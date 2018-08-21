@@ -764,7 +764,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     /* Initialize board data */
     board_data->fpga_version.describe = board_data->fpga_version_str;
-    board_data->fw_version.describe = board_data->fw_version_str;
+    board_data->fw_version.describe   = board_data->fw_version_str;
 
     board_data->module_format[BLADERF_RX] = -1;
     board_data->module_format[BLADERF_TX] = -1;
@@ -772,8 +772,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
     if (status < 0) {
-        log_debug("Failed to get FW version: %s\n",
-                  bladerf_strerror(status));
+        log_debug("Failed to get FW version: %s\n", bladerf_strerror(status));
         return status;
     }
     log_verbose("Read Firmware version: %s\n", board_data->fw_version.describe);
@@ -782,9 +781,10 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     board_data->state = STATE_FIRMWARE_LOADED;
 
     /* Determine firmware capabilities */
-    board_data->capabilities |= bladerf1_get_fw_capabilities(&board_data->fw_version);
-    log_verbose("Capability mask before FPGA load: 0x%016"PRIx64"\n",
-                 board_data->capabilities);
+    board_data->capabilities |=
+        bladerf1_get_fw_capabilities(&board_data->fw_version);
+    log_verbose("Capability mask before FPGA load: 0x%016" PRIx64 "\n",
+                board_data->capabilities);
 
     /* Wait until firmware is ready */
     if (have_cap(board_data->capabilities, BLADERF_CAP_QUERY_DEVICE_READY)) {
@@ -811,18 +811,19 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             return BLADERF_ERR_TIMEOUT;
         }
     } else {
-        log_info("FX3 FW v%u.%u.%u does not support the \"device ready\" query.\n"
-                 "\tEnsure flash-autoloading completes before opening a device.\n"
-                 "\tUpgrade the FX3 firmware to avoid this message in the future.\n"
-                 "\n", board_data->fw_version.major, board_data->fw_version.minor,
-                 board_data->fw_version.patch);
+        log_info(
+            "FX3 FW v%u.%u.%u does not support the \"device ready\" query.\n"
+            "\tEnsure flash-autoloading completes before opening a device.\n"
+            "\tUpgrade the FX3 firmware to avoid this message in the future.\n"
+            "\n",
+            board_data->fw_version.major, board_data->fw_version.minor,
+            board_data->fw_version.patch);
     }
 
     /* Determine data message size */
     status = dev->backend->get_device_speed(dev, &usb_speed);
     if (status < 0) {
-        log_debug("Failed to get device speed: %s\n",
-                  bladerf_strerror(status));
+        log_debug("Failed to get device speed: %s\n", bladerf_strerror(status));
         return status;
     }
     switch (usb_speed) {
@@ -848,12 +849,10 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             log_warning("Firmware v%u.%u.%u was detected. libbladeRF v%s "
                         "requires firmware v%u.%u.%u or later. An upgrade via "
                         "the bootloader is required.\n\n",
-                        &board_data->fw_version.major,
-                        &board_data->fw_version.minor,
-                        &board_data->fw_version.patch,
-                        LIBBLADERF_VERSION,
-                        required_fw_version.major,
-                        required_fw_version.minor,
+                        board_data->fw_version.major,
+                        board_data->fw_version.minor,
+                        board_data->fw_version.patch, LIBBLADERF_VERSION,
+                        required_fw_version.major, required_fw_version.minor,
                         required_fw_version.patch);
         }
 #endif
@@ -874,8 +873,36 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     status = spi_flash_read_fpga_size(dev, &board_data->fpga_size);
     if (status < 0) {
-        log_warning("Failed to get FPGA size %s\n",
-                    bladerf_strerror(status));
+        log_warning("Failed to get FPGA size %s\n", bladerf_strerror(status));
+    }
+
+    /* Check for possible mismatch between the USB device identification and
+     * the board's own knowledge. We need this to be a non-fatal condition,
+     * so that the problem can be fixed easily. */
+    if (board_data->fpga_size == BLADERF_FPGA_A4 ||
+        board_data->fpga_size == BLADERF_FPGA_A9) {
+        uint16_t vid, pid;
+
+        log_critical("Device type mismatch! FPGA size %d is a bladeRF2 "
+                     "characteristic, but the USB PID indicates bladeRF1. "
+                     "Initialization cannot continue.\n",
+                     board_data->fpga_size);
+        log_info("You must download firmware v2.2.0 or later from "
+                 "https://www.nuand.com/fx3/ and flash it (bladeRF-cli -f "
+                 "/path/to/bladeRF_fw.img) before using this device.\n");
+
+        status = dev->backend->get_vid_pid(dev, &vid, &pid);
+        if (status < 0) {
+            log_error("%s: get_vid_pid returned status %s\n", __FUNCTION__,
+                      bladerf_strerror(status));
+        }
+
+        log_debug("vid_pid=%04x:%04x fpga_size=%d fw_version=%u.%u.%u\n", vid,
+                  pid, board_data->fpga_size, board_data->fw_version.major,
+                  board_data->fw_version.minor, board_data->fw_version.patch);
+
+        log_warning("Skipping further initialization...\n");
+        return 0;
     }
 
     /* This will be set in initialize() after we can determine which
@@ -939,7 +966,8 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
             status = dev->backend->load_fpga(dev, buf, buf_size);
             if (status != 0) {
-                log_warning("Failure loading FPGA: %s\n", bladerf_strerror(status));
+                log_warning("Failure loading FPGA: %s\n",
+                            bladerf_strerror(status));
                 return status;
             }
 
@@ -964,17 +992,19 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         /* Cancel any pending re-tunes that may have been left over as the
          * result of a user application crashing or forgetting to call
          * bladerf_close() */
-        status = dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
+        status =
+            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
         if (status != 0) {
             log_warning("Failed to cancel any pending RX retunes: %s\n",
-                    bladerf_strerror(status));
+                        bladerf_strerror(status));
             return status;
         }
 
-        status = dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
+        status =
+            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
         if (status != 0) {
             log_warning("Failed to cancel any pending TX retunes: %s\n",
-                    bladerf_strerror(status));
+                        bladerf_strerror(status));
             return status;
         }
     }
