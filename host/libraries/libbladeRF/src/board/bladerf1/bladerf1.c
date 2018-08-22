@@ -1393,7 +1393,7 @@ static int set_tx_gain(struct bladerf *dev, int gain)
 {
     struct bladerf_range const *txvga1_range = NULL;
     struct bladerf_range const *txvga2_range = NULL;
-    bladerf_channel const ch                 = BLADERF_CHANNEL_RX(0);
+    bladerf_channel const ch                 = BLADERF_CHANNEL_TX(0);
     int txvga1, txvga2;
     int status;
 
