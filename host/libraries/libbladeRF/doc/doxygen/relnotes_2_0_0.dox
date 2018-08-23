@@ -39,6 +39,11 @@ changes to the API. Many of the changes can be transparently handled by
 compilers. However, applications will generally need to be recompiled and
 relinked to work with this version.
 
+Each topic has a table describing the affected functions, the importance
+of this change, and the recommended action. Please see
+\ref relnotes_2_0_0_ref_nomenclature for definitions of the words used in the
+"Importance" column.
+
 \subsection relnotes_2_0_0_api_freq_uint64 RF frequencies are now uint64_t
 
 In libbladeRF 1.x, RF frequencies were specified as 32-bit `unsigned int`. To
@@ -46,7 +51,7 @@ support the wider frequency range of the bladeRF Micro, frequencies are now
 specified as `uint64_t`, which is typedef'd as ::bladerf_frequency.
 
 <table>
-<caption id="multi_row">Required actions</caption>
+<caption id="multi_row_0">Required actions</caption>
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>bladerf_get_frequency()</td>
@@ -60,7 +65,11 @@ specified as `uint64_t`, which is typedef'd as ::bladerf_frequency.
 </tr>
 <tr>
     <td>bladerf_set_frequency()</td>
-    <td rowspan="3">Recommended</td>
+    <td rowspan="3">
+        <b>Required</b> for full compatibility
+
+        \note This action is required to use RF frequencies above ~4 GHz.
+    </td>
     <td rowspan="3">
         The `frequency` parameter is now of type ::bladerf_frequency.
 
@@ -91,7 +100,7 @@ multiple-output). This capability is used to transmit or receive samples via
 multiple RF ports simultaneously.
 
 <table>
-<caption id="multi_row">Required actions</caption>
+<caption id="multi_row_1">Required actions</caption>
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>bladerf_sync_config()</td>
@@ -120,7 +129,7 @@ void configure_module_sync(bladerf_module module) {
 <tr><td>bladerf_stream()</td></tr>
 <tr>
     <td>bladerf_get_timestamp()</td>
-    <td rowspan="4">Minor</td>
+    <td rowspan="3">Optional</td>
     <td rowspan="3">
         The `bladerf_module` argument has been replaced with
         \ref bladerf_direction.
@@ -136,6 +145,7 @@ void configure_module_sync(bladerf_module module) {
 <tr><td>bladerf_get_stream_timeout()</td></tr>
 <tr>
     <td>bladerf_sync_tx()</td>
+    <td rowspan="1">Informational</td>
     <td>
         The `samples` parameter is now a pointer to a `const`.
 
@@ -178,11 +188,17 @@ Note that some `bladerf_module` instances have been replaced with
 See the \ref relnotes_2_0_0_api_stream section elsewhere in this document.
 
 <table>
-<caption id="multi_row">Required actions</caption>
+<caption id="multi_row_2">Required actions</caption>
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>bladerf_enable_module()</td>
-    <td rowspan="27"><b>Required</b> for MIMO support, optional otherwise</td>
+    <td rowspan="27">
+        <b>Required</b> for full compatibility
+
+        \note This action is required to fully support devices with multiple
+              channels. Without these changes, only the first channel will be
+              available for use.
+    </td>
     <td rowspan="27">
         Replace `bladerf_module` with \ref bladerf_channel.
 
@@ -236,21 +252,26 @@ See the \ref relnotes_2_0_0_api_stream section elsewhere in this document.
 \subsection relnotes_2_0_0_api_range Defined BLADERF_*_{MAX,MIN,etc} constants replaced by bladerf_get_*_range functions
 
 The precompiler constants for supported minimum/maximum values have been
-deprecated and replaced with a set of context-aware functions.
+deprecated and replaced with a set of context-aware functions. The old
+constants will be removed in a later rleae.
 
 <table>
-<caption id="multi_row">Required actions</caption>
+<caption id="multi_row_3">Required actions</caption>
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>BLADERF_RXVGA1_GAIN_MIN</td>
     <td rowspan="17">
-        <b>Required</b> for full compatibility. The old constants are
-        deprecated and will be removed in a future release.
+        <b>Required</b> for full compatibility
+
+        \note This action is required for proper functioning of new bladeRF
+              models. The old constants are only valid for the original
+              bladeRF, and are not valid for other models.
     </td>
     <td rowspan="10">
         Use bladerf_get_gain_stage_range() to retrieve the range of allowable
-        gains for a specific gain stage. This should be called after setting
-        the frequency with bladerf_set_frequency().
+        gains for a specific gain stage. 
+
+        \see bladerf_get_gain() and bladerf_set_gain()
     </td>
 </tr>
 <tr><td>BLADERF_RXVGA1_GAIN_MAX</td></tr>
@@ -284,8 +305,8 @@ deprecated and replaced with a set of context-aware functions.
         Use bladerf_get_frequency_range() to retrieve the supported range of
         frequencies for a given channel.
 
-        \note This will vary depending on the particular hardware configuration
-              (such as if a XB-200 is attached).
+        \note The range will vary depending on the particular hardware
+              configuration, such as if a XB-200 is attached.
     </td>
 </tr>
 <tr><td>BLADERF_FREQUENCY_MIN</td></tr>
@@ -342,17 +363,21 @@ models, we've adjusted the gain ranges for these two functions to define 60 dB
 as the maximum available gain on RX, and roughly +0 dBm output power on TX.
 
 <table>
-<caption id="multi_row">Required actions</caption>
+<caption id="multi_row_4">Required actions</caption>
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>bladerf_set_gain()</td>
     <td rowspan="2">
-        <b>Required</b>
+        <b>Required</b> for full compatibility
+
+        \note This change affects the meaning of the values passed to/from
+              these functions, and the impact should be reviewed to avoid
+              unexpected results.
     </td>
     <td rowspan="2">
         60 dB is now defined as:
-        \li Maximum RX Gain
-        \li +0 dBm TX power (CW, approximate)
+        \li RX channels: Maximum RX Gain
+        \li TX channels: +0 dBm TX power (CW, approximate)
     </td>
 </tr>
 <tr><td>bladerf_get_gain()</td></tr>
@@ -373,18 +398,15 @@ as the maximum available gain on RX, and roughly +0 dBm output power on TX.
 For semantic clarity, common parameter types now have typedefs.
 
 <table>
-<caption id="multi_row">Required actions</caption>
+<caption id="multi_row_5">Required actions</caption>
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>bladerf_set_frequency()</td>
-    <td rowspan="4">
-        <b>Required</b> (see \ref relnotes_2_0_0_api_freq_uint64 elsewhere in
-        this document)
-    </td>
+    <td rowspan="4"><b>Required</b></td>
     <td rowspan="16">
         The declarations for these functions were changed to use defined
-        types. No changes are immediately necessary, with the exception of
-        ::bladerf_frequency (see \ref relnotes_2_0_0_api_freq_uint64).
+        types. No changes are immediately necessary, <i>with the exception of
+        ::bladerf_frequency</i>.
 
         The new types are:
 
@@ -392,10 +414,13 @@ For semantic clarity, common parameter types now have typedefs.
         \li ::bladerf_sample_rate (sample rate in samples per second;
             `unsigned int`)
         \li ::bladerf_bandwidth (bandwidth in Hz; `unsigned int`)
-        \li ::bladerf_frequency (center frequency in Hz; `uint64_t`)
+        \li ::bladerf_frequency (center frequency in Hz; now `uint64_t`,
+            was `uint32_t`)
         \li ::bladerf_timestamp (timestamp in ticks; `uint64_t`)
         \li ::bladerf_correction_value (correction value in arbitrary units;
             `int16_t`)
+
+        \see \ref relnotes_2_0_0_api_freq_uint64
     </td>
 </tr>
 <tr><td>bladerf_get_frequency()</td></tr>
@@ -697,5 +722,41 @@ interleaved in the sample buffers (currently 1 or 2).
 
 \li bladerf_sync_config()
 \li bladerf_stream()
+
+\subsection relnotes_2_0_0_ref_nomenclature Definitions for "Importance"
+
+<table>
+<tr><th>Word</th><th>Meaning</th></tr>
+<tr>
+    <td><b>Required</b></td>
+    <td>
+        This change must be performed to build code against libbladeRF 2.x.
+        Compile errors will result if you fail to do so.
+    </td>
+</tr>
+<tr>
+    <td><b>Required</b> for full compatibility</td>
+    <td>
+        This change is not required for building, but some functionality may
+        be missing or unavailable with some devices.
+
+        A Note will be included to describe the impact of not making this
+        change.
+    </td>
+</tr>
+<tr>
+    <td>Optional</td>
+    <td>
+        This change is optional, but recommended for clarity and/or future
+        compatibility.
+    </td>
+</tr>
+<tr>
+    <td>Informational</td>
+    <td>
+        This is an informational item, and no action is necessary or expected.
+    </td>
+</tr>
+</table>
 
 */
