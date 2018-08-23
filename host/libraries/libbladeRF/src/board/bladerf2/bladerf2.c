@@ -259,7 +259,9 @@ static const uint64_t BLADERF_REFIN_DEFAULT    = 10000000;
 #define RFFE_CONTROL_SPDT_HIGHBAND  0x1  // RF1 <-> RF2
 
 // Trim DAC control
-#define TRIMDAC_EN                  14   // 14 and 15
+#define TRIMDAC_MASK                0x3FFC // 2 through 13
+#define TRIMDAC_EN                  14     // 14 and 15
+#define TRIMDAC_EN_MASK             0x3
 #define TRIMDAC_EN_ACTIVE           0x0
 #define TRIMDAC_EN_HIGHZ            0x3
 
@@ -4165,7 +4167,36 @@ static int bladerf2_trim_dac_read(struct bladerf *dev, uint16_t *trim)
 
 static int bladerf2_trim_dac_write(struct bladerf *dev, uint16_t trim)
 {
+    struct bladerf2_board_data *board_data;
+    bool enable;
+    uint16_t trim_control;
+    uint16_t trim_value;
+    int status;
+
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+
+    trim_control = (trim >> TRIMDAC_EN) & TRIMDAC_EN_MASK;
+    trim_value   = trim & TRIMDAC_MASK;
+
+    log_debug("requested trim 0x%04x (control 0x%01x value 0x%04x)\n", trim,
+              trim_control, trim_value);
+
+    // Is the trimdac enabled?
+    status = bladerf2_get_trim_dac_enable(dev, &enable);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf2_get_trim_dac_enable", status);
+    }
+
+    // If the trimdac is not enabled, save this value for later but don't
+    // apply it.
+    if (!enable && trim_control != TRIMDAC_EN_HIGHZ) {
+        log_warning("trim DAC is disabled. New value will be saved until "
+                    "trim DAC is enabled\n");
+        board_data->trimdac_last_value = trim_value;
+        return 0;
+    }
 
     return dev->backend->ad56x1_vctcxo_trim_dac_write(dev, trim);
 }
