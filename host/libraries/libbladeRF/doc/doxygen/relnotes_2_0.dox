@@ -252,7 +252,7 @@ See the \ref relnotes_2_0_api_stream section elsewhere in this document.
 
 The precompiler constants for supported minimum/maximum values have been
 deprecated and replaced with a set of context-aware functions. The old
-constants will be removed in a later rleae.
+constants will be removed in a later release.
 
 <table>
 <caption id="multi_row_3">Required actions</caption>
@@ -676,7 +676,7 @@ what the bus voltage is, and what the system current and power draws are.
 
 The RFIC has an onboard temperature sensor, which may be useful for
 environmental monitoring, or for determining if the RFIC's synthesizers should
-be retuned after a significant temperature shift.
+be re-tuned after a significant temperature shift.
 
 \see bladerf_get_rfic_temperature()
 
