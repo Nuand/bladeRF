@@ -18,7 +18,7 @@ is also the first release with bindings for the Python programming language.
 We are very excited to release this library alongside the new bladeRF Micro.
 libbladeRF 2.0.0 began as a fork of the bladeRF codebase in February 2017.
 Across the FPGA, firmware, and host software trees, four engineers added
-95,000+ lines (and deleted 18,000+) to the bladeRF codebase, in more than 600
+105,000+ lines (and deleted 20,000+) to the bladeRF codebase, in more than 700
 commits.
 
 Inevitably, there will be bugs or missing features. Please use our issue
@@ -71,15 +71,15 @@ specified as `uint64_t`, which is typedef'd as ::bladerf_frequency.
 </table>
 
 \remarks
-\li DO NOT be alarmed if there is a small discrepancy (a few Hz) in the value
+\li Don't be alarmed if there is a small discrepancy (a few Hz) in the value
     returned by bladerf_get_frequency(), compared to what was requested by
     bladerf_set_frequency().
-\li DO check bladerf_get_frequency_range() \em before using
+\li Do check bladerf_get_frequency_range() \em before using
     bladerf_set_frequency() on a given device/channel.
-\li DO check bladerf_get_frequency() \em after doing bladerf_set_frequency(),
+\li Do check bladerf_get_frequency() \em after doing bladerf_set_frequency(),
     to verify that the expected frequency was achieved.
-\li DO expect bladerf_get_frequency() to return values larger than `UINT32_MAX`.
-\li DO use the ::bladerf_frequency type when possible.
+\li Do expect bladerf_get_frequency() to return values larger than `UINT32_MAX`.
+\li Do use the ::bladerf_frequency type when possible.
 
 \subsection relnotes_2_0_0_api_stream MIMO support in streaming API
 
@@ -142,8 +142,8 @@ void configure_module_sync(bladerf_module module) {
 </table>
 
 \remarks
-\li DO NOT use the `BLADERF_MODULE_RX` and `BLADERF_MODULE_TX` values.
-\li DO feel free to re-implement bladerf_interleave_stream_buffer() and/or
+\li Don't use the `BLADERF_MODULE_RX` and `BLADERF_MODULE_TX` values.
+\li Do feel free to re-implement bladerf_interleave_stream_buffer() and/or
     bladerf_deinterleave_stream_buffer() in a more efficient fashion. These
     are convenience functions written for clarity and portability, not
     performance.
@@ -219,11 +219,11 @@ See the \ref relnotes_2_0_0_api_stream section elsewhere in this document.
 </table>
 
 \remarks
-\li DO NOT use `BLADERF_MODULE_RX` or `BLADERF_MODULE_TX`.
-\li DO NOT assume the number of channels available.
-\li DO always check bladerf_get_channel_count() to determine how many channels
+\li Don't use `BLADERF_MODULE_RX` or `BLADERF_MODULE_TX`.
+\li Don't assume the number of channels available.
+\li Do always check bladerf_get_channel_count() to determine how many channels
     are available in a given direction.
-\li DO use the BLADERF_CHANNEL_RX(channel) and BLADERF_CHANNEL_TX(channel)
+\li Do use the BLADERF_CHANNEL_RX(channel) and BLADERF_CHANNEL_TX(channel)
     convenience macros.
 
 \see \ref relnotes_2_0_0_ref_channels
@@ -304,19 +304,19 @@ bool is_frequency_within_range(struct bladerf *dev, bladerf_channel channel, bla
 \endcode
 
 \remarks
-\li DO NOT use the legacy `BLADERF_*_{MIN,MAX}` defines or any hardcoded values
+\li Don't use the legacy `BLADERF_*_{MIN,MAX}` defines or any hardcoded values
     derived from them.
-\li DO NOT assume that the ranges will remain constant throughout operation,
+\li Don't assume that the ranges will remain constant throughout operation,
     or that they are the same for all channels.
-\li DO NOT hardcode ranges, or guess them based on the board model.
-\li DO remember that the ranges can change depending on configuration, e.g.
+\li Don't hardcode ranges, or guess them based on the board model.
+\li Do remember that the ranges can change depending on configuration, e.g.
     bladerf_get_gain_range() may return different values for an RX channel
     depending on the configured center frequency.
-\li DO call `bladerf_get_*_range()` every time you need to know -- don't
+\li Do call `bladerf_get_*_range()` every time you need to know -- don't
     cache it!
-\li DO test to ensure user-supplied values are valid before using them, when
+\li Do test to ensure user-supplied values are valid before using them, when
     possible.
-\li DO handle \ref BLADERF_ERR_RANGE errors when setting values, especially if
+\li Do handle \ref BLADERF_ERR_RANGE errors when setting values, especially if
     you don't check for validity first. The library will only return this if
     it is not sensible to clamp the value to be within range, e.g. with
     bladerf_set_sample_rate().
@@ -361,9 +361,9 @@ As well as:
 \li struct bladerf_metadata
 
 \remarks
-\li DO NOT use the underlying types (e.g. `uint64_t` instead of
+\li Don't use the underlying types (e.g. `uint64_t` instead of
     `bladerf_frequency`) if it can be avoided.
-\li DO use these typedefs whereever possible! They exist to make implementation
+\li Do use these typedefs whereever possible! They exist to make implementation
     easier.
 
 \todo
@@ -609,8 +609,7 @@ be retuned after a significant temperature shift.
 \subsubsection relnotes_2_0_0_ref_channels What is a channel?
 
 In the bladeRF architecture, a channel is a single, unidirectional RF path.
-There is generally a 1:1 mapping between a ::bladerf_channel and a physical
-RF port.
+There is a 1:1 mapping between a ::bladerf_channel and a physical RF port.
 
 On the original bladeRF, there are two channels available:
 
@@ -626,6 +625,7 @@ On the bladeRF Micro, there are four channels available:
 \li BLADERF_CHANNEL_TX(1) == J4 "TX2"
 
 Generally speaking, you will want to apply settings to a specific channel.
+
 Note that some groups of channels may share some settings on some hardware: for
 example, if you bladerf_set_frequency() on a bladeRF Micro's
 BLADERF_CHANNEL_RX(0), it will also change the frequency of
