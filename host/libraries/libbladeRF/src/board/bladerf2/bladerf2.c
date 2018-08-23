@@ -105,7 +105,8 @@ struct bladerf2_board_data {
 
     /* VCTCXO trim state */
     enum bladerf2_vctcxo_trim_source trim_source;
-    uint16_t trimdac_value;
+    uint16_t trimdac_last_value;   /**< saved running value */
+    uint16_t trimdac_stored_value; /**< cached value read from SPI flash */
 };
 
 /* Macro for logging and returning an error status. This should be used for
@@ -620,7 +621,7 @@ static int bladerf2_select_band(struct bladerf *dev,
 static int bladerf2_get_frequency(struct bladerf *dev,
                                   bladerf_channel ch,
                                   uint64_t *frequency);
-static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
+static int bladerf2_read_flash_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 
 
 /******************************************************************************/
@@ -1250,11 +1251,11 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     /* Initialize VCTCXO trim DAC to stored value */
-    uint16_t *trimval = &(board_data->trimdac_value);
+    uint16_t *trimval = &(board_data->trimdac_stored_value);
 
-    status = bladerf2_get_vctcxo_trim(dev, trimval);
+    status = bladerf2_read_flash_vctcxo_trim(dev, trimval);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf2_get_vctcxo_trim", status);
+        RETURN_ERROR_STATUS("bladerf2_read_flash_vctcxo_trim", status);
     }
 
     status = dev->backend->ad56x1_vctcxo_trim_dac_write(dev, *trimval);
@@ -4081,11 +4082,11 @@ static int bladerf2_set_trim_dac_enable(struct bladerf *dev, bool enable)
 
     // Set the trim DAC to high z if applicable
     if (!enable && trim != (TRIMDAC_EN_HIGHZ << TRIMDAC_EN)) {
-        board_data->trimdac_value = trim;
+        board_data->trimdac_last_value = trim;
         log_debug("saving current trim DAC value: 0x%04x\n", trim);
         trim = TRIMDAC_EN_HIGHZ << TRIMDAC_EN;
     } else if (enable && trim == (TRIMDAC_EN_HIGHZ << TRIMDAC_EN)) {
-        trim = board_data->trimdac_value;
+        trim = board_data->trimdac_last_value;
         log_debug("restoring old trim DAC value: 0x%04x\n", trim);
     }
 
@@ -4101,7 +4102,18 @@ static int bladerf2_set_trim_dac_enable(struct bladerf *dev, bool enable)
     return 0;
 }
 
-static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
+/**
+ * @brief      Read the VCTCXO trim value from the SPI flash
+ *
+ * Retrieves the factory VCTCXO value from the SPI flash. This function
+ * should not be used while sample streaming is in progress.
+ *
+ * @param      dev   Device handle
+ * @param      trim  Pointer to populate with the trim value
+ *
+ * @return     0 on success, value from \ref RETCODES list on failure
+ */
+static int bladerf2_read_flash_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 {
     int status;
 
@@ -4121,6 +4133,23 @@ static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
     }
 
     return status;
+}
+
+static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
+{
+    struct bladerf2_board_data *board_data;
+
+    if (NULL == trim) {
+        RETURN_INVAL("trim", "is null");
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+
+    *trim = board_data->trimdac_stored_value;
+
+    return 0;
 }
 
 static int bladerf2_trim_dac_read(struct bladerf *dev, uint16_t *trim)
