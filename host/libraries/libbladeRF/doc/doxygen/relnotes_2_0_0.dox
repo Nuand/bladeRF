@@ -2,11 +2,6 @@
 
 \page relnotes_2_0_0 libbladeRF 2.0.0 Release Notes
 
-This document describes many of the changes in libbladeRF 2.0.0, our first
-major version increment in more than three years. This release adds support for
-the bladeRF 2.0 "Micro," and improves the API for all bladeRF products. This
-is also the first release with bindings for the Python programming language.
-
 @attention libbladeRF 2.0.0 introduces breaking changes to the parameter lists
            for bladerf_get_frequency(), bladerf_stream(), and
            bladerf_sync_config().
@@ -17,6 +12,11 @@ is also the first release with bindings for the Python programming language.
 @attention Additionally, if you use bladerf_get_gain() and/or
            bladerf_set_gain(), be aware that the gain range for these functions
            has shifted. See \ref relnotes_2_0_0_api_gain for guidance.
+
+This document describes many of the changes in libbladeRF 2.0.0, our first
+major release in more than three years. This release adds support for the
+bladeRF 2.0 "Micro," and improves the API for all bladeRF products. This
+is also the first release with bindings for the Python programming language.
 
 We are very excited to release this library alongside the new bladeRF Micro.
 libbladeRF 2.0.0 began as a fork of the bladeRF codebase in February 2017.
@@ -116,7 +116,7 @@ multiple RF ports simultaneously.
                  in the correct type.
 
         \note Existing `bladerf_module` values are valid for SISO applications,
-              but an explicit cast is required:
+              but an explicit cast is usually required:
 ```
 void configure_module_sync(bladerf_module module) {
     // ...
@@ -147,9 +147,8 @@ void configure_module_sync(bladerf_module module) {
     <td>bladerf_sync_tx()</td>
     <td rowspan="1">Informational</td>
     <td>
-        The `samples` parameter is now a pointer to a `const`.
-
-        This should not impact user code.
+        The `samples` parameter is now a pointer to a `const`, to enforce
+        safety. This should not impact user code.
     </td>
 </tr>
 </table>
