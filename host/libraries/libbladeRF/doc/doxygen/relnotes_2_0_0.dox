@@ -39,7 +39,7 @@ changes to the API. Many of the changes can be transparently handled by
 compilers. However, applications will generally need to be recompiled and
 relinked to work with this version.
 
-\subsection relnotes_2_0_0_api_freq_uint64 Tuning frequencies are now uint64_t
+\subsection relnotes_2_0_0_api_freq_uint64 RF frequencies are now uint64_t
 
 In libbladeRF 1.x, RF frequencies were specified as 32-bit `unsigned int`. To
 support the wider frequency range of the bladeRF Micro, frequencies are now
@@ -60,7 +60,7 @@ specified as `uint64_t`, which is typedef'd as ::bladerf_frequency.
 </tr>
 <tr>
     <td>bladerf_set_frequency()</td>
-    <td rowspan="3">Minor</td>
+    <td rowspan="3">Recommended</td>
     <td rowspan="3">
         The `frequency` parameter is now of type ::bladerf_frequency.
 
@@ -84,7 +84,7 @@ specified as `uint64_t`, which is typedef'd as ::bladerf_frequency.
 \li Do expect bladerf_get_frequency() to return values larger than `UINT32_MAX`.
 \li Do use the ::bladerf_frequency type when possible.
 
-\subsection relnotes_2_0_0_api_stream MIMO support in streaming API
+\subsection relnotes_2_0_0_api_stream Streaming API changes for MIMO
 
 The data transfer APIs were expanded to support MIMO (multiple-input,
 multiple-output). This capability is used to transmit or receive samples via
@@ -160,7 +160,7 @@ void configure_module_sync(bladerf_module module) {
 \see bladerf_get_channel_count() - Get the number of RX or TX channels
      supported by the given device.
 
-\subsection relnotes_2_0_0_api_channel bladerf_channel replaces bladerf_module
+\subsection relnotes_2_0_0_api_channel bladerf_module replaced by bladerf_channel
 
 In libbladeRF 1.x, `bladerf_module` was an enum with two valid choices:
 `BLADERF_MODULE_RX` and `BLADERF_MODULE_TX`. To support MIMO, this enum has
@@ -182,7 +182,7 @@ See the \ref relnotes_2_0_0_api_stream section elsewhere in this document.
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>bladerf_enable_module()</td>
-    <td rowspan="27">Required for MIMO support, optional otherwise</td>
+    <td rowspan="27"><b>Required</b> for MIMO support, optional otherwise</td>
     <td rowspan="27">
         Replace `bladerf_module` with \ref bladerf_channel.
 
@@ -233,7 +233,7 @@ See the \ref relnotes_2_0_0_api_stream section elsewhere in this document.
 \see bladerf_get_channel_count() - Get the number of RX or TX channels
      supported by the given device.
 
-\subsection relnotes_2_0_0_api_range bladerf_get_*_range functions replace #define'd constants
+\subsection relnotes_2_0_0_api_range Defined BLADERF_*_{MAX,MIN,etc} constants replaced by bladerf_get_*_range functions
 
 The precompiler constants for supported minimum/maximum values have been
 deprecated and replaced with a set of context-aware functions.
@@ -243,7 +243,10 @@ deprecated and replaced with a set of context-aware functions.
 <tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
 <tr>
     <td>BLADERF_RXVGA1_GAIN_MIN</td>
-    <td rowspan="17">Required for complete bladeRF Micro compatibility</td>
+    <td rowspan="17">
+        <b>Required</b> for full compatibility. The old constants are
+        deprecated and will be removed in a future release.
+    </td>
     <td rowspan="10">
         Use bladerf_get_gain_stage_range() to retrieve the range of allowable
         gains for a specific gain stage. This should be called after setting
@@ -328,68 +331,35 @@ bool is_frequency_within_range(struct bladerf *dev, bladerf_channel channel, bla
 \see bladerf_set_gain() - Set overall system gain.
 \see bladerf_get_gain() - Get overall system gain.
 
-\subsection relnotes_2_0_0_api_typedefs New type definitions for parameters
-
-The following types are now defined:
-
-\li ::bladerf_gain (gain value in dB; `int`)
-\li ::bladerf_sample_rate (sample rate in samples per second; `unsigned int`)
-\li ::bladerf_bandwidth (bandwidth in Hz; `unsigned int`)
-\li ::bladerf_frequency (center frequency in Hz; `uint64_t`)
-\li ::bladerf_timestamp (timestamp in ticks; `uint64_t`)
-\li ::bladerf_correction_value (correction value in arbitrary units; `int16_t`)
-
-With the exception of ::bladerf_frequency, none of the underlying types changed
-from libbladeRF 1.x.x and no changes are strictly necessary. However, the
-declarations changed for the following functions:
-
-\li bladerf_set_gain()
-\li bladerf_get_gain()
-\li bladerf_set_gain_stage()
-\li bladerf_get_gain_stage()
-\li bladerf_set_sample_rate()
-\li bladerf_get_sample_rate()
-\li bladerf_set_bandwidth()
-\li bladerf_get_bandwidth()
-\li bladerf_select_band()
-\li bladerf_set_frequency()
-\li bladerf_get_frequency()
-\li bladerf_schedule_retune()
-\li bladerf_set_correction()
-\li bladerf_get_correction()
-\li bladerf_get_timestamp()
-
-As well as:
-
-\li struct bladerf_metadata
-
-\remarks
-\li Don't use the underlying types (e.g. `uint64_t` instead of
-    `bladerf_frequency`) if it can be avoided.
-\li Do use these typedefs whereever possible! They exist to make implementation
-    easier.
-
-\todo
-<a class="el" href="https://github.com/Nuand/bladeRF/issues/577">Issue #577</a>:
-Using `printf()` with a ::bladerf_frequency or ::bladerf_timestamp currently
-require knowing that they are actually `uint64_t`, e.g.
-`printf("the frequency is %" PRIu64 " Hz\n", freq);`.
-
-\subsection relnotes_2_0_0_api_gain bladerf_{get,set}_gain range shift
+\subsection relnotes_2_0_0_api_gain bladerf_{get,set}_gain range standardization
 
 Previously, the ranges used by bladerf_get_gain() and bladerf_set_gain() were
-somewhat arbitrary, with a value of 0 being the minimum possible gain, and
-the maximum possible gain being the sum of the max gain for all gain stages.
+somewhat arbitrary, with a value of 0 being the minimum possible gain, and the
+maximum possible gain being the sum of the max gain for all gain stages.
 
 To allow the same gain settings to produce similar results on all bladeRF
-models, we've standardized the gain ranges for these two functions as follows:
+models, we've adjusted the gain ranges for these two functions to define 60 dB
+as the maximum available gain on RX, and roughly +0 dBm output power on TX.
 
-\li RX Gain: 60 dB is the maximum available gain
-\li TX Gain: 60 dB is \em approximately +0 dBm CW output power
+<table>
+<caption id="multi_row">Required actions</caption>
+<tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
+<tr>
+    <td>bladerf_set_gain()</td>
+    <td rowspan="2">
+        <b>Required</b>
+    </td>
+    <td rowspan="2">
+        60 dB is now defined as:
+        \li Maximum RX Gain
+        \li +0 dBm TX power (CW, approximate)
+    </td>
+</tr>
+<tr><td>bladerf_get_gain()</td></tr>
+</table>
 
-This only affects bladerf_set_gain() and bladerf_get_gain(); individual gain
-stages (bladerf_set_gain_stage() and bladerf_get_gain_stage()) still expect
-raw hardware-specific values.
+\note Individual gain stages (bladerf_set_gain_stage() and
+      bladerf_get_gain_stage()) still expect raw hardware-specific values.
 
 \note The TX Gain is \em not calibrated, and the actual output power will vary
       from board to board, frequency to frequency, and even between different
@@ -397,6 +367,62 @@ raw hardware-specific values.
       of TX power should consider calibration.
 
 \see \ref relnotes_2_0_0_feats_gc_proportioning
+
+\subsection relnotes_2_0_0_api_typedefs Common parameter types now have typedefs
+
+For semantic clarity, common parameter types now have typedefs.
+
+<table>
+<caption id="multi_row">Required actions</caption>
+<tr><th>API Component</th><th>Importance</th><th>Action</th></tr>
+<tr>
+    <td>bladerf_set_frequency()</td>
+    <td rowspan="4">
+        <b>Required</b> (see \ref relnotes_2_0_0_api_freq_uint64 elsewhere in
+        this document)
+    </td>
+    <td rowspan="16">
+        The declarations for these functions were changed to use defined
+        types. No changes are immediately necessary, with the exception of
+        ::bladerf_frequency (see \ref relnotes_2_0_0_api_freq_uint64).
+
+        The new types are:
+
+        \li ::bladerf_gain (gain value in dB; `int`)
+        \li ::bladerf_sample_rate (sample rate in samples per second;
+            `unsigned int`)
+        \li ::bladerf_bandwidth (bandwidth in Hz; `unsigned int`)
+        \li ::bladerf_frequency (center frequency in Hz; `uint64_t`)
+        \li ::bladerf_timestamp (timestamp in ticks; `uint64_t`)
+        \li ::bladerf_correction_value (correction value in arbitrary units;
+            `int16_t`)
+    </td>
+</tr>
+<tr><td>bladerf_get_frequency()</td></tr>
+<tr><td>bladerf_schedule_retune()</td></tr>
+<tr><td>bladerf_select_band()</td></tr>
+<tr>
+    <td>bladerf_set_gain()</td>
+    <td rowspan="12">Optional</td>
+</tr>
+<tr><td>bladerf_get_gain()</td></tr>
+<tr><td>bladerf_set_gain_stage()</td></tr>
+<tr><td>bladerf_get_gain_stage()</td></tr>
+<tr><td>bladerf_set_sample_rate()</td></tr>
+<tr><td>bladerf_get_sample_rate()</td></tr>
+<tr><td>bladerf_set_bandwidth()</td></tr>
+<tr><td>bladerf_get_bandwidth()</td></tr>
+<tr><td>bladerf_set_correction()</td></tr>
+<tr><td>bladerf_get_correction()</td></tr>
+<tr><td>bladerf_get_timestamp()</td></tr>
+<tr><td>struct bladerf_metadata</td></tr>
+</table>
+
+\todo
+<a class="el" href="https://github.com/Nuand/bladeRF/issues/577">Issue #577</a>:
+Using `printf()` with a ::bladerf_frequency or ::bladerf_timestamp currently
+require knowing that they are actually `uint64_t`, e.g.
+`printf("the frequency is %" PRIu64 " Hz\n", freq);`.
 
 \section relnotes_2_0_0_feats New features
 
