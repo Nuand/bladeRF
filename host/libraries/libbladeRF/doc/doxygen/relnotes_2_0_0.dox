@@ -14,6 +14,9 @@ is also the first release with bindings for the Python programming language.
            compatible with this version. See the
            \ref relnotes_2_0_0_api_freq_uint64 and
            \ref relnotes_2_0_0_api_stream sections for guidance.
+@attention Additionally, if you use bladerf_get_gain() and/or
+           bladerf_set_gain(), be aware that the gain range for these functions
+           has shifted. See \ref relnotes_2_0_0_api_gain for guidance.
 
 We are very excited to release this library alongside the new bladeRF Micro.
 libbladeRF 2.0.0 began as a fork of the bladeRF codebase in February 2017.
@@ -372,6 +375,29 @@ Using `printf()` with a ::bladerf_frequency or ::bladerf_timestamp currently
 require knowing that they are actually `uint64_t`, e.g.
 `printf("the frequency is %" PRIu64 " Hz\n", freq);`.
 
+\subsection relnotes_2_0_0_api_gain bladerf_{get,set}_gain range shift
+
+Previously, the ranges used by bladerf_get_gain() and bladerf_set_gain() were
+somewhat arbitrary, with a value of 0 being the minimum possible gain, and
+the maximum possible gain being the sum of the max gain for all gain stages.
+
+To allow the same gain settings to produce similar results on all bladeRF
+models, we've standardized the gain ranges for these two functions as follows:
+
+\li RX Gain: 60 dB is the maximum available gain
+\li TX Gain: 60 dB is \em approximately +0 dBm CW output power
+
+This only affects bladerf_set_gain() and bladerf_get_gain(); individual gain
+stages (bladerf_set_gain_stage() and bladerf_get_gain_stage()) still expect
+raw hardware-specific values.
+
+\note The TX Gain is \em not calibrated, and the actual output power will vary
+      from board to board, frequency to frequency, and even between different
+      output ports on the same board. Applications requiring precise control
+      of TX power should consider calibration.
+
+\see \ref relnotes_2_0_0_feats_gc_proportioning
+
 \section relnotes_2_0_0_feats New features
 
 \subsection relnotes_2_0_0_feats_platform Multiple platform support
@@ -470,7 +496,7 @@ void agc_example(struct bladerf *dev, bladerf_channel channel)
 }
 \endcode
 
-\subsubsection relnotes_2_0_0_feats_gc_auto System gain proportioning
+\subsubsection relnotes_2_0_0_feats_gc_proportioning System gain proportioning
 
 In previous versions, setting the gain required careful proportioning of gain
 between LNAs and VGAs. To reduce the implementation burden, an overall gain may
@@ -604,9 +630,9 @@ be retuned after a significant temperature shift.
 
 \see bladerf_get_rfic_temperature()
 
-\subsection relnotes_2_0_0_ref Further information
+\section relnotes_2_0_0_ref Further information
 
-\subsubsection relnotes_2_0_0_ref_channels What is a channel?
+\subsection relnotes_2_0_0_ref_channels What is a channel?
 
 In the bladeRF architecture, a channel is a single, unidirectional RF path.
 There is a 1:1 mapping between a ::bladerf_channel and a physical RF port.
