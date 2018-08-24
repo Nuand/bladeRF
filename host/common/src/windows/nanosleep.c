@@ -23,17 +23,18 @@
  * THE SOFTWARE.
  */
 #ifndef WIN32
-#   error "This file is intended for use with WIN32 systems only."
+#error "This file is intended for use with WIN32 systems only."
 #endif
 
-#include <windows.h>
 #include "nanosleep.h"
+#include <pthread.h>
+#include <windows.h>
 
 int nanosleep(const struct timespec *req, struct timespec *rem)
 {
     DWORD sleep_ms;
 
-    sleep_ms = (req->tv_sec * 1e6) + (req->tv_nsec / 1e3);
+    sleep_ms = ((DWORD)req->tv_sec * 1000000) + ((DWORD)req->tv_nsec / 1000);
 
     Sleep(sleep_ms);
 
