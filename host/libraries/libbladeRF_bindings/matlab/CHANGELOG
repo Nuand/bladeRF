@@ -5,6 +5,14 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.0.1 (2018-08-24)
+--------------------------------
+
+This version is intended for use with libbladeRF v2.0.1.
+
+Changes:
+ * host: libbladeRF: Rename clock select option
+
 v1.0.0 (2018-08-13)
 --------------------------------
 
