@@ -20,6 +20,7 @@
 #include "cmd.h"
 #include "printset.h"
 #include <inttypes.h>
+#include <time.h>
 
 /* hardware */
 static void _print_rfic(struct cli_state *state)
@@ -200,6 +201,8 @@ int print_clock_ref(struct cli_state *state, int argc, char **argv)
         rv   = CLI_RET_LIBBLADERF;
         goto out;
     }
+
+    nanosleep( &(const struct timespec){0, 200000000L}, NULL );
 
     status = bladerf_get_pll_lock_state(state->dev, &locked);
     if (status < 0) {
