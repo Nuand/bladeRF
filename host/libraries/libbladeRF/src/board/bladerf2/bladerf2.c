@@ -1005,7 +1005,7 @@ static bool _check_total_sample_rate(struct bladerf *dev,
     bladerf_sample_rate rate_accum = 0;
     size_t active_channels         = 0;
 
-    const bladerf_sample_rate MAX_SAMPLE_THROUGHPUT = 80e6;
+    const bladerf_sample_rate MAX_SAMPLE_THROUGHPUT = 80000000;
 
     /* Read RFFE control register, if required */
     if (rffe_control_reg != NULL) {
