@@ -331,7 +331,7 @@ int CALL_CONV bladerf_get_power_source(struct bladerf *dev,
  * Available clock sources
  */
 typedef enum {
-    CLOCK_SELECT_VCTCXO,  /**< Use onboard VCTCXO */
+    CLOCK_SELECT_ONBOARD, /**< Use onboard VCTCXO */
     CLOCK_SELECT_EXTERNAL /**< Use external clock input */
 } bladerf_clock_select;
 

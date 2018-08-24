@@ -404,7 +404,7 @@ int print_clock_sel(struct cli_state *state, int argc, char **argv)
     }
 
     switch (clock_sel) {
-        case CLOCK_SELECT_VCTCXO:
+        case CLOCK_SELECT_ONBOARD:
             clock_str = "Onboard VCTCXO";
             break;
         case CLOCK_SELECT_EXTERNAL:
@@ -434,8 +434,8 @@ int set_clock_sel(struct cli_state *state, int argc, char **argv)
         goto out;
     }
 
-    if (!strcasecmp(argv[2], "VCTCXO")) {
-        clock_sel = CLOCK_SELECT_VCTCXO;
+    if (!strcasecmp(argv[2], "ONBOARD")) {
+        clock_sel = CLOCK_SELECT_ONBOARD;
     } else if (!strcasecmp(argv[2], "EXTERNAL")) {
         clock_sel = CLOCK_SELECT_EXTERNAL;
     } else {
