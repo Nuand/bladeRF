@@ -5,6 +5,38 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.0.1 (2018-08-24)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.2.0
+FPGA         v0.7.3
+
+This release contains minor fixes since v2.0.0.
+
+Note to bladeRF2 users: If you are using bladerf_{get,set}_clock_select(),
+please note that the enum for bladerf_clock_select has changed.
+CLOCK_SELECT_VCTCXO has been replaced with CLOCK_SELECT_ONBOARD.
+
+Changes:
+ * FreeBSD build fixes (#561)
+ * 32-bit architecture fixes (#573)
+ * Detect and handle a bladeRF Micro that is running old firmware to allow
+   re-flashing without recovery mode (#578)
+ * bladeRF1: bladerf_set_gain_mode returning BLADERF_ERR_UNSUPPORTED is no
+   longer fatal (#542)
+ * bladeRF1: only check AGC DC LUT setting when enabling AGC
+ * bladeRF1: typo fix in set_tx_gain (#580)
+ * xb200: check for null xb_data before dereferencing it (#575)
+ * bladeRF2: cache factory trimdac value at initialization; preserve trimdac
+   disable state on bladerf2_trim_dac_write (#582)
+ * bladeRF2: bladerf_clock_select: replace CLOCK_SELECT_VCTCXO with
+   CLOCK_SELECT_ONBOARD for clarity (#585)
+ * Improvements to the release notes (#583)
+ * bladeRF-cli: Add 200 ms delay before probing PLL lock status (#587)
+ * Windows: add a nanosleep() shim (#589)
+
 v2.0.0 (2018-08-13)
 --------------------------------
 
@@ -16,7 +48,7 @@ FPGA         v0.7.3
 Initial release supporting the bladeRF 2.0 series, which currently features the
 bladeRF Micro A4 and the bladeRF Micro A9.
 
-Please see the changes for 1.9.x, as well as doc/doxygen/relnotes_2_0_0.dox,
+Please see the changes for 1.9.x, as well as doc/doxygen/relnotes_2_0.dox,
 for a fuller summary of the changes since the last public release.
 
 Changes:
