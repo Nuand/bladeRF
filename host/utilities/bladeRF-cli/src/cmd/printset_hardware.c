@@ -20,7 +20,12 @@
 #include "cmd.h"
 #include "printset.h"
 #include <inttypes.h>
+
+#if BLADERF_OS_WINDOWS
+#include "nanosleep.h"
+#else
 #include <time.h>
+#endif
 
 /* hardware */
 static void _print_rfic(struct cli_state *state)
