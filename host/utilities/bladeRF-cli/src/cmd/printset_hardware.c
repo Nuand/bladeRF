@@ -202,8 +202,6 @@ int print_clock_ref(struct cli_state *state, int argc, char **argv)
         goto out;
     }
 
-    nanosleep( &(const struct timespec){0, 200000000L}, NULL );
-
     status = bladerf_get_pll_lock_state(state->dev, &locked);
     if (status < 0) {
         *err = status;
@@ -225,6 +223,8 @@ int set_clock_ref(struct cli_state *state, int argc, char **argv)
     int status;
     bool val;
 
+    long const PLL_SETTLE_NSEC = 200000000L;
+
     if (argc != 3) {
         printf("Usage: set clock_ref <on|off>\n");
         rv = CLI_RET_NARGS;
@@ -244,6 +244,9 @@ int set_clock_ref(struct cli_state *state, int argc, char **argv)
         rv   = CLI_RET_LIBBLADERF;
         goto out;
     }
+
+    /* Sleep for 200 ms to allow the PLL to settle */
+    nanosleep(&(const struct timespec){ 0, PLL_SETTLE_NSEC }, NULL);
 
     rv = print_clock_ref(state, 2, NULL);
 
