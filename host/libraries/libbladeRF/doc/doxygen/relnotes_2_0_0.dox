@@ -2,10 +2,10 @@
 
 \page relnotes_2_0_0 libbladeRF 2.0.0 Release Notes
 
-This page describes many of the changes in libbladeRF 2.0.0, our first major
-version increment in more than three years. This release adds support for the
-bladeRF Micro, and improves the API for all bladeRF products. This is also the
-first release with bindings for the Python programming language.
+This page describes many of the changes in libbladeRF 2.0.0, our latest major
+version increment that features significant changes. This release adds support for
+the bladeRF 2.0 Micro, and improves the API for all bladeRF products. This is also
+the first release with bindings for the Python programming language.
 
 @attention libbladeRF 2.0.0 introduces breaking changes to the parameter lists
            for bladerf_get_frequency(), bladerf_stream(), and
@@ -16,12 +16,11 @@ first release with bindings for the Python programming language.
            \ref relnotes_2_0_0_api_stream sections for guidance.
 
 We are very excited to release this library alongside the new bladeRF Micro.
-libbladeRF 2.0.0 began as a fork of the bladeRF codebase in February 2017.
-Across the FPGA, firmware, and host software trees, four engineers added
-95,000+ lines (and deleted 18,000+) to the bladeRF codebase, in more than 600
-commits.
+libbladeRF 2.0.0 began as a fork of the bladeRF codebase. Across the FPGA,
+firmware, and host software trees, we added 95,000+ lines (and deleted 18,000+)
+to the bladeRF codebase, in more than 600 commits.
 
-Inevitably, there will be bugs or missing features. Please use our issue
+In case you experience any bugs or missing features, please use our issue
 tracker at https://github.com/Nuand/bladeRF/issues to report any problems
 you encounter with this release. Also, visit our forums at
 https://nuand.com/forums/ to discuss this release with other bladeRF users.
