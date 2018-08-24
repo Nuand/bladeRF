@@ -1,3 +1,25 @@
+bladerf (2018.08-rc3) unstable; urgency=low
+
+  * Release candidate 3 for the 2018.08 release
+  * Detect and handle a bladeRF Micro that is running old firmware to allow
+    re-flashing without recovery mode (#578)
+  * bladeRF1: bladerf_set_gain_mode returning BLADERF_ERR_UNSUPPORTED is no
+    longer fatal (#542)
+  * bladeRF1: only check AGC DC LUT setting when enabling AGC
+  * bladeRF1: typo fix in set_tx_gain (#580)
+  * xb200: check for null xb_data before dereferencing it (#575)
+  * bladeRF2: cache factory trimdac value at initialization; preserve trimdac
+    disable state on bladerf2_trim_dac_write (#582)
+  * bladeRF2: bladerf_clock_select: replace CLOCK_SELECT_VCTCXO with
+    CLOCK_SELECT_ONBOARD for clarity (#585)
+  * Improvements to the release notes (#583)
+  * bladeRF-cli: Add 200 ms delay before probing PLL lock status (#587)
+  * "set loopback" help dialog aware of board type (#566)
+  * FPGA bitstream v0.7.3, FX3 FW v2.2.0, libbladeRF v2.0.1, bladeRF-cli
+    v1.6.1
+
+ -- Rey Tucker <rey.tucker@nuand.com>  Fri, 24 Aug 2018 16:19:32 -0400
+
 bladerf (2018.08-rc2) unstable; urgency=low
 
   * Release candidate 2 for the 2018.08 release

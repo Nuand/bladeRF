@@ -6,6 +6,78 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2018.08-rc3 (2018-08-24)
+--------------------------------------------------------------------------------
+
+Bugfix release candidate.
+
+    * FPGA bitstream                v0.7.3
+    * FX3 firmware                  v2.2.0
+    * libbladeRF                    v2.0.1
+    * bladeRF-cli                   v1.6.1
+    * MATLAB & Simulink bindings    v1.0.1
+    * Python bindings               v1.0.1
+
+libbladeRF v2.0.1:
+ * Detect and handle a bladeRF Micro that is running old firmware to allow
+   re-flashing without recovery mode (#578)
+ * bladeRF1: bladerf_set_gain_mode returning BLADERF_ERR_UNSUPPORTED is no
+   longer fatal (#542)
+ * bladeRF1: only check AGC DC LUT setting when enabling AGC
+ * bladeRF1: typo fix in set_tx_gain (#580)
+ * xb200: check for null xb_data before dereferencing it (#575)
+ * bladeRF2: cache factory trimdac value at initialization; preserve trimdac
+   disable state on bladerf2_trim_dac_write (#582)
+ * bladeRF2: bladerf_clock_select: replace CLOCK_SELECT_VCTCXO with
+   CLOCK_SELECT_ONBOARD for clarity (#585)
+ * Improvements to the release notes (#583)
+ * bladeRF-cli: Add 200 ms delay before probing PLL lock status (#587)
+ * Windows: add a nanosleep() shim (#589)
+
+bladeRF-cli v1.6.1:
+ * "set loopback" help dialog aware of board type (#566)
+ * host: libbladeRF: Rename clock select option
+ * host: bladeRF-cli: Add 200 ms delay before probing PLL lock status (#587)
+ * host: add nanosleep shim for Windows (#589)
+
+MATLAB v1.0.1:
+ * host: libbladeRF: Rename clock select option
+
+Python v1.0.1:
+ * host: libbladeRF: Rename clock select option
+
+--------------------------------------------------------------------------------
+ 2018.08-rc2 (2018-08-16)
+--------------------------------------------------------------------------------
+
+Minor bugfix release. Fixes packaging on Debian/Ubuntu.
+
+    * FPGA bitstream                v0.7.3
+    * FX3 firmware                  v2.2.0
+    * libbladeRF                    v2.0.0
+    * bladeRF-cli                   v1.6.0
+    * MATLAB & Simulink bindings    v1.0.0
+    * Python bindings               v1.0.0
+
+Fixes:
+ * libbladeRF: FreeBSD build fixes (#561)
+ * libbladeRF: 32-bit architecture fixes (#573)
+
+--------------------------------------------------------------------------------
+ 2018.08-rc1 (2018-08-15)
+--------------------------------------------------------------------------------
+
+Initial public release of libbladeRF v2.0, etc. Adds support for the
+bladeRF 2.0 Micro.
+
+    * FPGA bitstream                v0.7.3
+    * FX3 firmware                  v2.2.0
+    * libbladeRF                    v2.0.0
+    * bladeRF-cli                   v1.6.0
+    * MATLAB & Simulink bindings    v1.0.0
+    * Python bindings               v1.0.0
+
+--------------------------------------------------------------------------------
  2018.03-alpha1 (2018-03-26)
 --------------------------------------------------------------------------------
 
