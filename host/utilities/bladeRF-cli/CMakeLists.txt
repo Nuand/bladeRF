@@ -225,6 +225,7 @@ if(MSVC)
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
+            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/nanosleep.c
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/setenv.c
     )
 endif()
