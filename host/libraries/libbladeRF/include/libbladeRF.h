@@ -2337,7 +2337,7 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  *
  * @param       dev         Device handle
  * @param[in]   dir         Stream direction
- * @param[out]  value       Coarse timestamp value
+ * @param[out]  timestamp   Coarse timestamp value
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
