@@ -100,12 +100,18 @@ MATLAB Bindings
 
 * [ ] Regenerate ```libbladeRF_proto.m``` if required (TODO: how?)
 
+* [ ] Update the ```CHANGELOG``` file
+
 * [ ] Apply the tag: ```matlab_vX.Y.X```
 
 Python Bindings
 ================================================================================
 
 * [ ] Regenerate ```_cdef.py``` if required (TODO: how?)
+
+* [ ] Update the version number in the ```setup.py``` file
+
+* [ ] Update the ```CHANGELOG``` file
 
 * [ ] Apply the tag: ```python_vX.Y.X```
 
