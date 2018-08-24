@@ -13,18 +13,17 @@
            bladerf_set_gain(), be aware that the gain range for these functions
            has shifted. See \ref relnotes_2_0_api_gain for guidance.
 
-This document describes many of the changes in libbladeRF 2.0, our first
-major release in more than three years. This release adds support for the
-bladeRF 2.0 "Micro," and improves the API for all bladeRF products. This
+This document describes many of the changes in libbladeRF 2.0, our latest major
+version increment that features significant changes. This release adds support
+for the bladeRF 2.0 Micro, and improves the API for all bladeRF products. This
 is also the first release with bindings for the Python programming language.
 
 We are very excited to release this library alongside the new bladeRF Micro.
-libbladeRF 2.0 began as a fork of the bladeRF codebase in February 2017.
-Across the FPGA, firmware, and host software trees, four engineers added
-105,000+ lines (and deleted 20,000+) to the bladeRF codebase, in more than 700
-commits.
+libbladeRF 2.0 began as a fork of the bladeRF codebase. Across the FPGA,
+firmware, and host software trees, we added 95,000+ lines (and deleted 18,000+)
+to the bladeRF codebase, in more than 600 commits.
 
-Inevitably, there will be bugs or missing features. Please use our issue
+In case you experience any bugs or missing features, please use our issue
 tracker at https://github.com/Nuand/bladeRF/issues to report any problems
 you encounter with this release. Also, visit our forums at
 https://nuand.com/forums/ to discuss this release with other bladeRF users.
