@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #ifndef WIN32
-#   error "This file is intended for use with WIN32 systems only."
+#error "This file is intended for use with WIN32 systems only."
 #endif
 
 int nanosleep(const struct timespec *req, struct timespec *rem);

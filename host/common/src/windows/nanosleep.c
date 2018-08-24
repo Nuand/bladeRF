@@ -34,7 +34,7 @@ int nanosleep(const struct timespec *req, struct timespec *rem)
 {
     DWORD sleep_ms;
 
-    sleep_ms = ((DWORD)req->tv_sec * 1000000) + ((DWORD)req->tv_nsec / 1000);
+    sleep_ms = ((DWORD)req->tv_sec * 1000) + ((DWORD)req->tv_nsec / 1000000);
 
     Sleep(sleep_ms);
 
