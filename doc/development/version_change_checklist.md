@@ -122,7 +122,7 @@ Project-wide items
 
 * [ ] Update the top-level CHANGELOG file.
 
-* [ ] Update the ```debian/CHANGELOG``` file
+* [ ] Update the ```debian/changelog``` file using ```dch -i```
 
 * [ ] Apply the tag: ```YYYY.MM[-rcN]```
 
