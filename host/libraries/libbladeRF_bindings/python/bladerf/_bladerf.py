@@ -229,7 +229,7 @@ class RXMux(enum.Enum):
 
 class ClockSelect(enum.Enum):
     Unknown = -99
-    VCTCXO = libbladeRF.CLOCK_SELECT_VCTCXO
+    VCTCXO = libbladeRF.CLOCK_SELECT_ONBOARD
     External = libbladeRF.CLOCK_SELECT_EXTERNAL
 
     def __str__(self):

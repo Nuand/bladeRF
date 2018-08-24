@@ -604,7 +604,7 @@ header = """
     bladerf_power_sources *val);
   typedef enum
   {
-    CLOCK_SELECT_VCTCXO,
+    CLOCK_SELECT_ONBOARD,
     CLOCK_SELECT_EXTERNAL
   } bladerf_clock_select;
   int bladerf_get_clock_select(struct bladerf *dev, bladerf_clock_select

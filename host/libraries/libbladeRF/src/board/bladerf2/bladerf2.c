@@ -5193,7 +5193,7 @@ int bladerf_get_clock_select(struct bladerf *dev, bladerf_clock_select *sel)
     }
 
     if ((gpio & (1 << CFG_GPIO_CLOCK_SELECT)) == 0x0) {
-        *sel = CLOCK_SELECT_VCTCXO;
+        *sel = CLOCK_SELECT_ONBOARD;
     } else {
         *sel = CLOCK_SELECT_EXTERNAL;
     }
@@ -5228,7 +5228,7 @@ int bladerf_set_clock_select(struct bladerf *dev, bladerf_clock_select sel)
 
     // Set the clock select bit(s) accordingly
     switch (sel) {
-        case CLOCK_SELECT_VCTCXO:
+        case CLOCK_SELECT_ONBOARD:
             gpio &= ~(1 << CFG_GPIO_CLOCK_SELECT);
             break;
         case CLOCK_SELECT_EXTERNAL:
