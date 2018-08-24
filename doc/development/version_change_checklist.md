@@ -37,8 +37,8 @@ FPGA
 * [ ] Generate the official bitstreams ***at*** the tag and have them uploaded
       to https://www.nuand.com/fpga
 
-* [ ] Update the ```bladerf-fpga-hostedx115.postinst``` and
-      ```bladerf-fpga-hostedx40.postinst``` files under ```host/debian/```.
+* [ ] Update the ```bladerf-fpga-hostedx*.postinst``` files under
+      ```host/debian/```.
 
 
 
@@ -68,7 +68,9 @@ libbladeRF
 
 * [ ] Update the ```libbladeRF/CHANGELOG``` file
 
-* [ ] Update the version number in the CMakeLists.txt file
+* [ ] Update the version number in ```libbladeRF/CMakeLists.txt```
+
+* [ ] Update the version number in ```libbladeRF/include/libbladeRF.h```
 
 * [ ] Apply the tag: ```libbladeRF_vX.Y.Z```
 
