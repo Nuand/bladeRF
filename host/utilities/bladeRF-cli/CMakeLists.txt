@@ -26,6 +26,7 @@ configure_file(
 # Build dependencies
 ################################################################################
 find_package(LibTecla)
+find_package(LibEdit)
 
 if(MSVC)
     find_package(LibPThreadsWin32 REQUIRED)
@@ -47,8 +48,10 @@ endif()
 ################################################################################
 
 option(ENABLE_LIBTECLA
-        "Enable the use of libtecla, if available."
-        ${LIBTECLA_FOUND})
+        "Enable the use of libtecla, if available.")
+
+option(ENABLE_LIBEDIT
+        "Enable the use of libtecla, if available.")
 
 option(BUILD_BLADERF_CLI_DOCUMENTATION
         "Build bladeRF-cli man page. Requires help2man."
@@ -72,8 +75,12 @@ if(ENABLE_LIBTECLA)
         message(FATAL_ERROR "ENABLE_LIBTECLA was forced ON, but libtecla "
                 "cannot be found!")
     endif()
-
-    message(STATUS "libtecla support enabled")
+endif()
+if(ENABLE_LIBEDIT)
+    if((NOT LIBEDIT_INCLUDE_DIR) OR (NOT LIBEDIT_LIBRARIES))
+        message(FATAL_ERROR "ENABLE_LIBEDIT was forced ON, but editline "
+                "cannot be found!")
+    endif()
 endif()
 
 ################################################################################
@@ -147,8 +154,16 @@ if(MSVC)
 endif()
 
 
-if(ENABLE_LIBTECLA)
+message(STATUS "libtecla ${ENABLE_LIBTECLA} ${LIBTECLA_FOUND}")
+message(STATUS "libedit ${ENABLE_LIBEDIT} ${LIBEDIT_FOUND}")
+if(ENABLE_LIBTECLA OR (LIBTECLA_FOUND AND NOT ENABLE_LIBEDIT))
+    message(STATUS "libtecla support enabled")
+    set(ENABLE_LIBTECLA ON)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBTECLA_INCLUDE_DIR})
+elseif(ENABLE_LIBEDIT OR LIBEDIT_FOUND)
+    message(STATUS "editline support enabled")
+    set(ENABLE_LIBEDIT ON)
+    set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBEDIT_INCLUDE_DIR})
 endif()
 
 if(MSVC)
@@ -217,6 +232,8 @@ set(BLADERF_CLI_SOURCE
 # Select the input mode (and script handling) backend
 if(ENABLE_LIBTECLA)
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/input/tecla.c)
+elseif(ENABLE_LIBEDIT)
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/input/editline.c)
 else()
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/input/fgets.c)
 endif()
@@ -258,7 +275,8 @@ if(ENABLE_LIBTECLA)
     if(CMAKE_HOST_APPLE)
         set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ncurses)
     endif(CMAKE_HOST_APPLE)
-
+elseif(ENABLE_LIBEDIT)
+    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBEDIT_LIBRARIES})
 endif(ENABLE_LIBTECLA)
 
 if(LIBPTHREADSWIN32_FOUND)
