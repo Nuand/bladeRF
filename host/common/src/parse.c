@@ -159,6 +159,7 @@ int str2args(const char *line, char comment_char, char ***argv)
      * be closed */
     if (in_arg) {
         if (quote_char) {
+            free_args(argc, rv);
             return -2;
         } else {
             argc++;
