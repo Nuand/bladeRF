@@ -621,21 +621,60 @@ typedef int bladerf_gain;
 
 /**
  * Gain control modes
+ *
+ * In general, the default mode is automatic gain control. This will
+ * continuously adjust the gain to maximize dynamic range and minimize clipping.
+ *
+ * @note Implementers are encouraged to simply present a boolean choice between
+ *       "AGC On" (::BLADERF_GAIN_DEFAULT) and "AGC Off" (::BLADERF_GAIN_MGC).
+ *       The remaining choices are for advanced use cases.
  */
 typedef enum {
-    BLADERF_GAIN_DEFAULT,        /**< Device-specific default */
-    BLADERF_GAIN_MGC,            /**< Manual gain control */
-    BLADERF_GAIN_FASTATTACK_AGC, /**< Automatic gain control, fast attack */
-    BLADERF_GAIN_SLOWATTACK_AGC, /**< Automatic gain control, slow attack */
-    BLADERF_GAIN_HYBRID_AGC      /**< Automatic gain control, hybrid attack */
+    /** Device-specific default (automatic, when available)
+     *
+     * On the bladeRF x40 and x115 with FPGA versions >= v0.7.0, this is
+     * automatic gain control.
+     *
+     * On the bladeRF 2.0 Micro, this is BLADERF_GAIN_SLOWATTACK_AGC with
+     * reasonable default settings.
+     */
+    BLADERF_GAIN_DEFAULT,
+
+    /** Manual gain control
+     *
+     * Available on all bladeRF models.
+     */
+    BLADERF_GAIN_MGC,
+
+    /** Automatic gain control, fast attack (advanced)
+     *
+     * Only available on the bladeRF 2.0 Micro. This is an advanced option, and
+     * typically requires additional configuration for ideal performance.
+     */
+    BLADERF_GAIN_FASTATTACK_AGC,
+
+    /** Automatic gain control, slow attack (advanced)
+     *
+     * Only available on the bladeRF 2.0 Micro. This is an advanced option, and
+     * typically requires additional configuration for ideal performance.
+     */
+    BLADERF_GAIN_SLOWATTACK_AGC,
+
+    /** Automatic gain control, hybrid attack (advanced)
+     *
+     * Only available on the bladeRF 2.0 Micro. This is an advanced option, and
+     * typically requires additional configuration for ideal performance.
+     */
+    BLADERF_GAIN_HYBRID_AGC,
 } bladerf_gain_mode;
 
-/* Backwards compatibility */
-#define BLADERF_GAIN_AUTOMATIC BLADERF_GAIN_DEFAULT /**< Default AGC mode */
-#define BLADERF_GAIN_MANUAL BLADERF_GAIN_MGC        /**< Manual gain control */
+/** Default AGC mode (for backwards compatibility with libbladeRF 1.x) */
+#define BLADERF_GAIN_AUTOMATIC BLADERF_GAIN_DEFAULT
+/** Manual gain control (for backwards compatibility with libbladeRF 1.x) */
+#define BLADERF_GAIN_MANUAL BLADERF_GAIN_MGC
 
 /**
- * Mapping of human-readable names to gain modes
+ * Mapping between C string description of gain modes and bladerf_gain_mode
  */
 struct bladerf_gain_modes {
     const char *name;       /**< Name of gain mode */
@@ -695,6 +734,8 @@ int CALL_CONV bladerf_get_gain(struct bladerf *dev,
  *
  * The special value of ::BLADERF_GAIN_DEFAULT will return hardware AGC to
  * its default value at initialization.
+ * 
+ * @see bladerf_gain_mode for implementation guidance
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -733,6 +774,8 @@ int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev,
  *
  * This function may be called with `NULL` for `modes` to determine the number
  * of gain modes supported.
+ * 
+ * @see bladerf_gain_mode for implementation guidance
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
