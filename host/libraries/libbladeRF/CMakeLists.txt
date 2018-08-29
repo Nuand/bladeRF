@@ -35,6 +35,10 @@ if (NOT CMAKE_INSTALL_LIBDIR)
 include(GNUInstallDirs)
 endif (NOT CMAKE_INSTALL_LIBDIR)
 
+if (NOT CMAKE_INSTALL_DOCDIR)
+include(GNUInstallDirs)
+endif (NOT CMAKE_INSTALL_DOCDIR)
+
 # Fall back to just "lib" if the item provided by GNUInstallDirs doesn't exist
 # For example, on Ubuntu 13.10 with CMake 2.8.11.2,
 # /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE} doesn't exist.
@@ -535,6 +539,8 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
         )
 
     add_custom_target(libbladeRF-doxygen ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/index.html)
+
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/ DESTINATION ${CMAKE_INSTALL_DOCDIR}/html)
 
     else(DOXYGEN_FOUND)
         message(FATAL_ERROR "Could not find Doxygen. Unable to build libbladeRF API documentation.")
