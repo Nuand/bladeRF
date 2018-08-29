@@ -3,9 +3,9 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: bladerf
 Upstream-Contact: Nuand LLC <bladerf@nuand.com>
 Source: <https://github.com/Nuand/bladeRF/>
-Comment: Harmony copyright assignment agreements are in effect.
-         Only the host/ directory of the source is used to build the binary
-         Debian packages.
+Comment: Harmony copyright assignment agreements are in effect. Only the host/
+         and fpga_common/ directories of the source are used to build the
+         binary Debian packages.
 
 Files: *
 Copyright: 2012-2018 Nuand LLC
