@@ -1353,8 +1353,13 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     if (NULL == board_data) {
         RETURN_ERROR_STATUS("calloc board_data", BLADERF_ERR_MEM);
     }
-
     dev->board_data = board_data;
+
+    /* Allocate flash architecture */
+    dev->flash_arch = calloc(1, sizeof(struct bladerf_flash_arch));
+    if (dev->flash_arch == NULL) {
+        return BLADERF_ERR_MEM;
+    }
 
     /* Initialize board data */
     board_data->fpga_version.describe = board_data->fpga_version_str;
@@ -1362,6 +1367,10 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     board_data->module_format[BLADERF_RX] = -1;
     board_data->module_format[BLADERF_TX] = -1;
+
+    dev->flash_arch->status          = STATE_UNINITIALIZED;
+    dev->flash_arch->manufacturer_id = 0x0;
+    dev->flash_arch->device_id       = 0x0;
 
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
@@ -1437,6 +1446,28 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         return status;
     }
 
+    /* Probe SPI flash architecture information */
+    if( have_cap(board_data->capabilities, BLADERF_CAP_FW_FLASH_ID) ) {
+        status = spi_flash_read_flash_id( dev,
+                                          &dev->flash_arch->manufacturer_id,
+                                          &dev->flash_arch->device_id );
+        if( status < 0 ) {
+            log_error("Failed to probe SPI flash ID information.\n");
+        }
+    } else {
+        log_warning("An FX3 firmware upate is recommended in order to probe "
+                    "the SPI flash ID information.\n");
+    }
+
+    /* Decode SPI flash ID information to figure out its architecture.
+     * We need to know a little about the flash architecture before we can
+     * read anything from it, including FPGA size and other cal data.
+     * If the firmware does not have the capability to get the flash ID,
+     * sane defaults will be chosen.
+     *
+     * Not checking return code because it is irrelevant. */
+    spi_flash_decode_flash_architecture(dev, &board_data->fpga_size);
+
     /* Get FPGA size */
     status = spi_flash_read_fpga_size(dev, &board_data->fpga_size);
     if (status < 0) {
@@ -1446,6 +1477,16 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     if (getenv("BLADERF_FORCE_FPGA_A9")) {
         log_info("BLADERF_FORCE_FPGA_A9 is set, assuming A9 FPGA\n");
         board_data->fpga_size = BLADERF_FPGA_A9;
+    }
+
+    /* If the flash architecture could not be decoded earlier, try again now
+     * that the FPGA size is known. */
+    if( dev->flash_arch->status != STATUS_SUCCESS ) {
+        status = spi_flash_decode_flash_architecture(dev, &board_data->fpga_size);
+        if( status < 0 ) {
+            log_warning( "Assumptions were made about the SPI flash architecture! "
+                         "Flash commands may not function as expected.\n" );
+        }
     }
 
     /* Skip further work if BLADERF_FORCE_NO_FPGA_PRESENT is set */
@@ -1522,6 +1563,7 @@ static void bladerf2_close(struct bladerf *dev)
 {
     if (dev != NULL) {
         struct bladerf2_board_data *board_data = dev->board_data;
+        struct bladerf_flash_arch  *flash_arch = dev->flash_arch;
 
         if (board_data != NULL) {
             if (board_data->phy != NULL) {
@@ -1531,6 +1573,12 @@ static void bladerf2_close(struct bladerf *dev)
             free(board_data);
             board_data = NULL;
         }
+
+        if( flash_arch != NULL ) {
+            free(flash_arch);
+            flash_arch = NULL;
+        }
+
     }
 }
 

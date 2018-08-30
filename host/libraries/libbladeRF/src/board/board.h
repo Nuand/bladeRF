@@ -148,16 +148,22 @@ struct bladerf {
 
     /* Backend-specific implementations */
     const struct backend_fns *backend;
+
     /* Backend's private data */
     void *backend_data;
 
     /* Board-specific implementations */
     const struct board_fns *board;
+
+    /* Flash architecture */
+    struct bladerf_flash_arch *flash_arch;
+
     /* Board's private data */
     void *board_data;
 
     /* XB attached */
     bladerf_xb xb;
+
     /* XB's private data */
     void *xb_data;
 };
@@ -426,6 +432,22 @@ struct board_fns {
 
     /* Board name */
     const char *name;
+};
+
+/* Information about the (SPI) flash architecture */
+struct bladerf_flash_arch {
+    enum {
+        STATUS_UNINITIALIZED,
+        STATUS_SUCCESS,
+        STATUS_ASSUMED
+    } status;
+    uint8_t  manufacturer_id;        /**< Raw manufacturer ID */
+    uint8_t  device_id;              /**< Raw device ID */
+    uint32_t tsize_bytes;            /**< Total size of flash, in bytes */
+    uint32_t psize_bytes;            /**< Flash page size, in bytes */
+    uint32_t ebsize_bytes;           /**< Flash erase block size, in bytes */
+    uint32_t num_pages;              /**< Size of flash, in pages */
+    uint32_t num_ebs;                /**< Size of flash, in erase blocks */
 };
 
 /* Boards */

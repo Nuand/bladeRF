@@ -292,6 +292,103 @@ int spi_flash_read_fpga_size(struct bladerf *dev, bladerf_fpga_size *fpga_size)
     return status;
 }
 
+int spi_flash_read_flash_id(struct bladerf *dev, uint8_t *mid, uint8_t *did)
+{
+    int status;
+
+    status = dev->backend->get_flash_id(dev, mid, did);
+
+    return status;
+}
+
+int spi_flash_decode_flash_architecture(struct bladerf *dev,
+                                        bladerf_fpga_size  *fpga_size)
+{
+    int status;
+    struct bladerf_flash_arch *flash_arch;
+
+    status     = 0;
+    flash_arch = dev->flash_arch;
+
+    /* Fill in defaults */
+    flash_arch->tsize_bytes  = 32 << 17; /* 32 Mbit */
+    flash_arch->psize_bytes  = 256;
+    flash_arch->ebsize_bytes = 64 << 10; /* 64 Kbyte */
+    flash_arch->status       = STATUS_ASSUMED;
+
+    /* First try to decode the MID/DID of the flash chip */
+    switch( flash_arch->manufacturer_id ) {
+        case 0xC2: /* MACRONIX */
+            log_verbose( "Found SPI flash manufacturer: MACRONIX.\n" );
+            switch( flash_arch->device_id ) {
+                case 0x36:
+                    log_verbose( "Found SPI flash device: MX25U3235E (32 Mbit).\n" );
+                    flash_arch->tsize_bytes = 32 << 17;
+                    flash_arch->status      = STATUS_SUCCESS;
+                    break;
+                default:
+                    log_debug( "Unknown Macronix flash device ID.\n" );
+                    status = BLADERF_ERR_UNEXPECTED;
+            }
+            break;
+
+        case 0xEF: /* WINBOND */
+            log_verbose( "Found SPI flash manufacturer: WINBOND.\n" );
+            switch( flash_arch->device_id ) {
+                case 0x15:
+                    log_verbose( "Found SPI flash device: W25Q32JV (32 Mbit).\n" );
+                    flash_arch->tsize_bytes = 32 << 17;
+                    flash_arch->status      = STATUS_SUCCESS;
+                    break;
+                case 0x17:
+                    log_verbose( "Found SPI flash device: W25Q128JV (128 Mbit).\n" );
+                    flash_arch->tsize_bytes = 128 << 17;
+                    flash_arch->status      = STATUS_SUCCESS;
+                    break;
+                default:
+                    log_debug( "Unknown Winbond flash device ID.\n" );
+                    status = BLADERF_ERR_UNEXPECTED;
+            }
+            break;
+
+        default:
+            log_debug( "Unknown flash manufacturer ID.\n" );
+            status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    /* Could not decode flash MID/DID, so assume based on FPGA size */
+    if( status < 0 || flash_arch->status != STATUS_SUCCESS ) {
+        if( (fpga_size == NULL) || (*fpga_size == BLADERF_FPGA_UNKNOWN) ) {
+            log_debug( "Could not decode flash manufacturer/device ID and have "
+                       "an unknown FPGA size. Assume default flash "
+                       "architecture.\n" );
+        } else {
+            switch( *fpga_size ) {
+                case BLADERF_FPGA_A9:
+                    flash_arch->tsize_bytes = 128 << 17;
+                    break;
+                default:
+                    flash_arch->tsize_bytes = 32 << 17;
+            }
+            log_debug( "Could not decode flash manufacturer/device ID, but "
+                       "found a %u kLE FPGA. Setting the most probable "
+                       "flash architecture.\n", *fpga_size );
+        }
+    }
+
+    flash_arch->num_pages = flash_arch->tsize_bytes / flash_arch->psize_bytes;
+    flash_arch->num_ebs   = flash_arch->tsize_bytes / flash_arch->ebsize_bytes;
+
+    log_verbose("SPI flash total size = %u Mbit\n", (flash_arch->tsize_bytes >> 17));
+    log_verbose("SPI flash page size = %u bytes\n", flash_arch->psize_bytes);
+    log_verbose("SPI flash erase block size = %u bytes\n", flash_arch->ebsize_bytes);
+    log_verbose("SPI flash number of pages = %u\n", flash_arch->num_pages);
+    log_verbose("SPI flash number of erase blocks = %u pages\n", flash_arch->num_ebs);
+
+    return status;
+}
+
+
 /******
  * CRC16 implementation from http://softwaremonkey.org/Code/CRC16
  */

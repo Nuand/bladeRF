@@ -825,12 +825,22 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     }
     dev->board_data = board_data;
 
+    /* Allocate flash architecture */
+    dev->flash_arch = calloc(1, sizeof(struct bladerf_flash_arch));
+    if (dev->flash_arch == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
     /* Initialize board data */
     board_data->fpga_version.describe = board_data->fpga_version_str;
     board_data->fw_version.describe   = board_data->fw_version_str;
 
     board_data->module_format[BLADERF_RX] = -1;
     board_data->module_format[BLADERF_TX] = -1;
+
+    dev->flash_arch->status          = STATE_UNINITIALIZED;
+    dev->flash_arch->manufacturer_id = 0x0;
+    dev->flash_arch->device_id       = 0x0;
 
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
@@ -922,6 +932,28 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         return status;
     }
 
+    /* Probe SPI flash architecture information */
+    if( have_cap(board_data->capabilities, BLADERF_CAP_FW_FLASH_ID) ) {
+        status = spi_flash_read_flash_id( dev,
+                                          &dev->flash_arch->manufacturer_id,
+                                          &dev->flash_arch->device_id );
+        if( status < 0 ) {
+            log_error("Failed to probe SPI flash ID information.\n");
+        }
+    } else {
+        log_warning("An FX3 firmware upate is recommended in order to probe "
+                    "the SPI flash ID information.\n");
+    }
+
+    /* Decode SPI flash ID information to figure out its architecture.
+     * We need to know a little about the flash architecture before we can
+     * read anything from it, including FPGA size and other cal data.
+     * If the firmware does not have the capability to get the flash ID,
+     * sane defaults will be chosen.
+     *
+     * Not checking return code because it is irrelevant. */
+    spi_flash_decode_flash_architecture(dev, &board_data->fpga_size);
+
     /* VCTCXO trim and FPGA size are non-fatal indicators that we've
      * trashed the calibration region of flash. If these were made fatal,
      * we wouldn't be able to open the device to restore them. */
@@ -937,6 +969,16 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     status = spi_flash_read_fpga_size(dev, &board_data->fpga_size);
     if (status < 0) {
         log_warning("Failed to get FPGA size %s\n", bladerf_strerror(status));
+    }
+
+    /* If the flash architecture could not be decoded earlier, try again now
+     * that the FPGA size is known. */
+    if( dev->flash_arch->status != STATUS_SUCCESS ) {
+        status = spi_flash_decode_flash_architecture(dev, &board_data->fpga_size);
+        if( status < 0 ) {
+            log_warning( "Assumptions were made about the SPI flash architecture! "
+                         "Flash commands may not function as expected.\n" );
+        }
     }
 
     /* Check for possible mismatch between the USB device identification and
@@ -1078,6 +1120,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 static void bladerf1_close(struct bladerf *dev)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
+    struct bladerf_flash_arch  *flash_arch = dev->flash_arch;
     int status;
 
     if (board_data) {
@@ -1120,6 +1163,11 @@ static void bladerf1_close(struct bladerf *dev)
 
         free(board_data);
         board_data = NULL;
+    }
+
+    if( flash_arch != NULL ) {
+        free(flash_arch);
+        flash_arch = NULL;
     }
 }
 
