@@ -122,7 +122,7 @@ Description: Nuand bladeRF FPGA bitstream downloader (hostedxA4)
  configuration.  The FPGA bitstream will be downloaded from
  https://nuand.com/fpga/ and saved to /usr/share/Nuand/bladeRF.
  .
- This bitstream is for the bladeRF 2.0 Micro A4 with the Altera Cyclone V
+ This bitstream is for the bladeRF 2.0 Micro xA4 with the Altera Cyclone V
  5CEBA4 FPGA.
  .
  Note that this will not upgrade the bladeRF itself.  That can be done
@@ -141,7 +141,7 @@ Description: Nuand bladeRF FPGA bitstream downloader (hostedxA9)
  configuration.  The FPGA bitstream will be downloaded from
  https://nuand.com/fpga/ and saved to /usr/share/Nuand/bladeRF.
  .
- This bitstream is for the bladeRF 2.0 Micro A9 with the Altera Cyclone V
+ This bitstream is for the bladeRF 2.0 Micro xA9 with the Altera Cyclone V
  5CEBA9 FPGA.
  .
  Note that this will not upgrade the bladeRF itself.  That can be done
@@ -161,7 +161,7 @@ Description: Nuand bladeRF firmware downloader (FX3)
  and saved to /usr/share/Nuand/bladeRF.
  .
  This bitstream will work for either the Nuand bladeRF x40 or the x115,
- as well as the bladeRF 2.0 Micro A4 or A9.
+ as well as the bladeRF 2.0 Micro xA4 or xA9.
  .
  Note that this will not upgrade the bladeRF itself.  That can be done
  with the bladeRF-cli utility.
