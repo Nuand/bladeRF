@@ -402,7 +402,7 @@ static const struct bladerf_gain_range bladerf2_tx_gain_ranges[] = {
     {
         FIELD_INIT(.name, NULL),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    70000000UL),
+            FIELD_INIT(.min,    47000000UL),
             FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
@@ -418,7 +418,7 @@ static const struct bladerf_gain_range bladerf2_tx_gain_ranges[] = {
     {
         FIELD_INIT(.name, "dsa"),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    70000000UL),
+            FIELD_INIT(.min,    47000000UL),
             FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
@@ -482,7 +482,7 @@ static const struct bladerf_range bladerf2_rx_frequency_range = {
 };
 
 static const struct bladerf_range bladerf2_tx_frequency_range = {
-    FIELD_INIT(.min,    70000000),
+    FIELD_INIT(.min,    47000000),
     FIELD_INIT(.max,    6000000000),
     FIELD_INIT(.step,   2),
     FIELD_INIT(.scale,  1),
