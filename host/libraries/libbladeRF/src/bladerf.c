@@ -105,7 +105,7 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
             break;
         }
     }
-    /* If no matching borad was found */
+    /* If no matching board was found */
     if (i == bladerf_boards_len) {
         dev->backend->close(dev);
         free(dev);
