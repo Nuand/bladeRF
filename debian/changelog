@@ -1,3 +1,13 @@
+bladerf (2018.08) unstable; urgency=low
+
+  * debian: update packaging files (#596)
+  * Improve bladerf_gain_mode documentation (#595)
+  * Don't warn about libusb version on FreeBSD (#594)
+  * FPGA bitstream v0.7.3, FX3 FW v2.2.0, libbladeRF v2.0.2, bladeRF-cli
+    v1.6.1
+
+ -- Rey Sabrina Tucker (Nuand LLC) <rey.tucker@nuand.com>  Thu, 30 Aug 2018 18:01:12 -0400
+
 bladerf (2018.08-rc3) unstable; urgency=low
 
   * Release candidate 3 for the 2018.08 release

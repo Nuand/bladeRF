@@ -6,6 +6,73 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2018.08 (2018-08-30)
+--------------------------------------------------------------------------------
+
+This release introduces new functionality and bug fixes, particularly support
+for the bladeRF 2.0 Micro product. It consists of the following versions:
+
+    * FPGA bitstream                v0.7.3
+    * FX3 firmware                  v2.2.0
+    * libbladeRF                    v2.0.2
+    * bladeRF-cli                   v1.6.1
+    * MATLAB & Simulink bindings    v1.0.1
+    * Python bindings               v1.0.1
+
+*****************************************************************************
+***      libbladeRF v2.0 introduces a number of breaking changes !!       ***
+*****************************************************************************
+*** Please see relnotes_2_0 in the Doxygen documentation for a full       ***
+*** discussion of the changes in libbladeRF v2.0.                         ***
+*****************************************************************************
+
+Summary of changes since 2016.06:
+
+* FPGA
+    - Added support for Automatic Gain Control
+    - Redesign build system to support multiple product models
+    - Initial release with bladeRF Micro support
+    - Refactoring, bug fixes, and other misc. improvements
+
+* FX3
+    - Add support for the bladeRF 2.0 (2cf0:5250).
+    - Fix loading FPGA bitstreams from flash when there is nothing connected to
+      the USB connector.
+    - Move USB descriptor consts to .usbdscr section so the linker glomps them.
+
+* libbladeRF
+    - Added support for Automatic Gain Control
+    - Added bladeRF.conf config option file
+    - Refactor to support for multiple product lines
+    - Add support for the bladeRF Micro product
+    - API: replace bladerf_module with bladerf_channel, a reverse-compatible
+      change to handle products with multiple independent RF paths in the same
+      direction
+    - API: BREAKING CHANGE - on bladerf_set_frequency, et al, the frequency
+      parameter is now uint64_t instead of unsigned int
+    - Add typedefs for common param types, e.g. bladerf_frequency -> uint64_t
+
+* bladeRF-cli
+    - Added support for Automatic Gain Control
+    - No longer initializes the bladeRF before loading a new FPGA image, to
+      avoid potential catch-22 problems
+    - bladeRF 2.0 Micro support
+    - Support for MIMO RX and TX using "channel=" parameter on rx/tx config
+    - Various code quality fixups
+
+* MATLAB & Simulink bindings
+    - Add support for bladeRF 2.0 (Micro) products
+    - Change "not supported" (-8) library errors to Matlab warnings
+      temporarily, to permit some grace while others' scripts are updated.
+    - Update bladeRF_XCVR to use new unified gain control
+    - Add bladeRF_Misc for misc measurements and controls
+    - Update bladeRF_rx_gui to support unified gain
+    - Update Simulink block to match libbladeRF v2.0.0
+
+* Python
+    - New in 2018.08
+
+--------------------------------------------------------------------------------
  2018.08-rc3 (2018-08-24)
 --------------------------------------------------------------------------------
 
