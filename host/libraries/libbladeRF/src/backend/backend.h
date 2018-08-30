@@ -79,6 +79,9 @@ struct backend_fns {
     /* Get VID and PID of the device */
     int (*get_vid_pid)(struct bladerf *dev, uint16_t *vid, uint16_t *pid);
 
+    /* Get flash manufacturer/device IDs */
+    int (*get_flash_id)(struct bladerf *dev, uint8_t *mid, uint8_t *did);
+
     /* Opening device based upon specified device info. */
     int (*open)(struct bladerf *dev, struct bladerf_devinfo *info);
 

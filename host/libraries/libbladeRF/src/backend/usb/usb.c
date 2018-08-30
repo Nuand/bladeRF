@@ -344,6 +344,23 @@ static int usb_get_vid_pid(struct bladerf *dev, uint16_t *vid, uint16_t *pid)
     return usb->fn->get_vid_pid(usb->driver, vid, pid);
 }
 
+static int usb_get_flash_id(struct bladerf *dev, uint8_t *mid, uint8_t *did)
+{
+    int status;
+    int result;
+
+    status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_FLASH_ID,
+                            USB_DIR_DEVICE_TO_HOST, &result);
+    if (status < 0) {
+        log_debug("Could not read flash manufacturer ID and/or device ID. %s.\n",
+                  bladerf_strerror(status));
+    } else {
+        *did = result & 0xFF;
+        *mid = (result >> 8) & 0xFF;
+    }
+    return status;
+}
+
 static int begin_fpga_programming(struct bladerf *dev)
 {
     int result;
@@ -1108,6 +1125,7 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.probe, usb_probe),
 
     FIELD_INIT(.get_vid_pid, usb_get_vid_pid),
+    FIELD_INIT(.get_flash_id, usb_get_flash_id),
     FIELD_INIT(.open, usb_open),
     FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),
@@ -1209,6 +1227,7 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.probe, usb_probe),
 
     FIELD_INIT(.get_vid_pid, usb_get_vid_pid),
+    FIELD_INIT(.get_flash_id, usb_get_flash_id),
     FIELD_INIT(.open, usb_open),
     FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),

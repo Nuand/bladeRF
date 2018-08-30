@@ -104,6 +104,8 @@ struct usb_fns {
 
     int (*get_vid_pid)(void *driver, uint16_t *vid, uint16_t *pid);
 
+    int (*get_flash_id)(void *driver, uint8_t *mid, uint8_t *did);
+
     int (*get_speed)(void *driver, bladerf_dev_speed *speed);
 
     int (*change_setting)(void *driver, uint8_t setting);
