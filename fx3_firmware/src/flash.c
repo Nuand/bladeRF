@@ -164,6 +164,13 @@ uint8_t NuandGetSPIManufacturer() {
     return spi_mfn[0];
 }
 
+uint8_t NuandGetSPIDeviceID() {
+    if (!cached_spi_mfn) {
+        cacheSPIManufacturer();
+    }
+    return spi_mfn[1];
+}
+
 CyU3PReturnStatus_t NuandReadOtp(size_t offset, size_t size, void *buf) {
     CyU3PReturnStatus_t status;
 
