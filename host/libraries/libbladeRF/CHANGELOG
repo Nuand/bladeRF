@@ -5,6 +5,21 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.0.2 (2018-08-30)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.2.0
+FPGA         v0.7.3
+
+There are no functional changes since v2.0.1, although there are changes to
+the API documentation and the cmake build scripts.
+
+Changes:
+ * Improve bladerf_gain_mode documentation (#595)
+ * Don't warn about libusb version on FreeBSD (#594)
+
 v2.0.1 (2018-08-24)
 --------------------------------
 
