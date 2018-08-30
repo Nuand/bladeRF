@@ -411,7 +411,7 @@ typedef enum {
 typedef enum {
     BLADERF_DEVICE_SPEED_UNKNOWN,
     BLADERF_DEVICE_SPEED_HIGH,
-    BLADERF_DEVICE_SPEED_SUPER,
+    BLADERF_DEVICE_SPEED_SUPER
 } bladerf_dev_speed;
 
 /**

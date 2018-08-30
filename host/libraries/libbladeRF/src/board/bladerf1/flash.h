@@ -106,6 +106,28 @@ int spi_flash_read_vctcxo_trim(struct bladerf *dev, uint16_t *dac_trim);
 int spi_flash_read_fpga_size(struct bladerf *dev, bladerf_fpga_size *fpga_size);
 
 /**
+ * Retrieve SPI flash manufacturer ID and device ID.
+ *
+ * @param       dev         Device handle.
+ * @param[out]  mid         Flash manufacturer ID
+ * @param[out]  did         Flash device ID
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int spi_flash_read_flash_id(struct bladerf *dev, uint8_t *mid, uint8_t *did);
+
+/**
+ * Decode SPI flash architecture given manufacturer and device IDs.
+ *
+ * @param       dev         Device handle.
+ * @param       fpga_size   FPGA size
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int spi_flash_decode_flash_architecture(struct bladerf *dev,
+                                        bladerf_fpga_size  *fpga_size);
+
+/**
  * Encode a binary key-value pair.
  *
  * @param[in]       ptr     Pointer to data buffer that will contain encoded
