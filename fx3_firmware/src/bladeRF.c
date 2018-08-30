@@ -454,6 +454,11 @@ CyBool_t NuandHandleVendorRequest(
         CyU3PUsbSendRetCode(ret);
     break;
 
+    case BLADE_USB_CMD_QUERY_FLASH_ID:
+        ret = (NuandGetSPIManufacturer() << 8) | NuandGetSPIDeviceID();
+        CyU3PUsbSendRetCode(ret);
+    break;
+
     case BLADE_USB_CMD_SET_LOOPBACK:
         NuandRFLinkLoopBack(wValue);
         CyU3PUsbSendRetCode(wValue);

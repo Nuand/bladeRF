@@ -29,6 +29,7 @@ CyU3PReturnStatus_t NuandReadOtp(size_t offset, size_t size, void *buf);
 CyU3PReturnStatus_t NuandWriteOtp(size_t offset, size_t size, void *buf);
 CyU3PReturnStatus_t NuandLockOtp();
 uint8_t NuandGetSPIManufacturer();
+uint8_t NuandGetSPIDeviceID();
 void cacheSPIManufacturer();
 
 
