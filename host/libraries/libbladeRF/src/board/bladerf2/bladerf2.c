@@ -30,6 +30,7 @@
 #include "bladeRF.h"
 #include "logger_entry.h"
 #include "logger_id.h"
+#include "rel_assert.h"
 
 #include "../bladerf1/flash.h"
 #include "board/board.h"
@@ -4797,9 +4798,6 @@ int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
             fir_config = &ad9361_init_rx_fir_config;
             enable     = 0;
             break;
-        case BLADERF_RFIC_RXFIR_CUSTOM:
-            assert(rxfir != BLADERF_RFIC_RXFIR_CUSTOM);
-            break;
         case BLADERF_RFIC_RXFIR_DEC1:
             fir_config = &ad9361_init_rx_fir_config;
             enable     = 1;
@@ -4812,6 +4810,9 @@ int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
             fir_config = &ad9361_init_rx_fir_config_dec4;
             enable     = 1;
             break;
+        default:
+            assert(!"Bug: unhandled rxfir selection");
+            return BLADERF_ERR_UNEXPECTED;
     }
 
     status = ad9361_set_rx_fir_config(phy, *fir_config);
@@ -4881,9 +4882,6 @@ int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir txfir)
             fir_config = &ad9361_init_tx_fir_config;
             enable     = 0;
             break;
-        case BLADERF_RFIC_TXFIR_CUSTOM:
-            assert(txfir != BLADERF_RFIC_TXFIR_CUSTOM);
-            break;
         case BLADERF_RFIC_TXFIR_INT1:
             fir_config = &ad9361_init_tx_fir_config;
             enable     = 1;
@@ -4896,6 +4894,9 @@ int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir txfir)
             fir_config = &ad9361_init_tx_fir_config_int4;
             enable     = 1;
             break;
+        default:
+            assert(!"Bug: unhandled txfir selection");
+            return BLADERF_ERR_UNEXPECTED;
     }
 
     status = ad9361_set_tx_fir_config(phy, *fir_config);
