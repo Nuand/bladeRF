@@ -167,6 +167,80 @@ int CALL_CONV bladerf_get_rfic_rssi(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
 
+/**
+ * RFIC RX FIR filter choices
+ */
+typedef enum {
+    BLADERF_RFIC_RXFIR_BYPASS, /**< No filter */
+    BLADERF_RFIC_RXFIR_CUSTOM, /**< Custom FIR filter (currently unused) */
+    BLADERF_RFIC_RXFIR_DEC1,   /**< Decimate by 1 (default) */
+    BLADERF_RFIC_RXFIR_DEC2,   /**< Decimate by 2 */
+    BLADERF_RFIC_RXFIR_DEC4,   /**< Decimate by 4 */
+} bladerf_rfic_rxfir;
+
+#define BLADERF_RFIC_RXFIR_DEFAULT BLADERF_RFIC_RXFIR_DEC1
+
+/**
+ * RFIC TX FIR filter choices
+ */
+typedef enum {
+    BLADERF_RFIC_TXFIR_BYPASS, /**< No filter (default) */
+    BLADERF_RFIC_TXFIR_CUSTOM, /**< Custom FIR filter (currently unused) */
+    BLADERF_RFIC_TXFIR_INT1,   /**< Interpolate by 1 */
+    BLADERF_RFIC_TXFIR_INT2,   /**< Interpolate by 2 */
+    BLADERF_RFIC_TXFIR_INT4,   /**< Interpolate by 4 */
+} bladerf_rfic_txfir;
+
+#define BLADERF_RFIC_TXFIR_DEFAULT BLADERF_RFIC_TXFIR_BYPASS
+
+/**
+ * Get the current status of the RX FIR filter on the RFIC.
+ *
+ * @param   dev     Device handle
+ * @param   rxfir   RX FIR selection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rfic_rx_fir(struct bladerf *dev,
+                                      bladerf_rfic_rxfir *rxfir);
+
+/**
+ * Set the RX FIR filter on the RFIC.
+ *
+ * @param   dev     Device handle
+ * @param   rxfir   RX FIR selection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rfic_rx_fir(struct bladerf *dev,
+                                      bladerf_rfic_rxfir rxfir);
+
+/**
+ * Get the current status of the TX FIR filter on the RFIC.
+ *
+ * @param   dev     Device handle
+ * @param   txfir   TX FIR selection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rfic_tx_fir(struct bladerf *dev,
+                                      bladerf_rfic_txfir *txfir);
+
+/**
+ * Set the TX FIR filter on the RFIC.
+ *
+ * @param   dev     Device handle
+ * @param   txfir   TX FIR selection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rfic_tx_fir(struct bladerf *dev,
+                                      bladerf_rfic_txfir txfir);
+
 /** @} (End of FN_BLADERF2_LOW_LEVEL_RFIC) */
 
 /**

@@ -584,4 +584,132 @@ AD9361_TXFIRConfig ad9361_init_tx_fir_config_int2 = {
     0                   // tx_bandwidth
 };
 
+AD9361_RXFIRConfig ad9361_init_rx_fir_config_dec4 = {
+    3,  // rx (RX1 = 1, RX2 = 2, both = 3)
+    -6, // rx_gain (-12, -6, 0, or 6 dB)
+    4,  // rx_dec (decimate by 1, 2, or 4)
+
+    /**
+     * RX FIR Filter
+     * Built using https://github.com/analogdevicesinc/libad9361-iio
+     * Branch: filter_generation
+     * Commit: f749cef974f687f696226455dc7684277886cf3b
+     *
+     * This filter is intended to allow sample rates down to 520834 sps.
+     *
+     * It is a 128-tap, decimate-by-4 filter. Note that you MUST use a
+     * interpolate-by-4 filter on TX if you are using this filter.
+     *
+     * Design parameters:
+     *
+     * fdp.Rdata = 520834;
+     * fdp.RxTx = "Rx";
+     * fdp.Type = "Lowpass";
+     * fdp.DAC_div = 1;
+     * fdp.HB3 = 3;
+     * fdp.HB2 = 2;
+     * fdp.HB1 = 2;
+     * fdp.FIR = 4;
+     * fdp.PLL_mult = 32;
+     * fdp.converter_rate = 25000000;
+     * fdp.PLL_rate = 800000000;
+     * fdp.Fpass = fdp.Rdata*0.375;
+     * fdp.Fstop = fdp.Rdata*0.50;
+     * fdp.Fcenter = 0;
+     * fdp.Apass = 0.125;
+     * fdp.Astop = 85;
+     * fdp.phEQ = 217;
+     * fdp.wnom = 347220;
+     * fdp.caldiv = 309;
+     * fdp.RFbw = 433256;
+     * fdp.FIRdBmin = 0;
+     * fdp.int_FIR = 1;
+     */
+    {
+        -30,    -24,    -46,    -54,    -28,     -6,     50,     82,
+        108,     84,     28,    -60,   -136,   -172,   -132,    -24,
+        122,    244,    280,    192,     -2,   -238,   -410,   -428,
+       -250,     80,    436,    656,    614,    276,   -252,   -760,
+      -1006,   -830,   -234,    580,   1272,   1494,   1060,     48,
+      -1178,  -2086,  -2192,  -1284,    420,   2296,   3504,   3324,
+       1502,  -1544,  -4746,  -6664,  -5978,  -1984,   5054,  13852,
+      22416,  28606,  30790,  28370,  21974,  13264,   4422,  -2522,
+      -6282,  -6630,  -4358,   -892,   2236,   3914,   3762,   2144,
+        -80,  -1948,  -2774,  -2376,  -1078,    486,   1652,   2008,
+       1510,    466,   -640,  -1352,  -1434,   -928,   -110,    652,
+       1060,    990,    532,    -82,   -586,   -792,   -654,   -274,
+        164,    480,    562,    410,    118,   -178,   -362,   -378,
+       -244,    -34,    154,    256,    240,    136,     -4,   -116,
+       -168,   -144,    -74,     14,     74,    102,     76,     38,
+        -28,    -54,    -96,    -68,    -82,    -26,    -34,     -2,
+    },                  // rx_coef[128]
+    128,                // rx_coef_size
+    {0, 0, 0, 0, 0, 0}, // rx_path_clks[6]
+    0                   // rx_bandwidth
+};
+
+AD9361_TXFIRConfig ad9361_init_tx_fir_config_int4 = {
+    3,  // tx (TX1 = 1, TX2 = 2, both = 3)
+    0,  // tx_gain (-6 or 0 dB)
+    4,  // tx_int (interpolate by 1, 2, or 4)
+
+    /**
+     * TX FIR Filter
+     * Built using https://github.com/analogdevicesinc/libad9361-iio
+     * Branch: filter_generation
+     * Commit: f749cef974f687f696226455dc7684277886cf3b
+     *
+     * This filter is intended to allow sample rates down to 520834 sps.
+     *
+     * It is a 128-tap, interpolate-by-4 filter. Note that you MUST use a
+     * decimate-by-4 filter on RX if you are using this filter.
+     *
+     * Design parameters:
+     *
+     * fdp.Rdata = 520834;
+     * fdp.RxTx = "Tx";
+     * fdp.Type = "Lowpass";
+     * fdp.DAC_div = 1;
+     * fdp.HB3 = 3;
+     * fdp.HB2 = 2;
+     * fdp.HB1 = 2;
+     * fdp.FIR = 4;
+     * fdp.PLL_mult = 32;
+     * fdp.converter_rate = 25000000;
+     * fdp.PLL_rate = 800000000;
+     * fdp.Fpass = fdp.Rdata*0.375;
+     * fdp.Fstop = fdp.Rdata*0.50;
+     * fdp.Fcenter = 0;
+     * fdp.Apass = 0.125;
+     * fdp.Astop = 85;
+     * fdp.phEQ = 217;
+     * fdp.wnom = 347220;
+     * fdp.caldiv = 309;
+     * fdp.RFbw = 1253611;
+     * fdp.FIRdBmin = 0;
+     * fdp.int_FIR = 1;
+     */
+    {
+        -18,      2,    -14,     16,     34,     76,    104,    124,
+        108,     62,    -12,    -86,   -136,   -128,    -58,     58,
+        174,    242,    214,     84,   -110,   -294,   -382,   -310,
+        -84,    226,    494,    586,    426,     40,   -434,   -796,
+       -860,   -538,     92,    792,   1258,   1226,    622,   -386,
+      -1406,  -1972,  -1730,   -628,   1002,   2522,   3200,   2526,
+        466,  -2400,  -4986,  -6012,  -4444,     90,   7064,  15112,
+      22370,  27018,  27836,  24590,  18120,  10072,   2400,  -3220,
+      -5868,  -5578,  -3214,   -106,   2446,   3584,   3126,   1508,
+       -464,  -1970,  -2484,  -1940,   -696,    666,   1590,   1764,
+       1212,    244,   -706,  -1258,  -1242,   -732,     10,    656,
+        964,    850,    412,   -134,   -560,   -710,   -560,   -208,
+        178,    444,    500,    352,     88,   -172,   -330,   -336,
+       -212,    -24,    144,    230,    218,    124,      2,   -100,
+       -146,   -126,    -62,     18,     82,    110,     98,     60,
+         12,    -28,    -52,    -56,    -50,    -32,    -18,     -8,
+    },                  // tx_coef[128]
+    128,                // tx_coef_size
+    {0, 0, 0, 0, 0, 0}, // tx_path_clks[6]
+    0                   // tx_bandwidth
+};
+
 const float ina219_r_shunt = 0.001F;
