@@ -24,7 +24,7 @@
 FROM fedora:latest
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
-LABEL version="0.0.2"
+LABEL version="0.0.3"
 LABEL description="CI build environment for the bladeRF project"
 LABEL com.nuand.ci.distribution.name="Fedora"
 LABEL com.nuand.ci.distribution.version="latest"
@@ -37,6 +37,8 @@ RUN yum groupinstall -y "Development Tools" \
     doxygen \
     help2man \
     hostname \
+    libedit \
+    libedit-devel \
     libusbx \
     libusbx-devel \
     pandoc \
@@ -45,15 +47,6 @@ RUN yum groupinstall -y "Development Tools" \
  && rm -rf /var/cache/yum \
  && echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
  && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
-
-# Fedora lacks libtecla packages, so download and build.
-RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
- && cd libtecla \
- && CC=gcc ./configure \
- && make \
- && make install \
- && cd .. \
- && rm -rf libtecla
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
