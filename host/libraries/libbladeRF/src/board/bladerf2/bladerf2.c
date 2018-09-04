@@ -107,6 +107,11 @@ struct bladerf2_board_data {
     enum bladerf2_vctcxo_trim_source trim_source;
     uint16_t trimdac_last_value;   /**< saved running value */
     uint16_t trimdac_stored_value; /**< cached value read from SPI flash */
+
+    /* RFIC FIR Filter status */
+    bool low_samplerate_mode;
+    bladerf_rfic_rxfir rxfir, rxfir_orig;
+    bladerf_rfic_txfir txfir, txfir_orig;
 };
 
 /* Macro for logging and returning an error status. This should be used for
@@ -459,8 +464,16 @@ static const struct bladerf_gain_modes bladerf2_rx_gain_modes[] = {
 
 /* Sample Rate Range */
 static const struct bladerf_range bladerf2_sample_rate_range = {
-    FIELD_INIT(.min,    2083334),
+    FIELD_INIT(.min,    520834),
     FIELD_INIT(.max,    61440000),
+    FIELD_INIT(.step,   1),
+    FIELD_INIT(.scale,  1),
+};
+
+/* Sample rates requiring a 4x interpolation/decimation */
+static const struct bladerf_range bladerf2_sample_rate_range_4x = {
+    FIELD_INIT(.min,    520834),
+    FIELD_INIT(.max,    2083334),
     FIELD_INIT(.step,   1),
     FIELD_INIT(.scale,  1),
 };
@@ -633,6 +646,10 @@ static int bladerf2_read_flash_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 extern AD9361_InitParam ad9361_init_params;
 extern AD9361_RXFIRConfig ad9361_init_rx_fir_config;
 extern AD9361_TXFIRConfig ad9361_init_tx_fir_config;
+extern AD9361_RXFIRConfig ad9361_init_rx_fir_config_dec2;
+extern AD9361_TXFIRConfig ad9361_init_tx_fir_config_int2;
+extern AD9361_RXFIRConfig ad9361_init_rx_fir_config_dec4;
+extern AD9361_TXFIRConfig ad9361_init_tx_fir_config_int4;
 extern const float ina219_r_shunt;
 
 
@@ -1079,6 +1096,11 @@ static int bladerf2_initialize(struct bladerf *dev)
 
     board_data = dev->board_data;
 
+    /* Initialize board_data members */
+    board_data->rxfir_orig          = BLADERF_RFIC_RXFIR_DEFAULT;
+    board_data->txfir_orig          = BLADERF_RFIC_TXFIR_DEFAULT;
+    board_data->low_samplerate_mode = false;
+
     /* Read FPGA version */
     status = dev->backend->get_fpga_version(dev, &board_data->fpga_version);
     if (status < 0) {
@@ -1180,26 +1202,15 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     /* Set up AD9361 FIR filters */
-    /* TODO: permit selection of filter configurations */
     /* TODO: permit specification of filter taps, for the truly brave */
-    status = ad9361_set_tx_fir_config(phy, ad9361_init_tx_fir_config);
+    status = bladerf_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEFAULT);
     if (status < 0) {
-        RETURN_ERROR_AD9361("ad9361_set_tx_fir_config", status);
+        RETURN_ERROR_STATUS("bladerf_set_rfic_rx_fir", status);
     }
 
-    status = ad9361_set_tx_fir_en_dis(phy, 0);
+    status = bladerf_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_DEFAULT);
     if (status < 0) {
-        RETURN_ERROR_AD9361("ad9361_set_tx_fir_en_dis", status);
-    }
-
-    status = ad9361_set_rx_fir_config(phy, ad9361_init_rx_fir_config);
-    if (status < 0) {
-        RETURN_ERROR_AD9361("ad9361_set_rx_fir_config", status);
-    }
-
-    status = ad9361_set_rx_fir_en_dis(phy, 1);
-    if (status < 0) {
-        RETURN_ERROR_AD9361("ad9361_set_rx_fir_en_dis", status);
+        RETURN_ERROR_STATUS("bladerf_set_rfic_tx_fir", status);
     }
 
     /* Disable AD9361 until we need it */
@@ -2363,6 +2374,33 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         return BLADERF_ERR_RANGE;
     }
 
+    /* If the requested sample rate is outside of the native range, we must
+     * adjust the FIR filtering. */
+    if (_is_within_range(&bladerf2_sample_rate_range_4x, rate)) {
+        log_debug("enabling 4x decimation/interpolation filters\n");
+
+        status = bladerf_get_rfic_rx_fir(dev, &(board_data->rxfir_orig));
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_get_rfic_rx_fir", status);
+        }
+
+        status = bladerf_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEC4);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_set_rfic_rx_fir", status);
+        }
+
+        status = bladerf_get_rfic_tx_fir(dev, &(board_data->txfir_orig));
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_get_rfic_tx_fir", status);
+        }
+        status = bladerf_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_INT4);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_set_rfic_tx_fir", status);
+        }
+
+        board_data->low_samplerate_mode = true;
+    }
+
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_set_tx_sampling_freq(board_data->phy, rate);
         if (status < 0) {
@@ -2373,6 +2411,23 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_set_rx_sampling_freq", status);
         }
+    }
+
+    if (board_data->low_samplerate_mode &&
+        !_is_within_range(&bladerf2_sample_rate_range_4x, rate)) {
+        log_debug("disabling 4x decimation/interpolation filters\n");
+
+        status = bladerf_set_rfic_rx_fir(dev, board_data->rxfir_orig);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_set_rfic_fir", status);
+        }
+
+        status = bladerf_set_rfic_tx_fir(dev, board_data->txfir_orig);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_set_rfic_fir", status);
+        }
+
+        board_data->low_samplerate_mode = false;
     }
 
     if (actual != NULL) {
@@ -4686,6 +4741,174 @@ int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
     }
 
     *ctrl_out = (uint8_t)((reg >> RFFE_CONTROL_CTRL_OUT) & 0xFF);
+
+    return 0;
+}
+
+int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
+{
+    struct bladerf2_board_data *board_data;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+
+    *rxfir = board_data->rxfir;
+
+    return 0;
+}
+
+int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+    AD9361_RXFIRConfig *fir_config = NULL;
+    uint8_t enable;
+    int status;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+
+    if (BLADERF_RFIC_RXFIR_CUSTOM == rxfir) {
+        log_warning("custom FIR not implemented, assuming default\n");
+        rxfir = BLADERF_RFIC_RXFIR_DEFAULT;
+    }
+
+    switch (rxfir) {
+        case BLADERF_RFIC_RXFIR_BYPASS:
+            fir_config = &ad9361_init_rx_fir_config;
+            enable     = 0;
+            break;
+        case BLADERF_RFIC_RXFIR_CUSTOM:
+            assert(rxfir != BLADERF_RFIC_RXFIR_CUSTOM);
+            break;
+        case BLADERF_RFIC_RXFIR_DEC1:
+            fir_config = &ad9361_init_rx_fir_config;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_RXFIR_DEC2:
+            fir_config = &ad9361_init_rx_fir_config_dec2;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_RXFIR_DEC4:
+            fir_config = &ad9361_init_rx_fir_config_dec4;
+            enable     = 1;
+            break;
+    }
+
+    status = ad9361_set_rx_fir_config(phy, *fir_config);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_rx_fir_config", status);
+    }
+
+    status = ad9361_set_rx_fir_en_dis(phy, enable);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_rx_fir_en_dis", status);
+    }
+
+    board_data->rxfir = rxfir;
+
+    return 0;
+}
+
+int bladerf_get_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir *txfir)
+{
+    struct bladerf2_board_data *board_data;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+
+    *txfir = board_data->txfir;
+
+    return 0;
+}
+
+int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir txfir)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+    AD9361_TXFIRConfig *fir_config = NULL;
+    uint8_t enable;
+    int status;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+
+    if (BLADERF_RFIC_TXFIR_CUSTOM == txfir) {
+        log_warning("custom FIR not implemented, assuming default\n");
+        txfir = BLADERF_RFIC_TXFIR_DEFAULT;
+    }
+
+    switch (txfir) {
+        case BLADERF_RFIC_TXFIR_BYPASS:
+            fir_config = &ad9361_init_tx_fir_config;
+            enable     = 0;
+            break;
+        case BLADERF_RFIC_TXFIR_CUSTOM:
+            assert(txfir != BLADERF_RFIC_TXFIR_CUSTOM);
+            break;
+        case BLADERF_RFIC_TXFIR_INT1:
+            fir_config = &ad9361_init_tx_fir_config;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_TXFIR_INT2:
+            fir_config = &ad9361_init_tx_fir_config_int2;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_TXFIR_INT4:
+            fir_config = &ad9361_init_tx_fir_config_int4;
+            enable     = 1;
+            break;
+    }
+
+    status = ad9361_set_tx_fir_config(phy, *fir_config);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_rx_fir_config", status);
+    }
+
+    status = ad9361_set_tx_fir_en_dis(phy, enable);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_rx_fir_en_dis", status);
+    }
+
+    board_data->txfir = txfir;
 
     return 0;
 }
