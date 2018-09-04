@@ -40,6 +40,18 @@ Description: Nuand bladeRF software-defined radio device (header files)
  This package contains the header files required for compiling bladeRF
  applications.
 
+Package: libbladerf-doc
+Section: doc
+Architecture: any
+Depends: ${misc:Depends}
+Description: Nuand bladeRF software-defined radio device (API documentation)
+ The Nuand bladeRF is an open-source software-defined radio (SDR) system,
+ comprised of an RF transceiver, a field-programmable gate array (FPGA),
+ a microcontroller driving a USB 3.0 interface, and a suite of host
+ libraries and drivers to facilitate interaction with the device.
+ .
+ This package contains libbladeRF API documentation.
+
 Package: libbladerf-udev
 Section: libs
 Architecture: any
