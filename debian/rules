@@ -37,6 +37,7 @@ endif
 override_dh_auto_configure:
 	dh_auto_configure -- 	-DVERSION_INFO_OVERRIDE:STRING=$(VERSION_INFO_OVERRIDE) \
 							-DCMAKE_INSTALL_LIBDIR="lib/${DEB_HOST_MULTIARCH}" \
+							-DCMAKE_INSTALL_DOCDIR="share/doc/libbladerf-doc" \
 							-DENABLE_HOST_BUILD=ON \
 							-DENABLE_FX3_BUILD=OFF \
 							-DBUILD_DOCUMENTATION=ON \
