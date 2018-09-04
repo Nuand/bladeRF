@@ -28,12 +28,50 @@
 #endif
 
 /* hardware */
+const char *_rxfir_to_str(bladerf_rfic_rxfir rxfir)
+{
+    switch (rxfir) {
+        case BLADERF_RFIC_RXFIR_BYPASS:
+            return "bypass";
+        case BLADERF_RFIC_RXFIR_CUSTOM:
+            return "custom";
+        case BLADERF_RFIC_RXFIR_DEC1:
+            return "normal";
+        case BLADERF_RFIC_RXFIR_DEC2:
+            return "2x decimation";
+        case BLADERF_RFIC_RXFIR_DEC4:
+            return "4x decimation";
+    }
+
+    return "unknown";
+}
+
+const char *_txfir_to_str(bladerf_rfic_txfir txfir)
+{
+    switch (txfir) {
+        case BLADERF_RFIC_TXFIR_BYPASS:
+            return "bypass";
+        case BLADERF_RFIC_TXFIR_CUSTOM:
+            return "custom";
+        case BLADERF_RFIC_TXFIR_INT1:
+            return "normal";
+        case BLADERF_RFIC_TXFIR_INT2:
+            return "2x interpolation";
+        case BLADERF_RFIC_TXFIR_INT4:
+            return "4x interpolation";
+    }
+
+    return "unknown";
+}
+
 static void _print_rfic(struct cli_state *state)
 {
     int status;
 
     float temperature;
     uint8_t ctrlout, reg35, reg36;
+    bladerf_rfic_rxfir rxfir;
+    bladerf_rfic_txfir txfir;
 
     /* Temperature */
     status = bladerf_get_rfic_temperature(state->dev, &temperature);
@@ -59,10 +97,23 @@ static void _print_rfic(struct cli_state *state)
         return;
     }
 
+    /* FIR filters */
+    status = bladerf_get_rfic_rx_fir(state->dev, &rxfir);
+    if (status < 0) {
+        return;
+    }
+
+    status = bladerf_get_rfic_tx_fir(state->dev, &txfir);
+    if (status < 0) {
+        return;
+    }
+
     printf("    RFIC status:\n");
     printf("      Temperature:  %4.1f °C\n", temperature);
     printf("      CTRL_OUT:     0x%02x (0x035=0x%02x, 0x036=0x%02x)\n", ctrlout,
            reg35, reg36);
+    printf("      RX FIR:       %s\n", _rxfir_to_str(rxfir));
+    printf("      TX FIR:       %s\n", _txfir_to_str(txfir));
 }
 
 static void _print_power_source_bladerf2(struct cli_state *state)
