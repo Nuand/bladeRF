@@ -6,6 +6,12 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.8.0 (2018-09-05)
+--------------------------------
+ * bladeRF: Fix nios_gpio assignment overlap for AGC_EN
+ * bladeRF: Fix bug in AGC band selection
+
+--------------------------------
 v0.7.3 (2018-08-07)
 --------------------------------
  * Initial release with bladeRF Micro support
