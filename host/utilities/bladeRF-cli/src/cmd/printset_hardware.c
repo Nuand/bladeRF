@@ -318,7 +318,7 @@ int print_refin_freq(struct cli_state *state, int argc, char **argv)
     int status;
 
     bool enabled;
-    uint64_t refclk;
+    bladerf_frequency refclk;
 
     status = bladerf_get_pll_enable(state->dev, &enabled);
     if (status < 0) {
@@ -338,7 +338,7 @@ int print_refin_freq(struct cli_state *state, int argc, char **argv)
         goto out;
     }
 
-    printf("  REFIN frequency: %" PRIu64 " Hz\n", refclk);
+    printf("  REFIN frequency: %" BLADERF_PRIuFREQ " Hz\n", refclk);
 
 out:
     return rv;
@@ -351,7 +351,7 @@ int set_refin_freq(struct cli_state *state, int argc, char **argv)
     int status;
 
     const struct bladerf_range *range = NULL;
-    uint64_t freq;
+    bladerf_frequency freq;
     bool ok;
 
     if (argc != 3) {
