@@ -551,6 +551,18 @@ static int bladerf1_initialize(struct bladerf *dev)
 #endif
     }
 
+    /* Detect AGC FPGA bug and report warning */
+    if( have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT) &&
+        version_fields_less_than(&board_data->fpga_version, 0, 8, 0) ) {
+        log_warning("AGC commands for FPGA v%u.%u.%u are incompatible with "
+                    "this version of libbladeRF. Please update to FPGA "
+                    "v%u.%u.%u or newer to use AGC.\n",
+                    board_data->fpga_version.major,
+                    board_data->fpga_version.minor,
+                    board_data->fpga_version.patch,
+                    0, 8, 0 );
+    }
+
     /* Set FPGA packet protocol */
     if (have_cap(board_data->capabilities, BLADERF_CAP_PKT_HANDLER_FMT)) {
         status = dev->backend->set_fpga_protocol(dev, BACKEND_FPGA_PROTOCOL_NIOSII);
