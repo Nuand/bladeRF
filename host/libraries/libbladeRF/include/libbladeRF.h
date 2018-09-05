@@ -734,7 +734,7 @@ int CALL_CONV bladerf_get_gain(struct bladerf *dev,
  *
  * The special value of ::BLADERF_GAIN_DEFAULT will return hardware AGC to
  * its default value at initialization.
- * 
+ *
  * @see bladerf_gain_mode for implementation guidance
  *
  * @param       dev         Device handle
@@ -774,7 +774,7 @@ int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev,
  *
  * This function may be called with `NULL` for `modes` to determine the number
  * of gain modes supported.
- * 
+ *
  * @see bladerf_gain_mode for implementation guidance
  *
  * @param       dev         Device handle
@@ -1092,10 +1092,18 @@ int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
 /**
  * RF center frequency, in hertz (Hz)
  *
- * @remark Prior to libbladeRF 2.x.x, frequencies were specified as
+ * @see Format macros for fprintf() and fscanf(): `BLADERF_PRIuFREQ`,
+ * `BLADERF_PRIxFREQ`, `BLADERF_SCNuFREQ`, `BLADERF_SCNxFREQ`
+ *
+ * @remark Prior to libbladeRF 2.0.0, frequencies were specified as
  *         `unsigned int`.
  */
 typedef uint64_t bladerf_frequency;
+
+#define BLADERF_PRIuFREQ PRIu64
+#define BLADERF_PRIxFREQ PRIx64
+#define BLADERF_SCNuFREQ SCNu64
+#define BLADERF_SCNxFREQ SCNx64
 
 /**
  * Select the appropriate band path given a frequency in Hz.
@@ -1666,6 +1674,9 @@ int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
  * Timestamp, in ticks
  *
  * A channel's timestamp typically increments at the sample rate.
+ *
+ * @see Format macros for fprintf() and fscanf(): `BLADERF_PRIuTS`,
+ * `BLADERF_PRIxTS`, `BLADERF_SCNuTS`, `BLADERF_SCNxTS`
  */
 typedef uint64_t bladerf_timestamp;
 
@@ -1890,6 +1901,11 @@ int CALL_CONV bladerf_get_correction(struct bladerf *dev,
  *
  * @{
  */
+
+#define BLADERF_PRIuTS PRIu64
+#define BLADERF_PRIxTS PRIx64
+#define BLADERF_SCNuTS SCNu64
+#define BLADERF_SCNxTS SCNx64
 
 /**
  * @defgroup STREAMING_FORMAT Formats
