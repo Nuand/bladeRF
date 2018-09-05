@@ -42,6 +42,10 @@ uint64_t bladerf1_get_fw_capabilities(const struct bladerf_version *fw_version)
         capabilities |= BLADERF_CAP_READ_FW_LOG_ENTRY;
     }
 
+    if (version_fields_greater_or_equal(fw_version, 2, 3, 0)) {
+        capabilities |= BLADERF_CAP_FW_FLASH_ID;
+    }
+
     return capabilities;
 }
 
