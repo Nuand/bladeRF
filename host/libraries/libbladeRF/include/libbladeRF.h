@@ -1178,67 +1178,6 @@ int CALL_CONV bladerf_get_frequency_range(struct bladerf *dev,
 /** @} (End of FN_TUNING) */
 
 /**
- * @defgroup FN_RF_PORTS RF Ports
- *
- * These functions provide the ability to select various RF ports for RX and TX
- * channels.
- *
- * These functions are thread-safe.
- *
- * @{
- */
-
-/**
- * Set the RF port
- *
- * @param       dev         Device handle
- * @param[in]   ch          Channel
- * @param[in]   port        RF port name
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_rf_port(struct bladerf *dev,
-                                  bladerf_channel ch,
-                                  const char *port);
-
-/**
- * Get the RF port
- *
- * @param       dev         Device handle
- * @param[in]   ch          Channel
- * @param[out]  port        RF port name
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_rf_port(struct bladerf *dev,
-                                  bladerf_channel ch,
-                                  const char **port);
-
-/**
- * Get available RF ports
- *
- * This function may be called with `NULL` for `ports`, or 0 for `count`, to
- * determine the number of RF ports.
- *
- * @param       dev         Device handle
- * @param[in]   ch          Channel
- * @param[out]  ports       RF port names
- * @param[out]  count       Number to populate
- *
- * @return Number of RF ports on success, value from \ref RETCODES list on
- *         failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev,
-                                   bladerf_channel ch,
-                                   const char **ports,
-                                   unsigned int count);
-
-/** @} (End of FN_RF_PORTS) */
-
-/**
  * @defgroup FN_LOOPBACK Internal loopback
  *
  * The bladeRF provides a variety of loopback modes to aid in development and
@@ -3582,6 +3521,67 @@ int CALL_CONV bladerf_write_flash(struct bladerf *dev,
                                   uint32_t count);
 
 /** @} (End of FN_SPI_FLASH) */
+
+/**
+ * @defgroup FN_RF_PORTS RF Ports
+ *
+ * These functions provide the ability to select various RF ports for RX and TX
+ * channels. This is normally handled automatically.
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Set the RF port
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   port        RF port name
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rf_port(struct bladerf *dev,
+                                  bladerf_channel ch,
+                                  const char *port);
+
+/**
+ * Get the RF port
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[out]  port        RF port name
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rf_port(struct bladerf *dev,
+                                  bladerf_channel ch,
+                                  const char **port);
+
+/**
+ * Get available RF ports
+ *
+ * This function may be called with `NULL` for `ports`, or 0 for `count`, to
+ * determine the number of RF ports.
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[out]  ports       RF port names
+ * @param[out]  count       Number to populate
+ *
+ * @return Number of RF ports on success, value from \ref RETCODES list on
+ *         failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   const char **ports,
+                                   unsigned int count);
+
+/** @} (End of FN_RF_PORTS) */
 
 /** @} (End of FN_LOW_LEVEL) */
 
