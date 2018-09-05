@@ -229,8 +229,8 @@ struct band_port_map {
     uint32_t ad9361_port;
 };
 
-static const uint64_t BLADERF_VCTCXO_FREQUENCY = 38400000;
-static const uint64_t BLADERF_REFIN_DEFAULT    = 10000000;
+static const bladerf_frequency BLADERF_VCTCXO_FREQUENCY = 38400000;
+static const bladerf_frequency BLADERF_REFIN_DEFAULT    = 10000000;
 
 // clang-format off
 
@@ -632,10 +632,10 @@ static const struct bladerf_loopback_modes bladerf2_loopback_modes[] = {
 
 static int bladerf2_select_band(struct bladerf *dev,
                                 bladerf_channel ch,
-                                uint64_t frequency);
+                                bladerf_frequency frequency);
 static int bladerf2_get_frequency(struct bladerf *dev,
                                   bladerf_channel ch,
-                                  uint64_t *frequency);
+                                  bladerf_frequency *frequency);
 static int bladerf2_read_flash_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 
 
@@ -715,7 +715,7 @@ static int64_t _clamp_to_range(struct bladerf_range const *range, int64_t value)
 }
 
 static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
-                                                 uint64_t frequency)
+                                                 bladerf_frequency frequency)
 {
     const struct range_band_map *band_map;
     size_t band_map_len;
@@ -739,14 +739,13 @@ static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
     }
 
     /* Not a valid frequency */
-    log_warning("%s: frequency %" PRIu64 " not found in band map\n",
+    log_warning("%s: frequency %" BLADERF_PRIuFREQ " not found in band map\n",
                 __FUNCTION__, frequency);
     return BAND_SHUTDOWN;
 }
 
-static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
-                                                      bool enabled,
-                                                      uint64_t frequency)
+static const struct band_port_map *_get_band_port_map(
+    bladerf_channel ch, bool enabled, bladerf_frequency frequency)
 {
     enum bladerf2_band band;
     const struct band_port_map *port_map;
@@ -778,7 +777,7 @@ static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
     }
 
     /* Wasn't found, return a null ptr */
-    log_warning("%s: frequency %" PRIu64 " not found in port map\n",
+    log_warning("%s: frequency %" BLADERF_PRIuFREQ " not found in port map\n",
                 __FUNCTION__, frequency);
     return NULL;
 }
@@ -1833,7 +1832,7 @@ static int _get_gain_range(struct bladerf *dev,
 {
     struct bladerf_gain_range const *ranges = NULL;
     size_t ranges_len;
-    uint64_t frequency = 0;
+    bladerf_frequency frequency = 0;
     int status;
     size_t i;
 
@@ -2609,7 +2608,7 @@ static int bladerf2_get_frequency_range(struct bladerf *dev,
 
 static int bladerf2_select_band(struct bladerf *dev,
                                 bladerf_channel ch,
-                                uint64_t frequency)
+                                bladerf_frequency frequency)
 {
     int status;
     uint32_t reg;
@@ -2654,7 +2653,7 @@ static int bladerf2_select_band(struct bladerf *dev,
 
 static int bladerf2_set_frequency(struct bladerf *dev,
                                   bladerf_channel ch,
-                                  uint64_t frequency)
+                                  bladerf_frequency frequency)
 {
     struct bladerf2_board_data *board_data;
     const struct bladerf_range *range = NULL;
@@ -2697,11 +2696,11 @@ static int bladerf2_set_frequency(struct bladerf *dev,
 
 static int bladerf2_get_frequency(struct bladerf *dev,
                                   bladerf_channel ch,
-                                  uint64_t *frequency)
+                                  bladerf_frequency *frequency)
 {
     struct bladerf2_board_data *board_data;
     int status;
-    uint64_t lo_frequency;
+    bladerf_frequency lo_frequency;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
@@ -2874,8 +2873,8 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
 
 static int bladerf2_schedule_retune(struct bladerf *dev,
                                     bladerf_channel ch,
-                                    uint64_t timestamp,
-                                    uint64_t frequency,
+                                    bladerf_timestamp timestamp,
+                                    bladerf_frequency frequency,
                                     struct bladerf_quick_tune *quick_tune)
 
 {
@@ -3684,7 +3683,7 @@ static int bladerf2_sync_rx(struct bladerf *dev,
 
 static int bladerf2_get_timestamp(struct bladerf *dev,
                                   bladerf_direction dir,
-                                  uint64_t *value)
+                                  bladerf_timestamp *value)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
@@ -5008,8 +5007,8 @@ static int bladerf_pll_configure(struct bladerf *dev, uint16_t R, uint16_t N)
     return 0;
 }
 
-static int bladerf_pll_calculate_ratio(uint64_t ref_freq,
-                                       uint64_t clock_freq,
+static int bladerf_pll_calculate_ratio(bladerf_frequency ref_freq,
+                                       bladerf_frequency clock_freq,
                                        uint16_t *R,
                                        uint16_t *N)
 {
@@ -5200,7 +5199,7 @@ int bladerf_get_pll_refclk_range(struct bladerf *dev,
     return 0;
 }
 
-int bladerf_get_pll_refclk(struct bladerf *dev, uint64_t *frequency)
+int bladerf_get_pll_refclk(struct bladerf *dev, bladerf_frequency *frequency)
 {
     int status;
     uint32_t reg;
@@ -5243,7 +5242,7 @@ int bladerf_get_pll_refclk(struct bladerf *dev, uint64_t *frequency)
     return 0;
 }
 
-int bladerf_set_pll_refclk(struct bladerf *dev, uint64_t frequency)
+int bladerf_set_pll_refclk(struct bladerf *dev, bladerf_frequency frequency)
 {
     int status;
     uint16_t R, N;
