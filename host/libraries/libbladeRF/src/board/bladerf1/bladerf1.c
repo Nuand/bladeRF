@@ -175,16 +175,12 @@ static const struct bladerf_range bladerf1_tx_gain_range = {
 
 static const struct bladerf_gain_modes bladerf1_rx_gain_modes[] = {
     {
-        FIELD_INIT(.name, "default"),
+        FIELD_INIT(.name, "automatic"),
         FIELD_INIT(.mode, BLADERF_GAIN_DEFAULT)
     },
     {
         FIELD_INIT(.name, "manual"),
-        FIELD_INIT(.mode, BLADERF_GAIN_MANUAL)
-    },
-    {
-        FIELD_INIT(.name, "automatic"),
-        FIELD_INIT(.mode, BLADERF_GAIN_AUTOMATIC)
+        FIELD_INIT(.mode, BLADERF_GAIN_MGC)
     },
 };
 
@@ -1515,9 +1511,9 @@ static int bladerf1_get_gain_mode(struct bladerf *dev,
     }
 
     if (config_gpio & BLADERF_GPIO_AGC_ENABLE) {
-        *mode = BLADERF_GAIN_AUTOMATIC;
+        *mode = BLADERF_GAIN_DEFAULT;
     } else {
-        *mode = BLADERF_GAIN_MANUAL;
+        *mode = BLADERF_GAIN_MGC;
     }
 
     return status;
