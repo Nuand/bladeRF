@@ -441,7 +441,7 @@ static const struct bladerf_gain_range bladerf2_tx_gain_ranges[] = {
 /* RX gain modes */
 static const struct bladerf_gain_modes bladerf2_rx_gain_modes[] = {
     {
-        FIELD_INIT(.name, "default"),
+        FIELD_INIT(.name, "automatic"),
         FIELD_INIT(.mode, BLADERF_GAIN_DEFAULT)
     },
     {
