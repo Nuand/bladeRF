@@ -1372,7 +1372,7 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  *
  * @note This is set using bladerf_set_gain_mode().
  */
-#define BLADERF_GPIO_AGC_ENABLE (1 << 12)
+#define BLADERF_GPIO_AGC_ENABLE (1 << 18)
 
 /**
  * Enable-bit for timestamp counter in the FPGA
