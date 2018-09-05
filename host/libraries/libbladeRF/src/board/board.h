@@ -132,6 +132,12 @@
  */
 #define BLADERF_CAP_FW_SUPPORTS_BLADERF2 (((uint64_t)1) << 35)
 
+/**
+ * FX3 firmware v2.3.0 introduced support for reporting the SPI Flash
+ * manufacturer ID and device ID.
+ */
+#define BLADERF_CAP_FW_FLASH_ID (((uint64_t)1) << 36)
+
 struct bladerf {
     /* Handle lock - to ensure atomic access to control and configuration
      * operations */
