@@ -167,6 +167,26 @@ static void _print_power_monitor_bladerf2(struct cli_state *state)
     printf("    Power monitor:  %g V, %g A, %g W\n", vbus, iload, pload);
 }
 
+static void _print_rfconfig_bladerf1(struct cli_state *state)
+{
+    int status;
+    char const *rx_config, *tx_config;
+
+    status = bladerf_get_rf_port(state->dev, BLADERF_CHANNEL_RX(0), &rx_config);
+    if (status < 0) {
+        return;
+    }
+
+    status = bladerf_get_rf_port(state->dev, BLADERF_CHANNEL_TX(0), &tx_config);
+    if (status < 0) {
+        return;
+    }
+
+    printf("    RF routing:\n");
+    printf("      TX: %s\n", tx_config);
+    printf("      RX: %s\n", rx_config);
+}
+
 static char const *_rfic_rx_portstr(uint32_t port)
 {
     const char *pstrs[] = { "A_BAL",  "B_BAL",   "C_BAL", "A_N", "A_P",
@@ -202,7 +222,7 @@ static char const *_rfswitch_portstr(uint32_t port)
     return pstrs[port];
 }
 
-static void _print_rfconfig(struct cli_state *state)
+static void _print_rfconfig_bladerf2(struct cli_state *state)
 {
     int status;
 
@@ -213,7 +233,7 @@ static void _print_rfconfig(struct cli_state *state)
         return;
     }
 
-    printf("    RF switch config:\n");
+    printf("    RF routing:\n");
     printf("      TX1: RFIC 0x%x (%-7s) => SW 0x%x (%-7s)\n",
            config.tx1_rfic_port, _rfic_tx_portstr(config.tx1_rfic_port),
            config.tx1_spdt_port, _rfswitch_portstr(config.tx1_spdt_port));
@@ -230,12 +250,17 @@ static void _print_rfconfig(struct cli_state *state)
 
 int print_hardware(struct cli_state *state, int argc, char **argv)
 {
+    printf("  Hardware status:\n");
+
+    if (ps_is_board(state->dev, BOARD_BLADERF1)) {
+        _print_rfconfig_bladerf1(state);
+    }
+
     if (ps_is_board(state->dev, BOARD_BLADERF2)) {
-        printf("  Hardware status:\n");
         _print_rfic(state);
         _print_power_source_bladerf2(state);
         _print_power_monitor_bladerf2(state);
-        _print_rfconfig(state);
+        _print_rfconfig_bladerf2(state);
     }
 
     return CLI_RET_OK;

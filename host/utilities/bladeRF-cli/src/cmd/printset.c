@@ -130,7 +130,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(vctcxo_tamer, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     PRINTSET_ENTRY(xb_spi,       PRINTALL_OPTION_SKIP,           BOARD_BLADERF1),
     PRINTSET_ENTRY(xb_gpio,      PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
-    PRINTSET_ENTRY(xb_gpio_dir,  PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
+    PRINTSET_ENTRY(xb_gpio_dir,  PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     READONLY_ENTRY(hardware,     PRINTALL_OPTION_NONE,           BOARD_ANY),
 
     /* End of table marked by entry with NULL/empty fields */
