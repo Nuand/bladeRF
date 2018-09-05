@@ -231,6 +231,7 @@ package bladerf_p is
         xb_mode         : std_logic_vector(1 downto 0);
         agc_en          : std_logic;
         agc_band_sel    : std_logic;
+        ts_div2         : std_logic;  -- Not used in FPGA versions >= 0.3.0
         meta_en         : std_logic;
         led_mode        : std_logic;
         leds            : std_logic_vector(3 downto 1);
@@ -298,8 +299,8 @@ package body bladerf_p is
         -- AVAILABLE: x(29 downto 23);
         -- RESERVED:  rv(22 downto 21) := x.xb_mode2;  -- Why? Is this even needed?
         -- RESERVED:  rv(20 downto 19) := x.nios_ss_n; -- Why? Is this even needed?
-        --rv(18)           := x.agc_en;
-        --rv(17)           := x.agc_band_sel;
+        rv(18)           := x.agc_en;
+        rv(17)           := x.ts_div2; -- Not used in FPGA versions >= 0.3.0
         rv(16)           := x.meta_en;
         rv(15)           := x.led_mode;
         rv(14 downto 12) := x.leds;
@@ -337,8 +338,8 @@ package body bladerf_p is
         -- AVAILABLE: x(29 downto 23);
         --rv.xb_mode2      := x(22 downto 21); -- Why? Is this even needed?
         --rv.nios_ss_n     := x(20 downto 19); -- Why? Is this even needed?
-        rv.agc_en          := x(12); -- FIXME: overlaps leds(1)     ... use x(18) instead?
-        rv.agc_band_sel    := x(5);  -- FIXME: overlaps lms_rx_v(1) ... use x(17) instead?
+        rv.agc_en          := x(18);
+        rv.ts_div2         := x(17); -- Not used in FPGA versions >= 0.3.0
         rv.meta_en         := x(16);
         rv.led_mode        := x(15);
         rv.leds            := x(14 downto 12);
@@ -346,6 +347,7 @@ package body bladerf_p is
         rv.rx_mux_sel      := x(10 downto 8);
         rv.usb_speed       := x(7);
         rv.lms_rx_v        := x(6 downto 5);
+        rv.agc_band_sel    := rv.lms_rx_v(rv.lms_rx_v'low);
         rv.lms_tx_v        := x(4 downto 3);
         rv.lms_tx_enable   := x(2);
         rv.lms_rx_enable   := x(1);

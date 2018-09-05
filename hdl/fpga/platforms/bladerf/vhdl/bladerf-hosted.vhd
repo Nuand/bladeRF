@@ -456,7 +456,7 @@ begin
       ) port map (
         reset       =>  rx_reset,
         clock       =>  rx_clock,
-        async       =>  nios_gpio.o.agc_en,
+        async       =>  nios_gpio.o.agc_band_sel,
         sync        =>  agc_band_sel
       ) ;
 
