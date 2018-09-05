@@ -319,6 +319,57 @@ static const struct bladerf_loopback_modes bladerf1_loopback_modes[] = {
     },
 };
 
+/* RF ports */
+
+struct bladerf_lms_port_name_map {
+    const char *name;
+    union {
+        lms_lna rx_lna;
+        lms_pa tx_pa;
+    };
+};
+
+static const struct bladerf_lms_port_name_map bladerf1_rx_port_map[] = {
+    {
+        FIELD_INIT(.name, "none"),
+        FIELD_INIT(.rx_lna, LNA_NONE),
+    },
+    {
+        FIELD_INIT(.name, "lna1"),
+        FIELD_INIT(.rx_lna, LNA_1),
+    },
+    {
+        FIELD_INIT(.name, "lna2"),
+        FIELD_INIT(.rx_lna, LNA_2),
+    },
+    {
+        FIELD_INIT(.name, "lna3"),
+        FIELD_INIT(.rx_lna, LNA_3),
+    },
+};
+
+static const struct bladerf_lms_port_name_map bladerf1_tx_port_map[] = {
+/* TODO: TX PA control is not implemented */
+#if 0
+    {
+        FIELD_INIT(.name, "aux"),
+        FIELD_INIT(.tx_pa, PA_AUX),
+    },
+    {
+        FIELD_INIT(.name, "pa1"),
+        FIELD_INIT(.tx_pa, PA_1),
+    },
+    {
+        FIELD_INIT(.name, "pa2"),
+        FIELD_INIT(.tx_pa, PA_2),
+    },
+    {
+        FIELD_INIT(.name, "none"),
+        FIELD_INIT(.tx_pa, PA_NONE),
+    },
+#endif  // 0
+};
+
 /******************************************************************************/
 /* Low-level Initialization */
 /******************************************************************************/
@@ -1954,19 +2005,173 @@ static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, uint64_
 /* RF ports */
 /******************************************************************************/
 
-static int bladerf1_set_rf_port(struct bladerf *dev, bladerf_channel ch, const char *port)
+static int bladerf1_set_rf_port(struct bladerf *dev,
+                                bladerf_channel ch,
+                                const char *port)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    const struct bladerf_lms_port_name_map *port_map;
+    unsigned int port_map_len;
+    int status;
+    size_t i;
+
+    lms_lna rx_lna = LNA_NONE;
+    lms_pa tx_pa   = PA_NONE;
+    bool ok        = false;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* TODO: lms_pa_enable is not currently implemented */
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        log_debug("%s: not implemented for TX channels, silently ignoring\n",
+                  __FUNCTION__);
+        return 0;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        port_map     = bladerf1_tx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf1_tx_port_map);
+    } else {
+        port_map     = bladerf1_rx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf1_rx_port_map);
+    }
+
+    for (i = 0; i < port_map_len; i++) {
+        if (strcmp(port_map[i].name, port) == 0) {
+            if (BLADERF_CHANNEL_IS_TX(ch)) {
+                tx_pa = port_map[i].tx_pa;
+            } else {
+                rx_lna = port_map[i].rx_lna;
+            }
+            ok = true;
+            break;
+        }
+    }
+
+    if (!ok) {
+        log_error("port '%s' not valid for channel %s\n", port,
+                  channel2str(ch));
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        for (i = 0; i < port_map_len; i++) {
+            bool enable = (port_map[i].tx_pa == tx_pa);
+#if 0
+            status = lms_pa_enable(dev, port_map[i].tx_pa, enable);
+#else
+            log_verbose("%s: would %s pa %d but this is not implemented\n",
+                        __FUNCTION__, enable ? "enable" : "disable", tx_pa);
+            status = 0;
+#endif  // 0
+            if (status < 0) {
+                break;
+            }
+        }
+    } else {
+        status = lms_select_lna(dev, rx_lna);
+    }
+
+    return status;
 }
 
-static int bladerf1_get_rf_port(struct bladerf *dev, bladerf_channel ch, const char **port)
+static int bladerf1_get_rf_port(struct bladerf *dev,
+                                bladerf_channel ch,
+                                const char **port)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    const struct bladerf_lms_port_name_map *port_map;
+    unsigned int port_map_len;
+    int status;
+    size_t i;
+
+    lms_lna rx_lna = LNA_NONE;
+    lms_pa tx_pa   = PA_NONE;
+    bool ok        = false;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* TODO: pa getter not currently implemented */
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        log_debug("%s: not implemented for TX channels\n", __FUNCTION__);
+        if (port != NULL) {
+            *port = "auto";
+        }
+        return 0;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        port_map     = bladerf1_tx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf1_tx_port_map);
+
+#if 0
+        status = lms_get_pa(dev, &tx_pa);
+#else
+        status = 0;
+#endif  // 0
+    } else {
+        port_map     = bladerf1_rx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf1_rx_port_map);
+
+        status = lms_get_lna(dev, &rx_lna);
+    }
+
+    if (status < 0) {
+        return status;
+    }
+
+    if (port != NULL) {
+        for (i = 0; i < port_map_len; i++) {
+            if (BLADERF_CHANNEL_IS_TX(ch)) {
+                if (tx_pa == port_map[i].tx_pa) {
+                    *port = port_map[i].name;
+                    ok    = true;
+                    break;
+                }
+            } else {
+                if (rx_lna == port_map[i].rx_lna) {
+                    *port = port_map[i].name;
+                    ok    = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!ok) {
+        *port = "unknown";
+        log_error("%s: unexpected port id %d\n", __FUNCTION__,
+                  BLADERF_CHANNEL_IS_TX(ch) ? tx_pa : rx_lna);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    return 0;
 }
 
-static int bladerf1_get_rf_ports(struct bladerf *dev, bladerf_channel ch, const char **ports, unsigned int count)
+static int bladerf1_get_rf_ports(struct bladerf *dev,
+                                 bladerf_channel ch,
+                                 const char **ports,
+                                 unsigned int count)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    const struct bladerf_lms_port_name_map *port_map;
+    unsigned int port_map_len;
+    size_t i;
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        port_map     = bladerf1_tx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf1_tx_port_map);
+    } else {
+        port_map     = bladerf1_rx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf1_rx_port_map);
+    }
+
+    if (ports != NULL) {
+        count = (port_map_len < count) ? port_map_len : count;
+
+        for (i = 0; i < count; i++) {
+            ports[i] = port_map[i].name;
+        }
+    }
+
+    return port_map_len;
 }
 
 /******************************************************************************/
