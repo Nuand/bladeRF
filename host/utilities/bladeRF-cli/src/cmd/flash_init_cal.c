@@ -70,7 +70,7 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
         return CLI_RET_INVPARAM;
     }
 
-    image = bladerf_alloc_cal_image(fpga_size, dac);
+    image = bladerf_alloc_cal_image(state->dev, fpga_size, dac);
     if (!image) {
         return CLI_RET_MEM;
     }

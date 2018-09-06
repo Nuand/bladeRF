@@ -1030,7 +1030,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     full_path = file_find(filename);
     if (full_path != NULL) {
         log_debug("Loading RX calibration image %s\n", full_path);
-        dc_cal_tbl_image_load(&board_data->cal.dc_rx, full_path);
+        dc_cal_tbl_image_load(dev, &board_data->cal.dc_rx, full_path);
     }
     free(full_path);
     full_path = NULL;
@@ -1039,7 +1039,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     full_path = file_find(filename);
     if (full_path != NULL) {
         log_debug("Loading TX calibration image %s\n", full_path);
-        dc_cal_tbl_image_load(&board_data->cal.dc_tx, full_path);
+        dc_cal_tbl_image_load(dev, &board_data->cal.dc_tx, full_path);
     }
     free(full_path);
     full_path = NULL;

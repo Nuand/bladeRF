@@ -244,12 +244,13 @@ struct dc_cal_tbl * dc_cal_tbl_load(const uint8_t *buf, size_t buf_len)
     return ret;
 }
 
-int dc_cal_tbl_image_load(struct dc_cal_tbl **tbl, const char *img_file)
+int dc_cal_tbl_image_load(struct bladerf *dev,
+                          struct dc_cal_tbl **tbl, const char *img_file)
 {
     int status;
     struct bladerf_image *img;
 
-    img = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
+    img = bladerf_alloc_image(dev, BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (img == NULL) {
         return BLADERF_ERR_MEM;
     }

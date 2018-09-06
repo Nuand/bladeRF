@@ -122,7 +122,7 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
     if (rv < 0)
         return rv;
 
-    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
+    image = bladerf_alloc_image(state->dev, BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (!image) {
         rv = CLI_RET_MEM;
         goto cmd_flash_restore_out;

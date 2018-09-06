@@ -426,10 +426,10 @@ static int save_table_results(const char *filename,
     }
 
     if (module == BLADERF_MODULE_RX) {
-        image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_RX_DC_CAL,
+        image = bladerf_alloc_image(dev, BLADERF_IMAGE_TYPE_RX_DC_CAL,
                                     0xffffffff, (unsigned int) data_size);
     } else {
-        image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_TX_DC_CAL,
+        image = bladerf_alloc_image(dev, BLADERF_IMAGE_TYPE_TX_DC_CAL,
                                     0xffffffff, (unsigned int) data_size);
     }
 

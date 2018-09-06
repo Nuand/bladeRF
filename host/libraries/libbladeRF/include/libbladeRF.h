@@ -3189,7 +3189,8 @@ struct bladerf_image {
  *         `NULL` on memory allocation failure or invalid address/length.
  */
 API_EXPORT
-struct bladerf_image *CALL_CONV bladerf_alloc_image(bladerf_image_type type,
+struct bladerf_image *CALL_CONV bladerf_alloc_image(struct bladerf *dev,
+                                                    bladerf_image_type type,
                                                     uint32_t address,
                                                     uint32_t length);
 
@@ -3207,7 +3208,8 @@ struct bladerf_image *CALL_CONV bladerf_alloc_image(bladerf_image_type type,
  */
 API_EXPORT
 struct bladerf_image *CALL_CONV
-    bladerf_alloc_cal_image(bladerf_fpga_size fpga_size, uint16_t vctcxo_trim);
+    bladerf_alloc_cal_image(struct bladerf *dev,
+                            bladerf_fpga_size fpga_size, uint16_t vctcxo_trim);
 
 /**
  * Free a bladerf_image previously obtained via bladerf_alloc_image.
