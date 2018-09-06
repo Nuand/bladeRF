@@ -17,9 +17,9 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include <string.h>
-#include "rel_assert.h"
 #include "cmd.h"
+#include "rel_assert.h"
+#include <string.h>
 
 static inline const char *backend2str(bladerf_backend b)
 {
@@ -38,7 +38,7 @@ static inline const char *backend2str(bladerf_backend b)
 /* Todo move to cmd_probe.c */
 int cmd_probe(struct cli_state *s, int argc, char *argv[])
 {
-    bool error_on_no_dev = false;
+    bool error_on_no_dev            = false;
     struct bladerf_devinfo *devices = NULL;
     int n_devices, i;
 
@@ -72,6 +72,7 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
 
     putchar('\n');
     for (i = 0; i < n_devices; i++) {
+        printf("  Description:    %s\n", devices[i].product);
         printf("  Backend:        %s\n", backend2str(devices[i].backend));
         printf("  Serial:         %s\n", devices[i].serial);
         printf("  USB Bus:        %d\n", devices[i].usb_bus);
