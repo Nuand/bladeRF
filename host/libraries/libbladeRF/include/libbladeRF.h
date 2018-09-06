@@ -117,6 +117,9 @@ typedef enum {
     BLADERF_BACKEND_DUMMY = 100, /**< Dummy used for development purposes */
 } bladerf_backend;
 
+/** Length of device description string, including NUL-terminator */
+#define BLADERF_PRODUCT_LENGTH 33
+
 /** Length of device serial number string, including NUL-terminator */
 #define BLADERF_SERIAL_LENGTH 33
 
@@ -124,12 +127,13 @@ typedef enum {
  * Information about a bladeRF attached to the system
  */
 struct bladerf_devinfo {
-    bladerf_backend backend;            /**< Backend to use when connecting to
-                                         *   device */
-    char serial[BLADERF_SERIAL_LENGTH]; /**< Device serial number string */
-    uint8_t usb_bus;                    /**< Bus # device is attached to */
-    uint8_t usb_addr;                   /**< Device address on bus */
-    unsigned int instance;              /**< Device instance or ID */
+    bladerf_backend backend;              /**< Backend to use when connecting to
+                                           *   device */
+    char product[BLADERF_PRODUCT_LENGTH]; /**< Product description string */
+    char serial[BLADERF_SERIAL_LENGTH];   /**< Device serial number string */
+    uint8_t usb_bus;                      /**< Bus # device is attached to */
+    uint8_t usb_addr;                     /**< Device address on bus */
+    unsigned int instance;                /**< Device instance or ID */
 };
 
 /**
@@ -734,7 +738,7 @@ int CALL_CONV bladerf_get_gain(struct bladerf *dev,
  *
  * The special value of ::BLADERF_GAIN_DEFAULT will return hardware AGC to
  * its default value at initialization.
- * 
+ *
  * @see bladerf_gain_mode for implementation guidance
  *
  * @param       dev         Device handle
@@ -774,7 +778,7 @@ int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev,
  *
  * This function may be called with `NULL` for `modes` to determine the number
  * of gain modes supported.
- * 
+ *
  * @see bladerf_gain_mode for implementation guidance
  *
  * @param       dev         Device handle
