@@ -387,20 +387,22 @@ static inline bool is_page_aligned(uint32_t val)
     return val % BLADERF_FLASH_PAGE_SIZE == 0;
 }
 
-static inline bool is_valid_addr_len(uint32_t addr, uint32_t len)
+static inline bool is_valid_addr_len(struct bladerf *dev,
+                                     uint32_t addr, uint32_t len)
 {
-    if (addr >= BLADERF_FLASH_TOTAL_SIZE) {
+    if (addr >= dev->flash_arch->tsize_bytes) {
         return false;
-    } else if (len > BLADERF_FLASH_TOTAL_SIZE) {
+    } else if (len > dev->flash_arch->tsize_bytes) {
         return false;
-    } else if ((addr + len) > BLADERF_FLASH_TOTAL_SIZE) {
+    } else if ((addr + len) > dev->flash_arch->tsize_bytes) {
         return false;
     } else {
         return true;
     }
 }
 
-struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
+struct bladerf_image * bladerf_alloc_image(struct bladerf *dev,
+                                           bladerf_image_type type,
                                            uint32_t address,
                                            uint32_t length)
 {
@@ -417,7 +419,7 @@ struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
         } else if (!is_page_aligned(length)) {
             log_debug("Length is not page-aligned: 0x%08x\n", length);
             return NULL;
-        } else if (!is_valid_addr_len(address, length)) {
+        } else if (!is_valid_addr_len(dev, address, length)) {
             log_debug("Invalid address=0x%08x or length=0x%08x\n", address, length);
             return NULL;
         }
@@ -487,13 +489,15 @@ static int make_cal_region(bladerf_fpga_size size, uint16_t vctcxo_trim,
     return 0;
 }
 
-struct bladerf_image * bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
+struct bladerf_image * bladerf_alloc_cal_image(struct bladerf *dev,
+                                               bladerf_fpga_size fpga_size,
                                                uint16_t vctcxo_trim)
 {
     struct bladerf_image *image;
     int status;
 
-    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_CALIBRATION,
+    image = bladerf_alloc_image(dev,
+                                BLADERF_IMAGE_TYPE_CALIBRATION,
                                 BLADERF_FLASH_ADDR_CAL,
                                 BLADERF_FLASH_BYTE_LEN_CAL);
 

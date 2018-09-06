@@ -95,7 +95,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
         image_type = BLADERF_IMAGE_TYPE_RAW;
     }
 
-    image = bladerf_alloc_image(image_type, address, length);
+    image = bladerf_alloc_image(state->dev, image_type, address, length);
     if (!image) {
         status = CLI_RET_MEM;
         goto out;

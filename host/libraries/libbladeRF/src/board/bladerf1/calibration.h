@@ -86,12 +86,14 @@ struct dc_cal_tbl *dc_cal_tbl_load(const uint8_t *buf, size_t buf_len);
 /**
  * Load a DC calibration table from an image file
  *
+ * @param[in]   dev         bladeRF device handle
  * @param[out]  tbl         DC calibration Table
  * @param[in]   img_file    Path to image file
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int dc_cal_tbl_image_load(struct dc_cal_tbl **tbl, const char *img_file);
+int dc_cal_tbl_image_load(struct bladerf *dev,
+                          struct dc_cal_tbl **tbl, const char *img_file);
 
 /**
  * Free a DC calibration table

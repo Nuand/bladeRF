@@ -193,7 +193,7 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
     time_t time_tmp;
     int i;
 
-    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
+    image = bladerf_alloc_image(s->dev, BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (!image) {
         return CLI_RET_MEM;
     }
@@ -317,7 +317,7 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
         goto write_image_out;
     }
 
-    image = bladerf_alloc_image(p->type, p->address, data_size);
+    image = bladerf_alloc_image(s->dev, p->type, p->address, data_size);
     if (!image) {
         status = CLI_RET_MEM;
         goto write_image_out;
