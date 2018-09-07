@@ -32,15 +32,16 @@
 #include "spi_flash.h"
 #include "board/board.h"
 
-static inline int check_eb_access(uint32_t erase_block, uint32_t count)
+static inline int check_eb_access(struct bladerf *dev,
+                                  uint32_t erase_block, uint32_t count)
 {
-    if (erase_block >= BLADERF_FLASH_NUM_EBS) {
+    if (erase_block >= dev->flash_arch->num_ebs) {
         log_debug("Invalid erase block: %u\n", erase_block);
         return BLADERF_ERR_INVAL;
-    } else if (count > BLADERF_FLASH_NUM_EBS) {
+    } else if (count > dev->flash_arch->num_ebs) {
         log_debug("Invalid number of erase blocks: %u\n", count);
         return BLADERF_ERR_INVAL;
-    } else if ((erase_block + count) > BLADERF_FLASH_NUM_EBS) {
+    } else if ((erase_block + count) > dev->flash_arch->num_ebs) {
         log_debug("Requested operation extends past end of flash: "
                   "eb=%u, count=%u\n", erase_block, count);
         return BLADERF_ERR_INVAL;
@@ -69,7 +70,7 @@ static inline int check_page_access(struct bladerf *dev,
 
 int spi_flash_erase(struct bladerf *dev, uint32_t erase_block, uint32_t count)
 {
-    int status = check_eb_access(erase_block, count);
+    int status = check_eb_access(dev, erase_block, count);
 
     if (status == 0) {
         status = dev->backend->erase_flash_blocks(dev, erase_block, count);
