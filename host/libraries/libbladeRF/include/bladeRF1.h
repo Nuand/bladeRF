@@ -110,10 +110,6 @@
 /** SPI flash 64KiB erase block size, in bytes */
 #define BLADERF_FLASH_EB_SIZE (64 * 1024)
 
-/** Size of the SPI flash, in pages */
-#define BLADERF_FLASH_NUM_PAGES \
-    (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_PAGE_SIZE)
-
 /** Size of the SPI flash, in 64KiB erase blocks */
 #define BLADERF_FLASH_NUM_EBS (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_EB_SIZE)
 

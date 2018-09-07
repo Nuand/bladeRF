@@ -49,15 +49,16 @@ static inline int check_eb_access(uint32_t erase_block, uint32_t count)
     }
 }
 
-static inline int check_page_access(uint32_t page, uint32_t count)
+static inline int check_page_access(struct bladerf *dev,
+                                    uint32_t page, uint32_t count)
 {
-    if (page >= BLADERF_FLASH_NUM_PAGES) {
+    if (page >= dev->flash_arch->num_pages) {
         log_debug("Invalid page: %u\n", page);
         return BLADERF_ERR_INVAL;
-    } else if (count > BLADERF_FLASH_NUM_PAGES) {
+    } else if (count > dev->flash_arch->num_pages) {
         log_debug("Invalid number of pages: %u\n", count);
         return BLADERF_ERR_INVAL;
-    } else if ((page + count) > BLADERF_FLASH_NUM_PAGES) {
+    } else if ((page + count) > dev->flash_arch->num_pages) {
         log_debug("Requested operation extends past end of flash: "
                   "page=%u, count=%u\n", page, count);
         return BLADERF_ERR_INVAL;
@@ -80,7 +81,7 @@ int spi_flash_erase(struct bladerf *dev, uint32_t erase_block, uint32_t count)
 int spi_flash_read(struct bladerf *dev, uint8_t *buf,
                    uint32_t page, uint32_t count)
 {
-    int status = check_page_access(page, count);
+    int status = check_page_access(dev, page, count);
 
     if (status == 0) {
         status = dev->backend->read_flash_pages(dev, buf, page, count);
@@ -92,7 +93,7 @@ int spi_flash_read(struct bladerf *dev, uint8_t *buf,
 int spi_flash_write(struct bladerf *dev, const uint8_t *buf,
                     uint32_t page, uint32_t count)
 {
-    int status = check_page_access(page, count);
+    int status = check_page_access(dev, page, count);
 
     if (status == 0) {
         status = dev->backend->write_flash_pages(dev, buf, page, count);
