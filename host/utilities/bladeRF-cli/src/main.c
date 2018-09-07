@@ -67,6 +67,7 @@ struct rc_config {
     bool show_help_interactive;
     bool show_version;
     bool show_lib_version;
+    bool reopen_device;
 
     bladerf_log_level verbosity;
 
@@ -79,23 +80,24 @@ struct rc_config {
 
 static void init_rc_config(struct rc_config *rc)
 {
-    rc->interactive_mode = false;
-    rc->flash_fw = false;
-    rc->flash_fpga = false;
-    rc->load_fpga = false;
-    rc->probe = false;
-    rc->show_help = false;
-    rc->show_version = false;
-    rc->show_lib_version = false;
+    rc->interactive_mode      = false;
+    rc->flash_fw              = false;
+    rc->flash_fpga            = false;
+    rc->load_fpga             = false;
+    rc->probe                 = false;
+    rc->show_help             = false;
     rc->show_help_interactive = false;
+    rc->show_version          = false;
+    rc->show_lib_version      = false;
+    rc->reopen_device         = false;
 
     rc->verbosity = BLADERF_LOG_LEVEL_INFO;
 
-    rc->device = NULL;
-    rc->fw_file = NULL;
+    rc->device          = NULL;
+    rc->fw_file         = NULL;
     rc->flash_fpga_file = NULL;
-    rc->fpga_file = NULL;
-    rc->script_file = NULL;
+    rc->fpga_file       = NULL;
+    rc->script_file     = NULL;
 }
 
 static void deinit_rc_config(struct rc_config *rc)
@@ -299,18 +301,27 @@ static void print_error_need_devarg()
             "        present and -d was not specified. Aborting.\n\n");
 }
 
-static int open_device(struct rc_config *rc, struct cli_state *state, int status)
+static int open_device(struct rc_config *rc,
+                       struct cli_state *state,
+                       int status)
 {
     bool unset_env = false;
 
     if (!status) {
-        if (rc->fpga_file || rc->flash_fpga_file || rc->fw_file) {
-            // A full init will be run after the FPGA is reloaded, so there
-            // is no need to initialize everything now.
+        if (rc->reopen_device) {
+            printf("Now performing deferred device initialization...\n");
+            rc->reopen_device = false;
+        } else if (rc->fpga_file || rc->flash_fpga_file || rc->fw_file) {
+            /* These operations do not require having the FPGA loaded and
+             * the device initialized, so set BLADERF_FORCE_NO_FPGA_PRESENT
+             * to communicate our intent to bladerf_open. */
             if (!getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
-                unset_env = true;
+                printf("Deferring device initialization due to requested FPGA "
+                       "or firmware actions.\n");
                 status = setenv("BLADERF_FORCE_NO_FPGA_PRESENT", "true", 0);
-                printf("Deferring device init until after FPGA load\n");
+
+                unset_env         = true; /* Unset when done */
+                rc->reopen_device = true; /* Remember to re-open later */
             }
         }
 
@@ -331,8 +342,10 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
                 fprintf(stderr, "\n");
                 fprintf(stderr, "No bladeRF device(s) available.\n");
                 fprintf(stderr, "\n");
-                fprintf(stderr, "If one is attached, ensure it is not in use by another program\n");
-                fprintf(stderr, "and that the current user has permission to access it.\n");
+                fprintf(stderr, "If one is attached, ensure it is not in use "
+                                "by another program\n");
+                fprintf(stderr, "and that the current user has permission "
+                                "to access it.\n");
                 fprintf(stderr, "\n");
                 status = 0;
             } else if (update_required) {
@@ -368,8 +381,9 @@ static int flash_fw(struct rc_config *rc, struct cli_state *state, int status)
                 fprintf(stderr, "Error: failed to flash firmware: %s\n",
                         bladerf_strerror(status));
             } else {
-                printf("Done. "
-                       "A power cycle is required for this to take effect.\n");
+                printf("Successfully wrote firmware to flash!\n");
+                printf("NOTE: A power cycle is required to load the new "
+                       "firmware.\n");
             }
             bladerf_close(state->dev);
             state->dev = NULL;
@@ -397,7 +411,11 @@ static int flash_fpga(struct rc_config *rc, struct cli_state *state, int status)
             if (status) {
                 fprintf(stderr, "Error: %s\n", bladerf_strerror(status));
             } else {
-                printf("Done.\n");
+                if (!strcmp("X", rc->flash_fpga_file)) {
+                    printf("Successfully erased FPGA bitstream from flash!\n");
+                } else {
+                    printf("Successfully wrote FPGA bitstream to flash!\n");
+                }
             }
         }
     }
@@ -418,7 +436,10 @@ static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
                 fprintf(stderr, "Error: failed to load FPGA: %s\n",
                         bladerf_strerror(status));
             } else {
-                printf("Done.\n");
+                printf("Successfully loaded FPGA bitstream!\n");
+                /* bladerf_load_fpga does initialization, so we don't need to
+                 * re-open the device. */
+                rc->reopen_device = false;
             }
         }
     }
@@ -496,7 +517,7 @@ int main(int argc, char *argv[])
         printf("%s\n", version.describe);
         exit_immediately = true;
     } else if (rc.probe) {
-        status = cmd_handle(state, "probe strict");
+        status           = cmd_handle(state, "probe strict");
         exit_immediately = true;
     }
 
@@ -524,6 +545,19 @@ int main(int argc, char *argv[])
             goto main_issues;
         }
 
+        /* If we deferred initialization, we need to close and re-open the
+         * device */
+        if (rc.reopen_device) {
+            if (state->dev) {
+                bladerf_close(state->dev);
+            }
+
+            status = open_device(&rc, state, status);
+            if (status) {
+                goto main_issues;
+            }
+        }
+
         if (rc.script_file) {
             status = cli_open_script(&state->scripts, rc.script_file);
             if (status != 0) {
@@ -533,12 +567,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        /* Drop into interactive mode or begin executing commands from a a
+        /* Drop into interactive mode or begin executing commands from a
          * command-line list or a script. If we're not requested to do either,
          * exit cleanly */
         if (!str_queue_empty(&exec_list) || rc.interactive_mode ||
             cli_script_loaded(state->scripts)) {
-
             status = cli_start_tasks(state);
             if (status == 0) {
                 status = input_loop(state, rc.interactive_mode);
