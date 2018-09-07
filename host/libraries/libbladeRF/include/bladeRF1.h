@@ -101,9 +101,6 @@
  * @{
  */
 
-/** Total size of bladeRF SPI flash, in bytes */
-#define BLADERF_FLASH_TOTAL_SIZE (4 * 1024 * 1024)
-
 /** SPI flash page size, in bytes */
 #define BLADERF_FLASH_PAGE_SIZE 256
 
