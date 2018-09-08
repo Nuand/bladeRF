@@ -382,9 +382,9 @@ bladerf_image_read_out:
     return rv;
 }
 
-static inline bool is_page_aligned(uint32_t val)
+static inline bool is_page_aligned(struct bladerf *dev, uint32_t val)
 {
-    return val % BLADERF_FLASH_PAGE_SIZE == 0;
+    return val % dev->flash_arch->psize_bytes == 0;
 }
 
 static inline bool is_valid_addr_len(struct bladerf *dev,
@@ -413,10 +413,10 @@ struct bladerf_image * bladerf_alloc_image(struct bladerf *dev,
     /* 0xffffffff is a placeholder for images that use the format but don't
      * currently have an address in flash to live in */
     if (address != 0xffffffff) {
-        if (!is_page_aligned(address)) {
+        if (!is_page_aligned(dev, address)) {
             log_debug("Address is not page-aligned: 0x%08x\n", address);
             return NULL;
-        } else if (!is_page_aligned(length)) {
+        } else if (!is_page_aligned(dev, length)) {
             log_debug("Length is not page-aligned: 0x%08x\n", length);
             return NULL;
         } else if (!is_valid_addr_len(dev, address, length)) {

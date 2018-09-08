@@ -109,7 +109,7 @@ int spi_flash_verify(struct bladerf *dev, uint8_t *readback_buf,
 {
     int status = 0;
     size_t i;
-    const size_t len = count * BLADERF_FLASH_PAGE_SIZE;
+    const size_t len = count * dev->flash_arch->psize_bytes;
 
     log_info("Verifying %u pages, starting at page %u\n", count, page);
     status = spi_flash_read(dev, readback_buf, page, count);
