@@ -330,7 +330,7 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
 
     memcpy(image->serial, p->serial, BLADERF_SERIAL_LENGTH - 1);
 
-    status = bladerf_image_write(image, p->img_file);
+    status = bladerf_image_write(s->dev, image, p->img_file);
     if (status != 0) {
         s->last_lib_error = status;
         status = CLI_RET_LIBBLADERF;

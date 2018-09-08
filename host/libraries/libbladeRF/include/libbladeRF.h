@@ -3230,13 +3230,15 @@ void CALL_CONV bladerf_free_image(struct bladerf_image *image);
  * @pre  `image` has been initialized using bladerf_alloc_image()
  * @post `image->checksum` will be populated if this function succeeds
  *
+ * @param[in]    dev         Device handle
  * @param[in]    image       Flash image
  * @param[in]    file        File to write the flash image to
  *
  * @return 0 upon success, or a value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_image_write(struct bladerf_image *image,
+int CALL_CONV bladerf_image_write(struct bladerf *dev,
+                                  struct bladerf_image *image,
                                   const char *file);
 
 /**
@@ -3606,6 +3608,10 @@ int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
  * Erase regions of the bladeRF's SPI flash
  *
  * @note This function operates in units of 64 KiB erase blocks
+ * @note Not recommended for new designs. Consider using the
+ *       `bladerf_erase_flash_bytes()` function instead. It will perform the
+ *       necessary conversion from bytes to pages based on the specific
+ *       flash architecture found on the board.
  *
  * @param       dev             Device handle
  * @param[in]   erase_block     Erase block from which to start erasing
@@ -3619,6 +3625,24 @@ API_EXPORT
 int CALL_CONV bladerf_erase_flash(struct bladerf *dev,
                                   uint32_t erase_block,
                                   uint32_t count);
+
+/**
+ * Erase regions of the bladeRF's SPI flash
+ *
+ * @note This function operates in units of bytes
+ *
+ * @param       dev             Device handle
+ * @param[in]   address         Address at which to start erasing
+ * @param[in]   length          Number of bytes to erase
+ *
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `address` or `length` value,
+ *         or a value from \ref RETCODES list on other failures
+ */
+API_EXPORT
+int CALL_CONV bladerf_erase_flash_bytes(struct bladerf *dev,
+                                        uint32_t address,
+                                        uint32_t length);
 
 /**
  * Read data from the bladeRF's SPI flash

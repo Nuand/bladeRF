@@ -81,13 +81,13 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
     } else {
         assert(argc == 4);
         address = str2uint(argv[2], 0, UINT_MAX, &ok);
-        if (!ok || (address % BLADERF_FLASH_EB_SIZE != 0)) {
+        if (!ok) {
             cli_err(state, argv[0], "Invalid address provided.\n");
             goto out;
         }
 
         length = str2uint(argv[3], 0, UINT_MAX, &ok);
-        if (!ok || (length % BLADERF_FLASH_EB_SIZE != 0)) {
+        if (!ok) {
             cli_err(state, argv[0], "Invalid length provided.\n");
             goto out;
         }
@@ -115,7 +115,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
         goto out;
     }
 
-    status = bladerf_image_write(image, filename);
+    status = bladerf_image_write(state->dev, image, filename);
     if (status < 0) {
         lib_error(status, "Failed to write image file.");
         goto out;

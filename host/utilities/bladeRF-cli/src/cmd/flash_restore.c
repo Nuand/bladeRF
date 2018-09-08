@@ -94,15 +94,7 @@ static inline int erase_region(struct bladerf *dev, struct bladerf_image *img,
                                        BLADERF_FLASH_EB_LEN_CAL);
 
         case BLADERF_IMAGE_TYPE_RAW:
-            if ((addr % BLADERF_FLASH_EB_SIZE) != 0 ||
-                (len % BLADERF_FLASH_EB_SIZE) != 0) {
-
-                return BLADERF_ERR_INVAL;
-            } else {
-                uint32_t eb = BLADERF_FLASH_TO_EB(addr);
-                uint32_t count = BLADERF_FLASH_TO_EB(len);
-                return bladerf_erase_flash(dev, eb, count);
-            }
+            return bladerf_erase_flash_bytes(dev, addr, len);
 
         default:
             return BLADERF_ERR_INVAL;

@@ -506,7 +506,7 @@ static int save_table_results(const char *filename,
         off += sizeof(min_dc_q);
     }
 
-    status = bladerf_image_write(image, filename);
+    status = bladerf_image_write(dev, image, filename);
 
     bladerf_free_image(image);
     return status;
