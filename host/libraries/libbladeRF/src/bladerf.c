@@ -1402,6 +1402,42 @@ int bladerf_erase_flash(struct bladerf *dev,
     return status;
 }
 
+int bladerf_erase_flash_bytes(struct bladerf *dev,
+                              uint32_t address,
+                              uint32_t length)
+{
+    int      status;
+    uint32_t eb;
+    uint32_t count;
+
+    /* Make sure address is aligned to an erase block boundary */
+    if( (address % dev->flash_arch->ebsize_bytes) == 0 ) {
+        /* Convert into units of flash pages */
+        eb = address / dev->flash_arch->ebsize_bytes;
+    } else {
+        log_error("Address or length not aligned on a flash page boundary.\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Check for the case of erasing less than 1 erase block.
+     * For example, the calibration data. If so, round up to 1 EB.
+     * If erasing more than 1 EB worth of data, make sure the length
+     * is aligned to an EB boundary. */
+    if( (length > 0) && (length < dev->flash_arch->ebsize_bytes) ) {
+        count = 1;
+    } else if ((length % dev->flash_arch->ebsize_bytes) == 0) {
+        /* Convert into units of flash pages */
+        count = length  / dev->flash_arch->ebsize_bytes;
+    } else {
+        log_error("Address or length not aligned on a flash page boundary.\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    status = bladerf_erase_flash(dev, eb, count);
+
+    return status;
+}
+
 int bladerf_read_flash(struct bladerf *dev,
                        uint8_t *buf,
                        uint32_t page,

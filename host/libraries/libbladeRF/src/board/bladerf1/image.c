@@ -277,7 +277,8 @@ static int unpack_image(struct bladerf_image *img, uint8_t *buf, size_t len)
     return 0;
 }
 
-int bladerf_image_write(struct bladerf_image *img, const char *file)
+int bladerf_image_write(struct bladerf *dev,
+                        struct bladerf_image *img, const char *file)
 {
     int rv;
     FILE *f = NULL;
@@ -317,11 +318,11 @@ int bladerf_image_write(struct bladerf_image *img, const char *file)
     /* If the type is RAW, we should only allow erase-block aligned
      * addresses and lengths */
     if (img->type == BLADERF_IMAGE_TYPE_RAW) {
-        if (img->address % BLADERF_FLASH_EB_SIZE != 0) {
+        if (img->address % dev->flash_arch->ebsize_bytes != 0) {
             log_debug("Image address must be erase block-aligned for RAW.\n");
             rv = BLADERF_ERR_INVAL;
             goto error;
-        } else if (img->length % BLADERF_FLASH_EB_SIZE != 0) {
+        } else if (img->length % dev->flash_arch->ebsize_bytes != 0) {
             log_debug("Image length must be erase block-aligned for RAW.\n");
             rv = BLADERF_ERR_INVAL;
             goto error;

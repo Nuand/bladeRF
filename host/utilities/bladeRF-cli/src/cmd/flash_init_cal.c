@@ -104,7 +104,7 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
         assert(argc == 4);
 
         filename = input_expand_path(argv[3]);
-        rv = bladerf_image_write(image, filename);
+        rv = bladerf_image_write(state->dev, image, filename);
         free(filename);
     }
 
