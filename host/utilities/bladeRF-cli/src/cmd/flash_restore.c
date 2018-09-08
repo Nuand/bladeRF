@@ -59,13 +59,13 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
 
     if (argc == 4) {
         opt->address = str2uint(argv[2], 0, UINT_MAX, &ok);
-        if (!ok || (opt->address % BLADERF_FLASH_PAGE_SIZE != 0)) {
+        if (!ok) {
             cli_err(state, argv[0], "Invalid address provided\n");
             return CLI_RET_INVPARAM;
         }
 
         opt->len = str2uint(argv[3], 0, UINT_MAX, &ok);
-        if (!ok || (opt->len % BLADERF_FLASH_PAGE_SIZE != 0)) {
+        if (!ok) {
             cli_err(state, argv[0], "Invalid length provided\n");
             return CLI_RET_INVPARAM;
         }
@@ -114,7 +114,7 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
     int rv;
     struct bladerf_image *image = NULL;
     struct options opt;
-    uint32_t addr, len, page, count;
+    uint32_t addr, len;
 
     memset(&opt, 0, sizeof(opt));
 
@@ -156,10 +156,7 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
         goto cmd_flash_restore_out;
     }
 
-    page = BLADERF_FLASH_TO_PAGES(addr);
-    count = BLADERF_FLASH_TO_PAGES(len);
-
-    rv = bladerf_write_flash(state->dev, image->data, page, count);
+    rv = bladerf_write_flash_bytes(state->dev, image->data, addr, len);
     if (rv < 0) {
         cli_err(state, argv[0],
         "Failed to restore flash region.\n"

@@ -23,7 +23,7 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
     uint32_t padded_image_len;
 
     /* Pad firwmare data out to a page size */
-    const uint32_t page_size = BLADERF_FLASH_PAGE_SIZE;
+    const uint32_t page_size = dev->flash_arch->psize_bytes;
     const uint32_t padding_len =
         (len % page_size == 0) ? 0 : page_size - (len % page_size);
 
@@ -60,7 +60,7 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
     }
 
     /* Convert the image length to pages */
-    padded_image_len /= BLADERF_FLASH_PAGE_SIZE;
+    padded_image_len /= page_size;
 
     /* Write the firmware image to flash */
     status = spi_flash_write(dev, padded_image,
@@ -85,35 +85,36 @@ error:
     return status;
 }
 
-static inline void fill_fpga_metadata_page(uint8_t *metadata,
+static inline void fill_fpga_metadata_page(struct bladerf *dev,
+                                           uint8_t *metadata,
                                            size_t actual_bitstream_len)
 {
     char len_str[12];
     int idx = 0;
 
     memset(len_str, 0, sizeof(len_str));
-    memset(metadata, 0xff, BLADERF_FLASH_PAGE_SIZE);
+    memset(metadata, 0xff, dev->flash_arch->psize_bytes);
 
     snprintf(len_str, sizeof(len_str), "%u",
              (unsigned int)actual_bitstream_len);
 
-    binkv_encode_field((char *)metadata, BLADERF_FLASH_PAGE_SIZE,
+    binkv_encode_field((char *)metadata, dev->flash_arch->psize_bytes,
                        &idx, "LEN", len_str);
 }
 
 int spi_flash_write_fpga_bitstream(struct bladerf *dev,
                                    const uint8_t *bitstream, size_t len)
 {
+    /* Pad data to be page-aligned */
+    const uint32_t page_size = dev->flash_arch->psize_bytes;
+    const uint32_t padding_len =
+        (len % page_size == 0) ? 0 : page_size - (len % page_size);
+
     int status;
     uint8_t *readback_buf;
     uint8_t *padded_bitstream;
-    uint8_t metadata[BLADERF_FLASH_PAGE_SIZE];
+    uint8_t metadata[page_size];
     uint32_t padded_bitstream_len;
-
-    /* Pad data to be page-aligned */
-    const uint32_t page_size = BLADERF_FLASH_PAGE_SIZE;
-    const uint32_t padding_len =
-        (len % page_size == 0) ? 0 : page_size - (len % page_size);
 
     if (len >= (UINT32_MAX - padding_len)) {
         return BLADERF_ERR_INVAL;
@@ -122,7 +123,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
     padded_bitstream_len = (uint32_t) len + padding_len;
 
     /* Fill in metadata with the *actual* FPGA bitstream length */
-    fill_fpga_metadata_page(metadata, len);
+    fill_fpga_metadata_page(dev, metadata, len);
 
     readback_buf = malloc(padded_bitstream_len);
     if (readback_buf == NULL) {
@@ -158,7 +159,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
     }
 
     /* Convert the padded bitstream length to pages */
-    padded_bitstream_len /= BLADERF_FLASH_PAGE_SIZE;
+    padded_bitstream_len /= page_size;
 
     /* Write the padded bitstream */
     status = spi_flash_write(dev, padded_bitstream, BLADERF_FLASH_PAGE_FPGA + 1,

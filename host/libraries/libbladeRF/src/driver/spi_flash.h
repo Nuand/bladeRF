@@ -49,7 +49,7 @@ int spi_flash_erase(struct bladerf *dev, uint32_t erase_block, uint32_t count);
  *
  * @param       dev     Device handle
  * @param[out]  buf     Buffer to read data into. Must be `count` *
- *                      BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ *                      flash-page-size bytes or larger.
  * @param[in]   page    Page to begin reading from
  * @param[in]   count   Number of pages to read
  *
@@ -66,7 +66,7 @@ int spi_flash_read(struct bladerf *dev,
  *
  * @param       dev             Device handle
  * @param[out]  readback_buf    Buffer to read data into. Must be `count` *
- *                              BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ *                              flash-page-size bytes or larger.
  * @param[in]   expected_buf    Expected contents of buffer
  * @param[in]   page            Page to begin reading from
  * @param[in]   count           Number of pages to read

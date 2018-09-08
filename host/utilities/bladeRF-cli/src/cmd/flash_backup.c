@@ -43,7 +43,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
     struct bladerf_devinfo info;
     struct bladerf_image *image = NULL;
     bladerf_image_type image_type;
-    uint32_t address, length, page, count;
+    uint32_t address, length;
     char *filename = NULL;
     bool ok;
 
@@ -109,11 +109,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
 
     strncpy(image->serial, info.serial, BLADERF_SERIAL_LENGTH);
 
-    page = BLADERF_FLASH_TO_PAGES(address);
-    count = BLADERF_FLASH_TO_PAGES(length);
-
-
-    status = bladerf_read_flash(state->dev, image->data, page, count);
+    status = bladerf_read_flash_bytes(state->dev, image->data, address, length);
     if (status < 0) {
         lib_error(status, "Failed to read flash region");
         goto out;

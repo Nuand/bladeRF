@@ -530,7 +530,7 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
     }
 
     if (usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
-        read_size = BLADERF_FLASH_PAGE_SIZE;
+        read_size = dev->flash_arch->psize_bytes;
     } else if (usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
         read_size = 64;
     } else {
@@ -561,7 +561,7 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
     }
 
     /* Retrieve data from the firmware page buffer */
-    for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += read_size) {
+    for (offset = 0; offset < dev->flash_arch->psize_bytes; offset += read_size) {
         status = usb->fn->control_transfer(usb->driver,
                                            USB_TARGET_DEVICE,
                                            USB_REQUEST_VENDOR,
@@ -619,7 +619,7 @@ static int usb_read_flash_pages(struct bladerf *dev,
             goto error;
         }
 
-        n_read += BLADERF_FLASH_PAGE_SIZE;
+        n_read += dev->flash_arch->psize_bytes;
     }
 
     log_info("Done reading %u page%s\n", count, 1 == count ? "" : "s");
@@ -644,7 +644,7 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
     }
 
     if (usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
-        write_size = BLADERF_FLASH_PAGE_SIZE;
+        write_size = dev->flash_arch->psize_bytes;
     } else if (usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
         write_size = 64;
     } else {
@@ -655,7 +655,7 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
     /* Write the data to the firmware's page buffer.
      * Casting away the buffer's const-ness here is gross, but this buffer
      * will not be written to on an out transfer. */
-    for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += write_size) {
+    for (offset = 0; offset < dev->flash_arch->psize_bytes; offset += write_size) {
         status = usb->fn->control_transfer(usb->driver,
                                             USB_TARGET_DEVICE,
                                             USB_REQUEST_VENDOR,
@@ -731,7 +731,7 @@ static int usb_write_flash_pages(struct bladerf *dev,
             goto error;
         }
 
-        n_written += BLADERF_FLASH_PAGE_SIZE;
+        n_written += dev->flash_arch->psize_bytes;
     }
     log_info("Done writing %u page%s\n", count, 1 == count ? "" : "s");
 
@@ -774,7 +774,7 @@ static int usb_get_cal(struct bladerf *dev, char *cal)
     const uint16_t dummy_page = 0;
     int status, restore_status;
 
-    assert(CAL_BUFFER_SIZE == BLADERF_FLASH_PAGE_SIZE);
+    assert(CAL_BUFFER_SIZE == dev->flash_arch->psize_bytes);
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status) {
