@@ -1416,6 +1416,31 @@ int bladerf_read_flash(struct bladerf *dev,
     return status;
 }
 
+int bladerf_read_flash_bytes(struct bladerf *dev,
+                             uint8_t *buf,
+                             uint32_t address,
+                             uint32_t length)
+{
+    int      status;
+    uint32_t page;
+    uint32_t count;
+
+    /* Check alignment */
+    if( ((address % dev->flash_arch->psize_bytes) != 0) ||
+        ((length  % dev->flash_arch->psize_bytes) != 0) ) {
+        log_error("Address or length not aligned on a flash page boundary.\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Convert into units of flash pages */
+    page  = address / dev->flash_arch->psize_bytes;
+    count = length  / dev->flash_arch->psize_bytes;
+
+    status = bladerf_read_flash(dev, buf, page, count);
+
+    return status;
+}
+
 int bladerf_write_flash(struct bladerf *dev,
                         const uint8_t *buf,
                         uint32_t page,
@@ -1427,6 +1452,30 @@ int bladerf_write_flash(struct bladerf *dev,
     status = dev->board->write_flash(dev, buf, page, count);
 
     MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_write_flash_bytes(struct bladerf *dev,
+                              const uint8_t *buf,
+                              uint32_t address,
+                              uint32_t length)
+{
+    int      status;
+    uint32_t page;
+    uint32_t count;
+
+    /* Check alignment */
+    if( ((address % dev->flash_arch->psize_bytes) != 0) ||
+        ((length  % dev->flash_arch->psize_bytes) != 0) ) {
+        log_error("Address or length not aligned on a flash page boundary.\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Convert address and length into units of flash pages */
+    page  = address / dev->flash_arch->psize_bytes;
+    count = length  / dev->flash_arch->psize_bytes;
+
+    status = bladerf_write_flash(dev, buf, page, count);
     return status;
 }
 
