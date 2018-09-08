@@ -3623,11 +3623,15 @@ int CALL_CONV bladerf_erase_flash(struct bladerf *dev,
 /**
  * Read data from the bladeRF's SPI flash
  *
- * @note This function operates in units of 256-byte pages.
+ * @note This function operates in units of flash pages.
+ * @note Not recommended for new designs. Consider using the
+ *       `bladerf_read_flash_bytes()` function instead. It will perform the
+ *       necessary conversion from bytes to pages based on the specific
+ *       flash architecture found on the board.
  *
  * @param       dev     Device handle
  * @param[in]   buf     Buffer to read data into. Must be `count` *
- *                      ::BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ *                      flash-page-size bytes or larger.
  * @param[in]   page    Page to begin reading from
  * @param[in]   count   Number of pages to read
  *
@@ -3642,9 +3646,34 @@ int CALL_CONV bladerf_read_flash(struct bladerf *dev,
                                  uint32_t count);
 
 /**
+ * Read data from the bladeRF's SPI flash
+ *
+ * @note This function operates in units of bytes.
+ *
+ * @param       dev     Device handle
+ * @param[in]   buf     Buffer to read data into. Must be `length`
+ *                      bytes or larger.
+ * @param[in]   address Address to begin reading from
+ * @param[in]   length  Number of bytes to read
+ *
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `address` or `length` value,
+ *         or a value from \ref RETCODES list on other failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_read_flash_bytes(struct bladerf *dev,
+                                       uint8_t *buf,
+                                       uint32_t address,
+                                       uint32_t bytes);
+
+/**
  * Write data to the bladeRF's SPI flash device
  *
- * @note This function operates in units of 256-byte pages.
+ * @note This function operates in units of flash pages.
+ * @note Not recommended for new designs. Consider using the
+ *       `bladerf_write_flash_bytes()` function instead. It will perform the
+ *       necessary conversion from bytes to pages based on the specific
+ *       flash architecture found on the board.
  *
  * @param       dev     Device handle
  * @param[in]   buf     Data to write to flash
@@ -3660,6 +3689,26 @@ int CALL_CONV bladerf_write_flash(struct bladerf *dev,
                                   const uint8_t *buf,
                                   uint32_t page,
                                   uint32_t count);
+
+/**
+ * Write data to the bladeRF's SPI flash device
+ *
+ * @note This function operates in units of bytes.
+ *
+ * @param       dev     Device handle
+ * @param[in]   buf     Data to write to flash
+ * @param[in]   address Address to begin writing at
+ * @param[in]   length  Number of bytes to write
+ *
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `address` or `length` value,
+ *         or a value from \ref RETCODES list on other failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_write_flash_bytes(struct bladerf *dev,
+                                        const uint8_t *buf,
+                                        uint32_t address,
+                                        uint32_t length);
 
 /** @} (End of FN_SPI_FLASH) */
 
