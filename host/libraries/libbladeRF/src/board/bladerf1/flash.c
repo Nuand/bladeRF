@@ -27,6 +27,10 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
     const uint32_t padding_len =
         (len % page_size == 0) ? 0 : page_size - (len % page_size);
 
+    /* Flash page where FX3 firmware starts */
+    const uint32_t flash_page_fw = BLADERF_FLASH_ADDR_FIRMWARE /
+        dev->flash_arch->psize_bytes;
+
     if (len >= (UINT32_MAX - padding_len)) {
         return BLADERF_ERR_INVAL;
     }
@@ -64,7 +68,7 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
 
     /* Write the firmware image to flash */
     status = spi_flash_write(dev, padded_image,
-                             BLADERF_FLASH_PAGE_FIRMWARE, padded_image_len);
+                             flash_page_fw, padded_image_len);
 
     if (status < 0) {
         log_debug("Failed to write firmware: %s\n", bladerf_strerror(status));
@@ -73,7 +77,7 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
 
     /* Read back and double-check what we just wrote */
     status = spi_flash_verify(dev, readback_buf, padded_image,
-                              BLADERF_FLASH_PAGE_FIRMWARE, padded_image_len);
+                              flash_page_fw, padded_image_len);
     if (status != 0) {
         log_debug("Flash verification failed: %s\n", bladerf_strerror(status));
         goto error;
