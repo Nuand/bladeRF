@@ -116,10 +116,6 @@
 /** Byte address of FX3 firmware */
 #define BLADERF_FLASH_ADDR_FIRMWARE 0x00000000
 
-/** Flash page where FX3 firmware starts */
-#define BLADERF_FLASH_PAGE_FIRMWARE \
-    (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_FIRMWARE))
-
 /** Flash erase block where FX3 firmware starts */
 #define BLADERF_FLASH_EB_FIRMWARE \
     (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FIRMWARE))
