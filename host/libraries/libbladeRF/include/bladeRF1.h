@@ -107,9 +107,6 @@
 /** SPI flash 64KiB erase block size, in bytes */
 #define BLADERF_FLASH_EB_SIZE (64 * 1024)
 
-/** Convert byte addresses to units of flash pages */
-#define BLADERF_FLASH_TO_PAGES(bytes) ((bytes) / BLADERF_FLASH_PAGE_SIZE)
-
 /** Convert byte addresses to units of flash erase blocks */
 #define BLADERF_FLASH_TO_EB(bytes) ((bytes) / BLADERF_FLASH_EB_SIZE)
 
