@@ -75,8 +75,8 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
     }
 
     if (argc == 3) {
-        rv = bladerf_erase_flash(state->dev, BLADERF_FLASH_EB_CAL,
-                                 BLADERF_FLASH_EB_LEN_CAL);
+        rv = bladerf_erase_flash_bytes(state->dev, BLADERF_FLASH_ADDR_CAL,
+                                       BLADERF_FLASH_BYTE_LEN_CAL);
         if (rv != 0) {
             goto cmd_flash_init_cal_out;
         }
