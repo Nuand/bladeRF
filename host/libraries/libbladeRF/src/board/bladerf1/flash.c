@@ -114,6 +114,10 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
     const uint32_t padding_len =
         (len % page_size == 0) ? 0 : page_size - (len % page_size);
 
+    /** Flash page where FPGA metadata and bitstream start */
+    const uint32_t flash_page_fpga = BLADERF_FLASH_ADDR_FPGA /
+        dev->flash_arch->psize_bytes;
+
     int status;
     uint8_t *readback_buf;
     uint8_t *padded_bitstream;
@@ -155,7 +159,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
     }
 
     /* Write the metadata page */
-    status = spi_flash_write(dev, metadata, BLADERF_FLASH_PAGE_FPGA, 1);
+    status = spi_flash_write(dev, metadata, flash_page_fpga, 1);
     if (status != 0) {
         log_debug("Failed to write FPGA metadata page: %s\n",
                   bladerf_strerror(status));
@@ -166,7 +170,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
     padded_bitstream_len /= page_size;
 
     /* Write the padded bitstream */
-    status = spi_flash_write(dev, padded_bitstream, BLADERF_FLASH_PAGE_FPGA + 1,
+    status = spi_flash_write(dev, padded_bitstream, flash_page_fpga + 1,
                              padded_bitstream_len);
     if (status != 0) {
         log_debug("Failed to write bitstream: %s\n",
@@ -175,8 +179,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
     }
 
     /* Read back and verify metadata */
-    status = spi_flash_verify(dev, readback_buf, metadata,
-                              BLADERF_FLASH_PAGE_FPGA, 1);
+    status = spi_flash_verify(dev, readback_buf, metadata, flash_page_fpga, 1);
     if (status != 0) {
         log_debug("Failed to verify metadata: %s\n", bladerf_strerror(status));
         goto error;
@@ -184,7 +187,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
 
     /* Read back and verify the bitstream data */
     status = spi_flash_verify(dev, readback_buf, padded_bitstream,
-                              BLADERF_FLASH_PAGE_FPGA + 1, padded_bitstream_len);
+                              flash_page_fpga + 1, padded_bitstream_len);
     if (status != 0) {
         log_debug("Failed to verify bitstream data: %s\n",
                   bladerf_strerror(status));
