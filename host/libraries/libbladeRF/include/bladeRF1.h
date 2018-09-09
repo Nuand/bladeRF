@@ -154,10 +154,6 @@
  */
 #define BLADERF_FLASH_ADDR_FPGA 0x00040000
 
-/** Flash page where FPGA metadata and bitstream start */
-#define BLADERF_FLASH_PAGE_FPGA \
-    (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_FPGA))
-
 /** Flash erase block where FPGA metadata and bitstream start */
 #define BLADERF_FLASH_EB_FPGA (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FPGA))
 
