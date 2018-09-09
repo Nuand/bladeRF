@@ -101,12 +101,6 @@
  * @{
  */
 
-/** SPI flash 64KiB erase block size, in bytes */
-#define BLADERF_FLASH_EB_SIZE (64 * 1024)
-
-/** Convert byte addresses to units of flash erase blocks */
-#define BLADERF_FLASH_TO_EB(bytes) ((bytes) / BLADERF_FLASH_EB_SIZE)
-
 /** Byte address of FX3 firmware */
 #define BLADERF_FLASH_ADDR_FIRMWARE 0x00000000
 
