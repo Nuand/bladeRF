@@ -101,9 +101,6 @@
  * @{
  */
 
-/** SPI flash page size, in bytes */
-#define BLADERF_FLASH_PAGE_SIZE 256
-
 /** SPI flash 64KiB erase block size, in bytes */
 #define BLADERF_FLASH_EB_SIZE (64 * 1024)
 
