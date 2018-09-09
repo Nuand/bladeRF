@@ -123,10 +123,6 @@
 /** Length of firmware region of flash, in bytes */
 #define BLADERF_FLASH_BYTE_LEN_FIRMWARE 0x00030000
 
-/** Length of firmware region of flash, in pages */
-#define BLADERF_FLASH_PAGE_LEN_FIRMWARE \
-    (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_BYTE_LEN_FIRMWARE))
-
 /** Length of firmware region of flash, in erase blocks */
 #define BLADERF_FLASH_EB_LEN_FIRMWARE \
     (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FIRMWARE))
