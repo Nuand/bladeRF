@@ -116,21 +116,8 @@
 /** Byte address of calibration data region */
 #define BLADERF_FLASH_ADDR_CAL 0x00030000
 
-/** Flash erase block where calibration data starts */
-#define BLADERF_FLASH_EB_CAL (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_CAL))
-
 /** Length of calibration data, in bytes */
 #define BLADERF_FLASH_BYTE_LEN_CAL 0x100
-
-/**
- * Length of calibration data, in erase blocks.
- *
- * This is a special case, as the entire remainder of the erase block is
- * reserved for future calibration data use. When updating calibration data, the
- * whole block will be erased, even though the current firmware only uses one
- * page of it.
- */
-#define BLADERF_FLASH_EB_LEN_CAL 1
 
 /**
  * Byte address of of the autoloaded FPGA and associated metadata.
