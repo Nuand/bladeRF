@@ -127,15 +127,8 @@
  */
 #define BLADERF_FLASH_ADDR_FPGA 0x00040000
 
-/** Flash erase block where FPGA metadata and bitstream start */
-#define BLADERF_FLASH_EB_FPGA (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FPGA))
-
 /** Length of entire FPGA region, including both metadata and bitstream. */
 #define BLADERF_FLASH_BYTE_LEN_FPGA 0x00370000
-
-/** Length of entire FPGA region, in units of erase blocks */
-#define BLADERF_FLASH_EB_LEN_FPGA \
-    (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FPGA))
 
 /** @} (End of BLADERF_FLASH_CONSTANTS) */
 
