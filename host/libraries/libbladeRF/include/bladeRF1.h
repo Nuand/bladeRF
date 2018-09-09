@@ -130,9 +130,6 @@
 /** Byte address of calibration data region */
 #define BLADERF_FLASH_ADDR_CAL 0x00030000
 
-/** Flash page where calibration data starts */
-#define BLADERF_FLASH_PAGE_CAL (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_CAL))
-
 /** Flash erase block where calibration data starts */
 #define BLADERF_FLASH_EB_CAL (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_CAL))
 
