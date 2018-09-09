@@ -136,9 +136,6 @@
 /** Length of calibration data, in bytes */
 #define BLADERF_FLASH_BYTE_LEN_CAL 0x100
 
-/** Length of calibration data, in pages */
-#define BLADERF_FLASH_PAGE_LEN_CAL (BLADERF_FLASH_TO_PAGES(FLASH_BYTE_LEN_CAL))
-
 /**
  * Length of calibration data, in erase blocks.
  *
