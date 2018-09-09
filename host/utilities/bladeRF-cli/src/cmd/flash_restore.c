@@ -81,8 +81,8 @@ static inline int erase_region(struct bladerf *dev, struct bladerf_image *img,
 {
     switch (img->type) {
         case BLADERF_IMAGE_TYPE_FIRMWARE:
-            return bladerf_erase_flash(dev, BLADERF_FLASH_EB_FIRMWARE,
-                                       BLADERF_FLASH_EB_LEN_FIRMWARE);
+            return bladerf_erase_flash_bytes(dev, BLADERF_FLASH_ADDR_FIRMWARE,
+                                             BLADERF_FLASH_BYTE_LEN_FIRMWARE);
 
         case BLADERF_IMAGE_TYPE_FPGA_40KLE:
         case BLADERF_IMAGE_TYPE_FPGA_115KLE:

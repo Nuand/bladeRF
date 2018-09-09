@@ -110,16 +110,8 @@
 /** Byte address of FX3 firmware */
 #define BLADERF_FLASH_ADDR_FIRMWARE 0x00000000
 
-/** Flash erase block where FX3 firmware starts */
-#define BLADERF_FLASH_EB_FIRMWARE \
-    (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FIRMWARE))
-
 /** Length of firmware region of flash, in bytes */
 #define BLADERF_FLASH_BYTE_LEN_FIRMWARE 0x00030000
-
-/** Length of firmware region of flash, in erase blocks */
-#define BLADERF_FLASH_EB_LEN_FIRMWARE \
-    (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FIRMWARE))
 
 /** Byte address of calibration data region */
 #define BLADERF_FLASH_ADDR_CAL 0x00030000

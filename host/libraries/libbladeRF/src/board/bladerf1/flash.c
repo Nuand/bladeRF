@@ -31,6 +31,14 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
     const uint32_t flash_page_fw = BLADERF_FLASH_ADDR_FIRMWARE /
         dev->flash_arch->psize_bytes;
 
+    /* Flash erase block where FX3 firmware starts */
+    const uint32_t flash_eb_fw = BLADERF_FLASH_ADDR_FIRMWARE /
+        dev->flash_arch->ebsize_bytes;
+
+    /** Length of firmware region of flash, in erase blocks */
+    const uint32_t flash_eb_len_fw = BLADERF_FLASH_BYTE_LEN_FIRMWARE /
+        dev->flash_arch->ebsize_bytes;
+
     if (len >= (UINT32_MAX - padding_len)) {
         return BLADERF_ERR_INVAL;
     }
@@ -55,8 +63,7 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
     memset(padded_image + len, 0xFF, padded_image_len - len);
 
     /* Erase the entire firmware region */
-    status = spi_flash_erase(dev, BLADERF_FLASH_EB_FIRMWARE,
-                             BLADERF_FLASH_EB_LEN_FIRMWARE);
+    status = spi_flash_erase(dev, flash_eb_fw, flash_eb_len_fw);
     if (status != 0) {
         log_debug("Failed to erase firmware region: %s\n",
                   bladerf_strerror(status));
