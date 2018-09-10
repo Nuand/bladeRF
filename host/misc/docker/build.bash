@@ -178,6 +178,7 @@ if [ $# -gt 0 ]; then
     # We have an argument, so just build those images...
     for rootname in "$*"; do
         if [ "${rootname}" == "_base" ]; then
+            do_base
             continue
         fi
         rels="${rels} ${rootname}"
