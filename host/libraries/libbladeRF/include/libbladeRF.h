@@ -1104,9 +1104,13 @@ int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
  */
 typedef uint64_t bladerf_frequency;
 
+/** printf format for frequencies in unsigned decimal */
 #define BLADERF_PRIuFREQ PRIu64
+/** printf format for frequencies in hexadecimal */
 #define BLADERF_PRIxFREQ PRIx64
+/** scanf format for frequencies in unsigned decimal */
 #define BLADERF_SCNuFREQ SCNu64
+/** scanf format for frequencies in hexadecimal */
 #define BLADERF_SCNxFREQ SCNx64
 
 /**
@@ -1906,9 +1910,13 @@ int CALL_CONV bladerf_get_correction(struct bladerf *dev,
  * @{
  */
 
+/** printf format for timestamps in unsigned decimal */
 #define BLADERF_PRIuTS PRIu64
+/** printf format for timestamps in hexadecimal */
 #define BLADERF_PRIxTS PRIx64
+/** scanf format for timestamps in unsigned decimal */
 #define BLADERF_SCNuTS SCNu64
+/** scanf format for timestamps in hexadecimal */
 #define BLADERF_SCNxTS SCNx64
 
 /**
