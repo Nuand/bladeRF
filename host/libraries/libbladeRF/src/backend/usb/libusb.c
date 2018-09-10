@@ -155,6 +155,10 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
         info->usb_bus  = libusb_get_bus_number(dev);
         info->usb_addr = libusb_get_device_address(dev);
 
+        memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
+        memset(manu, 0, BLADERF_PRODUCT_LENGTH);
+        memset(prod, 0, BLADERF_PRODUCT_LENGTH);
+
         status = libusb_get_device_descriptor(dev, &desc);
         if (status != 0) {
             goto out;
@@ -162,7 +166,7 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 
         status = libusb_get_string_descriptor_ascii(
             handle, desc.iSerialNumber, (unsigned char *)&info->serial,
-            BLADERF_SERIAL_LENGTH);
+            BLADERF_SERIAL_LENGTH - 1);
 
         /* Consider this to be non-fatal, otherwise firmware <= 1.1
          * wouldn't be able to get far enough to upgrade */
@@ -174,7 +178,7 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 
         status = libusb_get_string_descriptor_ascii(handle, desc.iManufacturer,
                                                     (unsigned char *)&manu,
-                                                    BLADERF_PRODUCT_LENGTH);
+                                                    BLADERF_PRODUCT_LENGTH - 1);
         if (status < 0) {
             log_debug("Failed to retrieve manufacturer string\n");
             goto out;
@@ -182,16 +186,25 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 
         status = libusb_get_string_descriptor_ascii(handle, desc.iProduct,
                                                     (unsigned char *)&prod,
-                                                    BLADERF_PRODUCT_LENGTH);
+                                                    BLADERF_PRODUCT_LENGTH - 1);
         if (status < 0) {
             log_debug("Failed to retrieve product string\n");
             goto out;
         }
 
-        snprintf(info->product, BLADERF_PRODUCT_LENGTH, "%s %s", manu, prod);
+        log_verbose(
+            "%s: iManufacturer = '%s', iProduct = '%s', iSerial = '%s'\n",
+            __FUNCTION__, manu, prod, info->serial);
 
-        log_verbose("Bus %03d Device %03d: %s, serial %s\n", info->usb_bus,
-                    info->usb_addr, info->product, info->serial);
+        memset(info->product, 0, BLADERF_PRODUCT_LENGTH);
+        strncpy(info->product, manu, BLADERF_PRODUCT_LENGTH - 1);
+        strncat(info->product, " ",
+                BLADERF_PRODUCT_LENGTH - strlen(info->product) - 1);
+        strncat(info->product, prod,
+                BLADERF_PRODUCT_LENGTH - strlen(info->product) - 1);
+
+        log_debug("Bus %03d Device %03d: %s, serial %s\n", info->usb_bus,
+                  info->usb_addr, info->product, info->serial);
     }
 
 out:
