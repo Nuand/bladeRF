@@ -349,8 +349,6 @@ static const struct bladerf_lms_port_name_map bladerf1_rx_port_map[] = {
 };
 
 static const struct bladerf_lms_port_name_map bladerf1_tx_port_map[] = {
-/* TODO: TX PA control is not implemented */
-#if 0
     {
         FIELD_INIT(.name, "aux"),
         FIELD_INIT(.tx_pa, PA_AUX),
@@ -367,7 +365,6 @@ static const struct bladerf_lms_port_name_map bladerf1_tx_port_map[] = {
         FIELD_INIT(.name, "none"),
         FIELD_INIT(.tx_pa, PA_NONE),
     },
-#endif  // 0
 };
 
 /******************************************************************************/
@@ -2156,8 +2153,9 @@ static int bladerf1_get_rf_ports(struct bladerf *dev,
     size_t i;
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        port_map     = bladerf1_tx_port_map;
-        port_map_len = ARRAY_SIZE(bladerf1_tx_port_map);
+        /* Return a null list instead of bladerf1_tx_port_map */
+        port_map     = NULL;
+        port_map_len = 0;
     } else {
         port_map     = bladerf1_rx_port_map;
         port_map_len = ARRAY_SIZE(bladerf1_rx_port_map);
