@@ -188,6 +188,10 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
             goto out;
         }
 
+        log_verbose(
+            "%s: iManufacturer = '%s', iProduct = '%s', iSerial = '%s'\n", manu,
+            prod, info->serial);
+
         memset(info->product, 0, BLADERF_PRODUCT_LENGTH);
         strncpy(info->product, manu, BLADERF_PRODUCT_LENGTH - 1);
         strncat(info->product, " ",
@@ -195,8 +199,8 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
         strncat(info->product, prod,
                 BLADERF_PRODUCT_LENGTH - strlen(info->product) - 1);
 
-        log_verbose("Bus %03d Device %03d: %s, serial %s\n", info->usb_bus,
-                    info->usb_addr, info->product, info->serial);
+        log_debug("Bus %03d Device %03d: %s, serial %s\n", info->usb_bus,
+                  info->usb_addr, info->product, info->serial);
     }
 
 out:
