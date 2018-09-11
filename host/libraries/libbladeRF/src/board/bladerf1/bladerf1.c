@@ -444,8 +444,7 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
     cals.rxvga2b_q  = -1;
 
     if (have_rx) {
-        const struct bladerf_lms_dc_cals *reg_vals =
-            &board_data->cal.dc_rx->reg_vals;
+        const struct bladerf_lms_dc_cals *reg_vals = &board_data->cal.dc_rx->reg_vals;
 
         cals.lpf_tuning = reg_vals->lpf_tuning;
         cals.rx_lpf_i   = reg_vals->rx_lpf_i;
@@ -460,8 +459,7 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
     }
 
     if (have_tx) {
-        const struct bladerf_lms_dc_cals *reg_vals =
-            &board_data->cal.dc_tx->reg_vals;
+        const struct bladerf_lms_dc_cals *reg_vals = &board_data->cal.dc_tx->reg_vals;
 
         cals.tx_lpf_i = reg_vals->tx_lpf_i;
         cals.tx_lpf_q = reg_vals->tx_lpf_q;
@@ -475,13 +473,13 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
         } else {
             /* Have TX cal but no RX cal -- use the RX values that came along
              * for the ride when the TX table was generated */
-            cals.rx_lpf_i  = reg_vals->rx_lpf_i;
-            cals.rx_lpf_q  = reg_vals->rx_lpf_q;
-            cals.dc_ref    = reg_vals->dc_ref;
-            cals.rxvga2a_i = reg_vals->rxvga2a_i;
-            cals.rxvga2a_q = reg_vals->rxvga2a_q;
-            cals.rxvga2b_i = reg_vals->rxvga2b_i;
-            cals.rxvga2b_q = reg_vals->rxvga2b_q;
+            cals.rx_lpf_i   = reg_vals->rx_lpf_i;
+            cals.rx_lpf_q   = reg_vals->rx_lpf_q;
+            cals.dc_ref     = reg_vals->dc_ref;
+            cals.rxvga2a_i  = reg_vals->rxvga2a_i;
+            cals.rxvga2a_q  = reg_vals->rxvga2a_q;
+            cals.rxvga2b_i  = reg_vals->rxvga2b_i;
+            cals.rxvga2b_q  = reg_vals->rxvga2b_q;
         }
 
         log_verbose("Fetched register values from TX DC cal table.\n");
@@ -490,11 +488,10 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
     /* No TX table was loaded, so load LMS TX register cals from the RX table,
      * if available */
     if (have_rx && !have_tx) {
-        const struct bladerf_lms_dc_cals *reg_vals =
-            &board_data->cal.dc_rx->reg_vals;
+        const struct bladerf_lms_dc_cals *reg_vals = &board_data->cal.dc_rx->reg_vals;
 
-        cals.tx_lpf_i = reg_vals->tx_lpf_i;
-        cals.tx_lpf_q = reg_vals->tx_lpf_q;
+        cals.tx_lpf_i   = reg_vals->tx_lpf_i;
+        cals.tx_lpf_q   = reg_vals->tx_lpf_q;
     }
 
     if (have_rx || have_tx) {
@@ -507,22 +504,18 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
             int tx_status = 0;
 
             if (have_rx) {
-                bladerf_frequency rx_f;
-                rx_status = dev->board->get_frequency(
-                    dev, BLADERF_CHANNEL_RX(0), &rx_f);
+                uint64_t rx_f;
+                rx_status = dev->board->get_frequency(dev, BLADERF_CHANNEL_RX(0), &rx_f);
                 if (rx_status == 0) {
-                    rx_status = dev->board->set_frequency(
-                        dev, BLADERF_CHANNEL_RX(0), rx_f);
+                    rx_status = dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0), rx_f);
                 }
             }
 
             if (have_tx) {
-                bladerf_frequency rx_f;
-                rx_status = dev->board->get_frequency(
-                    dev, BLADERF_CHANNEL_RX(0), &rx_f);
+                uint64_t rx_f;
+                rx_status = dev->board->get_frequency(dev, BLADERF_CHANNEL_RX(0), &rx_f);
                 if (rx_status == 0) {
-                    rx_status = dev->board->set_frequency(
-                        dev, BLADERF_CHANNEL_RX(0), rx_f);
+                    rx_status = dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0), rx_f);
                 }
             }
 
@@ -1791,10 +1784,7 @@ static int bladerf1_get_rational_sample_rate(struct bladerf *dev, bladerf_channe
 /* Bandwidth */
 /******************************************************************************/
 
-static int bladerf1_set_bandwidth(struct bladerf *dev,
-                                  bladerf_channel ch,
-                                  bladerf_bandwidth bandwidth,
-                                  bladerf_bandwidth *actual)
+static int bladerf1_set_bandwidth(struct bladerf *dev, bladerf_channel ch, unsigned int bandwidth, unsigned int *actual)
 {
     int status;
     lms_bw bw;
@@ -1803,10 +1793,10 @@ static int bladerf1_set_bandwidth(struct bladerf *dev,
 
     if (bandwidth < BLADERF_BANDWIDTH_MIN) {
         bandwidth = BLADERF_BANDWIDTH_MIN;
-        log_info("Clamping bandwidth to %d Hz\n", bandwidth);
+        log_info("Clamping bandwidth to %dHz\n", bandwidth);
     } else if (bandwidth > BLADERF_BANDWIDTH_MAX) {
         bandwidth = BLADERF_BANDWIDTH_MAX;
-        log_info("Clamping bandwidth to %d Hz\n", bandwidth);
+        log_info("Clamping bandwidth to %dHz\n", bandwidth);
     }
 
     bw = lms_uint2bw(bandwidth);
@@ -1828,16 +1818,14 @@ static int bladerf1_set_bandwidth(struct bladerf *dev,
     return status;
 }
 
-static int bladerf1_get_bandwidth(struct bladerf *dev,
-                                  bladerf_channel ch,
-                                  bladerf_bandwidth *bandwidth)
+static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsigned int *bandwidth)
 {
     int status;
     lms_bw bw;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    status = lms_get_bandwidth(dev, ch, &bw);
+    status = lms_get_bandwidth( dev, ch, &bw);
     if (status == 0) {
         *bandwidth = lms_bw2uint(bw);
     } else {
@@ -1847,9 +1835,7 @@ static int bladerf1_get_bandwidth(struct bladerf *dev,
     return status;
 }
 
-static int bladerf1_get_bandwidth_range(struct bladerf *dev,
-                                        bladerf_channel ch,
-                                        const struct bladerf_range **range)
+static int bladerf1_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range)
 {
     *range = &bladerf1_bandwidth_range;
     return 0;
@@ -1859,23 +1845,19 @@ static int bladerf1_get_bandwidth_range(struct bladerf *dev,
 /* Frequency */
 /******************************************************************************/
 
-static int bladerf1_set_frequency(struct bladerf *dev,
-                                  bladerf_channel ch,
-                                  bladerf_frequency frequency)
+static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
-    const bladerf_xb attached              = dev->xb;
+    const bladerf_xb attached = dev->xb;
     int status;
     int16_t dc_i, dc_q;
     struct dc_cal_entry entry;
-    const struct dc_cal_tbl *dc_cal = (ch == BLADERF_CHANNEL_RX(0))
-                                          ? board_data->cal.dc_rx
-                                          : board_data->cal.dc_tx;
+    const struct dc_cal_tbl *dc_cal =
+        (ch == BLADERF_CHANNEL_RX(0)) ? board_data->cal.dc_rx : board_data->cal.dc_tx;
 
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    log_debug("Setting %s frequency to %" BLADERF_PRIuFREQ "\n",
-              channel2str(ch), frequency);
+    log_debug("Setting %s frequency to %u\n", channel2str(ch), frequency);
 
     if (attached == BLADERF_XB_200) {
         if (frequency < BLADERF_FREQUENCY_MIN) {
@@ -1909,8 +1891,7 @@ static int bladerf1_set_frequency(struct bladerf *dev,
             break;
 
         case BLADERF_TUNING_MODE_FPGA: {
-            status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW,
-                                                 frequency, NULL);
+            status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, frequency, NULL);
             break;
         }
 
@@ -1941,17 +1922,20 @@ static int bladerf1_set_frequency(struct bladerf *dev,
 
         if (ch == BLADERF_CHANNEL_RX(0) &&
             have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT)) {
-            status = dev->backend->set_agc_dc_correction(
-                dev, entry.max_dc_q, entry.max_dc_i, entry.mid_dc_q,
-                entry.mid_dc_i, entry.min_dc_q, entry.min_dc_i);
+
+            status = dev->backend->set_agc_dc_correction(dev,
+                            entry.max_dc_q, entry.max_dc_i,
+                            entry.mid_dc_q, entry.mid_dc_i,
+                            entry.min_dc_q, entry.min_dc_i);
             if (status != 0) {
                 return status;
             }
 
             log_verbose("Set AGC DC offset cal (I, Q) to: Max (%d, %d) "
                         " Mid (%d, %d) Min (%d, %d)\n",
-                        entry.max_dc_q, entry.max_dc_i, entry.mid_dc_q,
-                        entry.mid_dc_i, entry.min_dc_q, entry.min_dc_i);
+                        entry.max_dc_q, entry.max_dc_i,
+                        entry.mid_dc_q, entry.mid_dc_i,
+                        entry.min_dc_q, entry.min_dc_i);
         }
 
         log_verbose("Set %s DC offset cal (I, Q) to: (%d, %d)\n",
@@ -1961,9 +1945,7 @@ static int bladerf1_set_frequency(struct bladerf *dev,
     return 0;
 }
 
-static int bladerf1_get_frequency(struct bladerf *dev,
-                                  bladerf_channel ch,
-                                  bladerf_frequency *frequency)
+static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency)
 {
     bladerf_xb200_path path;
     struct lms_freq f;
@@ -1979,8 +1961,8 @@ static int bladerf1_get_frequency(struct bladerf *dev,
     if (f.x == 0) {
         /* If we see this, it's most often an indication that communication
          * with the LMS6002D is not occuring correctly */
-        *frequency = 0;
-        status     = BLADERF_ERR_IO;
+        *frequency = 0 ;
+        status = BLADERF_ERR_IO;
     } else {
         *frequency = lms_frequency_to_hz(&f);
     }
@@ -2001,9 +1983,7 @@ static int bladerf1_get_frequency(struct bladerf *dev,
     return 0;
 }
 
-static int bladerf1_get_frequency_range(struct bladerf *dev,
-                                        bladerf_channel ch,
-                                        const struct bladerf_range **range)
+static int bladerf1_get_frequency_range(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range)
 {
     if (dev->xb == BLADERF_XB_200) {
         *range = &bladerf1_xb200_frequency_range;
@@ -2014,9 +1994,7 @@ static int bladerf1_get_frequency_range(struct bladerf *dev,
     return 0;
 }
 
-static int bladerf1_select_band(struct bladerf *dev,
-                                bladerf_channel ch,
-                                bladerf_frequency frequency)
+static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
@@ -2200,20 +2178,14 @@ static int bladerf1_get_rf_ports(struct bladerf *dev,
 /* Scheduled Tuning */
 /******************************************************************************/
 
-static int bladerf1_get_quick_tune(struct bladerf *dev,
-                                   bladerf_channel ch,
-                                   struct bladerf_quick_tune *quick_tune)
+static int bladerf1_get_quick_tune(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     return lms_get_quick_tune(dev, ch, quick_tune);
 }
 
-static int bladerf1_schedule_retune(struct bladerf *dev,
-                                    bladerf_channel ch,
-                                    bladerf_timestamp timestamp,
-                                    bladerf_frequency frequency,
-                                    struct bladerf_quick_tune *quick_tune)
+static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune *quick_tune)
 
 {
     struct bladerf1_board_data *board_data = dev->board_data;
@@ -2224,10 +2196,8 @@ static int bladerf1_schedule_retune(struct bladerf *dev,
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
         log_debug("This FPGA version (%u.%u.%u) does not support "
-                  "scheduled retunes.\n",
-                  board_data->fpga_version.major,
-                  board_data->fpga_version.minor,
-                  board_data->fpga_version.patch);
+                  "scheduled retunes.\n",  board_data->fpga_version.major,
+                  board_data->fpga_version.minor, board_data->fpga_version.patch);
 
         return BLADERF_ERR_UNSUPPORTED;
     }
@@ -2238,23 +2208,22 @@ static int bladerf1_schedule_retune(struct bladerf *dev,
             return status;
         }
     } else {
-        f.freqsel       = quick_tune->freqsel;
-        f.vcocap        = quick_tune->vcocap;
-        f.nint          = quick_tune->nint;
-        f.nfrac         = quick_tune->nfrac;
-        f.flags         = quick_tune->flags;
-        f.x             = 0;
+        f.freqsel = quick_tune->freqsel;
+        f.vcocap  = quick_tune->vcocap;
+        f.nint    = quick_tune->nint;
+        f.nfrac   = quick_tune->nfrac;
+        f.flags   = quick_tune->flags;
+        f.x       = 0;
         f.vcocap_result = 0;
     }
 
-    return dev->backend->retune(dev, ch, timestamp, f.nint, f.nfrac, f.freqsel,
-                                f.vcocap,
-                                (f.flags & LMS_FREQ_FLAGS_LOW_BAND) != 0,
-                                (f.flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) != 0);
+    return dev->backend->retune(dev, ch, timestamp,
+                       f.nint, f.nfrac, f.freqsel, f.vcocap,
+                       (f.flags & LMS_FREQ_FLAGS_LOW_BAND) != 0,
+                       (f.flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) != 0);
 }
 
-static int bladerf1_cancel_scheduled_retunes(struct bladerf *dev,
-                                             bladerf_channel ch)
+static int bladerf1_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
@@ -2262,14 +2231,11 @@ static int bladerf1_cancel_scheduled_retunes(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
-        status = dev->backend->retune(dev, ch, NIOS_PKT_RETUNE_CLEAR_QUEUE, 0,
-                                      0, 0, 0, false, false);
+        status = dev->backend->retune(dev, ch, NIOS_PKT_RETUNE_CLEAR_QUEUE, 0, 0, 0, 0, false, false);
     } else {
         log_debug("This FPGA version (%u.%u.%u) does not support "
-                  "scheduled retunes.\n",
-                  board_data->fpga_version.major,
-                  board_data->fpga_version.minor,
-                  board_data->fpga_version.patch);
+                  "scheduled retunes.\n",  board_data->fpga_version.major,
+                  board_data->fpga_version.minor, board_data->fpga_version.patch);
 
         return BLADERF_ERR_UNSUPPORTED;
     }
@@ -2688,9 +2654,7 @@ static int bladerf1_sync_rx(struct bladerf *dev,
     return status;
 }
 
-static int bladerf1_get_timestamp(struct bladerf *dev,
-                                  bladerf_direction dir,
-                                  bladerf_timestamp *value)
+static int bladerf1_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *value)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
