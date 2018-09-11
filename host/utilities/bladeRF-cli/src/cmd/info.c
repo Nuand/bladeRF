@@ -17,9 +17,9 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#include <stdio.h>
 #include "cmd.h"
 #include "conversions.h"
-#include <stdio.h>
 
 int cmd_info(struct cli_state *state, int argc, char **argv)
 {
@@ -61,8 +61,7 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     usb_speed = bladerf_device_speed(state->dev);
 
     printf("\n");
-    printf("  Board:                    %s (%s)\n", info.product,
-           bladerf_get_board_name(state->dev));
+    printf("  Board:                    %s\n", bladerf_get_board_name(state->dev));
     printf("  Serial #:                 %s\n", info.serial);
     printf("  VCTCXO DAC calibration:   0x%.4x\n", dac_trim);
     if (fpga_size != 0) {
