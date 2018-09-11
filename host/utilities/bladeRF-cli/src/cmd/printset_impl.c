@@ -140,7 +140,7 @@ static int _do_print_bandwidth(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
-    bladerf_bandwidth bw;
+    unsigned int bw;
 
     status = bladerf_get_bandwidth(state->dev, ch, &bw);
     if (status < 0) {
@@ -190,7 +190,7 @@ static int _do_set_bandwidth(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
-    bladerf_bandwidth bw;
+    unsigned int bw;
     const struct bladerf_range *range = NULL;
     bool ok;
 
@@ -200,15 +200,17 @@ static int _do_set_bandwidth(struct cli_state *state,
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
         goto out;
+    } else if (range->max >= UINT32_MAX) {
+        cli_err_nnl(state, __FUNCTION__,
+                    "Invalid range->max (this is a bug): %" PRIu64 "\n",
+                    range->max);
+        goto out;
     }
 
-    /* Bug check */
-    assert(range->max < UINT32_MAX);
-
     /* Parse bandwidth */
-    bw = str2uint_suffix(arg, (bladerf_bandwidth)range->min,
-                         (bladerf_bandwidth)range->max, freq_suffixes,
-                         NUM_FREQ_SUFFIXES, &ok);
+    bw =
+        str2uint_suffix(arg, (unsigned int)range->min, (unsigned int)range->max,
+                        freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
 
     if (!ok) {
         cli_err_nnl(state, __FUNCTION__, "Invalid bandwidth (%s)\n", arg);
@@ -278,7 +280,7 @@ static int _do_print_frequency(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
-    bladerf_frequency freq;
+    uint64_t freq;
 
     status = bladerf_get_frequency(state->dev, ch, &freq);
     if (status < 0) {
@@ -287,8 +289,7 @@ static int _do_print_frequency(struct cli_state *state,
         goto out;
     }
 
-    printf("  %s Frequency: %10" BLADERF_PRIuFREQ " Hz\n", channel2str(ch),
-           freq);
+    printf("  %s Frequency: %10" PRIu64 " Hz\n", channel2str(ch), freq);
 
 out:
     return rv;
@@ -329,7 +330,7 @@ static int _do_set_frequency(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
-    bladerf_frequency freq;
+    uint64_t freq;
     const struct bladerf_range *range = NULL;
     bool ok;
 
@@ -436,7 +437,7 @@ static int _do_print_gain(struct cli_state *state,
     struct bladerf_range const *range = NULL;
 
     bool printed = false;
-    bladerf_gain gain;
+    int gain;
     int count;
     int i;
 
@@ -573,7 +574,7 @@ out:
 static int _do_set_gain(struct cli_state *state,
                         bladerf_channel ch,
                         char *stage,
-                        bladerf_gain gain)
+                        int gain)
 {
     int rv   = CLI_RET_OK;
     int *err = &state->last_lib_error;
@@ -634,7 +635,7 @@ int set_gain(struct cli_state *state, int argc, char **argv)
 
     struct bladerf_range const *range = NULL;
 
-    bladerf_gain gain;
+    int gain;
     bool ok;
 
     switch (argc) {
@@ -679,14 +680,14 @@ int set_gain(struct cli_state *state, int argc, char **argv)
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
         goto out;
+    } else if (range->max >= UINT32_MAX) {
+        cli_err_nnl(state, argv[0],
+                    "Invalid range->max (this is a bug): %" PRIu64 "\n",
+                    range->max);
     }
 
-    /* Bug check */
-    assert(range->max < INT32_MAX);
-    assert(range->min < INT32_MIN);
-
-    gain = str2int(value_str, (bladerf_gain)range->min,
-                   (bladerf_gain)range->max, &ok);
+    gain = str2int(value_str, (unsigned int)range->min,
+                   (unsigned int)range->max, &ok);
     if (!ok) {
         cli_err_nnl(state, argv[0], "Invalid gain setting for %s (%s)\n",
                     (stage == NULL) ? channel2str(ch) : stage, value_str);
@@ -760,19 +761,19 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
 
         if (ps_is_board(state->dev, BOARD_BLADERF1)) {
             printf("  %-18s%s\n", "bb_txlpf_rxvga2",
-                   "Baseband loopback: TXLPF output --> RXVGA2 input\n");
+                  "Baseband loopback: TXLPF output --> RXVGA2 input\n");
             printf("  %-18s%s\n", "bb_txlpf_rxlpf",
-                   "Baseband loopback: TXLPF output --> RXLPF input\n");
+                  "Baseband loopback: TXLPF output --> RXLPF input\n");
             printf("  %-18s%s\n", "bb_txvga1_rxvga2",
-                   "Baseband loopback: TXVGA1 output --> RXVGA2 input\n");
+                  "Baseband loopback: TXVGA1 output --> RXVGA2 input\n");
             printf("  %-18s%s\n", "bb_txvga1_rxlpf",
-                   "Baseband loopback: TXVGA1 output --> RXLPF input\n");
+                  "Baseband loopback: TXVGA1 output --> RXLPF input\n");
             printf("  %-18s%s\n", "rf_lna1",
-                   "RF loopback: TXMIX --> RXMIX via LNA1 path\n");
+                  "RF loopback: TXMIX --> RXMIX via LNA1 path\n");
             printf("  %-18s%s\n", "rf_lna2",
-                   "RF loopback: TXMIX --> RXMIX via LNA2 path\n");
+                  "RF loopback: TXMIX --> RXMIX via LNA2 path\n");
             printf("  %-18s%s\n", "rf_lna3",
-                   "RF loopback: TXMIX --> RXMIX via LNA3 path\n");
+                  "RF loopback: TXMIX --> RXMIX via LNA3 path\n");
         }
 
         if (ps_is_board(state->dev, BOARD_BLADERF2)) {
