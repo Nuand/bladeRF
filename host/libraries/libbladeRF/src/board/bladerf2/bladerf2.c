@@ -638,6 +638,9 @@ static int bladerf2_get_frequency(struct bladerf *dev,
                                   bladerf_channel ch,
                                   bladerf_frequency *frequency);
 static int bladerf2_read_flash_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
+static int bladerf2_get_sample_rate(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    bladerf_sample_rate *rate);
 
 
 /******************************************************************************/
@@ -699,28 +702,32 @@ static int64_t _clamp_to_range(struct bladerf_range const *range, int64_t value)
     }
 
     if (__scale(range, value) < range->min) {
-        log_warning("%s: requested value %" PRIi64 " is below range [%g,%g]\n",
-                    __FUNCTION__, value, __unscale(range, range->min),
-                    __unscale(range, range->max));
+        log_warning("Requested value %" PRIi64
+                    " is below range [%g,%g], clamping to %" PRIi64 "\n",
+                    value, __unscale(range, range->min),
+                    __unscale(range, range->max),
+                    __unscale_int64(range, range->min));
         value = __unscale_int64(range, range->min);
     }
 
     if (__scale(range, value) > range->max) {
-        log_warning("%s: requested value %" PRIi64 " is above range [%g,%g]\n",
-                    __FUNCTION__, value, __unscale(range, range->min),
-                    __unscale(range, range->max));
+        log_warning("Requested value %" PRIi64
+                    " is above range [%g,%g], clamping to %" PRIi64 "\n",
+                    value, __unscale(range, range->min),
+                    __unscale(range, range->max),
+                    __unscale_int64(range, range->max));
         value = __unscale_int64(range, range->max);
     }
 
     return value;
 }
 
-static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
-                                                 bladerf_frequency frequency)
+static enum bladerf2_band _get_band_by_freq(bladerf_channel ch,
+                                            bladerf_frequency freq)
 {
     const struct range_band_map *band_map;
     size_t band_map_len;
-    int64_t freqi = (int64_t)frequency;
+    int64_t freqi = (int64_t)freq;
     size_t i;
 
     /* Select RX vs TX */
@@ -740,13 +747,13 @@ static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
     }
 
     /* Not a valid frequency */
-    log_warning("%s: frequency %" BLADERF_PRIuFREQ " not found in band map\n",
-                __FUNCTION__, frequency);
+    log_warning("Frequency %" BLADERF_PRIuFREQ " not found in band map\n",
+                freq);
     return BAND_SHUTDOWN;
 }
 
-static const struct band_port_map *_get_band_port_map(
-    bladerf_channel ch, bool enabled, bladerf_frequency frequency)
+static const struct band_port_map *_get_band_port_map_by_freq(
+    bladerf_channel ch, bool enabled, bladerf_frequency freq)
 {
     enum bladerf2_band band;
     const struct band_port_map *port_map;
@@ -754,7 +761,7 @@ static const struct band_port_map *_get_band_port_map(
     size_t i;
 
     /* Determine which band to use */
-    band = enabled ? _get_band_by_frequency(ch, frequency) : BAND_SHUTDOWN;
+    band = enabled ? _get_band_by_freq(ch, freq) : BAND_SHUTDOWN;
 
     /* Select the band->port map for RX vs TX */
     if (BLADERF_CHANNEL_IS_TX(ch)) {
@@ -778,15 +785,15 @@ static const struct band_port_map *_get_band_port_map(
     }
 
     /* Wasn't found, return a null ptr */
-    log_warning("%s: frequency %" BLADERF_PRIuFREQ " not found in port map\n",
-                __FUNCTION__, frequency);
+    log_warning("Frequency %" BLADERF_PRIuFREQ " not found in port map\n",
+                freq);
     return NULL;
 }
 
-static int _set_spdt_bits(uint32_t *reg,
-                          bladerf_channel ch,
-                          bool enabled,
-                          bladerf_frequency frequency)
+static int _modify_spdt_bits_by_freq(uint32_t *reg,
+                                     bladerf_channel ch,
+                                     bool enabled,
+                                     bladerf_frequency freq)
 {
     const struct band_port_map *port_map;
     uint32_t shift;
@@ -796,10 +803,10 @@ static int _set_spdt_bits(uint32_t *reg,
     }
 
     /* Look up the port configuration for this frequency */
-    port_map = _get_band_port_map(ch, enabled, frequency);
+    port_map = _get_band_port_map_by_freq(ch, enabled, freq);
 
     if (NULL == port_map) {
-        RETURN_INVAL("_get_band_port_map", "returned null");
+        RETURN_INVAL("_get_band_port_map_by_freq", "returned null");
     }
 
     /* Modify the reg bits accordingly */
@@ -826,10 +833,10 @@ static int _set_spdt_bits(uint32_t *reg,
     return 0;
 }
 
-static int _set_ad9361_port(struct bladerf *dev,
-                            bladerf_channel ch,
-                            bool enabled,
-                            bladerf_frequency frequency)
+static int _set_ad9361_port_by_freq(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    bool enabled,
+                                    bladerf_frequency freq)
 {
     const struct band_port_map *port_map;
     struct bladerf2_board_data *board_data;
@@ -842,10 +849,10 @@ static int _set_ad9361_port(struct bladerf *dev,
     phy        = board_data->phy;
 
     /* Look up the port configuration for this frequency */
-    port_map = _get_band_port_map(ch, enabled, frequency);
+    port_map = _get_band_port_map_by_freq(ch, enabled, freq);
 
     if (NULL == port_map) {
-        RETURN_INVAL("_get_band_port_map", "returned null");
+        RETURN_INVAL("_get_band_port_map_by_freq", "returned null");
     }
 
     /* Set the AD9361 port accordingly */
@@ -1006,10 +1013,6 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
 
     return 0;
 }
-
-static int bladerf2_get_sample_rate(struct bladerf *dev,
-                                    bladerf_channel ch,
-                                    bladerf_sample_rate *rate);
 
 static bool _check_total_sample_rate(struct bladerf *dev,
                                      const uint32_t *rffe_control_reg)
@@ -1730,9 +1733,9 @@ static int bladerf2_enable_module(struct bladerf *dev,
     /* Channel Setup/Teardown */
     if (ch_pending) {
         /* Modify SPDT bits */
-        status = _set_spdt_bits(&reg, ch, enable, freq);
+        status = _modify_spdt_bits_by_freq(&reg, ch, enable, freq);
         if (status < 0) {
-            RETURN_ERROR_STATUS("_set_spdt_bits", status);
+            RETURN_ERROR_STATUS("_modify_spdt_bits_by_freq", status);
         }
 
         /* Modify MIMO channel enable bits */
@@ -1766,9 +1769,9 @@ static int bladerf2_enable_module(struct bladerf *dev,
         }
 
         /* Select RFIC port */
-        status = _set_ad9361_port(dev, ch, dir_enable, freq);
+        status = _set_ad9361_port_by_freq(dev, ch, dir_enable, freq);
         if (status < 0) {
-            RETURN_ERROR_STATUS("_set_ad9361_port", status);
+            RETURN_ERROR_STATUS("_set_ad9361_port_by_freq", status);
         }
 
         /* Tear down sync interface if required */
@@ -2632,9 +2635,9 @@ static int bladerf2_select_band(struct bladerf *dev,
         bool enable = _is_rffe_ch_enabled(reg, bch);
 
         /* Update SPDT bits accordingly */
-        status = _set_spdt_bits(&reg, bch, enable, frequency);
+        status = _modify_spdt_bits_by_freq(&reg, bch, enable, frequency);
         if (status < 0) {
-            RETURN_ERROR_STATUS("_set_spdt_bits", status);
+            RETURN_ERROR_STATUS("_modify_spdt_bits_by_freq", status);
         }
     }
 
@@ -2644,9 +2647,10 @@ static int bladerf2_select_band(struct bladerf *dev,
     }
 
     /* Set AD9361 port */
-    status = _set_ad9361_port(dev, ch, _is_rffe_ch_enabled(reg, ch), frequency);
+    status = _set_ad9361_port_by_freq(dev, ch, _is_rffe_ch_enabled(reg, ch),
+                                      frequency);
     if (status < 0) {
-        RETURN_ERROR_STATUS("_set_ad9361_port", status);
+        RETURN_ERROR_STATUS("_set_ad9361_port_by_freq", status);
     }
 
     return 0;
