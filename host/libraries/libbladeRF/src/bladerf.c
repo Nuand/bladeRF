@@ -331,7 +331,27 @@ int bladerf_get_serial(struct bladerf *dev, char *serial)
     int status;
     MUTEX_LOCK(&dev->lock);
 
+    /** TODO: add deprecation warning */
+
     status = dev->board->get_serial(dev, serial);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_serial_struct(struct bladerf *dev,
+                              struct bladerf_serial *serial)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    char serialstr[BLADERF_SERIAL_LENGTH];
+
+    status = dev->board->get_serial(dev, serialstr);
+
+    if (status >= 0) {
+        strncpy(serial->serial, serialstr, BLADERF_SERIAL_LENGTH - 1);
+    }
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
