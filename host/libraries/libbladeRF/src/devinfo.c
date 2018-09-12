@@ -160,7 +160,7 @@ int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
 
 void bladerf_init_devinfo(struct bladerf_devinfo *info)
 {
-    info->backend  = BLADERF_BACKEND_ANY;
+    info->backend = BLADERF_BACKEND_ANY;
 
     memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
     strncpy(info->serial, DEVINFO_SERIAL_ANY, BLADERF_SERIAL_LENGTH - 1);
@@ -168,6 +168,12 @@ void bladerf_init_devinfo(struct bladerf_devinfo *info)
     info->usb_bus  = DEVINFO_BUS_ANY;
     info->usb_addr = DEVINFO_ADDR_ANY;
     info->instance = DEVINFO_INST_ANY;
+
+    memset(info->manufacturer, 0, BLADERF_DESCRIPTION_LENGTH);
+    strncpy(info->manufacturer, "<unknown>", BLADERF_DESCRIPTION_LENGTH - 1);
+
+    memset(info->product, 0, BLADERF_DESCRIPTION_LENGTH);
+    strncpy(info->product, "<unknown>", BLADERF_DESCRIPTION_LENGTH - 1);
 }
 
 bool bladerf_devinfo_matches(const struct bladerf_devinfo *a,

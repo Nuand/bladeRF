@@ -117,6 +117,9 @@ typedef enum {
     BLADERF_BACKEND_DUMMY = 100, /**< Dummy used for development purposes */
 } bladerf_backend;
 
+/** Length of device description string, including NUL-terminator */
+#define BLADERF_DESCRIPTION_LENGTH 33
+
 /** Length of device serial number string, including NUL-terminator */
 #define BLADERF_SERIAL_LENGTH 33
 
@@ -130,6 +133,10 @@ struct bladerf_devinfo {
     uint8_t usb_bus;                    /**< Bus # device is attached to */
     uint8_t usb_addr;                   /**< Device address on bus */
     unsigned int instance;              /**< Device instance or ID */
+
+    /** Manufacturer description string */
+    char manufacturer[BLADERF_DESCRIPTION_LENGTH];
+    char product[BLADERF_DESCRIPTION_LENGTH]; /**< Product description string */
 };
 
 /**
