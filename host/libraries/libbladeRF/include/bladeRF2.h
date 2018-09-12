@@ -178,6 +178,7 @@ typedef enum {
     BLADERF_RFIC_RXFIR_DEC4,   /**< Decimate by 4 */
 } bladerf_rfic_rxfir;
 
+/** Default RFIC RX FIR filter */
 #define BLADERF_RFIC_RXFIR_DEFAULT BLADERF_RFIC_RXFIR_DEC1
 
 /**
@@ -191,6 +192,7 @@ typedef enum {
     BLADERF_RFIC_TXFIR_INT4,   /**< Interpolate by 4 */
 } bladerf_rfic_txfir;
 
+/** Default RFIC TX FIR filter */
 #define BLADERF_RFIC_TXFIR_DEFAULT BLADERF_RFIC_TXFIR_BYPASS
 
 /**
