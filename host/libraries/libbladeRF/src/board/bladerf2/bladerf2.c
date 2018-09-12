@@ -2487,7 +2487,7 @@ static int bladerf2_set_rational_sample_rate(
     status =
         bladerf2_set_sample_rate(dev, ch, integer_rate, &actual_integer_rate);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf2_set_sample_ratel", status);
+        RETURN_ERROR_STATUS("bladerf2_set_sample_rate", status);
     }
 
     if (actual != NULL) {
