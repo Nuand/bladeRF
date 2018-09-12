@@ -373,6 +373,13 @@ struct bladerf_range {
 };
 
 /**
+ * Serial number structure
+ */
+struct bladerf_serial {
+    char serial[BLADERF_SERIAL_LENGTH]; /**< Device serial number string */
+};
+
+/**
  * Version structure for FPGA, firmware, libbladeRF, and associated utilities
  */
 struct bladerf_version {
@@ -408,7 +415,7 @@ typedef enum {
 } bladerf_dev_speed;
 
 /**
- * Query a device's serial number
+ * Query a device's serial number (deprecated)
  *
  * @param       dev     Device handle
  * @param[out]  serial  This user-supplied buffer, which <b>must be at least
@@ -417,10 +424,38 @@ typedef enum {
  *                      error occurs (as indicated by a non-zero return value),
  *                      no data will be written to this buffer.
  *
+ * @deprecated New code should use ::bladerf_get_serial_struct instead.
+ *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_get_serial(struct bladerf *dev, char *serial);
+
+/**
+ * Query a device's serial number
+ *
+ * @param       dev     Device handle
+ * @param[out]  serial  Pointer to a bladerf_serial structure, which will be
+ *                      populated with a `serial` string on success.
+ *
+ * Example code:
+ *
+ * @code
+ *   struct bladerf_serial sn;
+ *
+ *   status = bladerf_get_serial_struct(dev, &sn);
+ *   if (status < 0) {
+ *       // error handling here
+ *   }
+ *
+ *   printf("Serial number: %s\n", sn.serial);
+ * @endcode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_serial_struct(struct bladerf *dev,
+                                        struct bladerf_serial *serial);
 
 /**
  * Query a device's FPGA size
