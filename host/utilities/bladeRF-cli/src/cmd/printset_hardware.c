@@ -109,7 +109,7 @@ static void _print_rfic(struct cli_state *state)
     }
 
     printf("    RFIC status:\n");
-    printf("      Temperature:  %4.1f \u2103\n", temperature);
+    printf("      Temperature:  %4.1f degrees C\n", temperature);
     printf("      CTRL_OUT:     0x%02x (0x035=0x%02x, 0x036=0x%02x)\n", ctrlout,
            reg35, reg36);
     printf("      RX FIR:       %s\n", _rxfir_to_str(rxfir));
