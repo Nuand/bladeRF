@@ -69,6 +69,8 @@ header = """
   int bladerf_get_serial(struct bladerf *dev, char *serial);
   int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size
     *size);
+  int bladerf_get_flash_size(struct bladerf *dev, uint32_t *size,
+    bool *is_guess);
   int bladerf_fw_version(struct bladerf *dev, struct bladerf_version
     *version);
   int bladerf_is_fpga_configured(struct bladerf *dev);

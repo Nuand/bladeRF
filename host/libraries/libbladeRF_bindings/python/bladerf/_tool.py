@@ -24,7 +24,7 @@ import argparse
 from bladerf import _bladerf
 
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 def _bool_to_onoff(val):
@@ -80,6 +80,9 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
     b = _bladerf.BladeRF(device, devinfo)
 
     devinfo = b.get_devinfo()
+
+    flash_size, fs_guessed = b.flash_size
+
     if verbose:
         print("Object           ", repr(b))
     print("Board Name       ", b.board_name)
@@ -90,6 +93,8 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
         print("FPGA Version     ", b.fpga_version)
     else:
         print("FPGA Version     ", "Not Configured")
+    print("Flash Size       ", (flash_size>>17), "Mbit",
+          "(assumed)" if fs_guessed else "")
     print("Firmware Version ", b.fw_version)
 
     if verbose:
