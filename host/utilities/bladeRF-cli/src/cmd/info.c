@@ -25,8 +25,10 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
 {
     int status;
     bladerf_fpga_size fpga_size;
+    uint32_t flash_size;
     uint16_t dac_trim;
     bool fpga_loaded;
+    bool flash_size_guessed;
     struct bladerf_devinfo info;
     bladerf_dev_speed usb_speed;
     const char *backend_str;
@@ -52,6 +54,13 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
         return CLI_RET_LIBBLADERF;
     }
 
+    status = bladerf_get_flash_size(state->dev, &flash_size,
+                                    &flash_size_guessed);
+    if (status < 0) {
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
     status = bladerf_get_vctcxo_trim(state->dev, &dac_trim);
     if (status < 0) {
         state->last_lib_error = status;
@@ -71,6 +80,12 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
         printf("  FPGA size:                Unknown\n");
     }
     printf("  FPGA loaded:              %s\n", fpga_loaded ? "yes" : "no");
+    if (flash_size != 0) {
+        printf("  Flash size:               %u Mbit", (flash_size >> 17));
+        printf( flash_size_guessed ? " (assumed)\n" : "\n");
+    } else {
+        printf("  Flash size:               Unknown\n");
+    }
     printf("  USB bus:                  %d\n", info.usb_bus);
     printf("  USB address:              %d\n", info.usb_addr);
     printf("  USB speed:                %s\n", devspeed2str(usb_speed));
