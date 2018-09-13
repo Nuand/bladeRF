@@ -512,6 +512,15 @@ class BladeRF:
 
     fpga_size = property(get_fpga_size, doc="FPGA size in kLE")
 
+    def get_flash_size(self):
+        flash_size = ffi.new("uint32_t *")
+        is_guess   = ffi.new("bool *")
+        ret = libbladeRF.bladerf_get_flash_size(self.dev[0], flash_size, is_guess)
+        _check_error(ret)
+        return (flash_size[0], is_guess[0])
+
+    flash_size = property(get_flash_size, doc="Flash size in bytes")
+
     def is_fpga_configured(self):
         ret = libbladeRF.bladerf_is_fpga_configured(self.dev[0])
         _check_error(ret)
