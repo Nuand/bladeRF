@@ -368,6 +368,17 @@ int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
     return status;
 }
 
+int bladerf_get_flash_size(struct bladerf *dev, uint32_t *size, bool *is_guess)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_flash_size(dev, size, is_guess);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 int bladerf_is_fpga_configured(struct bladerf *dev)
 {
     int status;

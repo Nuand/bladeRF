@@ -1635,6 +1635,20 @@ static int bladerf2_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
     return 0;
 }
 
+static int bladerf2_get_flash_size(struct bladerf *dev, uint32_t *size, bool *is_guess)
+{
+    if (NULL == size) {
+        RETURN_INVAL("size", "is null");
+    }
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    *size = dev->flash_arch->tsize_bytes;
+    *is_guess = (dev->flash_arch->status != STATUS_SUCCESS);
+
+    return 0;
+}
+
 static int bladerf2_is_fpga_configured(struct bladerf *dev)
 {
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
@@ -4430,6 +4444,7 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.device_speed, bladerf2_device_speed),
     FIELD_INIT(.get_serial, bladerf2_get_serial),
     FIELD_INIT(.get_fpga_size, bladerf2_get_fpga_size),
+    FIELD_INIT(.get_flash_size, bladerf2_get_flash_size),
     FIELD_INIT(.is_fpga_configured, bladerf2_is_fpga_configured),
     FIELD_INIT(.get_capabilities, bladerf2_get_capabilities),
     FIELD_INIT(.get_channel_count, bladerf2_get_channel_count),

@@ -471,6 +471,23 @@ int CALL_CONV bladerf_get_fpga_size(struct bladerf *dev,
                                     bladerf_fpga_size *size);
 
 /**
+ * Query a device's Flash size
+ *
+ * @param       dev      Device handle
+ * @param[out]  size     Will be updated with the size of the onboard flash,
+ *                       in bytes. If an error occurs, no data will be written
+ *                       to this pointer.
+ * @param[out]  is_guess True if the flash size is a guess (using FPGA size).
+ *                       False if the flash ID was queried and its size
+ *                       was successfully decoded.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_flash_size(struct bladerf *dev, uint32_t *size,
+                                     bool *is_guess);
+
+/**
  * Query firmware version
  *
  * @param       dev         Device handle
