@@ -3356,7 +3356,7 @@ static int bladerf2_trigger_arm(struct bladerf *dev,
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    return fpga_trigger_fire(dev, trigger);
+    return fpga_trigger_arm(dev, trigger, arm);
 }
 
 static int bladerf2_trigger_fire(struct bladerf *dev,
