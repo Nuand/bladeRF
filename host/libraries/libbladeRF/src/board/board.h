@@ -180,6 +180,7 @@ struct board_fns {
     bladerf_dev_speed (*device_speed)(struct bladerf *dev);
     int (*get_serial)(struct bladerf *dev, char *serial);
     int (*get_fpga_size)(struct bladerf *dev, bladerf_fpga_size *size);
+    int (*get_flash_size)(struct bladerf *dev, uint32_t *size, bool *is_guess);
     int (*is_fpga_configured)(struct bladerf *dev);
     uint64_t (*get_capabilities)(struct bladerf *dev);
     size_t (*get_channel_count)(struct bladerf *dev, bladerf_direction dir);
