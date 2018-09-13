@@ -17,6 +17,8 @@ header = """
     uint8_t usb_bus;
     uint8_t usb_addr;
     unsigned int instance;
+    char manufacturer[33];
+    char product[33];
   };
   int bladerf_open(struct bladerf **device, const char
     *device_identifier);
@@ -158,12 +160,6 @@ header = """
     bladerf_frequency *frequency);
   int bladerf_get_frequency_range(struct bladerf *dev, bladerf_channel
     ch, const struct bladerf_range **range);
-  int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch, const
-    char *port);
-  int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch, const
-    char **port);
-  int bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
-    const char **ports, unsigned int count);
   typedef enum
   {
     BLADERF_LB_NONE = 0,
@@ -401,6 +397,12 @@ header = """
     page, uint32_t count);
   int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
     uint32_t page, uint32_t count);
+  int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch, const
+    char *port);
+  int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch, const
+    char **port);
+  int bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
+    const char **ports, unsigned int count);
   typedef enum
   {
     BLADERF_XB_NONE = 0,
@@ -583,6 +585,30 @@ header = """
   int bladerf_get_rfic_rssi(struct bladerf *dev, bladerf_channel ch,
     int32_t *pre_rssi, int32_t *sym_rssi);
   int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
+  typedef enum
+  {
+    BLADERF_RFIC_RXFIR_BYPASS,
+    BLADERF_RFIC_RXFIR_CUSTOM,
+    BLADERF_RFIC_RXFIR_DEC1,
+    BLADERF_RFIC_RXFIR_DEC2,
+    BLADERF_RFIC_RXFIR_DEC4
+  } bladerf_rfic_rxfir;
+  typedef enum
+  {
+    BLADERF_RFIC_TXFIR_BYPASS,
+    BLADERF_RFIC_TXFIR_CUSTOM,
+    BLADERF_RFIC_TXFIR_INT1,
+    BLADERF_RFIC_TXFIR_INT2,
+    BLADERF_RFIC_TXFIR_INT4
+  } bladerf_rfic_txfir;
+  int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir
+    *rxfir);
+  int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir
+    rxfir);
+  int bladerf_get_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir
+    *txfir);
+  int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir
+    txfir);
   int bladerf_get_pll_lock_state(struct bladerf *dev, bool *locked);
   int bladerf_get_pll_enable(struct bladerf *dev, bool *enabled);
   int bladerf_set_pll_enable(struct bladerf *dev, bool enable);
