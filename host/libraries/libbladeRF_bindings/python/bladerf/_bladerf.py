@@ -561,12 +561,12 @@ class BladeRF:
     @property
     def rx_channel_count(self):
         """Number of RX channels on the device"""
-        return self.get_channel_count(BLADERF_RX)
+        return self.get_channel_count(libbladeRF.BLADERF_RX)
 
     @property
     def tx_channel_count(self):
         """Number of TX channels on the device"""
-        return self.get_channel_count(BLADERF_TX)
+        return self.get_channel_count(libbladeRF.BLADERF_TX)
 
     # Enable/Disable
 
