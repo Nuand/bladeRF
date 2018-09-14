@@ -273,6 +273,15 @@ class PMICRegister(enum.Enum):
             return "float *"
 
 
+class Serial(collections.namedtuple("Serial", ["serial"])):
+    @staticmethod
+    def from_struct(serial):
+        return Serial(ffi.string(serial.serial).decode())
+
+    def __str__(self):
+        return self.serial
+
+
 ###############################################################################
 
 
@@ -496,11 +505,15 @@ class BladeRF:
     device_speed = property(get_device_speed,
                             doc="USB speed of the open device")
 
-    def get_serial(self):
-        serial = ffi.new("char []", BLADERF_SERIAL_LENGTH)
-        ret = libbladeRF.bladerf_get_serial(self.dev[0], serial)
+    def get_serial_struct(self):
+        serial = ffi.new("struct bladerf_serial *")
+        ret = libbladeRF.bladerf_get_serial_struct(self.dev[0], serial)
         _check_error(ret)
-        return ffi.string(serial).decode()
+        return Serial.from_struct(serial)
+
+    def get_serial(self):
+        sstruct = self.get_serial_struct()
+        return sstruct.serial
 
     serial = property(get_serial, doc="Serial number of the open device")
 
