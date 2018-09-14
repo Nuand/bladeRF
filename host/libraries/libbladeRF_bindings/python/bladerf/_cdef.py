@@ -45,6 +45,10 @@ header = """
     int64_t step;
     float scale;
   };
+  struct bladerf_serial
+  {
+    char serial[33];
+  };
   struct bladerf_version
   {
     uint16_t major;
@@ -67,10 +71,12 @@ header = """
     BLADERF_DEVICE_SPEED_SUPER
   } bladerf_dev_speed;
   int bladerf_get_serial(struct bladerf *dev, char *serial);
+  int bladerf_get_serial_struct(struct bladerf *dev, struct
+    bladerf_serial *serial);
   int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size
     *size);
-  int bladerf_get_flash_size(struct bladerf *dev, uint32_t *size,
-    bool *is_guess);
+  int bladerf_get_flash_size(struct bladerf *dev, uint32_t *size, bool
+    *is_guess);
   int bladerf_fw_version(struct bladerf *dev, struct bladerf_version
     *version);
   int bladerf_is_fpga_configured(struct bladerf *dev);
