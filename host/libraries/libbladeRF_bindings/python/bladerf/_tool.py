@@ -93,7 +93,7 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
         print("FPGA Version     ", b.fpga_version)
     else:
         print("FPGA Version     ", "Not Configured")
-    print("Flash Size       ", (flash_size>>17), "Mbit",
+    print("Flash Size       ", (flash_size >> 17), "Mbit",
           "(assumed)" if fs_guessed else "")
     print("Firmware Version ", b.fw_version)
 
