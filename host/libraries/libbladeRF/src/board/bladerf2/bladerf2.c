@@ -1447,16 +1447,18 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     }
 
     /* Probe SPI flash architecture information */
-    if( have_cap(board_data->capabilities, BLADERF_CAP_FW_FLASH_ID) ) {
-        status = spi_flash_read_flash_id( dev,
-                                          &dev->flash_arch->manufacturer_id,
-                                          &dev->flash_arch->device_id );
-        if( status < 0 ) {
+    if (have_cap(board_data->capabilities, BLADERF_CAP_FW_FLASH_ID)) {
+        status = spi_flash_read_flash_id(dev, &dev->flash_arch->manufacturer_id,
+                                         &dev->flash_arch->device_id);
+        if (status < 0) {
             log_error("Failed to probe SPI flash ID information.\n");
         }
     } else {
-        log_warning("An FX3 firmware upate is recommended in order to probe "
-                    "the SPI flash ID information.\n");
+        log_debug("FX3 firmware v%u.%u.%u does not support SPI flash ID. A "
+                  "firmware update is recommended in order to probe the SPI "
+                  "flash ID information.\n",
+                  board_data->fw_version.major, board_data->fw_version.minor,
+                  board_data->fw_version.patch);
     }
 
     /* Decode SPI flash ID information to figure out its architecture.
@@ -1481,11 +1483,12 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     /* If the flash architecture could not be decoded earlier, try again now
      * that the FPGA size is known. */
-    if( dev->flash_arch->status != STATUS_SUCCESS ) {
-        status = spi_flash_decode_flash_architecture(dev, &board_data->fpga_size);
-        if( status < 0 ) {
-            log_warning( "Assumptions were made about the SPI flash architecture! "
-                         "Flash commands may not function as expected.\n" );
+    if (dev->flash_arch->status != STATUS_SUCCESS) {
+        status =
+            spi_flash_decode_flash_architecture(dev, &board_data->fpga_size);
+        if (status < 0) {
+            log_debug("Assumptions were made about the SPI flash architecture! "
+                      "Flash commands may not function as expected.\n");
         }
     }
 
@@ -1563,7 +1566,7 @@ static void bladerf2_close(struct bladerf *dev)
 {
     if (dev != NULL) {
         struct bladerf2_board_data *board_data = dev->board_data;
-        struct bladerf_flash_arch  *flash_arch = dev->flash_arch;
+        struct bladerf_flash_arch *flash_arch  = dev->flash_arch;
 
         if (board_data != NULL) {
             if (board_data->phy != NULL) {
@@ -1574,11 +1577,10 @@ static void bladerf2_close(struct bladerf *dev)
             board_data = NULL;
         }
 
-        if( flash_arch != NULL ) {
+        if (flash_arch != NULL) {
             free(flash_arch);
             flash_arch = NULL;
         }
-
     }
 }
 
@@ -1635,7 +1637,9 @@ static int bladerf2_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
     return 0;
 }
 
-static int bladerf2_get_flash_size(struct bladerf *dev, uint32_t *size, bool *is_guess)
+static int bladerf2_get_flash_size(struct bladerf *dev,
+                                   uint32_t *size,
+                                   bool *is_guess)
 {
     if (NULL == size) {
         RETURN_INVAL("size", "is null");
@@ -1643,7 +1647,7 @@ static int bladerf2_get_flash_size(struct bladerf *dev, uint32_t *size, bool *is
 
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
-    *size = dev->flash_arch->tsize_bytes;
+    *size     = dev->flash_arch->tsize_bytes;
     *is_guess = (dev->flash_arch->status != STATUS_SUCCESS);
 
     return 0;
