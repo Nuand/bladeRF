@@ -809,6 +809,7 @@ extern "C" {
         FIELD_INIT(.open, cyapi_open),
         FIELD_INIT(.close, cyapi_close),
         FIELD_INIT(.get_vid_pid, cyapi_get_vid_pid),
+        FIELD_INIT(.get_flash_id, NULL),
         FIELD_INIT(.get_speed, cyapi_get_speed),
         FIELD_INIT(.change_setting, cyapi_change_setting),
         FIELD_INIT(.control_transfer, cyapi_control_transfer),
