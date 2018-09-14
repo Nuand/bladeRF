@@ -1607,12 +1607,18 @@ static int bladerf1_set_gain_mode(struct bladerf *dev,
     }
 
     if (mode == BLADERF_GAIN_AUTOMATIC || mode == BLADERF_GAIN_DEFAULT) {
-        if (!have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT) ||
-            !board_data->cal.dc_rx) {
+        if (!have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT)) {
+            log_error("This FPGA version does not support AGC.\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+
+        if (!board_data->cal.dc_rx) {
+            log_error("RX DC calibration table not found for this board.\n");
             return BLADERF_ERR_UNSUPPORTED;
         }
 
         if (board_data->cal.dc_rx->version != 2) {
+            log_error("Incompatible RX DC calibration table version.\n");
             return BLADERF_ERR_UNSUPPORTED;
         }
 
