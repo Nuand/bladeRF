@@ -345,12 +345,13 @@ int bladerf_get_serial_struct(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    char serialstr[BLADERF_SERIAL_LENGTH];
+    char serialstr[sizeof(serial->serial)];
 
     status = dev->board->get_serial(dev, serialstr);
 
     if (status >= 0) {
-        strncpy(serial->serial, serialstr, BLADERF_SERIAL_LENGTH - 1);
+        strncpy(serial->serial, serialstr, sizeof(serial->serial));
+        serial->serial[sizeof(serial->serial)-1] = '\0';
     }
 
     MUTEX_UNLOCK(&dev->lock);
