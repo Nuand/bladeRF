@@ -20,7 +20,7 @@ library ieee ;
 
 entity bladerf_agc_lms_drv is
   port (
-    -- 40MHz clock and async asserted, sync deasserted reset
+    -- 80 MHz clock and async asserted, sync deasserted reset
     clock           :   in  std_logic ;
     reset           :   in  std_logic ;
 
@@ -136,6 +136,9 @@ begin
     gain_nack <= current.nack ;
 
     U_spi_controller: entity work.lms6_spi_controller
+      generic map (
+        CLOCK_DIV       => 4
+      )
       port map (
         -- Physical Interface
         sclk            => sclk,

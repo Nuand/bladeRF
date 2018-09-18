@@ -68,10 +68,10 @@ set_input_delay  -clock_fall -clock lms_sclk_pin -max  9.0 [get_ports {lms_sdo}]
 set_output_delay -clock lms_sclk_pin -min  1.0 [get_ports {lms_sen lms_sdio}]
 set_output_delay -clock lms_sclk_pin -max  2.0 [get_ports {lms_sen lms_sdio}] -add_delay
 
-set_multicycle_path -setup -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 2
-set_multicycle_path -hold -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 2
-set_multicycle_path -setup -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 2
-set_multicycle_path -hold -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 2
+set_multicycle_path -setup -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 4
+set_multicycle_path -hold -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 4
+set_multicycle_path -setup -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 4
+set_multicycle_path -hold -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 4
 
 # Si5338 interface
 set_input_delay -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {si_scl si_sda}]
