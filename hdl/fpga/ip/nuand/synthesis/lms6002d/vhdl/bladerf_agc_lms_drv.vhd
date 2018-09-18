@@ -101,6 +101,10 @@ architecture arch of bladerf_agc_lms_drv is
         arbiter_req         :   std_logic ;
         arbiter_done        :   std_logic ;
 
+        gain_inc_req        :   std_logic ;
+        gain_dec_req        :   std_logic ;
+        gain_rst_req        :   std_logic ;
+
         -- Avalon-MM Interface
         mm_write            :   std_logic ;
         mm_addr             :   std_logic_vector(7 downto 0) ;
@@ -115,6 +119,9 @@ architecture arch of bladerf_agc_lms_drv is
         rv.initializing := '0' ;
         rv.arbiter_req  := '0' ;
         rv.arbiter_done := '0' ;
+        rv.gain_inc_req := '0' ;
+        rv.gain_dec_req := '0' ;
+        rv.gain_rst_req := '0' ;
         rv.gain_state   := UNSET_GAIN_STATE ;
         rv.mm_addr      := ( others => '0' ) ;
         rv.mm_din       := ( others => '0' ) ;
@@ -176,6 +183,10 @@ begin
         future.arbiter_done <= '0' ;
         future.arbiter_req  <= '0' ;
 
+        future.gain_inc_req <= gain_inc_req ;
+        future.gain_dec_req <= gain_dec_req ;
+        future.gain_rst_req <= gain_rst_req ;
+
         case current.fsm is
             when INIT =>
                 future.nack <= '1' ;
@@ -188,7 +199,7 @@ begin
                 end if ;
 
             when IDLE =>
-                if( gain_inc_req = '1' ) then
+                if( current.gain_inc_req = '1' ) then
                     if( current.gain_state = LOW_GAIN_STATE ) then
                         future.gain_state <= MID_GAIN_STATE ;
                         future.future_gain <= MID_GAIN ;
@@ -202,7 +213,7 @@ begin
                         -- we are already as high as can be
                     end if ;
                 end if ;
-                if( gain_dec_req = '1' ) then
+                if( current.gain_dec_req = '1' ) then
                     if( current.gain_state = MID_GAIN_STATE ) then
                         future.gain_state <= LOW_GAIN_STATE ;
                         future.future_gain <= LOW_GAIN ;
@@ -216,7 +227,7 @@ begin
                         -- we are already as low as can be
                     end if ;
                 end if ;
-                if( gain_rst_req = '1' ) then
+                if( current.gain_rst_req = '1' ) then
                     future.gain_state <= HIGH_GAIN_STATE ;
                     future.future_gain <= HIGH_GAIN ;
                 end if ;
