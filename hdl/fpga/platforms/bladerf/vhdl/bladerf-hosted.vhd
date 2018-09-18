@@ -200,7 +200,8 @@ architecture hosted_bladerf of bladerf is
     signal arbiter_ack          : std_logic_vector(1 downto 0) := (others => '0');
 
     -- AGC control signal
-    signal agc_en               : std_logic ;
+    alias agc_en is nios_gpio.o.agc_en ;
+
     signal gain_inc_req         : std_logic ;
     signal gain_dec_req         : std_logic ;
     signal gain_rst_req         : std_logic ;
@@ -231,15 +232,22 @@ architecture hosted_bladerf of bladerf is
     signal tx_sample_fifo_rempty_untriggered        : std_logic;
 
     -- AGC signals
-    signal agc_arbiter_req           : std_logic;
-    signal agc_arbiter_grant         : std_logic;
-    signal agc_arbiter_done          : std_logic;
+    alias agc_band_sel is nios_gpio.o.agc_band_sel ;
 
-    signal agc_band_sel              : std_logic;
+    signal gain_inc_req_80M          : std_logic;
+    signal gain_dec_req_80M          : std_logic;
+    signal gain_rst_req_80M          : std_logic;
+
+    signal gain_ack_rxclk            : std_logic;
+    signal gain_nack_rxclk           : std_logic;
 
     signal agc_gain_high             : std_logic;
     signal agc_gain_mid              : std_logic;
     signal agc_gain_low              : std_logic;
+
+    signal agc_gain_high_rxclk       : std_logic;
+    signal agc_gain_mid_rxclk        : std_logic;
+    signal agc_gain_low_rxclk        : std_logic;
 
     signal fpga_dc_i_correction      : signed(15 downto 0);
     signal fpga_dc_q_correction      : signed(15 downto 0);
@@ -317,18 +325,6 @@ begin
             sync                =>  rx_mux_sel(i)
           ) ;
     end generate ;
-
-
-    U_agc_en : entity work.synchronizer
-      generic map (
-        RESET_LEVEL         =>  '0'
-      ) port map (
-        reset               =>  '0',
-        clock               =>  rx_clock,
-        async               =>  nios_gpio.o.agc_en,
-        sync                =>  agc_en
-      ) ;
-
 
     U_meta_sync_fx3 : entity work.synchronizer
       generic map (
@@ -420,45 +416,85 @@ begin
         sync        =>  tx_enable
       ) ;
 
-    U_agc_arbiter_req_sync : entity work.synchronizer
+    U_gain_inc_req_80M_sync : entity work.synchronizer
       generic map (
         RESET_LEVEL =>  '0'
       ) port map (
         reset       =>  sys_rst_80M,
         clock       =>  \80MHz\,
-        async       =>  agc_arbiter_req,
-        sync        =>  arbiter_request(1)
-      ) ;
+        async       =>  gain_inc_req,
+        sync        =>  gain_inc_req_80M
+      );
 
-    U_agc_arbiter_grant_sync : entity work.synchronizer
-      generic map (
-        RESET_LEVEL =>  '0'
-      ) port map (
-        reset       =>  rx_reset,
-        clock       =>  rx_clock,
-        async       =>  arbiter_granted(1),
-        sync        =>  agc_arbiter_grant
-      ) ;
-
-    U_agc_arbiter_done_sync : entity work.synchronizer
+    U_gain_dec_req_80M_sync : entity work.synchronizer
       generic map (
         RESET_LEVEL =>  '0'
       ) port map (
         reset       =>  sys_rst_80M,
         clock       =>  \80MHz\,
-        async       =>  agc_arbiter_done,
-        sync        =>  arbiter_ack(1)
-      ) ;
+        async       =>  gain_dec_req,
+        sync        =>  gain_dec_req_80M
+      );
 
-    U_agc_band_sel : entity work.synchronizer
+    U_gain_rst_req_80M_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  sys_rst_80M,
+        clock       =>  \80MHz\,
+        async       =>  gain_rst_req,
+        sync        =>  gain_rst_req_80M
+      );
+
+    U_gain_ack_rxclk_sync : entity work.synchronizer
       generic map (
         RESET_LEVEL =>  '0'
       ) port map (
         reset       =>  rx_reset,
         clock       =>  rx_clock,
-        async       =>  nios_gpio.o.agc_band_sel,
-        sync        =>  agc_band_sel
-      ) ;
+        async       =>  gain_ack,
+        sync        =>  gain_ack_rxclk
+      );
+
+    U_gain_nack_rxclk_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  gain_nack,
+        sync        =>  gain_nack_rxclk
+      );
+
+    U_agc_gain_high_rxclk_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  agc_gain_high,
+        sync        =>  agc_gain_high_rxclk
+      );
+
+    U_agc_gain_mid_rxclk_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  agc_gain_mid,
+        sync        =>  agc_gain_mid_rxclk
+      );
+
+    U_agc_gain_low_rxclk_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  agc_gain_low,
+        sync        =>  agc_gain_low_rxclk
+      );
 
     -- TX sample fifo
     tx_sample_fifo.aclr <= tx_reset ;
@@ -699,13 +735,13 @@ begin
 
     process(all)
     begin
-        if( agc_gain_high = '1' ) then
+        if( agc_gain_high_rxclk = '1' ) then
             fpga_dc_i_correction <= signed( corr_dc_i_max ) ;
             fpga_dc_q_correction <= signed( corr_dc_q_max ) ;
-        elsif( agc_gain_mid = '1' ) then
+        elsif( agc_gain_mid_rxclk = '1' ) then
             fpga_dc_i_correction <= signed( corr_dc_i_mid ) ;
             fpga_dc_q_correction <= signed( corr_dc_q_mid ) ;
-        elsif( agc_gain_low = '1' ) then
+        elsif( agc_gain_low_rxclk = '1' ) then
             fpga_dc_i_correction <= signed( corr_dc_i_min ) ;
             fpga_dc_q_correction <= signed( corr_dc_q_min ) ;
         else
@@ -751,8 +787,8 @@ begin
         gain_inc_req   => gain_inc_req,
         gain_dec_req   => gain_dec_req,
         gain_rst_req   => gain_rst_req,
-        gain_ack       => gain_ack,
-        gain_nack      => gain_nack,
+        gain_ack       => gain_ack_rxclk,
+        gain_nack      => gain_nack_rxclk,
         gain_max       => '0',
 
         rst_gains      => open,
@@ -765,13 +801,13 @@ begin
 
     U_agc_lms : entity work.bladerf_agc_lms_drv
       port map (
-        clock          => rx_clock,
-        reset          => rx_reset,
+        clock          => \80MHz\,
+        reset          => sys_rst_80M,
 
         enable         => agc_en,
-        gain_inc_req   => gain_inc_req,
-        gain_dec_req   => gain_dec_req,
-        gain_rst_req   => gain_rst_req,
+        gain_inc_req   => gain_inc_req_80M,
+        gain_dec_req   => gain_dec_req_80M,
+        gain_rst_req   => gain_rst_req_80M,
         gain_ack       => gain_ack,
         gain_nack      => gain_nack,
 
@@ -779,9 +815,9 @@ begin
         gain_mid       => agc_gain_mid,
         gain_low       => agc_gain_low,
 
-        arbiter_req    => agc_arbiter_req,
-        arbiter_grant  => agc_arbiter_grant,
-        arbiter_done   => agc_arbiter_done,
+        arbiter_req    => arbiter_request(1),
+        arbiter_grant  => arbiter_granted(1),
+        arbiter_done   => arbiter_ack(1),
 
         band_sel       => agc_band_sel,
 
@@ -919,6 +955,7 @@ begin
     -- LMS6002D IQ interface
     rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
     rx_sample_q(15 downto 12) <= (others => rx_sample_q(11)) ;
+
     U_lms6002d : entity work.lms6002d
       port map (
         rx_clock            =>  rx_clock,
