@@ -852,5 +852,9 @@ int32_t ad9361_get_tx_rssi(struct ad9361_rf_phy *phy,
 int32_t ad9361_set_tx_rf_port_output(struct ad9361_rf_phy *phy, uint32_t mode);
 int32_t ad9361_get_tx_rf_port_output(struct ad9361_rf_phy *phy, uint32_t *mode);
 int32_t ad9361_get_temp(struct ad9361_rf_phy *phy);
+int32_t ad9361_rx_fastlock_store(struct ad9361_rf_phy *phy, uint32_t profile);
+int32_t ad9361_rx_fastlock_save(struct ad9361_rf_phy *phy, uint32_t profile, uint8_t *values);
+int32_t ad9361_tx_fastlock_store(struct ad9361_rf_phy *phy, uint32_t profile);
+int32_t ad9361_tx_fastlock_save(struct ad9361_rf_phy *phy, uint32_t profile, uint8_t *values);
 
 #endif  // AD936X_H_

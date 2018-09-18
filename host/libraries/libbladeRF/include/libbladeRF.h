@@ -1806,8 +1806,8 @@ struct bladerf_quick_tune {
         };
         /* bladeRF2 quick tune parameters */
         struct {
-            /* TODO: Define these */
-            void *tbd;
+            uint32_t profile;  /**< Fastlock profile number (0-7) */
+            uint8_t  data[16]; /**< Fastlock profile data */
         };
     };
 };

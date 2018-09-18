@@ -2970,7 +2970,58 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
                                    bladerf_channel ch,
                                    struct bladerf_quick_tune *quick_tune)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data;
+    int status;
+
+    if (NULL == quick_tune) {
+        RETURN_INVAL("quick_tune", "is null");
+    }
+
+    if (quick_tune->profile > 8) {
+        RETURN_INVAL_ARG("Quick tune profile number", quick_tune->profile,
+                         "is not valid");
+    }
+
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
+        ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
+        RETURN_INVAL_ARG("channel", ch, "is not valid");
+    }
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    board_data = dev->board_data;
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        /* Create a fastlock profile in the RFIC */
+        status = ad9361_tx_fastlock_store(board_data->phy,
+                                          quick_tune->profile);
+        if (status < 0) {
+            RETURN_ERROR_AD9361("ad9361_tx_fastlock_store", status);
+        }
+        /* Save the fastlock profile to quick_tune structure */
+        status = ad9361_tx_fastlock_save(board_data->phy,
+                                         quick_tune->profile,
+                                         &quick_tune->data[0]);
+        if (status < 0) {
+            RETURN_ERROR_AD9361("ad9361_tx_fastlock_save", status);
+        }
+    } else {
+        /* Create a fastlock profile in the RFIC */
+        status = ad9361_rx_fastlock_store(board_data->phy,
+                                          quick_tune->profile);
+        if (status < 0) {
+            RETURN_ERROR_AD9361("ad9361_rx_fastlock_store", status);
+        }
+        /* Save the fastlock profile to quick_tune structure */
+        status = ad9361_rx_fastlock_save(board_data->phy,
+                                         quick_tune->profile,
+                                         &quick_tune->data[0]);
+        if (status < 0) {
+            RETURN_ERROR_AD9361("ad9361_rx_fastlock_save", status);
+        }
+    }
+
+    return 0;
 }
 
 static int bladerf2_schedule_retune(struct bladerf *dev,
