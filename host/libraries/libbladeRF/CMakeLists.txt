@@ -67,6 +67,11 @@ option(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
       OFF
 )
 
+option(ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
+       "Enable log_verbose() calls on frequently-used functions in nios_access.c. Note that this may produce a lot of log output."
+       OFF
+)
+
 option(ENABLE_LOCK_CHECKS
        "Enable checks for lock acquisition failures (e.g., deadlock)"
        OFF
@@ -274,6 +279,10 @@ endif()
 
 if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
     add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
+endif()
+
+if(ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
+    add_definitions(-DENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE)
 endif()
 
 if(ENABLE_USB_DEV_RESET_ON_OPEN)

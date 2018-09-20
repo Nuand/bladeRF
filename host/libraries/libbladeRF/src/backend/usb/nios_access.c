@@ -475,10 +475,12 @@ int nios_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
     int status = nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_SI5338, addr, data);
 
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s: Read 0x%02x from addr 0x%02x\n",
                     __FUNCTION__, *data, addr);
     }
+#endif
 
     return status;
 }
@@ -487,10 +489,12 @@ int nios_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     int status = nios_8x8_write(dev, NIOS_PKT_8x8_TARGET_SI5338, addr, data);
 
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s: Wrote 0x%02x to addr 0x%02x\n",
                     __FUNCTION__, data, addr);
     }
+#endif
 
     return status;
 }
@@ -499,10 +503,12 @@ int nios_lms6_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
     int status = nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_LMS6, addr, data);
 
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s: Read 0x%02x from addr 0x%02x\n",
                     __FUNCTION__, *data, addr);
     }
+#endif
 
     return status;
 }
@@ -511,10 +517,12 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     int status = nios_8x8_write(dev, NIOS_PKT_8x8_TARGET_LMS6, addr, data);
 
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s: Wrote 0x%02x to addr 0x%02x\n",
                     __FUNCTION__, data, addr);
     }
+#endif
 
     return status;
 }
@@ -554,7 +562,7 @@ int nios_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
 
     status = nios_16x64_read(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
 
-#ifdef LOGGING_ENABLED
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (log_get_verbosity() == BLADERF_LOG_LEVEL_VERBOSE && status == 0) {
         size_t bytes = (((cmd >> 12) & 0x7) + 1);
         size_t addr  = cmd & 0xFFF;
@@ -583,7 +591,7 @@ int nios_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data)
 
     status = nios_16x64_write(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
 
-#ifdef LOGGING_ENABLED
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (log_get_verbosity() == BLADERF_LOG_LEVEL_VERBOSE && status == 0) {
         size_t bytes = (((cmd >> 12) & 0x7) + 1) & 0xFF;
         size_t addr  = cmd & 0xFFF;
@@ -611,10 +619,13 @@ int nios_adi_axi_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
     int status;
 
     status = nios_32x32_read(dev, NIOS_PKT_32x32_TARGET_ADI_AXI, addr, data);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s:  Read  0x%08" PRIx32 " from addr 0x%04" PRIx32 "\n",
                     __FUNCTION__, *data, addr);
     }
+#endif
 
     return status;
 }
@@ -624,10 +635,13 @@ int nios_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data)
     int status;
 
     status = nios_32x32_write(dev, NIOS_PKT_32x32_TARGET_ADI_AXI, addr, data);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s: Wrote 0x%08" PRIx32 " to   addr 0x%04" PRIx32 "\n",
                     __FUNCTION__, data, addr);
     }
+#endif
 
     return status;
 }
@@ -637,9 +651,12 @@ int nios_rffe_control_read(struct bladerf *dev, uint32_t *value)
     int status;
 
     status = nios_8x32_read(dev, NIOS_PKT_8x32_TARGET_RFFE_CSR, 0, value);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s: Read 0x%08x\n", __FUNCTION__, *value);
     }
+#endif
 
     return status;
 }
@@ -649,9 +666,12 @@ int nios_rffe_control_write(struct bladerf *dev, uint32_t value)
     int status;
 
     status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_RFFE_CSR, 0, value);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
     if (status == 0) {
         log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, value);
     }
+#endif
 
     return status;
 }
