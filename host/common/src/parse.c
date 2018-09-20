@@ -214,8 +214,8 @@ static struct config_options *add_opt(
 
     rv[optc - 1].lineno = lineno;
 
-    free(ptr1);
-    free(ptr2);
+    //free(ptr1);
+    //free(ptr2);
 
     return rv;
 }
