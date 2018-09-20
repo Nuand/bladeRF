@@ -143,15 +143,15 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     libusb_device_handle *handle;
     struct libusb_device_descriptor desc;
 
+    /* Populate device info */
+    bladerf_init_devinfo(info);
+    info->backend  = BLADERF_BACKEND_LIBUSB;
+    info->usb_bus  = libusb_get_bus_number(dev);
+    info->usb_addr = libusb_get_device_address(dev);
+
     status = libusb_open(dev, &handle);
 
     if (status == 0) {
-        /* Populate device info */
-        bladerf_init_devinfo(info);
-        info->backend  = BLADERF_BACKEND_LIBUSB;
-        info->usb_bus  = libusb_get_bus_number(dev);
-        info->usb_addr = libusb_get_device_address(dev);
-
         status = libusb_get_device_descriptor(dev, &desc);
         if (status != 0) {
             memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
@@ -325,30 +325,45 @@ static int lusb_probe(backend_probe_target probe_target,
     /* Iterate through all the USB devices */
     for (i = 0, n = 0; i < count && status == 0; i++) {
         if (device_is_probe_target(probe_target, list[i])) {
+            bool do_add = true;
 
             /* Open the USB device and get some information */
             status = get_devinfo(list[i], &info);
             if (status) {
-                /* We may not be able to open the device if another
-                 * driver (e.g., CyUSB3) is associated with it. Therefore,
-                 * just log to the debug level and carry on. */
+                /* We may not be able to open the device if another driver
+                 * (e.g., CyUSB3) is associated with it. Therefore, just log to
+                 * the debug level and carry on. */
                 log_debug("Could not open device: %s\n",
-                          libusb_error_name(status) );
+                          libusb_error_name(status));
 
-                if (status == LIBUSB_ERROR_ACCESS && !printed_access_warning) {
-                    printed_access_warning = true;
-                    log_warning("Found a bladeRF via VID/PID, but could not "
-                                "open it due to insufficient permissions.\n");
+                if (status == LIBUSB_ERROR_ACCESS) {
+                    /* If it's an access error, odds are good this is happening
+                     * because we've already got the device open. Pass the info
+                     * we have back to the caller. */
+                    do_add = true;
+
+                    if (!printed_access_warning) {
+                        printed_access_warning = true;
+                        log_warning(
+                            "Found a bladeRF via VID/PID, but could not open "
+                            "it due to insufficient permissions, or because "
+                            "the device is already open.\n");
+                    }
+                } else {
+                    do_add = false;
                 }
 
                 /* Don't stop probing because one device was "problematic" */
                 status = 0;
-            } else {
+            }
+
+            if (do_add) {
                 info.instance = n++;
+
                 status = bladerf_devinfo_list_add(info_list, &info);
-                if( status ) {
+                if (status) {
                     log_error("Could not add device to list: %s\n",
-                              bladerf_strerror(status) );
+                              bladerf_strerror(status));
                 } else {
                     log_verbose("Added instance %d to device list\n",
                                 info.instance);
