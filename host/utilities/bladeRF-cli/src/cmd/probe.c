@@ -40,7 +40,8 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
 {
     bool error_on_no_dev            = false;
     struct bladerf_devinfo *devices = NULL;
-    int n_devices, i;
+    struct bladerf_devinfo my_dev;
+    int n_devices, i, status;
 
     n_devices = bladerf_get_device_list(&devices);
 
@@ -70,14 +71,41 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
         }
     }
 
+    if (s->dev != NULL) {
+        status = bladerf_get_devinfo(s->dev, &my_dev);
+        if (status < 0) {
+            cli_err(s, argv[0], "Failed to get open device info: %s\n",
+                    bladerf_strerror(status));
+            s->last_lib_error = status;
+            return CLI_RET_LIBBLADERF;
+        }
+    }
+
     putchar('\n');
     for (i = 0; i < n_devices; i++) {
-        printf("  Description:    %s %s\n", devices[i].manufacturer,
-               devices[i].product);
-        printf("  Backend:        %s\n", backend2str(devices[i].backend));
-        printf("  Serial:         %s\n", devices[i].serial);
-        printf("  USB Bus:        %d\n", devices[i].usb_bus);
-        printf("  USB Address:    %d\n", devices[i].usb_addr);
+        struct bladerf_devinfo *this = &devices[i];
+
+        bool already_open = (s->dev != NULL) &&
+                            (this->usb_bus == my_dev.usb_bus) &&
+                            (this->usb_addr == my_dev.usb_addr);
+
+        if (already_open) {
+            this = &my_dev;
+        } else if (0 == strcmp("ANY", this->serial)) {
+            printf("  Description:    inaccessible device (already in use?)\n");
+            printf("  Backend:        %s\n", backend2str(this->backend));
+            printf("  USB Bus:        %d\n", this->usb_bus);
+            printf("  USB Address:    %d\n", this->usb_addr);
+            putchar('\n');
+            continue;
+        }
+
+        printf("  Description:    %s %s%s\n", this->manufacturer, this->product,
+               already_open ? " (currently open)" : "");
+        printf("  Backend:        %s\n", backend2str(this->backend));
+        printf("  Serial:         %s\n", this->serial);
+        printf("  USB Bus:        %d\n", this->usb_bus);
+        printf("  USB Address:    %d\n", this->usb_addr);
         putchar('\n');
     }
 
