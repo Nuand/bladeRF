@@ -57,7 +57,17 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
 
     status = BLADERF_ERR_INVAL;
 
-    if (!strcasecmp(opt.key, "fpga")) {
+    if (!strcasecmp(opt.key, "rx_biastee_en")) {
+      if (!strcasecmp(opt.value, "1")) {
+        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_RX(0), 1);
+      } else {
+        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_RX(1), 0);
+      }
+      if (status < 0) {
+        log_warning("Processed rx_biastee_en\n");
+        return status; 
+      }
+    } else if (!strcasecmp(opt.key, "fpga")) {
         status = bladerf_load_fpga(dev, opt.value);
         if (status < 0) {
             log_warning("Config line %d: could not load FPGA from `%s'\n",
