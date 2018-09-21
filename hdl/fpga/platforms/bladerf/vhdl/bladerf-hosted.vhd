@@ -1156,7 +1156,7 @@ begin
         if( rising_edge(fx3_pclk_pll) ) then
             count := count - 1 ;
             if( count = 0 ) then
-                count := 100_000_00 ;
+                count := 100_000_000 ;
                 led1_blink <= not led1_blink;
             end if ;
         end if ;
