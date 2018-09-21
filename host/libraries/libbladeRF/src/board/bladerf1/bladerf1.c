@@ -984,6 +984,13 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         }
     }
 
+    /* Skip further work if BLADERF_FORCE_NO_FPGA_PRESENT is set */
+    if (getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
+        log_debug("Skipping FPGA configuration and initialization - "
+                  "BLADERF_FORCE_NO_FPGA_PRESENT is set.\n");
+        return 0;
+    }
+
     /* Check for possible mismatch between the USB device identification and
      * the board's own knowledge. We need this to be a non-fatal condition,
      * so that the problem can be fixed easily. */
