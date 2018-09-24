@@ -3653,14 +3653,26 @@ static int bladerf2_set_stream_timeout(struct bladerf *dev,
                                        bladerf_direction dir,
                                        unsigned int timeout)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    MUTEX_LOCK(&board_data->sync[dir].lock);
+    board_data->sync[dir].stream_config.timeout_ms = timeout;
+    MUTEX_UNLOCK(&board_data->sync[dir].lock);
+
+    return 0;
 }
 
 static int bladerf2_get_stream_timeout(struct bladerf *dev,
                                        bladerf_direction dir,
                                        unsigned int *timeout)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    MUTEX_LOCK(&board_data->sync[dir].lock);
+    *timeout = board_data->sync[dir].stream_config.timeout_ms;
+    MUTEX_UNLOCK(&board_data->sync[dir].lock);
+
+    return 0;
 }
 
 static int bladerf2_sync_config(struct bladerf *dev,
