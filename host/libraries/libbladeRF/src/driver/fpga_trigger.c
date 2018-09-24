@@ -29,6 +29,8 @@ static bool is_valid_signal(bladerf_trigger_signal signal)
 {
     switch (signal) {
         case BLADERF_TRIGGER_J71_4:
+        case BLADERF_TRIGGER_J51_1:
+        case BLADERF_TRIGGER_MINI_EXP_1:
 
         case BLADERF_TRIGGER_USER_0:
         case BLADERF_TRIGGER_USER_1:

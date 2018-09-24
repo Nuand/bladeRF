@@ -1062,6 +1062,8 @@ int nios_read_trigger(struct bladerf *dev, bladerf_channel ch,
     /* Only 1 external trigger is currently supported */
     switch (trigger) {
         case BLADERF_TRIGGER_J71_4:
+        case BLADERF_TRIGGER_J51_1:
+        case BLADERF_TRIGGER_MINI_EXP_1:
             break;
 
         default:
@@ -1100,6 +1102,8 @@ int nios_write_trigger(struct bladerf *dev, bladerf_channel ch,
     /* Only 1 external trigger is currently supported */
     switch (trigger) {
         case BLADERF_TRIGGER_J71_4:
+        case BLADERF_TRIGGER_J51_1:
+        case BLADERF_TRIGGER_MINI_EXP_1:
             break;
 
         default:

@@ -484,7 +484,8 @@ int CALL_CONV bladerf_get_fpga_size(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_flash_size(struct bladerf *dev, uint32_t *size,
+int CALL_CONV bladerf_get_flash_size(struct bladerf *dev,
+                                     uint32_t *size,
                                      bool *is_guess);
 
 /**
@@ -1391,10 +1392,9 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *lb);
  * For devices running at the same sample rate, the trigger event should
  * achieve synchronization within +/- 1 sample on each device in the chain.
  *
- * @note bladeRF1 note: As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been
- *       allocated as the trigger signal. However, this API section is designed
- *       to allow future signals to be added, including users' software and
- *       hardware customizations.
+ * @note As of FPGA v0.6.0, `mini_exp[1]` has been allocated as the trigger
+ *       signal. However, this API section is designed to allow future signals
+ *       to be added, including users' software and hardware customizations.
  *
  * @note <b>Important</b>: Ensure that you disarm triggers <b>before</b>
  *       stopping sample streams (i.e., calling bladerf_enable_module() with
@@ -1407,7 +1407,8 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *lb);
  * The standard usage of these functions is shown below. This example assumes:
  *
  *  - The two devices are connected such they share a common ground and their
- *      J71-4 pins are connected.
+ *      `mini_exp[1]` pins are connected. `mini_exp[1]` is J71-4 on bladeRF
+ *      x40/x115, and J51-1 on bladeRF xA4/xA9.
  *
  *  - Both devices are already configured to utilize a common clock signal via
  *      the external SMB connection.  Generally, this will consist of one device
@@ -1524,7 +1525,10 @@ typedef enum {
  *
  * This selects pin or signal used for the trigger.
  *
- * @note ::BLADERF_TRIGGER_J71_4 is the only valid option as of FPGA v0.6.0.
+ * @note ::BLADERF_TRIGGER_J71_4, ::BLADERF_TRIGGER_J51_1, and
+ *       ::BLADERF_TRIGGER_MINI_EXP_1 are the only valid options as of FPGA
+ *       v0.6.0. All three values have the same behavior and may be used
+ *       interchangably.
  *
  * The `BLADERF_TRIGGER_USER_*` values have been added to allow users to modify
  * both hardware and software implementations to add custom triggers, while
@@ -1533,7 +1537,9 @@ typedef enum {
  */
 typedef enum {
     BLADERF_TRIGGER_INVALID = -1, /**< Invalid selection */
-    BLADERF_TRIGGER_J71_4,        /**< J71 pin 4 (mini_exp_1) */
+    BLADERF_TRIGGER_J71_4,        /**< J71 pin 4, mini_exp[1] on x40/x115 */
+    BLADERF_TRIGGER_J51_1,        /**< J51 pin 1, mini_exp[1] on xA4/xA9 */
+    BLADERF_TRIGGER_MINI_EXP_1,   /**< mini_exp[1], hardware-independent */
 
     BLADERF_TRIGGER_USER_0 = 128, /**< Reserved for user SW/HW customizations */
     BLADERF_TRIGGER_USER_1,       /**< Reserved for user SW/HW customizations */
