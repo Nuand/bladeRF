@@ -488,18 +488,11 @@ classdef bladeRF_Simulink < matlab.System & ...
                 %disp('Updated TX frequency');
             end
 
-            if isChangedProperty(obj, 'tx_vga1') && obj.tx_vga1 ~= obj.curr_tx_vga1
-                obj.device.tx.vga1 = obj.tx_vga1;
-                obj.curr_tx_vga1   = obj.device.tx.vga1;
-                %disp('Updated TX VGA1 gain');
+            if isChangedProperty(obj, 'tx_gain') && obj.tx_gain ~= obj.curr_tx_gain
+                obj.device.tx.gain = obj.tx_gain;
+                obj.curr_tx_gain   = obj.device.tx.gain;
+                %disp('Updated TX gain');
             end
-
-            if isChangedProperty(obj, 'tx_vga2') && obj.tx_vga2 ~= obj.curr_tx_vga2
-                obj.device.tx.vga2 = obj.tx_vga2;
-                obj.curr_tx_vga2   = obj.device.tx.vga2;
-                %disp('Updated TX VGA2 gain');
-            end
-
         end
 
         function validatePropertiesImpl(obj)
