@@ -143,6 +143,26 @@ int async_init_stream(struct bladerf_stream **stream,
     return status;
 }
 
+int async_set_transfer_timeout(struct bladerf_stream *stream,
+                               unsigned int transfer_timeout_ms)
+{
+    MUTEX_LOCK(&stream->lock);
+    stream->transfer_timeout = transfer_timeout_ms;
+    MUTEX_UNLOCK(&stream->lock);
+
+    return 0;
+}
+
+int async_get_transfer_timeout(struct bladerf_stream *stream,
+                               unsigned int *transfer_timeout_ms)
+{
+    MUTEX_LOCK(&stream->lock);
+    *transfer_timeout_ms = stream->transfer_timeout;
+    MUTEX_UNLOCK(&stream->lock);
+
+    return 0;
+}
+
 int async_run_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
     int status;
