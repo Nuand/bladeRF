@@ -70,6 +70,8 @@ architecture arch of command_uart is
     signal sout_data    : std_logic_vector(7 downto 0) ;
     signal sout_we      : std_logic ;
 
+    signal rs232_sout_reg : std_logic;
+
     signal ack : std_logic ;
 
     type magics_t is array(natural range <>) of std_logic_vector(7 downto 0) ;
@@ -294,6 +296,16 @@ begin
         end if ;
     end process ;
 
+    -- Register outputs
+    register_sout : process(clock, reset) is
+    begin
+        if (reset = '1') then
+            rs232_sout <= '1';
+        elsif (rising_edge(clock)) then
+            rs232_sout <= rs232_sout_reg;
+        end if;
+    end process register_sout;
+
     -- Send data to the UART from the FIFO
     send_to_uart : process(clock, reset)
         variable bits           : std_logic_vector(7 downto 0) ;
@@ -301,16 +313,16 @@ begin
         variable clock_count    : natural range 0 to CLOCKS_PER_BIT ;
     begin
         if( reset = '1' ) then
-            send_fsm    <= IDLE ;
-            rs232_sout  <= '1' ;
-            bit_count   := 0 ;
-            clock_count := 0 ;
-            bits        := (others =>'0') ;
+            send_fsm        <= IDLE ;
+            rs232_sout_reg  <= '1' ;
+            bit_count       := 0 ;
+            clock_count     := 0 ;
+            bits            := (others =>'0') ;
         elsif( rising_edge(clock) ) then
             case send_fsm is
                 -- Wait until we have something to send
                 when IDLE =>
-                    rs232_sout <= '1' ;
+                    rs232_sout_reg  <= '1' ;
                     if( sout_we = '1' ) then
                         send_fsm    <= SEND_START ;
                         bit_count   := bits'length ;
@@ -319,18 +331,18 @@ begin
 
                 -- Send the start bit
                 when SEND_START =>
-                    rs232_sout <= '0' ;
-                    clock_count := clock_count - 1 ;
+                    rs232_sout_reg  <= '0' ;
+                    clock_count     := clock_count - 1 ;
                     if( clock_count = 0 ) then
                         send_fsm    <= SEND_DATA ;
                         clock_count := CLOCKS_PER_BIT ;
                     elsif( clock_count = 9 ) then
-                        bits := sout_data ;
+                        bits        := sout_data ;
                     end if ;
                 -- Send the data
                 when SEND_DATA =>
-                    rs232_sout   <= bits(0) ;
-                    clock_count := clock_count - 1 ;
+                    rs232_sout_reg  <= bits(0) ;
+                    clock_count     := clock_count - 1 ;
                     if( clock_count = 0 ) then
                         bits        := '0' & bits(bits'high downto 1) ;
                         bit_count   := bit_count - 1 ;
@@ -342,19 +354,19 @@ begin
 
                 -- Send the stop bit
                 when SEND_STOP =>
-                    rs232_sout   <= '1' ;
-                    clock_count := clock_count - 1 ;
+                    rs232_sout_reg  <= '1' ;
+                    clock_count     := clock_count - 1 ;
                     if( clock_count = 0 ) then
-                        send_fsm <= IDLE ;
+                        send_fsm    <= IDLE ;
                     end if ;
 
                 -- Weird
                 when others =>
-                    send_fsm    <= IDLE ;
-                    rs232_sout  <= '1' ;
-                    bit_count   := 0 ;
-                    clock_count := 0 ;
-                    bits        := (others =>'0') ;
+                    send_fsm        <= IDLE ;
+                    rs232_sout_reg  <= '1' ;
+                    bit_count       := 0 ;
+                    clock_count     := 0 ;
+                    bits            := (others =>'0') ;
             end case ;
         end if ;
     end process ;
