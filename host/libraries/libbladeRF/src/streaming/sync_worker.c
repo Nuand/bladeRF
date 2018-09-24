@@ -30,12 +30,14 @@
 #endif
 #include "rel_assert.h"
 #include "conversions.h"
+#include "minmax.h"
 
 #include "async.h"
 #include "sync.h"
 #include "sync_worker.h"
 
 #include "board/board.h"
+#include "backend/usb/usb.h"
 
 #define worker2str(s) (direction2str(s->stream_config.layout & BLADERF_DIRECTION_MASK))
 
@@ -213,6 +215,14 @@ int sync_worker_init(struct bladerf_sync *s)
         goto worker_init_out;
     }
 
+    status = async_set_transfer_timeout(
+        s->worker->stream,
+        uint_max(s->stream_config.timeout_ms, BULK_TIMEOUT_MS));
+    if (status != 0) {
+        log_debug("%s worker: Failed to set transfer timeout: %s\n",
+                  worker2str(s), bladerf_strerror(status));
+        goto worker_init_out;
+    }
 
     MUTEX_INIT(&s->worker->state_lock);
     MUTEX_INIT(&s->worker->request_lock);

@@ -79,6 +79,14 @@ int async_init_stream(struct bladerf_stream **stream,
                       size_t num_transfers,
                       void *user_data);
 
+/* Set the transfer timeout. This acquires stream->lock. */
+int async_set_transfer_timeout(struct bladerf_stream *stream,
+                               unsigned int transfer_timeout_ms);
+
+/* Get the transfer timeout. This acquires stream->lock. */
+int async_get_transfer_timeout(struct bladerf_stream *stream,
+                               unsigned int *transfer_timeout_ms);
+
 /* Backend code is responsible for acquiring stream->lock in their callbacks */
 int async_run_stream(struct bladerf_stream *stream,
                      bladerf_channel_layout layout);
