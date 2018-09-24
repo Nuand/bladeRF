@@ -1037,13 +1037,13 @@ Usage:
 .PP
 If used without parameters, this command prints the state of all
 triggers.
-When aand and supplied, the specified trigger is printed.
+When and and supplied, the specified trigger is printed.
 .PP
 Below are the available options for :
 .PP
 .TS
 tab(@);
-rw(11.7n) lw(56.4n).
+rw(12.6n) lw(55.4n).
 T{
 Trigger
 T}@T{
@@ -1053,9 +1053,23 @@ _
 T{
 \f[C]J71\-4\f[]
 T}@T{
-Trigger signal is on \f[C]mini_exp1\f[] (J71, pin 4).
+Trigger signal is on \f[C]mini_exp1\f[] (bladeRF x40/x115, J71, pin 4).
+T}
+T{
+\f[C]J51\-1\f[]
+T}@T{
+Trigger signal is on \f[C]mini_exp1\f[] (bladeRF xA4/xA9, J51, pin 1).
+T}
+T{
+\f[C]Miniexp\-1\f[]
+T}@T{
+Trigger signal is on \f[C]mini_exp1\f[], hardware\-independent
 T}
 .TE
+.PP
+Note that all three of the above options map to the same logical port on
+all devices (\f[C]mini_exp[1]\f[]).
+Multiple options are provided for reverse compatibility and clarity.
 .PP
 The trigger is controlled and configured by providing the last argument,
 which may be one of the following:

@@ -703,15 +703,24 @@ trigger
 Usage: `trigger [<trigger> <tx | rx> [<off slave master fire>]]`
 
 If used without parameters, this command prints the state of all triggers.
-When <trigger> aand <tx | rx> and supplied, the specified trigger is printed.
+When <trigger> and <tx | rx> and supplied, the specified trigger is printed.
 
 Below are the available options for <trigger>:
 
 ----------------------------------------------------------------------
-    Trigger Description
+     Trigger Description
+------------ ---------------------------------------------------------
+`J71-4`      Trigger signal is on `mini_exp1` (bladeRF x40/x115, J71, pin 4).
+
+`J51-1`      Trigger signal is on `mini_exp1` (bladeRF xA4/xA9, J51, pin 1).
+
+`Miniexp-1`  Trigger signal is on `mini_exp1`, hardware-independent
+
 ----------- ----------------------------------------------------------
- `J71-4`    Trigger signal is on `mini_exp1` (J71, pin 4).
------------ ----------------------------------------------------------
+
+Note that all three of the above options map to the same logical port on
+all devices (`mini_exp[1]`). Multiple options are provided for reverse
+compatibility and clarity.
 
 The trigger is controlled and configured by providing the last argument,
 which may be one of the following:

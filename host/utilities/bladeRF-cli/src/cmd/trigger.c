@@ -182,13 +182,23 @@ out:
 static inline int print_all_triggers(struct cli_state *state)
 {
     int status;
+    char const *board_name = bladerf_get_board_name(state->dev);
+    bladerf_trigger_signal signal;
 
-    status = print_trigger(state, BLADERF_MODULE_RX, BLADERF_TRIGGER_J71_4);
+    if (strcmp(board_name, "bladerf1") == 0) {
+        signal = BLADERF_TRIGGER_J71_4;
+    } else if (strcmp(board_name, "bladerf2") == 0) {
+        signal = BLADERF_TRIGGER_J51_1;
+    } else {
+        cli_err(state, "print_all_triggers", "Unknown board name");
+    }
+
+    status = print_trigger(state, BLADERF_MODULE_RX, signal);
     if (status != 0) {
         return status;
     }
 
-    status = print_trigger(state, BLADERF_MODULE_TX, BLADERF_TRIGGER_J71_4);
+    status = print_trigger(state, BLADERF_MODULE_TX, signal);
 
     return status;
 }

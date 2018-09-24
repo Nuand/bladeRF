@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Fri Aug 24 15:58:28 EDT 2018 by rtucker@rho
+ * Last generated: Mon Sep 24 17:21:36 EDT 2018 by rtucker@rho
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -707,13 +707,19 @@
   "Usage: trigger [<trigger> <tx | rx> [<off slave master fire>]]\n" \
   "\n" \
   "If used without parameters, this command prints the state of all\n" \
-  "triggers. When aand and supplied, the specified trigger is printed.\n" \
+  "triggers. When and and supplied, the specified trigger is printed.\n" \
   "\n" \
   "Below are the available options for :\n" \
   "\n" \
-  "        Trigger Description\n" \
-  "  ------------- --------------------------------------------------------------\n" \
-  "          J71-4 Trigger signal is on mini_exp1 (J71, pin 4).\n" \
+  "                Trigger Description\n" \
+  "  --------------------- ------------------------------------------------------------------------------------------------\n" \
+  "                  J71-4 Trigger signal is on mini_exp1 (bladeRF x40/x115, J71, pin 4).\n" \
+  "                  J51-1 Trigger signal is on mini_exp1 (bladeRF xA4/xA9, J51, pin 1).\n" \
+  "              Miniexp-1 Trigger signal is on mini_exp1, hardware-independent\n" \
+  "\n" \
+  "Note that all three of the above options map to the same logical port\n" \
+  "on all devices (mini_exp[1]). Multiple options are provided for\n" \
+  "reverse compatibility and clarity.\n" \
   "\n" \
   "The trigger is controlled and configured by providing the last\n" \
   "argument, which may be one of the following:\n" \
