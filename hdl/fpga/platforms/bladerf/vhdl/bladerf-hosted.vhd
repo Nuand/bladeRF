@@ -229,6 +229,7 @@ architecture hosted_bladerf of bladerf is
     -- Trigger Outputs
     signal lms_rx_enable_sig                        : std_logic;
     signal lms_rx_enable_qualified                  : std_logic;
+    signal lms_rx_enable_qualified_rxclk            : std_logic;
     signal tx_sample_fifo_rempty_untriggered        : std_logic;
 
     -- AGC signals
@@ -494,6 +495,16 @@ begin
         clock       =>  rx_clock,
         async       =>  agc_gain_low,
         sync        =>  agc_gain_low_rxclk
+      );
+
+    U_lms_rx_enable_qualified_rxclk_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  lms_rx_enable_qualified,
+        sync        =>  lms_rx_enable_qualified_rxclk
       );
 
     -- TX sample fifo
@@ -1010,7 +1021,7 @@ begin
                 when RX_MUX_NORMAL =>
                     rx_mux_i <= rx_sample_i ;
                     rx_mux_q <= rx_sample_q ;
-                    if( lms_rx_enable_qualified = '1' ) then
+                    if( lms_rx_enable_qualified_rxclk = '1' ) then
                         rx_mux_valid <= rx_sample_valid ;
                     else
                         rx_mux_valid <= '0' ;
@@ -1064,10 +1075,29 @@ begin
         fx3_ctl(i) <= fx3_ctl_out(i) when fx3_ctl_oe(i) = '1' else 'Z';
     end generate ;
 
-    fx3_ctl_in <= fx3_ctl ;
+    -- synchronize fx3_ctl_in to the fx3_pclk_pll domain
+    generate_fx3_ctl_in_synch: for i in fx3_ctl'range generate
+        U_fx3_ctl_in_sync : entity work.synchronizer
+          generic map (
+            RESET_LEVEL =>  '0'
+          ) port map (
+            reset               =>  sys_rst_sync,
+            clock               =>  fx3_pclk_pll,
+            async               =>  fx3_ctl(i),
+            sync                =>  fx3_ctl_in(i)
+          );
+    end generate generate_fx3_ctl_in_synch;
 
-    command_serial_in <= fx3_uart_txd when sys_rst_80M = '0' else '1' ;
-    fx3_uart_rxd <= command_serial_out when sys_rst_80M = '0' else 'Z' ;
+    register_uart : process(sys_rst_80M, \80MHz\) is
+    begin
+        if (sys_rst_80M = '1') then
+            command_serial_in <= '1';
+            fx3_uart_rxd <= 'Z';
+        elsif (rising_edge(\80MHz\)) then
+            command_serial_in <= fx3_uart_txd;
+            fx3_uart_rxd <= command_serial_out;
+        end if;
+    end process register_uart;
 
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : component nios_system
@@ -1157,28 +1187,39 @@ begin
     nios_gpio.i.nios_ss_n <= nios_ss_n;
     nios_gpio.i.xb_mode2  <= nios_gpio.o.xb_mode;
 
-    dac_cs_selection : process(all)
+    dac_sclk    <= nios_sclk;
+    dac_sdi     <= nios_sdio;
+    nios_sdo    <= dac_sdo;
+
+    dac_cs_selection : process(sys_rst_80M, \80MHz\) is
     begin
-        dac_sclk <= nios_sclk ;
-        dac_sdi <= nios_sdio ;
-        nios_sdo <= dac_sdo ;
-        if( nios_gpio.o.xb_mode = "00" ) then
-            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
-            dac_csx <= nios_ss_n(0);
-        elsif( nios_gpio.o.xb_mode = "10" ) then
-            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
-            if (nios_ss_n(1 downto 0) = "10") then --
-                dac_csx <= '0';
-            elsif (nios_ss_n(1 downto 0) = "01") then
-                dac_csx <= '1';
-            else
-                dac_csx <= '1';
-            end if;
-        else
-            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0)  ;
-            dac_csx <= nios_ss_n(0) ;
+        if (sys_rst_80M = '1') then
+            xb_gpio_dir <= (others => '0');
+            dac_csx     <= '1';
+        elsif (rising_edge(\80MHz\)) then
+            case nios_gpio.o.xb_mode is
+                when "00" =>
+                    xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
+                    dac_csx     <= nios_ss_n(0);
+
+                when "10" =>
+                    xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
+
+                    case nios_ss_n(1 downto 0) is
+                        when "10" =>
+                            dac_csx <= '0';
+                        when "01" =>
+                            dac_csx <= '1';
+                        when others =>
+                            dac_csx <= '1';
+                    end case;
+
+                when others =>
+                    xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
+                    dac_csx     <= nios_ss_n(0);
+            end case;
         end if;
-    end process;
+    end process dac_cs_selection;
 
     -- IO for NIOS
     si_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
@@ -1212,8 +1253,16 @@ begin
     lms_tx_v                <= nios_gpio.o.lms_tx_v;
     lms_rx_v                <= nios_gpio.o.lms_rx_v;
 
-    -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
-    fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
+    -- CTS and the SPI CSx are tied to the same signal.  When we are in reset,
+    -- allow for SPI accesses.
+    set_fx3_uart_cts : process(sys_rst_sync, fx3_pclk_pll) is
+    begin
+        if (sys_rst_sync = '1') then
+            fx3_uart_cts <= 'Z';
+        elsif (rising_edge(fx3_pclk_pll)) then
+            fx3_uart_cts <= '1';
+        end if;
+    end process set_fx3_uart_cts;
 
     exp_spi_clock           <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
     exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
