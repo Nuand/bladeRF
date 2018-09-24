@@ -141,10 +141,10 @@ const char *trigger2str(bladerf_trigger_signal trigger);
  *
  * This is case-insensitive.
  *
- * @param   str         Trigger as a string. Should be:
- *                      "J71-4"
+ * @param   str         Trigger as a string. Valid values include `Miniexp-1`,
+ *                      `J51-1`, `J71-4`, or `User-0` through `User-7`.
  *
- * @return BLADERF_TRIGGER_J71_4 or BLADERF_TRIGGER_INVALID
+ * @return valid bladerf_trigger_signal value, or BLADERF_TRIGGER_INVALID
  */
 bladerf_trigger_signal str2trigger(const char *str);
 

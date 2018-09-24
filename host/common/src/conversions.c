@@ -187,6 +187,12 @@ const char *trigger2str(bladerf_trigger_signal trigger)
         case BLADERF_TRIGGER_J71_4:
             return "J71-4";
 
+        case BLADERF_TRIGGER_J51_1:
+            return "J51-1";
+
+        case BLADERF_TRIGGER_MINI_EXP_1:
+            return "MiniExp-1";
+
         case BLADERF_TRIGGER_USER_0:
             return "User-0";
 
@@ -220,6 +226,10 @@ bladerf_trigger_signal str2trigger(const char *str)
 {
     if (!strcasecmp("J71-4", str)) {
         return BLADERF_TRIGGER_J71_4;
+    } else if (!strcasecmp("J51-1", str)) {
+        return BLADERF_TRIGGER_J51_1;
+    } else if (!strcasecmp("Miniexp-1", str)) {
+        return BLADERF_TRIGGER_MINI_EXP_1;
     } else if (!strcasecmp("User-0", str)) {
         return BLADERF_TRIGGER_USER_0;
     } else if (!strcasecmp("User-1", str)) {
