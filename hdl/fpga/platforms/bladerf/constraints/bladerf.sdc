@@ -37,7 +37,6 @@ set_output_delay -clock [get_clocks fx3_virtual] -min 0.75 [get_ports {fx3_gpif*
 set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll|altpll_component|auto_generated|pll1|clk[0]}] -setup -start 2
 set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll|altpll_component|auto_generated|pll1|clk[0]}] -hold -start 2
 
-
 # LMS sample interface
 set_input_delay -clock [get_clocks lms_rx_virtual] -max  5.832 [get_ports {lms_rx_data* lms_rx_iq_select}]
 set_input_delay -clock [get_clocks lms_rx_virtual] -min  -0.168 [get_ports {lms_rx_data* lms_rx_iq_select}] -add_delay
@@ -53,6 +52,10 @@ set_output_delay -clock [get_clocks c4_tx_virtual] -max  1.185 [get_ports {lms_t
 #set_false_path -from * -to [get_ports fx3_uart_cts]
 set_output_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 1.0 [get_ports {fx3_uart_rxd}]
 set_output_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_rxd}] -add_delay
+
+set_output_delay -clock [get_clocks {U_fx3_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 1.0 [get_ports {fx3_uart_cts}]
+set_output_delay -clock [get_clocks {U_fx3_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_cts}] -add_delay
+
 set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 1.0 [get_ports {fx3_uart_txd}]
 set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
 
@@ -105,8 +108,8 @@ set_output_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_re
 # Exceptions
 
 # The dcfifo which goes from the C4 TX domain to the PCLK domain seems to have an issue with the clear signal.  It isn't generally a issue so ignore it?
-set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
-set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|common_dcfifo:U_common_dcfifo|dcfifo*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|common_dcfifo:U_common_dcfifo|dcfifo*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
 
 # False path between hold_time and compare_time due to the way the FSM is setup
 set_false_path -from {*x_tamer|hold_time[*]} -to {*x_tamer|compare_time[*]}
@@ -114,3 +117,7 @@ set_false_path -from {*x_tamer|hold_time[*]} -to {*x_tamer|compare_time[*]}
 # Asynchronous clear on the RX FIFO when disabling RX
 set_false_path -from {fx3_gpif*rx_enable} -to {rx_meta_fifo*:wraclr|*}
 set_false_path -from {fx3_gpif*rx_enable} -to {rx_fifo*:wraclr|*}
+
+# Expansion ports
+set_false_path -from * -to [get_ports {exp_spi_clock exp_spi_mosi exp_gpio[*] mini_exp1 mini_exp2}]
+set_false_path -from [get_ports {exp_gpio[*] exp_clock_in mini_exp1 mini_exp2}]
