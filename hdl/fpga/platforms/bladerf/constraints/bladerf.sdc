@@ -20,9 +20,6 @@ derive_clock_uncertainty
 create_clock -period "10 MHz" [get_ports ref_vctcxo_tune]
 
 # First flop synchronizer false path
-set_false_path -from * -to [get_registers *synchronize:reg0]
-set_false_path -from * -to [get_registers reset_synchronizer*]
-set_false_path -from * -to [get_registers *vctcxo_tamer*reset_synchronizer*]
 set_false_path -from [get_registers {*source_holding[*]}] -to *
 
 ### Fast Interfaces ###
