@@ -415,6 +415,18 @@ typedef enum {
 } bladerf_dev_speed;
 
 /**
+ * FPGA configuration source
+ *
+ * Note: the numbering of this enum must match NuandFpgaConfigSource in
+ * firmware_common/bladeRF.h
+ */
+typedef enum {
+    BLADERF_FPGA_SOURCE_UNKNOWN = 0, /**< Uninitialized/invalid */
+    BLADERF_FPGA_SOURCE_FLASH   = 1, /**< Last FPGA load was from flash */
+    BLADERF_FPGA_SOURCE_HOST    = 2  /**< Last FPGA load was from host */
+} bladerf_fpga_source;
+
+/**
  * Query a device's serial number (deprecated)
  *
  * @param       dev     Device handle
@@ -523,6 +535,24 @@ int CALL_CONV bladerf_is_fpga_configured(struct bladerf *dev);
 API_EXPORT
 int CALL_CONV bladerf_fpga_version(struct bladerf *dev,
                                    struct bladerf_version *version);
+
+/**
+ * Query FPGA configuration source
+ *
+ * Determine whether the FPGA image was loaded from flash, or if it was
+ * loaded from the host, by asking the firmware for the last-known FPGA
+ * configuration source.
+ *
+ * @param       dev     Device handle
+ * @param[out]  source  Source of the configuration
+ *
+ * @return 0 on success, ::BLADERF_ERR_UNSUPPORTED if the
+ * BLADERF_CAP_FW_FPGA_SOURCE capability is not present, value from \ref
+ * RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_fpga_source(struct bladerf *dev,
+                                      bladerf_fpga_source *source);
 
 /**
  * Obtain the bus speed at which the device is operating

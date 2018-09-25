@@ -159,6 +159,26 @@ static int usb_set_fpga_protocol(struct bladerf *dev, backend_fpga_protocol fpga
     return 0;
 }
 
+static bladerf_fpga_source usb_get_fpga_source(struct bladerf *dev)
+{
+    int result = -1;
+    int status;
+
+    status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_FPGA_SOURCE,
+                            USB_DIR_DEVICE_TO_HOST, &result);
+
+    if (status < 0) {
+        log_debug("%s: vendor_cmd_int returned %s\n", __FUNCTION__,
+                  bladerf_strerror(status));
+        return BLADERF_FPGA_SOURCE_UNKNOWN;
+    } else if (0 == result || 1 == result || 2 == result) {
+        return (bladerf_fpga_source)result;
+    } else {
+        log_debug("Unexpected result from FPGA source query: %d\n", result);
+        return BLADERF_FPGA_SOURCE_UNKNOWN;
+    }
+}
+
 /* After performing a flash operation, switch back to either RF_LINK or the
  * FPGA loader.
  */
@@ -1134,6 +1154,7 @@ const struct backend_fns backend_fns_usb_legacy = {
 
     FIELD_INIT(.load_fpga, usb_load_fpga),
     FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),
+    FIELD_INIT(.get_fpga_source, usb_get_fpga_source),
 
     FIELD_INIT(.get_fw_version, usb_get_fw_version),
     FIELD_INIT(.get_fpga_version, usb_get_fpga_version),
@@ -1236,6 +1257,7 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.load_fpga, usb_load_fpga),
     FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),
+    FIELD_INIT(.get_fpga_source, usb_get_fpga_source),
 
     FIELD_INIT(.get_fw_version, usb_get_fw_version),
     FIELD_INIT(.get_fpga_version, usb_get_fpga_version),

@@ -13,6 +13,7 @@
 
 static const struct compat fw_compat[] = {
     /*   Firmware       requires  >=        FPGA */
+    { VERSION(2, 3, 1),                 VERSION(0, 6, 0) },
     { VERSION(2, 3, 0),                 VERSION(0, 6, 0) },
     { VERSION(2, 2, 0),                 VERSION(0, 6, 0) },
     { VERSION(2, 1, 1),                 VERSION(0, 6, 0) },
