@@ -438,6 +438,9 @@ CyBool_t NuandHandleVendorRequest(
 
     case BLADE_USB_CMD_BEGIN_PROG:
         retStatus = FpgaBeginProgram();
+        if(0 == retStatus) {
+            NuandSetFpgaConfigSource(NUAND_FPGA_CONFIG_SOURCE_HOST);
+        }
         CyU3PUsbSendRetCode(retStatus);
     break;
 
@@ -461,6 +464,10 @@ CyBool_t NuandHandleVendorRequest(
         ret = (NuandGetSPIManufacturer() << 8) | NuandGetSPIDeviceID();
         CyU3PUsbSendRetCode(ret);
     break;
+
+    case BLADE_USB_CMD_QUERY_FPGA_SOURCE:
+        ret = (unsigned int)NuandGetFpgaConfigSource();
+        CyU3PUsbSendRetCode(ret);
 
     case BLADE_USB_CMD_SET_LOOPBACK:
         NuandRFLinkLoopBack(wValue);

@@ -30,6 +30,7 @@
 #define BLADE_USB_CMD_RF_TX                     5
 #define BLADE_USB_CMD_QUERY_DEVICE_READY        6
 #define BLADE_USB_CMD_QUERY_FLASH_ID            7
+#define BLADE_USB_CMD_QUERY_FPGA_SOURCE         8
 #define BLADE_USB_CMD_FLASH_READ              100
 #define BLADE_USB_CMD_FLASH_WRITE             101
 #define BLADE_USB_CMD_FLASH_ERASE             102
@@ -87,6 +88,18 @@ struct bladeRF_sector {
     unsigned int len;
     unsigned char *ptr;
 };
+
+/**
+ * FPGA configuration source
+ * 
+ * Note: the numbering of this enum must match bladerf_fpga_source in
+ * libbladeRF.h
+ */
+typedef enum {
+    NUAND_FPGA_CONFIG_SOURCE_INVALID = 0, /**< Uninitialized/invalid */
+    NUAND_FPGA_CONFIG_SOURCE_FLASH   = 1, /**< Last FPGA load was from flash */
+    NUAND_FPGA_CONFIG_SOURCE_HOST    = 2  /**< Last FPGA load was from host */
+} NuandFpgaConfigSource;
 
 #define USB_CYPRESS_VENDOR_ID   0x04b4
 #define USB_FX3_PRODUCT_ID      0x00f3

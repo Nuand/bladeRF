@@ -24,6 +24,7 @@
 #include <cyu3usb.h>
 #include <cyu3spi.h>
 #include "bladeRF.h"
+#include "fpga.h"
 #include "gpif.h"
 #include "spi_flash_lib.h"
 
@@ -32,9 +33,14 @@
 /* DMA Channel for RF U2P (USB to P-port) transfers */
 static CyU3PDmaChannel glChHandlebladeRFUtoP;
 
-static uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received
-                                             * from USB during FPGA programming */
+/* Counter to track the number of buffers received from USB during FPGA
+ * programming */
+static uint32_t glDMARxCount = 0;
+
 static uint16_t glFlipLut[256];
+
+/* Tracks the last FPGA programmer (SPI flash or USB host) */
+static NuandFpgaConfigSource glFpgaConfigSrc = NUAND_FPGA_CONFIG_SOURCE_INVALID;
 
 int FpgaBeginProgram(void)
 {
@@ -60,7 +66,6 @@ int FpgaBeginProgram(void)
 
     return 0;
 }
-
 
 void NuandFpgaConfigSwInit(void) {
     NuandFpgaConfigSwFlipLut(glFlipLut);
@@ -102,6 +107,8 @@ static void NuandFpgaConfigStart(void)
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
     static int first_call = 1;
     bool doUsb = true;
+
+    NuandSetFpgaConfigSource(NUAND_FPGA_CONFIG_SOURCE_INVALID);
 
     NuandAllowSuspend(CyFalse);
 
@@ -296,6 +303,7 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
     CyU3PDmaState_t state;
 
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+
     NuandFpgaConfigStart();
     ptr = CyU3PDmaBufferAlloc(4096);
     apiRetStatus = CyFxSpiInit(0x100);
@@ -367,6 +375,8 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
         }
     }
 
+    NuandSetFpgaConfigSource(NUAND_FPGA_CONFIG_SOURCE_FLASH);
+
 out:
     CyU3PDmaBufferFree(ptr);
     CyU3PSpiDeInit();
@@ -375,6 +385,16 @@ out:
     NuandFpgaConfigStop();
 
     return retval;
+}
+
+NuandFpgaConfigSource NuandGetFpgaConfigSource(void)
+{
+    return glFpgaConfigSrc;
+}
+
+void NuandSetFpgaConfigSource(NuandFpgaConfigSource src)
+{
+    glFpgaConfigSrc = src;
 }
 
 const struct NuandApplication NuandFpgaConfig = {
