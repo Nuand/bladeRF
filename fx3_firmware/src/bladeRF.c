@@ -226,8 +226,11 @@ static void StopApplication()
 {
     if (glAppMode == MODE_RF_CONFIG) {
         NuandRFLink.stop();
-    } else if (glAppMode == MODE_FPGA_CONFIG){
-        NuandFpgaConfig.stop();
+    } else if (glAppMode == MODE_FPGA_CONFIG) {
+        /* if a flash autoload is in progress, don't stop it */
+        if (glDeviceReady || !glAutoLoadValid) {
+            NuandFpgaConfig.stop();
+        }
     }
 }
 
