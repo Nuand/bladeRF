@@ -41,7 +41,7 @@ if(ENABLE_FX3_BUILD)
     ExternalProject_Add(fx3_firmware
         DOWNLOAD_COMMAND ""
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/fx3_firmware"
-        CMAKE_ARGS "-DFX3_SDK_PATH=${FX3_SDK_PATH};-DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fx3_firmware/cmake/fx3-toolchain.cmake"
+        CMAKE_ARGS "-DFX3_INSTALL_PATH=${FX3_INSTALL_PATH};-DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fx3_firmware/cmake/fx3-toolchain.cmake"
         BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/fx3_firmware"
         PREFIX     "${CMAKE_CURRENT_BINARY_DIR}/fx3_firmware"
         INSTALL_COMMAND ""
