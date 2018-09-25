@@ -391,6 +391,17 @@ int bladerf_is_fpga_configured(struct bladerf *dev)
     return status;
 }
 
+int bladerf_get_fpga_source(struct bladerf *dev, bladerf_fpga_source *source)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_fpga_source(dev, source);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 const char *bladerf_get_board_name(struct bladerf *dev)
 {
     return dev->board->name;

@@ -1235,6 +1235,24 @@ static int bladerf1_is_fpga_configured(struct bladerf *dev)
     return dev->backend->is_fpga_configured(dev);
 }
 
+static int bladerf1_get_fpga_source(struct bladerf *dev,
+                                    bladerf_fpga_source *source)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    if (!have_cap(board_data->capabilities, BLADERF_CAP_FW_FPGA_SOURCE)) {
+        log_debug("%s: not supported by firmware\n", __FUNCTION__);
+        *source = BLADERF_FPGA_SOURCE_UNKNOWN;
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    *source = dev->backend->get_fpga_source(dev);
+
+    return 0;
+}
+
 static uint64_t bladerf1_get_capabilities(struct bladerf *dev)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
@@ -3420,6 +3438,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_fpga_size, bladerf1_get_fpga_size),
     FIELD_INIT(.get_flash_size, bladerf1_get_flash_size),
     FIELD_INIT(.is_fpga_configured, bladerf1_is_fpga_configured),
+    FIELD_INIT(.get_fpga_source, bladerf1_get_fpga_source),
     FIELD_INIT(.get_capabilities, bladerf1_get_capabilities),
     FIELD_INIT(.get_channel_count, bladerf1_get_channel_count),
     FIELD_INIT(.get_fpga_version, bladerf1_get_fpga_version),

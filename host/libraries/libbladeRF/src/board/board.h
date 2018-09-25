@@ -138,6 +138,12 @@
  */
 #define BLADERF_CAP_FW_FLASH_ID (((uint64_t)1) << 36)
 
+/**
+ * FX3 firmware v2.3.1 introduced support for querying the source of the
+ * currently-configured FPGA (e.g. flash autoload, host, etc)
+ */
+#define BLADERF_CAP_FW_FPGA_SOURCE (((uint64_t)1) << 37)
+
 struct bladerf {
     /* Handle lock - to ensure atomic access to control and configuration
      * operations */
@@ -182,6 +188,7 @@ struct board_fns {
     int (*get_fpga_size)(struct bladerf *dev, bladerf_fpga_size *size);
     int (*get_flash_size)(struct bladerf *dev, uint32_t *size, bool *is_guess);
     int (*is_fpga_configured)(struct bladerf *dev);
+    int (*get_fpga_source)(struct bladerf *dev, bladerf_fpga_source *source);
     uint64_t (*get_capabilities)(struct bladerf *dev);
     size_t (*get_channel_count)(struct bladerf *dev, bladerf_direction dir);
 
@@ -437,18 +444,15 @@ struct board_fns {
 
 /* Information about the (SPI) flash architecture */
 struct bladerf_flash_arch {
-    enum {
-        STATUS_UNINITIALIZED,
-        STATUS_SUCCESS,
-        STATUS_ASSUMED
-    } status;
-    uint8_t  manufacturer_id;        /**< Raw manufacturer ID */
-    uint8_t  device_id;              /**< Raw device ID */
-    uint32_t tsize_bytes;            /**< Total size of flash, in bytes */
-    uint32_t psize_bytes;            /**< Flash page size, in bytes */
-    uint32_t ebsize_bytes;           /**< Flash erase block size, in bytes */
-    uint32_t num_pages;              /**< Size of flash, in pages */
-    uint32_t num_ebs;                /**< Size of flash, in erase blocks */
+    enum { STATUS_UNINITIALIZED, STATUS_SUCCESS, STATUS_ASSUMED } status;
+
+    uint8_t manufacturer_id; /**< Raw manufacturer ID */
+    uint8_t device_id;       /**< Raw device ID */
+    uint32_t tsize_bytes;    /**< Total size of flash, in bytes */
+    uint32_t psize_bytes;    /**< Flash page size, in bytes */
+    uint32_t ebsize_bytes;   /**< Flash erase block size, in bytes */
+    uint32_t num_pages;      /**< Size of flash, in pages */
+    uint32_t num_ebs;        /**< Size of flash, in erase blocks */
 };
 
 /* Boards */

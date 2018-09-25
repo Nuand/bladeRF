@@ -100,6 +100,7 @@ struct backend_fns {
                      const uint8_t *image,
                      size_t image_size);
     int (*is_fpga_configured)(struct bladerf *dev);
+    bladerf_fpga_source (*get_fpga_source)(struct bladerf *dev);
 
     /* Version checking */
     int (*get_fw_version)(struct bladerf *dev, struct bladerf_version *version);
