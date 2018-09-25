@@ -17,59 +17,80 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include "cmd.h"
 #include "version.h"
+#include "cmd.h"
 #include <stdio.h>
 
 int cmd_version(struct cli_state *state, int argc, char **argv)
 {
     int status;
-
     struct bladerf_version fw_version, fpga_version, lib_version;
-    bool fpga_loaded = false;
 
     bladerf_version(&lib_version);
 
     printf("\n");
-    printf("  bladeRF-cli version:        " BLADERF_CLI_VERSION "\n");
-    printf("  libbladeRF version:         %s\n", lib_version.describe);
+    printf("  %-28s%s\n", "bladeRF-cli version:", BLADERF_CLI_VERSION);
+    printf("  %-28s%s\n", "libbladeRF version:", lib_version.describe);
     printf("\n");
 
     /* Exit cleanly if no device is attached */
     if (state->dev == NULL) {
-        printf("  Device version information unavailable: No device attached.\n");
+        printf(
+            "  Device version information unavailable: No device attached.\n");
         return 0;
     }
 
-    status = bladerf_is_fpga_configured(state->dev);
-    if (status < 0) {
-        state->last_lib_error = status;
-        return CLI_RET_LIBBLADERF;
-    } else if (status != 0) {
-        fpga_loaded = true;
-        status = bladerf_fpga_version(state->dev, &fpga_version);
-        if (status < 0) {
-            state->last_lib_error = status;
-            return CLI_RET_LIBBLADERF;
-        }
-    }
-
+    /* Retrieve and print firmware version */
     status = bladerf_fw_version(state->dev, &fw_version);
     if (status < 0) {
         state->last_lib_error = status;
         return CLI_RET_LIBBLADERF;
     }
 
+    printf("  %-28s%s\n", "Firmware version:", fw_version.describe);
 
-    printf("  Firmware version:           %s\n", fw_version.describe);
+    /* Check if the FPGA is configured before checking version */
+    status = bladerf_is_fpga_configured(state->dev);
 
-    if (fpga_loaded) {
-        printf("  FPGA version:               %s\n", fpga_version.describe);
+    if (status < 0) {
+        /* error condition */
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    } else if (status > 0) {
+        /* the FPGA is configured */
+        bladerf_fpga_source source;
+        char *loaded_via = "";
+
+        status = bladerf_fpga_version(state->dev, &fpga_version);
+        if (status < 0) {
+            state->last_lib_error = status;
+            return CLI_RET_LIBBLADERF;
+        }
+
+        status = bladerf_get_fpga_source(state->dev, &source);
+        if (status < 0) {
+            /* Fail gracefully and just assume it's unknown */
+            source = BLADERF_FPGA_SOURCE_UNKNOWN;
+        }
+
+        switch (source) {
+            case BLADERF_FPGA_SOURCE_FLASH:
+                loaded_via = " (configured from SPI flash)";
+                break;
+            case BLADERF_FPGA_SOURCE_HOST:
+                loaded_via = " (configured by USB host)";
+                break;
+            default:
+                break;
+        }
+
+        printf("  %-28s%s%s\n", "FPGA version:", fpga_version.describe,
+               loaded_via);
     } else {
-        printf("  FPGA version:               Unknown (FPGA not loaded)\n");
+        /* the FPGA is not configured yet */
+        printf("  %-28s%s\n", "FPGA version:", "Unknown (FPGA not loaded)");
     }
 
     printf("\n");
     return CLI_RET_OK;
 }
-
