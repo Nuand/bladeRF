@@ -297,8 +297,6 @@ fi
 set -e
 
 work_dir="work/${platform}-${size}-${rev}"
-common_dir=../../../fpga/platforms/common/bladerf
-build_dir=../../../fpga/platforms/${platform}/build
 
 if [ "$clear_work_dir" == "1" ]; then
     echo -e "\nClearing ${work_dir} directory\n" >&2
@@ -307,6 +305,10 @@ fi
 
 mkdir -p ${work_dir}
 pushd ${work_dir}
+
+# These paths are relative to $work_dir
+common_dir=../../../fpga/platforms/common/bladerf
+build_dir=../../../fpga/platforms/${platform}/build
 
 cp -r ${build_dir}/ip.ipx .
 
@@ -343,7 +345,7 @@ if [ -f ${build_dir}/platform.sh ]; then
 fi
 
 if [ -f nios_system.sopcinfo ]; then
-    echo "Skipiping qsys-generate, nios_system.sopcinfo already exists"
+    echo "Skipping qsys-generate, nios_system.sopcinfo already exists"
 else
     qsys-generate --synthesis=Verilog nios_system.qsys
 fi
@@ -408,7 +410,7 @@ quartus_sh --64bit \
            -t        "${build_dir}/bladerf.tcl" \
            -projname "${PROJECT_NAME}" \
            -part     "${DEVICE}" \
-           -platdir  "$(readlink -f ${build_dir}/..)"
+           -platdir  "${build_dir}/.."
 
 # Run Quartus flow
 quartus_sh --64bit \
