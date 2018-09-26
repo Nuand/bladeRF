@@ -5,6 +5,19 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.3.1 (2018-09-26)
+--------------------------------
+ * Fix USB device reset (e.g. during bladerf_open()) interrupting SPI flash
+   autoloading of FPGA images (#661)
+ * Add BLADE_USB_CMD_QUERY_FPGA_SOURCE command, which identifies the source
+   of the currently-running FPGA image (SPI flash vs USB host). (#646)
+
+v2.3.0 (2018-08-29)
+--------------------------------
+ * Add BLADE_USB_CMD_QUERY_FLASH_ID command, which returns the SPI flash
+   manufacturer and device ID information. (#571)
+ * Update README to reflect unified firmware introduced in v2.2.0
+
 v2.2.0 (2018-06-18)
 --------------------------------
  * Unify bladeRF builds
