@@ -45,6 +45,7 @@ if(ENABLE_FX3_BUILD)
         BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/fx3_firmware"
         PREFIX     "${CMAKE_CURRENT_BINARY_DIR}/fx3_firmware"
         INSTALL_COMMAND ""
+        BUILD_ALWAYS true
     )
 else()
     message(STATUS "Skipping FX3 firmware build")
