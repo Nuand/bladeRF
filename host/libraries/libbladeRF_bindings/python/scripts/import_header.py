@@ -34,6 +34,28 @@ import textwrap
 # This is the default for the Ubuntu python3-pycparser package
 FAKE_LIBC_INCLUDE_DIR = "/usr/share/python3-pycparser/fake_libc_include"
 
+# Lines matching these will be omitted from the output for brevity
+STOPLIST = [
+    "typedef struct Display Display;",
+    "typedef unsigned long XID;",
+    "typedef unsigned long VisualID;",
+    "typedef XID Window;",
+    "typedef void *MirEGLNativeWindowType;",
+    "typedef void *MirEGLNativeDisplayType;",
+    "typedef struct MirConnection MirConnection;",
+    "typedef struct MirSurface MirSurface;",
+    "typedef struct MirSurfaceSpec MirSurfaceSpec;",
+    "typedef struct MirScreencast MirScreencast;",
+    "typedef struct MirPromptSession MirPromptSession;",
+    "typedef struct MirBufferStream MirBufferStream;",
+    "typedef struct MirPersistentId MirPersistentId;",
+    "typedef struct MirBlob MirBlob;",
+    "typedef struct MirDisplayConfig MirDisplayConfig;",
+    "typedef struct xcb_connection_t xcb_connection_t;",
+    "typedef uint32_t xcb_window_t;",
+    "typedef uint32_t xcb_visualid_t;",
+]
+
 
 class MyCGenerator(c_generator.CGenerator):
     # Clean up enumeration printouts...
@@ -74,6 +96,7 @@ def parse_header(filename):
     return parse_file(filename,
                       use_cpp=True,
                       cpp_args=[
+                        r'-I{}'.format(os.path.dirname(filename)),
                         r'-I{}'.format(FAKE_LIBC_INCLUDE_DIR),
                         r'-D_DOXYGEN_ONLY_'])
 
@@ -87,7 +110,8 @@ def generate_cdef(data, print_omitted_lines=False):
     for line in data.split('\n'):
         # Filter typedefs included from system headers
         if 'bladerf' not in line and ('typedef int' in line or
-                                      'typedef _Bool' in line):
+                                      'typedef _Bool' in line or
+                                      line in STOPLIST):
             if print_omitted_lines:
                 line = "/* Omitted: {} */".format(line)
             else:
