@@ -70,6 +70,12 @@ header = """
     BLADERF_DEVICE_SPEED_HIGH,
     BLADERF_DEVICE_SPEED_SUPER
   } bladerf_dev_speed;
+  typedef enum
+  {
+    BLADERF_FPGA_SOURCE_UNKNOWN = 0,
+    BLADERF_FPGA_SOURCE_FLASH = 1,
+    BLADERF_FPGA_SOURCE_HOST = 2
+  } bladerf_fpga_source;
   int bladerf_get_serial(struct bladerf *dev, char *serial);
   int bladerf_get_serial_struct(struct bladerf *dev, struct
     bladerf_serial *serial);
@@ -82,6 +88,8 @@ header = """
   int bladerf_is_fpga_configured(struct bladerf *dev);
   int bladerf_fpga_version(struct bladerf *dev, struct bladerf_version
     *version);
+  int bladerf_get_fpga_source(struct bladerf *dev, bladerf_fpga_source
+    *source);
   bladerf_dev_speed bladerf_device_speed(struct bladerf *dev);
   const char *bladerf_get_board_name(struct bladerf *dev);
   typedef int bladerf_channel;
