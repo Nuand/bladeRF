@@ -191,6 +191,7 @@ static inline int print_all_triggers(struct cli_state *state)
         signal = BLADERF_TRIGGER_J51_1;
     } else {
         cli_err(state, "print_all_triggers", "Unknown board name");
+        return CLI_RET_INVPARAM;
     }
 
     status = print_trigger(state, BLADERF_MODULE_RX, signal);
