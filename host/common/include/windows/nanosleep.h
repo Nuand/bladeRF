@@ -33,6 +33,8 @@ extern "C" {
 #error "This file is intended for use with WIN32 systems only."
 #endif
 
+#include <pthread.h>
+
 int nanosleep(const struct timespec *req, struct timespec *rem);
 
 #ifdef __cplusplus
