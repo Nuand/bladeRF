@@ -25,6 +25,8 @@
 #ifndef WIN_NANOSLEEP_H_
 #define WIN_NANOSLEEP_H_
 
+#include <pthread.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,8 +34,6 @@ extern "C" {
 #ifndef WIN32
 #error "This file is intended for use with WIN32 systems only."
 #endif
-
-#include <pthread.h>
 
 int nanosleep(const struct timespec *req, struct timespec *rem);
 

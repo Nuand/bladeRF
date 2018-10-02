@@ -27,7 +27,6 @@
 #endif
 
 #include "nanosleep.h"
-#include <pthread.h>
 #include <windows.h>
 
 int nanosleep(const struct timespec *req, struct timespec *rem)
