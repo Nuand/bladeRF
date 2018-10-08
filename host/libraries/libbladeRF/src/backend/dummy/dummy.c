@@ -392,7 +392,7 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.probe, dummy_probe),
 
     FIELD_INIT(.get_vid_pid, dummy_get_vid_pid),
-    FIELD_INIT(.get_flash_id, usb_get_flash_id),
+    FIELD_INIT(.get_flash_id, dummy_get_flash_id),
     FIELD_INIT(.open, dummy_open),
     FIELD_INIT(.set_fpga_protocol, dummy_set_fpga_protocol),
     FIELD_INIT(.close, dummy_close),
