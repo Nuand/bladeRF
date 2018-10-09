@@ -185,6 +185,13 @@ set(LIBBLADERF_INCLUDES
 ################################################################################
 # Build dependencies
 ################################################################################
+if(BUILD_AD936X)
+    # Add AD936x library
+    ExternalProject_Get_property(libad936x BINARY_DIR)
+    find_library(LIBAD936X_LIBRARY ad936x PATHS ${BINARY_DIR})
+    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBAD936X_LIBRARY})
+endif()
+
 if(MSVC)
     set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${MSVC_C99_INCLUDES})
 
@@ -294,19 +301,11 @@ include_directories(${LIBBLADERF_INCLUDES})
 ################################################################################
 # Configure source files
 ################################################################################
-set(LIBBLADERF_AD9361_SOURCE
-        src/driver/thirdparty/adi/ad9361.c
-        src/driver/thirdparty/adi/ad9361_api.c
-        src/driver/thirdparty/adi/ad9361_conv.c
-        src/driver/thirdparty/adi/adc_core.c
-        src/driver/thirdparty/adi/dac_core.c
-        src/driver/thirdparty/adi/util.c
-        src/driver/thirdparty/adi/platform.c
+set(LIBBLADERF_SOURCE_BLADERF2
+        src/board/bladerf2/bladerf2.c
+        src/board/bladerf2/capabilities.c
+        src/board/bladerf2/compatibility.c
 )
-
-if(NOT MSVC)
-    set_source_files_properties(${LIBBLADERF_AD9361_SOURCE} PROPERTIES COMPILE_FLAGS "-std=gnu11")
-endif(NOT MSVC)
 
 set(LIBBLADERF_SOURCE
         src/backend/backend.c
@@ -323,10 +322,6 @@ set(LIBBLADERF_SOURCE
         src/board/bladerf1/calibration.c
         src/board/bladerf1/flash.c
         src/board/bladerf1/image.c
-        src/board/bladerf2/bladerf2.c
-        src/board/bladerf2/capabilities.c
-        src/board/bladerf2/compatibility.c
-        src/board/bladerf2/params.c
         src/board/board.c
         src/expansion/xb100.c
         src/expansion/xb200.c
@@ -350,8 +345,11 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/lms.c
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/band_select.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/parse.c
-        ${LIBBLADERF_AD9361_SOURCE}
 )
+
+if(BUILD_AD936X)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${LIBBLADERF_SOURCE_BLADERF2})
+endif()
 
 if (MSVC)
         set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${CMAKE_CURRENT_BINARY_DIR}/bladerf.rc)
@@ -373,7 +371,7 @@ if(ENABLE_BACKEND_USB)
 endif()
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend//usb/libusb.c)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/libusb.c)
 endif()
 
 if(ENABLE_BACKEND_CYAPI)

@@ -95,7 +95,7 @@ if(BUILD_AD936X)
     endif(BLADERF_TOP_LEVEL_BUILD)
 
     include(ExternalProject)
-    ExternalProject_Add(libad9361x
+    ExternalProject_Add(libad936x
         DOWNLOAD_COMMAND ""
         CMAKE_ARGS "-DLIBAD936X_DEBUG=${BUILD_AD936X_DEBUG}"
         SOURCE_DIR "${LIBAD9361X_SOURCE_PATH}"
