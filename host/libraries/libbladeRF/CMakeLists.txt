@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.5)
 project(libbladeRF C)
 
+
 ################################################################################
 # Version information
 ################################################################################
@@ -47,6 +48,7 @@ if (NOT EXISTS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
     set(CMAKE_INSTALL_LIBDIR lib)
 endif()
 
+
 ################################################################################
 # Configuration options
 ################################################################################
@@ -87,9 +89,11 @@ option(ENABLE_RFIC_TIMING_CALIBRATION
        OFF
 )
 
+
 ##############################
 # Backend Support
 ##############################
+
 option(ENABLE_BACKEND_USB
     "Enable USB backends. Required when using the bladeRF with a host machine."
     ON
@@ -126,9 +130,11 @@ configure_file(
     @ONLY
 )
 
+
 ################################################################################
 # Additional compiler options
 ################################################################################
+
 if(ENABLE_LIBBLADERF_LOGGING)
     add_definitions(-DLOGGING_ENABLED)
 endif()
@@ -167,10 +173,10 @@ else()
 endif()
 
 
-
 ################################################################################
 # Include paths
 ################################################################################
+
 set(LIBBLADERF_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -181,16 +187,9 @@ set(LIBBLADERF_INCLUDES
 )
 
 
-
 ################################################################################
 # Build dependencies
 ################################################################################
-if(BUILD_AD936X)
-    # Add AD936x library
-    ExternalProject_Get_property(libad936x BINARY_DIR)
-    find_library(LIBAD936X_LIBRARY ad936x PATHS ${BINARY_DIR})
-    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBAD936X_LIBRARY})
-endif()
 
 if(MSVC)
     set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${MSVC_C99_INCLUDES})
@@ -296,7 +295,12 @@ if(ENABLE_USB_DEV_RESET_ON_OPEN)
     add_definitions(-DENABLE_USB_DEV_RESET_ON_OPEN=1)
 endif()
 
+if(BUILD_AD936X)
+    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ad936x)
+endif(BUILD_AD936X)
+
 include_directories(${LIBBLADERF_INCLUDES})
+
 
 ################################################################################
 # Configure source files
@@ -417,6 +421,7 @@ endif()
 
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
+
 ################################################################################
 # Build configuration
 ################################################################################
@@ -446,9 +451,11 @@ set_target_properties(libbladerf_shared PROPERTIES SOVERSION ${VERSION_INFO_MAJO
 include(Shortfile)
 define_file_basename_for_sources(libbladerf_shared)
 
+
 ################################################################################
 # Generate pkg-config file
 ################################################################################
+
 add_subdirectory(include)
 foreach(inc ${LIBBLADERF_INCLUDE_DIR})
     list(APPEND LIBBLADERF_PC_CFLAGS "-I${inc}")
@@ -493,9 +500,11 @@ install(
 )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
+
 ################################################################################
 # Library installation information
 ################################################################################
+
 install(TARGETS libbladerf_shared
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # .so/.dylib
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # .a/.lib
@@ -506,11 +515,14 @@ install(TARGETS libbladerf_shared
 ################################################################################
 # Informational output
 ################################################################################
+
 message(STATUS "libbladeRF version: ${VERSION_INFO}")
+
 
 ################################################################################
 # Doxygen documentation
 ################################################################################
+
 if(BUILD_LIBBLADERF_DOC_EXAMPLES)
     add_subdirectory(doc/examples)
 endif()

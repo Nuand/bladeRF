@@ -80,31 +80,12 @@ check_library_exists(c clock_gettime "time.h" HAVE_CLOCK_GETTIME)
 option(BUILD_AD936X
        "Include support for the Analog Devices AD936x RFIC."
        ON)
-
 option(BUILD_AD936X_DEBUG
        "Enable debugging output for the AD936x library."
        OFF)
-
-if(BUILD_AD936X)
-    set(LIBAD9361X_SOURCE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/analogdevicesinc/no-OS_local")
-
-    if(BLADERF_TOP_LEVEL_BUILD)
-        set(LIBAD9361X_BINARY_PATH "${CMAKE_CURRENT_BINARY_DIR}/../thirdparty/analogdevicesinc/no-OS_local")
-    else()
-        set(LIBAD9361X_BINARY_PATH "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/analogdevicesinc/no-OS_local")
-    endif(BLADERF_TOP_LEVEL_BUILD)
-
-    include(ExternalProject)
-    ExternalProject_Add(libad936x
-        DOWNLOAD_COMMAND ""
-        CMAKE_ARGS "-DLIBAD936X_DEBUG=${BUILD_AD936X_DEBUG}"
-        SOURCE_DIR "${LIBAD9361X_SOURCE_PATH}"
-        BINARY_DIR "${LIBAD9361X_BINARY_PATH}"
-        PREFIX     "${LIBAD9361X_BINARY_PATH}"
-        INSTALL_COMMAND ""
-        BUILD_ALWAYS true
-    )
-endif(BUILD_AD936X)
+ # We do this prior to the rest of host/common, as the compile options are
+# going to be different.
+add_subdirectory(common/thirdparty/ad936x)
 
 ################################################################################
 # Compiler configuration
