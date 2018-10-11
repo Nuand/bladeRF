@@ -266,7 +266,7 @@ set_instance_parameter_value ram {enableDiffWidth} {0}
 set_instance_parameter_value ram {initMemContent} {1}
 set_instance_parameter_value ram {initializationFileName} {onchip_memory2_0}
 set_instance_parameter_value ram {instanceID} {MED}
-set_instance_parameter_value ram {memorySize} {32768.0}
+set_instance_parameter_value ram {memorySize} ${ram_size}
 set_instance_parameter_value ram {readDuringWriteMode} {DONT_CARE}
 set_instance_parameter_value ram {simAllowMRAMContentsFile} {0}
 set_instance_parameter_value ram {simMemInitOnlyFilename} {0}
