@@ -34,7 +34,7 @@ static inline bool perform_write(uint8_t id, uint16_t addr, uint64_t data)
 
     switch (id) {
         case NIOS_PKT_16x64_TARGET_AD9361:
-            ad9361_spi_write(addr, data);
+            adi_spi_write(addr, data);
             break;
 
         /* Add user customizations here
@@ -59,7 +59,7 @@ static inline bool perform_read(uint8_t id, uint16_t addr, uint64_t *data)
 
     switch (id) {
         case NIOS_PKT_16x64_TARGET_AD9361:
-            *data = ad9361_spi_read(addr);
+            *data = adi_spi_read(addr);
             break;
 
         /* Add user customizations here
