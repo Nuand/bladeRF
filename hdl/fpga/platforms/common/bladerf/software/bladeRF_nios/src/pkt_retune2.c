@@ -161,7 +161,7 @@ static inline void profile_load(bladerf_module module, fastlock_profile *p)
         return;
     }
 
-    ad9361_fastlock_load(module, p);
+    adi_fastlock_load(module, p);
 }
 
 static inline void profile_load_scheduled(struct queue *q,
@@ -201,13 +201,13 @@ static inline void profile_activate(bladerf_module module, fastlock_profile *p)
     }
 
     /* Activate the RFFE fast lock profile */
-    ad9361_fastlock_recall(module, p);
+    adi_fastlock_recall(module, p);
 
     /* Adjust the RFFE port */
-    ad9361_rfport_select(p);
+    adi_rfport_select(p);
 
     /* Adjust the RF switches */
-    ad9361_rfspdt_select(module, p);
+    adi_rfspdt_select(module, p);
 }
 
 static inline void retune_isr(struct queue *q)

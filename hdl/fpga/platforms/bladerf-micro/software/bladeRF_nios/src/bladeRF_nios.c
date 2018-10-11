@@ -199,26 +199,26 @@ int main(void)
             // Read AD9361 registers 0x045-0x04c
             for( i=0x45; i < 0x4d; i++ ) {
                 adi_spi_addr = (adi_spi_addr & 0xfc00) | i;
-                adi_spi_data = ad9361_spi_read(adi_spi_addr);
+                adi_spi_data = adi_spi_read(adi_spi_addr);
             }
 
             // Read 0x028
             adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
-            adi_spi_data = ad9361_spi_read(adi_spi_addr);
+            adi_spi_data = adi_spi_read(adi_spi_addr);
 
             // Write 0x5a to 0x028
             adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
             adi_spi_data = (UINT64_C(0x5a) << (64-8));
-            ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
+            adi_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
 
             // Read 0x028
             adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
-            adi_spi_data = ad9361_spi_read(adi_spi_addr);
+            adi_spi_data = adi_spi_read(adi_spi_addr);
 
             // Write 0x5a to 0x028
             adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
             adi_spi_data = (UINT64_C(0x0) << (64-8));
-            ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
+            adi_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
 
             usleep(100);
         }

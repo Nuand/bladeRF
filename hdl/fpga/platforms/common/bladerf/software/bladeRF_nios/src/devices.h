@@ -192,7 +192,7 @@ void lms6_write(uint8_t addr, uint8_t data);
  *
  * @return  Register data
  */
-uint64_t ad9361_spi_read(uint16_t addr);
+uint64_t adi_spi_read(uint16_t addr);
 
 /**
  * Write to AD9361 SPI register(s)
@@ -200,7 +200,7 @@ uint64_t ad9361_spi_read(uint16_t addr);
  * @param   addr    Register address to write to
  * @param   data    Data to write
  */
-void ad9361_spi_write(uint16_t addr, uint64_t data);
+void adi_spi_write(uint16_t addr, uint64_t data);
 
 /**
  * Read from ADI AXI space
@@ -226,7 +226,7 @@ void adi_axi_write(uint16_t addr, uint32_t data);
  * @param rffe_profile AD9361 profile number (0-::NUM_RFFE_FASTLOCK_PROFILES)
  * @param nios_profile Nios profile number (0-::NUM_BBP_FASTLOCK_PROFILES)
  */
-void ad9361_fastlock_save(bool is_tx, uint8_t rffe_profile,
+void adi_fastlock_save(bool is_tx, uint8_t rffe_profile,
                           uint16_t nios_profile);
 
 /**
@@ -235,7 +235,7 @@ void ad9361_fastlock_save(bool is_tx, uint8_t rffe_profile,
  * @param m    Which module to load.
  * @param *p   Fast lock profile structure
  */
-void ad9361_fastlock_load(bladerf_module m, fastlock_profile *p);
+void adi_fastlock_load(bladerf_module m, fastlock_profile *p);
 
 /**
  * Recall a stored fast lock profile.
@@ -243,14 +243,14 @@ void ad9361_fastlock_load(bladerf_module m, fastlock_profile *p);
  * @param m    Which module to recall.
  * @param *p   Fast lock profile structure
  */
-void ad9361_fastlock_recall(bladerf_module m, fastlock_profile *p);
+void adi_fastlock_recall(bladerf_module m, fastlock_profile *p);
 
 /**
  * Set the AD9361 port.
  *
  * @param *p   Fast lock profile structure
  */
-void ad9361_rfport_select(fastlock_profile *p);
+void adi_rfport_select(fastlock_profile *p);
 
 /**
  * Set the RF switches.
@@ -258,7 +258,7 @@ void ad9361_rfport_select(fastlock_profile *p);
  * @param m    Which module's switches to control.
  * @param *p   Fast lock profile structure
  */
-void ad9361_rfspdt_select(bladerf_module m, fastlock_profile *p);
+void adi_rfspdt_select(bladerf_module m, fastlock_profile *p);
 
 /**
  * Read from Si5338 clock generator register
