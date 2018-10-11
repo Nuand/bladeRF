@@ -335,6 +335,8 @@ else
     cmd="set nios_impl ${nios_rev}"
     cmd="${cmd}; set device_family {${DEVICE_FAMILY}}"
     cmd="${cmd}; set device ${DEVICE}"
+    cmd="${cmd}; set nios_impl ${nios_rev}"
+    cmd="${cmd}; set ram_size $(get_qsys_ram $size)"
     qsys-script \
         --script=${common_dir}/build/common_system.tcl \
         --cmd="${cmd}"
@@ -347,6 +349,8 @@ else
     cmd="set nios_impl ${nios_rev}"
     cmd="${cmd}; set device_family {${DEVICE_FAMILY}}"
     cmd="${cmd}; set device ${DEVICE}"
+    cmd="${cmd}; set nios_impl ${nios_rev}"
+    cmd="${cmd}; set ram_size $(get_qsys_ram $size)"
     qsys-script \
         --script=${build_dir}/nios_system.tcl \
         --cmd="${cmd}"
