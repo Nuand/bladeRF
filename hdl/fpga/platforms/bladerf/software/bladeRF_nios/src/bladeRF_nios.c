@@ -176,7 +176,7 @@ int main(void)
             if (handler == NULL) {
                 /* We somehow got out of sync. Throw away request data until
                  * we hit a magic value */
-                DBG("Got invalid magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
+                DBG("Got invalid magic value: 0x%x\n", pkt.req[PKT_MAGIC_IDX]);
                 continue;
             }
 

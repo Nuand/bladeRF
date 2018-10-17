@@ -69,7 +69,7 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint8_t *data)
         */
 
         default:
-            DBG("%s: Invalid ID: 0x%02x\n", __FUNCTION__, id);
+            DBG("%s: Invalid ID: 0x%x\n", __FUNCTION__, id);
             *data = 0xff;
             return false;
     }
@@ -119,7 +119,7 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint8_t data)
         */
 
         default:
-            DBG("%s: Invalid ID: 0x%02x\n", __FUNCTION__, id);
+            DBG("%s: Invalid ID: 0x%x\n", __FUNCTION__, id);
             return false;
     }
 

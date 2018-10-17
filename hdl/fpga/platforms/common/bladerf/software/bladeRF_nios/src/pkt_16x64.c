@@ -46,7 +46,7 @@ static inline bool perform_write(uint8_t id, uint16_t addr, uint64_t data)
         */
 
         default:
-            DBG("Unknown ID: 0x%02x\n", id);
+            DBG("Unknown ID: 0x%x\n", id);
             success = false;
     }
 
@@ -71,7 +71,7 @@ static inline bool perform_read(uint8_t id, uint16_t addr, uint64_t *data)
         */
 
         default:
-            DBG("Invalid ID: 0x%02x\n", id);
+            DBG("Invalid ID: 0x%x\n", id);
             success = false;
 
     }
