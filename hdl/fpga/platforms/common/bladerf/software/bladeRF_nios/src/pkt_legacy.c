@@ -33,6 +33,12 @@
 #define ADDR_IDX    PAYLOAD_IDX
 #define DATA_IDX    (ADDR_IDX + 1)
 
+/* Omit debug output from this file. */
+#ifdef BLADERF_NIOS_DEBUG
+#undef DBG
+#define DBG(...)
+#endif
+
 /**
  * Configuration options
  *
@@ -110,12 +116,12 @@ static inline enum config_param lookup_param(uint8_t addr)
 {
     uint8_t i;
 
-    DBG("Perip lookup for addr=%d\n", addr);
+    DBG("Perip lookup for addr=0x%x\n", addr);
 
     for (i = 0; i < ARRAY_SIZE(config_params); i++) {
         if (config_params[i].start <= addr &&
             (config_params[i].start + config_params[i].len) > addr) {
-            DBG("Found match at entry %d\n", i);
+            DBG("Found match at entry 0x%x\n", i);
             return (enum config_param) i;
         }
     }
@@ -192,7 +198,7 @@ static uint64_t perform_config_read(enum config_param param)
             break;
 
         default:
-            DBG("Invalid config read parameter: %u\n", param);
+            DBG("Invalid config read parameter: 0x%x\n", param);
             payload = (uint64_t) -1;
     }
 
@@ -226,7 +232,7 @@ static inline void legacy_config_read(uint8_t count, struct pkt_buf *b)
          * that we got a different request while in the middle of the previous
          * series of accesses. */
         if (n == 0 || (param != last_param)) {
-            DBG("Resetting read state for param=%d with n=%d\n", param, n);
+            DBG("Resetting read state for param=0x%x with n=0x%x\n", param, n);
             n = 0;
             payload = perform_config_read(param);
             last_param = param;
@@ -274,7 +280,7 @@ static inline void legacy_pkt_read(uint8_t dev_id, uint8_t count,
             break;
 
         default:
-            DBG("Got invalid device ID: 0x%04x\n", dev_id);
+            DBG("Got invalid device ID: 0x%x\n", dev_id);
             break;
     }
 }
@@ -338,7 +344,7 @@ static inline void perform_config_write(enum config_param p, uint64_t payload)
             break;
 
         default:
-            DBG("Invalid config param write: %u\n", p);
+            DBG("Invalid config param write: 0x%x\n", p);
             break;
     }
 }
@@ -369,7 +375,7 @@ static inline void legacy_config_write(uint8_t count, struct pkt_buf *b)
      * that we got a different request while in the middle of the previous
      * series of accesses. */
     if (n == 0 || (param != last_param)) {
-        DBG("Resetting write state for param=%d with n=%d\n", param, n);
+        DBG("Resetting write state for param=0x%x with n=0x%x\n", param, n);
         payload = 0;
         n = 0;
     }
@@ -421,7 +427,7 @@ static inline void legacy_pkt_write(uint8_t dev_id, uint8_t count,
             break;
 
         default:
-            DBG("Got invalid device ID: 0x%04x\n", dev_id);
+            DBG("Got invalid device ID: 0x%x\n", dev_id);
             break;
     }
 }
@@ -439,7 +445,7 @@ void pkt_legacy(struct pkt_buf *b)
     b->resp[PKT_MAGIC_IDX] = b->req[PKT_MAGIC_IDX];
     b->resp[PKT_CFG_IDX]   = b->req[PKT_CFG_IDX];
 
-    DBG("%s: read=%s, write=%s, dev_id=0x%x, cfg=%x, count=%d\n", __FUNCTION__,
+    DBG("%s: read=%s, write=%s, dev_id=0x%x, cfg=0x%x, count=0x%x\n", __FUNCTION__,
         is_read ? "true" : "false", is_write ? "true" : "false", dev_id, cfg, count);
 
     if (is_read) {

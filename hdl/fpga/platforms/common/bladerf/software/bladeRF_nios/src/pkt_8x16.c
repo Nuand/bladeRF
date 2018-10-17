@@ -48,7 +48,7 @@ static inline bool iq_corr_read(uint8_t addr, uint16_t *data)
             break;
 
         default:
-            DBG("%s: Invalid IQ corr addr: 0x%02x\n", __FUNCTION__, addr);
+            DBG("%s: Invalid IQ corr addr: 0x%x\n", __FUNCTION__, addr);
             return false;
     }
 
@@ -75,7 +75,7 @@ static inline bool iq_corr_write(uint8_t addr, uint16_t data)
             break;
 
         default:
-            DBG("%s: Invalid IQ corr addr: 0x%02x\n", __FUNCTION__, addr);
+            DBG("%s: Invalid IQ corr addr: 0x%x\n", __FUNCTION__, addr);
             return false;
     }
 
@@ -112,7 +112,7 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint16_t *data)
         */
 
         default:
-            DBG("%s: Invalid ID: 0x%02x\n", __FUNCTION__, id);
+            DBG("%s: Invalid ID: 0x%x\n", __FUNCTION__, id);
             return false;
     }
 
@@ -152,7 +152,7 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint16_t data)
         */
 
         default:
-            DBG("%s: Invalid ID: 0x%02x\n", __FUNCTION__, id);
+            DBG("%s: Invalid ID: 0x%x\n", __FUNCTION__, id);
             return false;
     }
 

@@ -32,7 +32,7 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint64_t data)
 {
     switch (id) {
         case NIOS_PKT_8x64_TARGET_TIMESTAMP:
-            DBG("Invalid write acess to timestamp: 0x%02x\n", addr);
+            DBG("Invalid write access to timestamp: 0x%x\n", addr);
             return false;
 
         /* Add user customizations here
@@ -44,7 +44,7 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint64_t data)
         */
 
         default:
-            DBG("Unknown ID: 0x%02x\n", id);
+            DBG("Unknown ID: 0x%x\n", id);
             return false;
     }
 }
@@ -61,7 +61,7 @@ static inline bool read_timestamp(uint8_t addr, uint64_t *data)
             break;
 
         default:
-            DBG("Invalid addr: 0x%02x\n", addr);
+            DBG("Invalid addr: 0x%x\n", addr);
             return false;
     }
 
@@ -86,7 +86,7 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint64_t *data)
         */
 
         default:
-            DBG("Invalid ID: 0x%02x\n", id);
+            DBG("Invalid ID: 0x%x\n", id);
             success = false;
 
     }
