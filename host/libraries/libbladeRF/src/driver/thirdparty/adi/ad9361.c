@@ -40,9 +40,9 @@
 /***************************** Include Files **********************************/
 /******************************************************************************/
 #include "host_config.h"
-#if 0 == BLADERF_OS_FREEBSD  
+#if !defined(BLADERF_OS_FREEBSD) && !defined(BLADERF_OS_OSX)
 #include <malloc.h>
-#endif // BLADERF_OS_FREEBSD
+#endif // BLADERF_OS_FREEBSD + BLADERF_OS_OSX
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
