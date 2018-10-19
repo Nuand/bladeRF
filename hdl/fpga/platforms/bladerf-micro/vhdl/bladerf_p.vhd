@@ -153,6 +153,10 @@ package bladerf_p is
     constant RX_FIFO_RWIDTH         : natural := 32;    -- read side data width
     constant RX_FIFO_LENGTH         : natural := 4096;  -- samples
 
+    constant ADSB_FIFO_WWIDTH       : natural := 128;   -- write side data width
+    constant ADSB_FIFO_RWIDTH       : natural := 32;    -- read side data width
+    constant ADSB_FIFO_LENGTH       : natural := 1024;  -- samples
+
     constant LOOPBACK_FIFO_WWIDTH   : natural := 64;    -- write side data width
     constant LOOPBACK_FIFO_RWIDTH   : natural := 64;    -- read side data width
     constant LOOPBACK_FIFO_LENGTH   : natural := 512;   -- samples
@@ -201,6 +205,25 @@ package bladerf_p is
         rfull   :   std_logic;
         rused   :   std_logic_vector(compute_rdusedw_high(RX_FIFO_LENGTH, RX_FIFO_WWIDTH,
                                                           RX_FIFO_RWIDTH, "OFF") downto 0);
+    end record;
+
+    type adsb_fifo_t is record
+        aclr    :   std_logic;
+
+        wclock  :   std_logic;
+        wdata   :   std_logic_vector(ADSB_FIFO_WWIDTH-1 downto 0);
+        wreq    :   std_logic;
+        wempty  :   std_logic;
+        wfull   :   std_logic;
+        wused   :   std_logic_vector(compute_wrusedw_high(ADSB_FIFO_LENGTH, "OFF") downto 0);
+
+        rclock  :   std_logic;
+        rdata   :   std_logic_vector(ADSB_FIFO_RWIDTH-1 downto 0);
+        rreq    :   std_logic;
+        rempty  :   std_logic;
+        rfull   :   std_logic;
+        rused   :   std_logic_vector(compute_rdusedw_high(ADSB_FIFO_LENGTH, ADSB_FIFO_WWIDTH,
+                                                          ADSB_FIFO_RWIDTH, "OFF") downto 0);
     end record;
 
     type loopback_fifo_t is record
@@ -393,6 +416,7 @@ package bladerf_p is
     constant RFFE_GPI_DEFAULT           : rffe_gpi_t;
     constant TX_FIFO_T_DEFAULT          : tx_fifo_t;
     constant RX_FIFO_T_DEFAULT          : rx_fifo_t;
+    constant ADSB_FIFO_T_DEFAULT        : adsb_fifo_t;
     constant LOOPBACK_FIFO_T_DEFAULT    : loopback_fifo_t;
     constant META_FIFO_TX_T_DEFAULT     : meta_fifo_tx_t;
     constant META_FIFO_RX_T_DEFAULT     : meta_fifo_rx_t;
@@ -710,6 +734,22 @@ package body bladerf_p is
     );
 
     constant RX_FIFO_T_DEFAULT : rx_fifo_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant ADSB_FIFO_T_DEFAULT : adsb_fifo_t := (
         aclr    => '1',
         wclock  => '0',
         wdata   => (others => '0'),

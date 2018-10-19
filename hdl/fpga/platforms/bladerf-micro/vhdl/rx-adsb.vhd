@@ -52,10 +52,10 @@ entity rx is
         sample_fifo_rclock     : in    std_logic;
         sample_fifo_raclr      : in    std_logic;
         sample_fifo_rreq       : in    std_logic;
-        sample_fifo_rdata      : out   std_logic_vector(RX_FIFO_T_DEFAULT.rdata'range);
+        sample_fifo_rdata      : out   std_logic_vector(ADSB_FIFO_T_DEFAULT.rdata'range);
         sample_fifo_rempty     : out   std_logic;
         sample_fifo_rfull      : out   std_logic;
-        sample_fifo_rused      : out   std_logic_vector(RX_FIFO_T_DEFAULT.rused'range);
+        sample_fifo_rused      : out   std_logic_vector(ADSB_FIFO_T_DEFAULT.rused'range);
 
         -- Metadata to host via FX3
         meta_fifo_rclock       : in    std_logic;
@@ -94,7 +94,7 @@ architecture arch of rx is
 
     signal rx_mux_mode              : rx_mux_mode_t       := RX_MUX_NORMAL;
 
-    signal sample_fifo              : rx_fifo_t           := RX_FIFO_T_DEFAULT;
+    signal sample_fifo              : adsb_fifo_t         := ADSB_FIFO_T_DEFAULT;
     signal loopback_fifo            : loopback_fifo_t     := LOOPBACK_FIFO_T_DEFAULT;
     signal meta_fifo                : meta_fifo_rx_t      := META_FIFO_RX_T_DEFAULT;
 
