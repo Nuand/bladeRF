@@ -1,0 +1,48 @@
+# Convenience variable
+set here         $::quartus(qip_path)
+set common_dir   [file normalize [file join $here ../common/bladerf]]
+set altera_ip    [file normalize [file join $here ../../ip/altera]]
+set adi_ip       [file normalize [file join $here ../../ip/analogdevicesinc]]
+set nuand_ip     [file normalize [file join $here ../../ip/nuand]]
+set opencores_ip [file normalize [file join $here ../../ip/opencores]]
+
+# Altera IP
+set_global_assignment -name VHDL_FILE    [file normalize [file join $altera_ip common_dcfifo/common_dcfifo.vhd]]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/tx_fifo.vhd]]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/tx_meta_fifo.vhd]]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/rx_fifo.vhd]]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/rx_meta_fifo.vhd]]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/lb_fifo.vhd]]
+set_global_assignment -name VERILOG_FILE [file normalize                       system_pll/system_pll.v]
+set_global_assignment -name QIP_FILE     [file normalize                       system_pll/system_pll.qip]
+set_global_assignment -name VERILOG_FILE [file normalize                       fx3_pll/fx3_pll.v]
+set_global_assignment -name QIP_FILE     [file normalize                       fx3_pll/fx3_pll.qip]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/adsbfifo.vhd]]
+
+# Nuand IP
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/signal_generator.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/constellation_mapper.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fir_filter.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/tan_table.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/handshake.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/reset_synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_readwrite_p.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_reader.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_writer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/set_clear_ff.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip trigger/trigger.vhd]]
+set_global_assignment -name QIP_FILE  [file normalize [file join $nuand_ip pll_reset/pll_reset.qip]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip ps_sync/vhdl/ps_sync.vhd]]
+
+# Implementation Details
+set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/fx3_gpif.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/tx.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/rx-adsb.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-adsb.vhd]]
+set_global_assignment -name QIP_FILE  [file normalize                  nios_system/synthesis/nios_system.qip]
+
+# Explicitly include Nios mem_init
+set_global_assignment -name QIP_FILE [file normalize bladeRF_nios/mem_init/meminit.qip]
+
+set_global_assignment -name QIP_FILE  [file normalize [file join $nuand_ip   adsb/quartus/adsb_decoder.qip]]

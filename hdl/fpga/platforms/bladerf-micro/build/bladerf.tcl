@@ -113,6 +113,8 @@ export_assignments
 # Create the hosted
 make_revision hosted
 
+# Create the adsb
+make_revision adsb
 
 # Projects created!
 puts "${PROJECT_NAME} projects created!"
