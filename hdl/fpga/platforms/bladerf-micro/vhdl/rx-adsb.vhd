@@ -75,6 +75,10 @@ entity rx is
         loopback_fifo_wfull    : out   std_logic;
         loopback_fifo_wused    : out   std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wused'range);
 
+        -- ADSB
+        adsb_data              : in    std_logic_vector(127 downto 0);
+        adsb_valid             : in    std_logic;
+
         -- RFFE Interface
         adc_controls           : in    sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
         adc_streams            : in    sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE)
@@ -130,14 +134,14 @@ begin
         end if;
     end process;
 
+    sample_fifo.wdata  <= adsb_data;
+    sample_fifo.wreq   <= adsb_valid;
 
     -- RX sample FIFO
     sample_fifo.aclr   <= sample_fifo_raclr;
     sample_fifo.wclock <= rx_clock;
-    U_rx_sample_fifo : entity work.rx_fifo
-        generic map (
-            LPM_NUMWORDS        => 2**(sample_fifo.wused'length)
-        ) port map (
+    U_rx_sample_fifo : entity work.adsbfifo
+        port map (
             aclr                => sample_fifo.aclr,
 
             wrclk               => sample_fifo.wclock,
@@ -228,8 +232,8 @@ begin
 
             fifo_full           =>  sample_fifo.wfull,
             fifo_usedw          =>  sample_fifo.wused,
-            fifo_data           =>  sample_fifo.wdata,
-            fifo_write          =>  sample_fifo.wreq,
+            fifo_data           =>  open,
+            fifo_write          =>  open,
 
             meta_fifo_full      =>  meta_fifo.wfull,
             meta_fifo_usedw     =>  meta_fifo.wused,

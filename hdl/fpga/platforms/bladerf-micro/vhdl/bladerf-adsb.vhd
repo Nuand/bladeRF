@@ -28,9 +28,12 @@ library work;
     use work.bladerf;
     use work.bladerf_p.all;
     use work.fifo_readwrite_p.all;
+    use work.adsb_decoder_p.all ;
 
-architecture hosted_bladerf of bladerf is
+library altera_mf ;
+    use altera_mf.altera_mf_components.all ;
 
+architecture adsb_bladerf of bladerf is
     attribute noprune          : boolean;
     attribute keep             : boolean;
 
@@ -120,6 +123,19 @@ architecture hosted_bladerf of bladerf is
 
     signal rx_ts_reset            : std_logic;
     signal tx_ts_reset            : std_logic;
+
+    -- ADSB specific signals
+    constant NUM_DECODERS   :   positive    := 8 ;
+
+    signal adsb_init        :   std_logic ;
+    signal adsb_power       :   signed(INPUT_POWER_WIDTH-1 downto 0) ;
+    signal adsb_valid       :   std_logic ;
+
+    signal msgs             :   messages_t(NUM_DECODERS-1 downto 0) ;
+    signal msgs_valid       :   std_logic_vector(NUM_DECODERS-1 downto 0) ;
+
+    signal fifo_data        :   std_logic_vector(127 downto 0) ;
+    signal fifo_valid       :   std_logic ;
 
     signal rx_trigger_ctl_i       : std_logic_vector(7 downto 0);
     signal rx_trigger_ctl         : trigger_t := TRIGGER_T_DEFAULT;
@@ -588,6 +604,10 @@ begin
             loopback_fifo_wfull    => tx_loopback_fifo.wfull,
             loopback_fifo_wused    => tx_loopback_fifo.wused,
 
+            -- ADSB interface
+            adsb_data              => fifo_data,
+            adsb_valid             => fifo_valid,
+
             -- RFFE Interface
             adc_controls           => adc_controls,
             adc_streams            => adc_streams
@@ -821,6 +841,74 @@ begin
             sync        =>  tx_enable
         );
 
+    -- ========================================================================
+    -- ADSB
+    -- ========================================================================
+    -- Front end mixing by -Fs/4, filtering and power calculation
+    U_adsb_fe : entity work.adsb_fe
+      port map (
+        clock               =>  rx_clock,
+        reset               =>  rx_reset,
+
+        in_i                =>  adc_streams(0).data_i, --ad9361.ch(0).adc.i.data,
+        in_q                =>  adc_streams(0).data_q, --ad9361.ch(0).adc.q.data,
+        in_valid            =>  adc_streams(0).data_v, --ad9361.ch(0).adc.i.valid,
+
+        out_power           =>  adsb_power,
+        out_valid           =>  adsb_valid
+      ) ;
+
+    make_init : process(rx_clock, rx_reset)
+        variable downcount : natural range 0 to 5 := 5 ;
+    begin
+        if( rx_reset = '1' ) then
+            adsb_init <= '1' ;
+            downcount := 5 ;
+        elsif( rising_edge(rx_clock) ) then
+            if( downcount > 0 ) then
+                downcount := downcount - 1 ;
+                adsb_init <= '1' ;
+            else
+                adsb_init <= '0' ;
+            end if ;
+        end if ;
+    end process ;
+
+    -- Message preamble detector and multiple decoders
+    U_adsb_decoder : entity work.adsb_decoder
+      generic map (
+        NUM_DECODERS        =>  NUM_DECODERS
+      ) port map (
+        clock               =>  rx_clock,
+        reset               =>  rx_reset,
+
+        init                =>  adsb_init,
+
+        in_power            =>  adsb_power,
+        in_valid            =>  adsb_valid,
+
+        debug_rpl           =>  open,
+
+        out_messages        =>  msgs,
+        out_valid           =>  msgs_valid
+      ) ;
+
+    -- Aggregate into a single stream
+    U_message_aggregator : entity work.message_aggregator
+      generic map (
+        MSGS_PER_TIMEOUT    =>  128,
+        PACKET_TIMEOUT      =>  32000000/100,
+        NUM_DECODERS        =>  NUM_DECODERS
+      ) port map (
+        clock               =>  rx_clock,
+        reset               =>  rx_reset,
+
+        in_messages         =>  msgs,
+        in_valid            =>  msgs_valid,
+
+        out_message         =>  fifo_data,
+        out_valid           =>  fifo_valid
+      ) ;
 
     -- ========================================================================
     -- HANDSHAKES
