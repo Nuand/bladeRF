@@ -13,7 +13,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhd
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/wrappers/tx_fifo.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/wrappers/rx_meta_fifo.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/wrappers/tx_meta_fifo.vhd]]
-set_global_assignment -name QIP_FILE  [file normalize [file join $altera_ip  adsbfifo/adsbfifo.qip]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/wrappers/adsbfifo.vhd]]
 
 # Explicitly include Nios mem_init
 set_global_assignment -name QIP_FILE  [file normalize                        bladeRF_nios/mem_init/meminit.qip]
@@ -35,8 +35,9 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   syn
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   synthesis/set_clear_ff.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/fx3_gpif.vhd]]
 
-set_global_assignment -name QIP_FILE  [file normalize [file join $nuand_ip   adsb/quartus/adsb_decoder.qip]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/bladerf-adsb.vhd]]
 
 # SDC Constraints
 set_global_assignment -name SDC_FILE  [file normalize [file join $here       constraints/bladerf.sdc]]
+
+set_global_assignment -name QIP_FILE  [file normalize [file join $nuand_ip   adsb/quartus/adsb_decoder.qip]]
