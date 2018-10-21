@@ -41,6 +41,7 @@ entity fifo_writer is
         usb_speed           :   in      std_logic;
         meta_en             :   in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
+        mini_exp            :   in      std_logic_vector(1 downto 0);
 
         in_sample_controls  :   in      sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
         in_samples          :   in      sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE);
@@ -124,6 +125,8 @@ architecture simple of fifo_writer is
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
     signal fifo_future  : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
 
+    signal sync_mini_exp: std_logic_vector(1 downto 0);
+
 begin
 
     -- Throw an error if port widths don't make sense
@@ -163,6 +166,21 @@ begin
         end if;
     end process;
 
+    -- ------------------------------------------------------------------------
+    -- MINI EXP PIN SYNCHRONIZER
+    -- ------------------------------------------------------------------------
+    generate_sync_mimo_rx_en : for i in mini_exp'range generate
+        U_sync_mini_exp : entity work.synchronizer
+            generic map (
+                RESET_LEVEL         =>  '0'
+                )
+            port map (
+                reset               =>  '0',
+                clock               =>  clock,
+                async               =>  mini_exp(i),
+                sync                =>  sync_mini_exp(i)
+            );
+    end generate;
 
     -- ------------------------------------------------------------------------
     -- META FIFO WRITER
@@ -185,7 +203,8 @@ begin
         meta_future            <= meta_current;
 
         meta_future.meta_write <= '0';
-        meta_future.meta_data  <= x"FFFFFFFF" & std_logic_vector(timestamp) & x"12344321";
+        -- currently the GPIF modules overwrites the bottom 16 bits of the flags field
+        meta_future.meta_data  <= x"FFF" & "11" & sync_mini_exp & x"FFFF" & std_logic_vector(timestamp) & x"12344321";
 
         case meta_current.state is
             when IDLE =>
