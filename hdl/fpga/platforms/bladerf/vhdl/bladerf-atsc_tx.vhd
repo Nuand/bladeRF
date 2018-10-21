@@ -485,6 +485,7 @@ begin
         usb_speed           =>  usb_speed_rx,
         meta_en             =>  '0',
         timestamp           =>  (others => '0'),
+        mini_exp            =>  mini_exp2 & mini_exp1,
 
         fifo_clear          =>  rx_sample_fifo.aclr,
         fifo_full           =>  rx_sample_fifo.wfull,

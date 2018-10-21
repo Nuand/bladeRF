@@ -586,6 +586,9 @@ begin
             sample_fifo_rfull      => rx_sample_fifo.rfull,
             sample_fifo_rused      => rx_sample_fifo.rused,
 
+            -- Mini expansion signals
+            mini_exp               => mini_exp2 & mini_exp1,
+
             -- Metadata to host via FX3
             meta_fifo_rclock       => fx3_pclk_pll,
             meta_fifo_raclr        => not rx_enable_pclk,

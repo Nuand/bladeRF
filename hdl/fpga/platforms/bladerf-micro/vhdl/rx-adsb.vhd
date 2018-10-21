@@ -57,6 +57,9 @@ entity rx is
         sample_fifo_rfull      : out   std_logic;
         sample_fifo_rused      : out   std_logic_vector(ADSB_FIFO_T_DEFAULT.rused'range);
 
+        -- Mini expansion signals
+        mini_exp               : in    std_logic_vector(1 downto 0);
+
         -- Metadata to host via FX3
         meta_fifo_rclock       : in    std_logic;
         meta_fifo_raclr        : in    std_logic;
@@ -229,6 +232,7 @@ begin
             usb_speed           =>  usb_speed,
             meta_en             =>  meta_en,
             timestamp           =>  rx_timestamp,
+            mini_exp            =>  mini_exp,
 
             fifo_full           =>  sample_fifo.wfull,
             fifo_usedw          =>  sample_fifo.wused,
