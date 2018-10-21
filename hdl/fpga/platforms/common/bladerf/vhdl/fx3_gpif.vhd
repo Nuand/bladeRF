@@ -302,7 +302,10 @@ begin
                     gpif_oe         <= '1';
 
                     if (current.meta_downcount = 0) then
-                        gpif_out    <= rx_meta_fifo_data(31 downto 16) & "00000000" & "0000" & (not underrun) & (not underrun) & underrun & underrun;
+                        -- this overrites 16 LBSs in the flags field stored in fifo_writer
+                        gpif_out    <= rx_meta_fifo_data(31 downto 16) & x"000" &
+                            -- LSB nibble of the last word
+                            "00" & (not underrun) & underrun;
                     else
                         gpif_out    <= rx_meta_fifo_data;
                     end if;
