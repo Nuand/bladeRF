@@ -2236,6 +2236,24 @@ typedef enum {
 #define BLADERF_META_FLAG_RX_NOW (1 << 31)
 
 /**
+ * This flag is asserted in bladerf_metadata.status by the hardware when an
+ * underflow is detected in the sample buffering system on the device.
+ */
+#define BLADERF_META_FLAG_RX_HW_UNDERFLOW       (1 << 0)
+
+/**
+ * This flag is asserted in bladerf_metadata.status by the hardware if mini
+ * expansion IO pin 1 is asserted.
+ */
+#define BLADERF_META_FLAG_RX_HW_MINIEXP1        (1 << 16)
+
+/**
+ * This flag is asserted in bladerf_metadata.status by the hardware if mini
+ * expansion IO pin 2 is asserted.
+ */
+#define BLADERF_META_FLAG_RX_HW_MINIEXP2        (1 << 17)
+
+/**
  * Sample metadata
  *
  * This structure is used in conjunction with the ::BLADERF_FORMAT_SC16_Q11_META

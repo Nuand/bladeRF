@@ -543,6 +543,11 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         s->meta.msg_flags =
                             metadata_get_flags(s->meta.curr_msg);
 
+                        user_meta->status |= s->meta.msg_flags &
+                           (BLADERF_META_FLAG_RX_HW_UNDERFLOW |
+                              BLADERF_META_FLAG_RX_HW_MINIEXP1 |
+                              BLADERF_META_FLAG_RX_HW_MINIEXP2);
+
                         s->meta.curr_msg_off = 0;
 
                         /* We've encountered a discontinuity and need to return
