@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
+#include <unistd.h>
 #include <libbladeRF.h>
 #include "conversions.h"
 
@@ -34,16 +36,26 @@
 
 #define ITERATIONS 10000
 
-/* Select frequencies  such that we ensure we cross the low/high band limit */
-#define F1 ((unsigned int) 1.499e9)
-#define F2 ((unsigned int) 1.501e9)
+typedef struct {
+    bladerf_frequency f;
+    struct bladerf_quick_tune qt;
+} freq;
+
+/* Pick the middle tune frequency (exclusive) around which other frequencies
+ * will be computed. Select to ensure hops cross a high/low band boundary */
+#define BLADERF1_CENTER_FREQ ((bladerf_frequency) 1.500e9)
+#define BLADERF2_CENTER_FREQ ((bladerf_frequency) 3.000e9)
+#define FREQ_INCREMENT       ((bladerf_frequency) 0.500e6)
+#define NUM_FREQS            16
 
 int run_test(struct bladerf *dev)
 {
+    const char *board_name;
     int status;
-    struct bladerf_quick_tune f1, f2;
+    freq freqs[NUM_FREQS];
     int16_t *samples = NULL;
-    unsigned int i;
+    unsigned int i, f;
+    bladerf_frequency center_freq;
 
     samples = malloc(2 * BUF_LEN * sizeof(samples[0]));
     if (samples == NULL) {
@@ -65,34 +77,47 @@ int run_test(struct bladerf *dev)
         goto out;
     }
 
+    board_name = bladerf_get_board_name(dev);
+
+    if (strcmp(board_name, "bladerf1") == 0) {
+        center_freq = BLADERF1_CENTER_FREQ;
+    } else if (strcmp(board_name, "bladerf2") == 0) {
+        center_freq = BLADERF2_CENTER_FREQ;
+    } else {
+        fprintf(stderr, "Unknown board name: %s\n", board_name);
+        goto out;
+    }
+
+    /* Calculate the hop frequencies */
+    for( f = 0; f < (NUM_FREQS/2); f++ ) {
+        freqs[f].f = center_freq - ((NUM_FREQS/2)*FREQ_INCREMENT) +
+            (f*FREQ_INCREMENT);
+    }
+
+    for( f = (NUM_FREQS/2); f < NUM_FREQS; f++ ) {
+        freqs[f].f = center_freq + ((f-(NUM_FREQS/2)+1)*FREQ_INCREMENT);
+    }
+
+    printf("Hop Set:\n");
+    for( f = 0; f < NUM_FREQS; f++ ) {
+        printf("freq[%2u]=%" PRIu64 "\n", f, freqs[f].f);
+    }
+
     /* Set up our quick tune set */
+    for( f = 0; f < NUM_FREQS; f++ ) {
+        status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, freqs[f].f);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set frequency to %" PRIu64 ": %s\n",
+                    freqs[f].f, bladerf_strerror(status));
+            goto out;
+        }
 
-    status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, F1);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set frequency to %u: %s\n",
-                F1, bladerf_strerror(status));
-        goto out;
-    }
-
-    status = bladerf_get_quick_tune(dev, BLADERF_MODULE_TX, &f1);
-    if (status != 0) {
-        fprintf(stderr, "Failed to get f1 quick tune: %s\n",
-                bladerf_strerror(status));
-        goto out;
-    }
-
-    status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, F2);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set frequency to %u: %s\n",
-                F1, bladerf_strerror(status));
-        goto out;
-    }
-
-    status = bladerf_get_quick_tune(dev, BLADERF_MODULE_TX, &f2);
-    if (status != 0) {
-        fprintf(stderr, "Failed to get f2 quick tune: %s\n",
-                bladerf_strerror(status));
-        goto out;
+        status = bladerf_get_quick_tune(dev, BLADERF_MODULE_TX, &freqs[f].qt);
+        if (status != 0) {
+            fprintf(stderr, "Failed to get quick tune %u: %s\n",
+                    f, bladerf_strerror(status));
+            goto out;
+        }
     }
 
     /* Enable and run! */
@@ -104,38 +129,26 @@ int run_test(struct bladerf *dev)
         goto out;
     }
 
-
     for (i = 0; i < ITERATIONS; i++) {
-        status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
-                                         BLADERF_RETUNE_NOW, 0, &f1);
+        for( f = 0; f < NUM_FREQS; f++ ) {
+            status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
+                                             BLADERF_RETUNE_NOW, 0,
+                                             &freqs[f].qt);
 
-        if (status != 0) {
-            fprintf(stderr, "Failed to perform quick tune to f1: %s\n",
-                    bladerf_strerror(status));
-            goto out;
-        }
+            if (status != 0) {
+                fprintf(stderr, "Failed to perform quick tune to index %u: "
+                        "%s\n", f, bladerf_strerror(status));
+                goto out;
+            }
 
-        status = bladerf_sync_tx(dev, samples, BUF_LEN, NULL, 3500);
-        if (status != 0) {
-            fprintf(stderr, "Failed to TX data: %s\n",
-                    bladerf_strerror(status));
-            goto out;
-        }
+            status = bladerf_sync_tx(dev, samples, BUF_LEN, NULL, 3500);
+            if (status != 0) {
+                fprintf(stderr, "Failed to TX data: %s\n",
+                        bladerf_strerror(status));
+                goto out;
+            }
 
-        status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
-                                         BLADERF_RETUNE_NOW, 0, &f2);
-
-        if (status != 0) {
-            fprintf(stderr, "Failed to perform quick tune to f2: %s\n",
-                    bladerf_strerror(status));
-            goto out;
-        }
-
-        status = bladerf_sync_tx(dev, samples, BUF_LEN, NULL, 3500);
-        if (status != 0) {
-            fprintf(stderr, "Failed to TX data: %s\n",
-                    bladerf_strerror(status));
-            goto out;
+            usleep(200000);
         }
     }
 
@@ -158,6 +171,8 @@ int main(int argc, char *argv[])
     } else {
         devstr = argv[1];
     }
+
+    //bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_DEBUG);
 
     status = bladerf_open(&dev, devstr);
     if (status != 0) {
