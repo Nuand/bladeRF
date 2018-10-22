@@ -3140,7 +3140,25 @@ static int bladerf2_schedule_retune(struct bladerf *dev,
 static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev,
                                              bladerf_channel ch)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
+        status = dev->backend->retune2(dev, ch, NIOS_PKT_RETUNE2_CLEAR_QUEUE,
+                                       0, 0, 0, 0);
+    } else {
+        log_debug("This FPGA version (%u.%u.%u) does not support "
+                  "scheduled retunes.\n",
+                  board_data->fpga_version.major,
+                  board_data->fpga_version.minor,
+                  board_data->fpga_version.patch);
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return status;
 }
 
 
