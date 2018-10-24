@@ -68,6 +68,7 @@ set_false_path -from *             -to [get_ports ufl_clock_oe]
 set_false_path -from adf_muxout    -to *
 set_false_path -from exp_clock_req -to *
 set_false_path -from exp_present   -to *
+set_false_path -from pwr_status    -to *
 
 # JTAG settings
 set_clock_groups -exclusive -group [get_clocks altera_reserved_tck]
