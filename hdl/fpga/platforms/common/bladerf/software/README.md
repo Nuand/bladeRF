@@ -107,7 +107,7 @@ $ build_bladerf.sh -s 40 -r hosted
 
 - Import the bladeRF_nios and bladeRF_nios_bsp projects:
   - From the project explorer, right click and select *Import...*
-  - Select *Existing projects into Workspace*
+  - Select *General --> Existing projects into Workspace*
   - Select *Root Directory*
   - Select this directory. You should see both projects checked in the *Projects* pane.
   - Click Finish
