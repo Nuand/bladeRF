@@ -140,7 +140,15 @@ static int _do_print_bandwidth(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
-    unsigned int bw;
+    struct bladerf_range const *range;
+    bladerf_bandwidth bw;
+
+    status = bladerf_get_bandwidth_range(state->dev, ch, &range);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    };
 
     status = bladerf_get_bandwidth(state->dev, ch, &bw);
     if (status < 0) {
@@ -149,7 +157,8 @@ static int _do_print_bandwidth(struct cli_state *state,
         goto out;
     }
 
-    printf("  %s Bandwidth: %9u Hz\n", channel2str(ch), bw);
+    printf("  %s Bandwidth: %9u Hz (Range: [%.0f, %.0f])\n", channel2str(ch),
+           bw, range->min * range->scale, range->max * range->scale);
 
 out:
     return rv;
@@ -280,7 +289,15 @@ static int _do_print_frequency(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
-    uint64_t freq;
+    struct bladerf_range const *range;
+    bladerf_frequency freq;
+
+    status = bladerf_get_frequency_range(state->dev, ch, &range);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    };
 
     status = bladerf_get_frequency(state->dev, ch, &freq);
     if (status < 0) {
@@ -289,7 +306,9 @@ static int _do_print_frequency(struct cli_state *state,
         goto out;
     }
 
-    printf("  %s Frequency: %10" PRIu64 " Hz\n", channel2str(ch), freq);
+    printf("  %s Frequency: %10" BLADERF_PRIuFREQ " Hz (Range: [%.0f, %.0f])\n",
+           channel2str(ch), freq, range->min * range->scale,
+           range->max * range->scale);
 
 out:
     return rv;
@@ -761,19 +780,19 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
 
         if (ps_is_board(state->dev, BOARD_BLADERF1)) {
             printf("  %-18s%s\n", "bb_txlpf_rxvga2",
-                  "Baseband loopback: TXLPF output --> RXVGA2 input\n");
+                   "Baseband loopback: TXLPF output --> RXVGA2 input\n");
             printf("  %-18s%s\n", "bb_txlpf_rxlpf",
-                  "Baseband loopback: TXLPF output --> RXLPF input\n");
+                   "Baseband loopback: TXLPF output --> RXLPF input\n");
             printf("  %-18s%s\n", "bb_txvga1_rxvga2",
-                  "Baseband loopback: TXVGA1 output --> RXVGA2 input\n");
+                   "Baseband loopback: TXVGA1 output --> RXVGA2 input\n");
             printf("  %-18s%s\n", "bb_txvga1_rxlpf",
-                  "Baseband loopback: TXVGA1 output --> RXLPF input\n");
+                   "Baseband loopback: TXVGA1 output --> RXLPF input\n");
             printf("  %-18s%s\n", "rf_lna1",
-                  "RF loopback: TXMIX --> RXMIX via LNA1 path\n");
+                   "RF loopback: TXMIX --> RXMIX via LNA1 path\n");
             printf("  %-18s%s\n", "rf_lna2",
-                  "RF loopback: TXMIX --> RXMIX via LNA2 path\n");
+                   "RF loopback: TXMIX --> RXMIX via LNA2 path\n");
             printf("  %-18s%s\n", "rf_lna3",
-                  "RF loopback: TXMIX --> RXMIX via LNA3 path\n");
+                   "RF loopback: TXMIX --> RXMIX via LNA3 path\n");
         }
 
         if (ps_is_board(state->dev, BOARD_BLADERF2)) {
@@ -988,7 +1007,15 @@ static int _do_print_samplerate(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
+    struct bladerf_range const *range;
     struct bladerf_rational_rate rate;
+
+    status = bladerf_get_sample_rate_range(state->dev, ch, &range);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    };
 
     status = bladerf_get_rational_sample_rate(state->dev, ch, &rate);
     if (status < 0) {
@@ -997,8 +1024,10 @@ static int _do_print_samplerate(struct cli_state *state,
         goto out;
     }
 
-    printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64 "\n",
-           channel2str(ch), rate.integer, rate.num, rate.den);
+    printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
+           " (Range: [%.0f, %.0f])\n",
+           channel2str(ch), rate.integer, rate.num, rate.den,
+           range->min * range->scale, range->max * range->scale);
 
 out:
     return rv;
