@@ -320,6 +320,7 @@ foreach pin ${ins} {
 }
 
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR "ON" -to adf_muxout
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR "ON" -to fx3_uart_rxd
 
 
 ##########
