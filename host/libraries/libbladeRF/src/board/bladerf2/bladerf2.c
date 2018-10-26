@@ -88,6 +88,9 @@ struct bladerf2_board_data {
     /* Format currently being used with a module, or -1 if module is not used */
     bladerf_format module_format[NUM_MODULES];
 
+    /* Which mode of operation we use for tuning */
+    bladerf_tuning_mode tuning_mode;
+
     /* Board properties */
     bladerf_fpga_size fpga_size;
     /* Data message size */
@@ -4169,13 +4172,43 @@ static int bladerf2_device_reset(struct bladerf *dev)
 static int bladerf2_set_tuning_mode(struct bladerf *dev,
                                     bladerf_tuning_mode mode)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (mode == BLADERF_TUNING_MODE_FPGA &&
+        !have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
+        log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
+                  "provided tuning mode (%d)\n",
+                  board_data->fpga_version.major, board_data->fpga_version.minor,
+                  board_data->fpga_version.patch, mode);
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    switch (mode) {
+        case BLADERF_TUNING_MODE_HOST:
+            log_debug("Tuning mode: host\n");
+            break;
+        default:
+            assert(!"Invalid tuning mode.");
+            return BLADERF_ERR_INVAL;
+    }
+
+    board_data->tuning_mode = mode;
+
+    return 0;
 }
 
 static int bladerf2_get_tuning_mode(struct bladerf *dev,
                                     bladerf_tuning_mode *mode)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    *mode = board_data->tuning_mode;
+
+    return 0;
 }
 
 
