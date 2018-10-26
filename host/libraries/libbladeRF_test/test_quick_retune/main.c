@@ -31,28 +31,39 @@
 #include <libbladeRF.h>
 #include "conversions.h"
 
+#define VERBOSITY BLADERF_LOG_LEVEL_INFO
+
 #define BUF_LEN    4096
 #define TIMEOUT_MS 2500
 
 #define ITERATIONS 10000
+
+/* Dwell time at each frequency (us) */
+#define DWELL_TIME_US 0
 
 typedef struct {
     bladerf_frequency f;
     struct bladerf_quick_tune qt;
 } freq;
 
-/* Pick the middle tune frequency (exclusive) around which other frequencies
- * will be computed. Select to ensure hops cross a high/low band boundary */
+/* Pick the frequency around which each hop frequency will be computed
+ * Select this to ensure hops cross a high/low band boundary */
 #define BLADERF1_CENTER_FREQ ((bladerf_frequency) 1.500e9)
 #define BLADERF2_CENTER_FREQ ((bladerf_frequency) 3.000e9)
-#define FREQ_INCREMENT       ((bladerf_frequency) 0.500e6)
+
+/* Number of hop frequencies to generate */
 #define NUM_FREQS            16
+
+/* Spacing between hop frequencies */
+#define FREQ_INCREMENT       ((bladerf_frequency) 0.500e6)
 
 int run_test(struct bladerf *dev)
 {
     const char *board_name;
     int status;
     freq freqs[NUM_FREQS];
+    //int hopseq[] = {7, 2, 14, 1, 11, 15, 3, 5, 12, 13, 0, 4, 6, 8, 9, 10};
+    int hopseq[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
     int16_t *samples = NULL;
     unsigned int i, f;
     bladerf_frequency center_freq;
@@ -89,21 +100,18 @@ int run_test(struct bladerf *dev)
     }
 
     /* Calculate the hop frequencies */
-    for( f = 0; f < (NUM_FREQS/2); f++ ) {
-        freqs[f].f = center_freq - ((NUM_FREQS/2)*FREQ_INCREMENT) +
-            (f*FREQ_INCREMENT);
-    }
-
-    for( f = (NUM_FREQS/2); f < NUM_FREQS; f++ ) {
-        freqs[f].f = center_freq + ((f-(NUM_FREQS/2)+1)*FREQ_INCREMENT);
-    }
-
     printf("Hop Set:\n");
     for( f = 0; f < NUM_FREQS; f++ ) {
+        if( f < (NUM_FREQS/2) ) {
+            freqs[f].f = center_freq - ((NUM_FREQS/2)*FREQ_INCREMENT) +
+                (f*FREQ_INCREMENT);
+        } else {
+            freqs[f].f = center_freq + ((f-(NUM_FREQS/2)+1)*FREQ_INCREMENT);
+        }
         printf("freq[%2u]=%" PRIu64 "\n", f, freqs[f].f);
     }
 
-    /* Set up our quick tune set */
+    /* Get the quick tune data */
     for( f = 0; f < NUM_FREQS; f++ ) {
         status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, freqs[f].f);
         if (status != 0) {
@@ -131,13 +139,24 @@ int run_test(struct bladerf *dev)
 
     for (i = 0; i < ITERATIONS; i++) {
         for( f = 0; f < NUM_FREQS; f++ ) {
+
+            if( DWELL_TIME_US > 999999 ) {
+                printf("hopseq[%u] = %u\n", f, hopseq[f]);
+
+                if (strcmp(board_name, "bladerf2") == 0) {
+                    printf("nios_profile = %u, rffe_profile = %u\n",
+                           freqs[hopseq[f]].qt.nios_profile,
+                           freqs[hopseq[f]].qt.rffe_profile);
+                }
+            }
+
             status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
                                              BLADERF_RETUNE_NOW, 0,
-                                             &freqs[f].qt);
+                                             &freqs[hopseq[f]].qt);
 
             if (status != 0) {
                 fprintf(stderr, "Failed to perform quick tune to index %u: "
-                        "%s\n", f, bladerf_strerror(status));
+                        "%s\n", hopseq[f], bladerf_strerror(status));
                 goto out;
             }
 
@@ -148,7 +167,7 @@ int run_test(struct bladerf *dev)
                 goto out;
             }
 
-            usleep(200000);
+            usleep(DWELL_TIME_US);
         }
     }
 
@@ -172,7 +191,7 @@ int main(int argc, char *argv[])
         devstr = argv[1];
     }
 
-    //bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_DEBUG);
+    bladerf_log_set_verbosity(VERBOSITY);
 
     status = bladerf_open(&dev, devstr);
     if (status != 0) {
