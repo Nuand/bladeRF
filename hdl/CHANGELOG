@@ -6,6 +6,21 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.9.0 (2018-10-26)
+--------------------------------
+ * bladeRF: hosted: fix typo in toggle_led1
+ * bladeRF: move AGC SPI driver into 80 MHz clock domain (fixes #640) (#642)
+ * bladeRF: timing improvements (fixes #395) (#652)
+ * build: Cygwin compatibility (#660)
+ * bladeRF: adsb: adjust build and FIFO type to match bladeRF-micro impl
+ * bladeRF-micro: adsb: implement support for ADS-B core on bladeRF micro
+ * fx3_gpif: clean up metadata flags field in GPIF
+ * fifo_writer: add metadata flags for miniexp{1,2} IO pin status
+ * nios: clarify README.md
+ * bladeRF-micro: add false path constraint for pwr_status (#681)
+ * bladeRF-micro: weak pull-up on fx3_uart_rxd (fixes #679) (#683)
+
+--------------------------------
 v0.8.0 (2018-09-05)
 --------------------------------
  * bladeRF: Fix nios_gpio assignment overlap for AGC_EN
