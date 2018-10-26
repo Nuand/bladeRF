@@ -104,13 +104,28 @@ double random_retune(struct bladerf *dev)
 
 double quick_retune(struct bladerf *dev)
 {
+    const char *board_name;
+    bladerf_frequency center_freq;
+    const bladerf_frequency center_fdev = 1.0e6; /* 1 MHz deviation */
     int status;
     struct bladerf_quick_tune f1, f2;
     struct timespec start, end;
     unsigned int i;
 
+    board_name = bladerf_get_board_name(dev);
+
     /* Choosing frequencies that cross the low/high band threshold */
-    status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, 1.499e9);
+    if (strcmp(board_name, "bladerf1") == 0) {
+        center_freq = 1.500e9;
+    } else if (strcmp(board_name, "bladerf2") == 0) {
+        center_freq = 3.000e9;
+    } else {
+        fprintf(stderr, "Unknown board name: %s\n", board_name);
+        return -1;
+    }
+
+    status = bladerf_set_frequency(dev, BLADERF_MODULE_RX,
+                                   center_freq - center_fdev);
     if (status != 0) {
         return -1;
     }
@@ -120,7 +135,8 @@ double quick_retune(struct bladerf *dev)
         return -1;
     }
 
-    status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, 1.501e9);
+    status = bladerf_set_frequency(dev, BLADERF_MODULE_RX,
+                                   center_freq + center_fdev);
     if (status != 0) {
         return -1;
     }
@@ -171,6 +187,7 @@ int main(int argc, char *argv[])
     struct bladerf *dev = NULL;
     const char *devstr = NULL;
     double duration_host, duration_fpga;
+    const char *board_name;
 
     if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
         fprintf(stderr, "Usage: %s [device string]\n", argv[0]);
@@ -185,6 +202,8 @@ int main(int argc, char *argv[])
                 bladerf_strerror(status));
         return status;
     }
+
+    board_name = bladerf_get_board_name(dev);
 
     printf("Re-tuning with fixed frequency...\n");
 
@@ -205,23 +224,25 @@ int main(int argc, char *argv[])
         printf("  Host tuning:    %fs\n", duration_host);
     }
 
-    status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA);
-    if (status != 0) {
-        fprintf(stderr, "Failed to switch to FPGA-based tuning mode: %s\n",
-                bladerf_strerror(status));
-        status = -1;
-        goto out;
-    } else {
-        duration_fpga = fixed_retune(dev);
-
-        if (duration_fpga < 0) {
-            status = (int) duration_fpga;
+    if (strcmp(board_name, "bladerf1") == 0) {
+        status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA);
+        if (status != 0) {
+            fprintf(stderr, "Failed to switch to FPGA-based tuning mode: %s\n",
+                    bladerf_strerror(status));
+            status = -1;
             goto out;
         } else {
-            printf("  FPGA tuning:    %fs\n", duration_fpga);
-        }
+            duration_fpga = fixed_retune(dev);
 
-        printf("  Speedup factor: %f\n", duration_host / duration_fpga);
+            if (duration_fpga < 0) {
+                status = (int) duration_fpga;
+                goto out;
+            } else {
+                printf("  FPGA tuning:    %fs\n", duration_fpga);
+            }
+
+            printf("  Speedup factor: %f\n", duration_host / duration_fpga);
+        }
     }
 
 
@@ -245,23 +266,25 @@ int main(int argc, char *argv[])
         printf("  Host tuning:    %fs\n", duration_host);
     }
 
-    status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA);
-    if (status != 0) {
-        fprintf(stderr, "Failed to switch to FPGA-based tuning mode: %s\n",
-                bladerf_strerror(status));
-        status = -1;
-        goto out;
-    } else {
-        duration_fpga = fixed_retune(dev);
-
-        if (duration_fpga < 0) {
-            status = (int) duration_fpga;
+    if (strcmp(board_name, "bladerf1") == 0) {
+        status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA);
+        if (status != 0) {
+            fprintf(stderr, "Failed to switch to FPGA-based tuning mode: %s\n",
+                    bladerf_strerror(status));
+            status = -1;
             goto out;
         } else {
-            printf("  FPGA tuning:    %fs\n", duration_fpga);
-        }
+            duration_fpga = fixed_retune(dev);
 
-        printf("  Speedup factor: %f\n\n", duration_host / duration_fpga);
+            if (duration_fpga < 0) {
+                status = (int) duration_fpga;
+                goto out;
+            } else {
+                printf("  FPGA tuning:    %fs\n", duration_fpga);
+            }
+
+            printf("  Speedup factor: %f\n\n", duration_host / duration_fpga);
+        }
     }
 
     printf("Performing quick-tune...\n");
@@ -283,23 +306,25 @@ int main(int argc, char *argv[])
         printf("  Host tuning:    %fs\n", duration_host);
     }
 
-    status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA);
-    if (status != 0) {
-        fprintf(stderr, "Failed to switch to fpga-based tuning mode: %s\n",
-                bladerf_strerror(status));
-        status = -1;
-        goto out;
-    } else {
-        duration_fpga = quick_retune(dev);
-
-        if (duration_fpga < 0) {
-            status = (int) duration_fpga;
+    if (strcmp(board_name, "bladerf1") == 0) {
+        status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA);
+        if (status != 0) {
+            fprintf(stderr, "Failed to switch to fpga-based tuning mode: %s\n",
+                    bladerf_strerror(status));
+            status = -1;
             goto out;
         } else {
-            printf("  FPGA tuning:    %fs\n", duration_fpga);
-        }
+            duration_fpga = quick_retune(dev);
 
-        printf("  Speedup factor: %f\n\n", duration_host / duration_fpga);
+            if (duration_fpga < 0) {
+                status = (int) duration_fpga;
+                goto out;
+            } else {
+                printf("  FPGA tuning:    %fs\n", duration_fpga);
+            }
+
+            printf("  Speedup factor: %f\n\n", duration_host / duration_fpga);
+        }
     }
 
 out:
