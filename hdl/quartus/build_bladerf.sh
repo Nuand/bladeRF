@@ -43,6 +43,7 @@ function usage()
     echo "       gen                  Only generate the project files"
     echo "       synth                Synthesize the design"
     echo "       full (default)       Fit the design and create programming files"
+    echo "    -S <seed>             Fitter seed setting (default: 1)"
     echo "    -h                    Show this text"
     echo ""
 
@@ -123,8 +124,9 @@ fi
 # Set default options
 nios_rev="Tiny"
 flow="full"
+seed="1"
 
-while getopts ":cb:r:s:a:fn:l:h" opt; do
+while getopts ":cb:r:s:a:fn:l:S:h" opt; do
     case $opt in
         c)
             clear_work_dir=1
@@ -158,6 +160,10 @@ while getopts ":cb:r:s:a:fn:l:h" opt; do
 
         l)
             flow=$OPTARG
+            ;;
+
+        S)
+            seed=$OPTARG
             ;;
 
         h)
@@ -419,7 +425,8 @@ quartus_sh --64bit \
            -rev      "${rev}" \
            -flow     "${flow}" \
            -stp      "${stp_file}" \
-           -force    "${force}"
+           -force    "${force}" \
+           -seed     "${seed}"
 
 popd
 

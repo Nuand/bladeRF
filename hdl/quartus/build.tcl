@@ -9,6 +9,7 @@ set options { \
     { "flow.arg"     "gen"     "Quartus flow: gen, synth, full" } \
     { "stp.arg"      ""        "SignalTap II file to use" } \
     { "force.arg"    ""        "Force enable TalkBack to use SignalTapII" } \
+    { "seed.arg"     ""        "Specify fitter seed" } \
 }
 
 # Parse the command arguments, store them into 'opts'
@@ -93,6 +94,11 @@ if { $opts(stp) != "" } {
     }
 } else {
     set_global_assignment -name ENABLE_SIGNALTAP off
+}
+
+# Configure seed
+if { $opts(seed) != "" } {
+    set_global_assignment -name SEED "$opts(seed)"
 }
 
 # Save all the options
