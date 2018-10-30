@@ -2,8 +2,51 @@
 libbladeRF Change Log Summary
 
 For more detailed information, please see the git change log and issue tracker
-hosted on GitHub: https://github.com/nuand/bladeRF
+hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
+
+v2.1.0 (2018-10-30)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.3.1
+FPGA         v0.9.0
+
+Note to bladerf1 (x40/x115) users: AGC will not work with FPGA versions
+older than v0.8.0, due to a change in the control register mapping. A warning
+will be printed during device initialization if you are using an affected
+FPGA version.
+
+API additions:
+ * Add format macros for bladerf_frequency and bladerf_timestamp (#623)
+ * Add 'manufacturer' and 'product' device description strings to
+   bladerf_devinfo struct (#624)
+ * Add bladerf_get_serial_struct() API function (#382)
+ * Add bladerf_get_flash_size() API function (#634)
+ * Add bladerf_trigger_signal values for J51-1 (bladerf2) and Miniexp-1
+   (generic) (#656)
+ * Add bladerf_get_fpga_source() API function (#662)
+
+Changes:
+ * bladerf2: Support TX frequencies down to 47 MHz (#598)
+ * bladerf2: Support sample rates down to 0.521 MSps (#593)
+ * docs: install the doxygen documentation (#597)
+ * Adjust RX gain mode lists for clarity (#601)
+ * bladerf1: Fix BLADERF_GPIO_AGC_ENABLE (#607)
+ * Moved FN_RF_PORTS into the FN_LOW_LEVEL section of API docs
+ * bladerf1: implemented bladerf_{get,set}_rf_port[s] (#600, #608, #625)
+ * bladerf2: fix bladerf_trigger_arm implementation (#633)
+ * backend/nios: reduce verbose logging spew (#647)
+ * backend/libusb: return partial info if we can't open the device during
+   lusb_probe() (#648)
+ * bladerf1: skip initialization if BLADERF_FORCE_NO_FPGA_PRESENT is set (#651)
+ * streaming: extend USB transfer timeout to match the configured stream
+   timeout (#659)
+ * backend/dummy, backend/cyapi: fix wrong get_flash_id fptrs (#670)
+ * common: include pthread.h in nanosleep.h (#669) (#671)
+ * thirdparty/adi: fix OSX and FreeBSD compilation issue
+ * streaming: add meta RX hardware flags for underflow, miniexp{1,2}
 
 v2.0.2 (2018-08-30)
 --------------------------------
