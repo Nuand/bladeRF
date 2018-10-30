@@ -2,8 +2,22 @@
 bladeRF-cli Change Log Summary
 
 For more detailed information, please see the git change log and issue tracker
-hosted on GitHub: https://github.com/nuand/bladeRF
+hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
+
+v1.7.0 (2018-10-30)
+--------------------------------
+ * Add libedit support (#591)
+ * Show RF routing in 'print hardware' on bladerf1 devices (#608)
+ * Display manufacturer and product strings in 'probe', 'info' (#624)
+ * Ensure device is initialized after deferred open (#612)
+ * Use "degrees C" on temperature instead of the degrees symbol
+ * Add flash size to 'info' command (#634)
+ * Handle already-open devices on 'probe' (#648)
+ * Add support for "J51-1" and "Miniexp-1" as trigger signals (#656)
+ * Display FPGA configuration source on 'version' (#662)
+ * Print supported ranges for sample rate, bandwidth, frequency
+ * Fix missing return in error case (#666)
 
 v1.6.1 (2018-08-24)
 --------------------------------
