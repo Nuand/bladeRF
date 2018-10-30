@@ -300,7 +300,7 @@ static int cyapi_get_vid_pid(void *driver, uint16_t *vid,
     return 0;
 }
 
-static int cyapi_get_flash_id(struct bladerf *dev, uint8_t *mid, uint8_t *did)
+static int cyapi_get_flash_id(void *driver, uint8_t *mid, uint8_t *did)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
