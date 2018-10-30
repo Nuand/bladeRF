@@ -1,3 +1,15 @@
+bladerf (2018.10-rc1) unstable; urgency=low
+
+  * Release candidate 1 for 2018.10. Please see the top-level CHANGELOG file,
+    as well as the sub-project CHANGELOG files, for more details.
+  * control: fix bladeRF 2.0 Micro xA4/xA9 nomenclature
+  * libbladerf-doc: new package, containing doxygen-generated libbladeRF API
+    documentation
+  * FPGA bitstream v0.9.0, FX3 FW v2.3.1, libbladeRF v2.1.0, bladeRF-cli
+    v1.7.0
+
+ -- Rey Sabrina Tucker (Nuand LLC) <rey.tucker@nuand.com>  Tue, 30 Oct 2018 17:06:11 -0400
+
 bladerf (2018.08) unstable; urgency=low
 
   * debian: update packaging files (#596)

@@ -2,8 +2,88 @@
 bladeRF Project Change Log Summary
 
 For more detailed information, please see the git change log and issue tracker
-hosted on GitHub: https://github.com/nuand/bladeRF
+hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
+
+--------------------------------------------------------------------------------
+ 2018.10-rc1 (2018-10-30)
+--------------------------------------------------------------------------------
+
+This release introduces new functionality and bug fixes, generally expanding
+support for the bladeRF 2.0 Micro. It consists of the following versions:
+
+    * FPGA bitstream                v0.9.0
+    * FX3 firmware                  v2.3.1
+    * libbladeRF                    v2.1.0
+    * bladeRF-cli                   v1.7.0
+    * MATLAB & Simulink bindings    v1.0.2
+    * Python bindings               v1.1.0
+
+Note to bladerf1 (x40/x115) users: AGC will not work with FPGA versions
+older than v0.8.0, due to a change in the control register mapping. A warning
+will be printed during device initialization if you are using an affected
+FPGA version.
+
+Summary of changes since 2018.08:
+
+* FPGA
+    - Support for the ADS-B core on bladeRF micro
+    - Add metadata flags for miniexp{1,2} IO pin status
+    - Fix race condition during FX3/Nios UART initialization
+    - Fix bugs in bladeRF AGC control
+    - Timing closure improvements
+    - Build system fixes
+
+* FX3
+    - Fix USB device reset interrupting SPI flash autoloading of FPGA images
+    - Add BLADE_USB_CMD_QUERY_FLASH_ID command
+    - Add BLADE_USB_CMD_QUERY_FPGA_SOURCE command
+
+* libbladeRF
+    - API additions:
+        - Add format macros for bladerf_frequency and bladerf_timestamp
+        - Add 'manufacturer' and 'product' device description strings to
+          bladerf_devinfo struct
+        - Add bladerf_get_serial_struct() API function
+        - Add bladerf_get_flash_size() API function
+        - Add bladerf_trigger_signal values for J51-1 (bladerf2) and Miniexp-1
+          (generic)
+        - Add bladerf_get_fpga_source() API function
+        - Add meta RX hardware flags for underflow, miniexp{1,2}
+    - Fixes:
+        - bladerf2: support TX frequencies down to 47 MHz
+        - bladerf2: support sample rates down to 0.521 Msps
+        - bladerf1: fix BLADERF_GPIO_AGC_ENABLE
+        - bladerf2: fix bladerf_trigger_arm implementation
+        - streaming: extend USB transfer timeout to match the configured stream
+          timeout
+    - Misc:
+        - Install the doxygen docs, if generated
+        - Adjust RX gain mode lists for clarity
+        - bladerf1: implement bladerf_{get,set}_rf_port[s]
+        - bladerf1: skip initialization if BLADERF_FORCE_NO_FPGA_PRESENT is set
+
+* bladeRF-cli
+    - Add libedit support
+    - Ensure device is initialized after deferred open
+    - info: display manufacturer, product, flash size
+    - print: show RF routing on bladerf1
+    - print: display supported ranges for sample rate, bandwidth, frequency
+    - probe: handle already-open devices
+    - version: display FPGA configuration source
+
+* MATLAB & Simulink bindings
+    - Add missing BB_TXVGA1_RXLPF loopback option
+    - Fix tx_gain property handling in simulink
+
+* Python
+    - Fix rx_channel_count, tx_channel_count
+    - Update with latest API functions
+
+* Windows installer
+    - install-drivers: install a driver for the bootloader VID/PID (04b4:00f3),
+      allowing easier FX3 bootloader recovery operations
+    - Upgrade to libusb 1.0.22
 
 --------------------------------------------------------------------------------
  2018.08 (2018-08-30)
