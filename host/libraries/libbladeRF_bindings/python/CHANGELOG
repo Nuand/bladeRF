@@ -5,6 +5,13 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.1.0 (2018-10-30)
+--------------------------------
+ * Fix rx_channel_count and tx_channel_count
+ * Use new bladerf_get_serial_struct in the get_serial method
+ * Update with latest API functions
+ * Improve import_header.py script
+
 v1.0.1 (2018-08-24)
 --------------------------------
 
