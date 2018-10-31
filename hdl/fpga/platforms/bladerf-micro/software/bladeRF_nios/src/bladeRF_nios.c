@@ -48,6 +48,8 @@
 #include "pkt_legacy.h"
 #include "debug.h"
 
+#define BLADERF_DEVICE_NAME "Nuand bladeRF 2.0 Micro"
+
 #ifdef BLADERF_NIOS_PC_SIMULATION
     extern bool run_nios;
 #   define HAVE_REQUEST() ({ \
@@ -117,6 +119,13 @@ typedef enum state {
 
 int main(void)
 {
+    DBG(BLADERF_DEVICE_NAME " FPGA v%x.%x.%x\n",
+        FPGA_VERSION_MAJOR, FPGA_VERSION_MINOR, FPGA_VERSION_PATCH);
+    DBG("Built " __DATE__ " " __TIME__ " with love <3\n");
+#ifdef BLADERF_NIOS_LIBAD936X
+    DBG("libad936x found: This FPGA image has magic transgirl powers\n");
+#endif  // BLADERF_NIOS_LIBAD936X
+
     uint8_t i;
 
     /* Pointer to currently active packet handler */
@@ -130,6 +139,18 @@ int main(void)
     const volatile uint8_t *magic = &pkt.req[PKT_MAGIC_IDX];
 
     volatile bool have_request = false;
+
+#ifdef BLADERF_NIOS_DEBUG
+    // Twiddler: gratuitous screen placebo
+    size_t const TWIDDLE_DELAY_CONSTANT = 100000;
+    size_t twiddle_count = 0;
+    enum {
+        TWIDDLE_STATE_PIPE = '|',
+        TWIDDLE_STATE_FWD_SLASH = '/',
+        TWIDDLE_STATE_HYPHEN = '-',
+        TWIDDLE_STATE_BACKSLASH = '\\',
+    } twiddle_state = TWIDDLE_STATE_PIPE;
+#endif
 
     // Trim DAC constants
     const uint16_t trimdac_min       = 0x28F5;
@@ -268,8 +289,35 @@ int main(void)
         }
     #endif
 
+    DBG("=== System Ready ===\n");
+
     while (run_nios) {
         have_request = HAVE_REQUEST();
+
+#ifdef BLADERF_NIOS_DEBUG
+        if (have_request) {
+            twiddle_count = 0;
+        } else if (TWIDDLE_DELAY_CONSTANT == ++twiddle_count) {
+            DBG("%c\b", twiddle_state);
+
+            switch (twiddle_state) {
+                case TWIDDLE_STATE_PIPE:
+                    twiddle_state = TWIDDLE_STATE_FWD_SLASH;
+                    break;
+                case TWIDDLE_STATE_FWD_SLASH:
+                    twiddle_state = TWIDDLE_STATE_HYPHEN;
+                    break;
+                case TWIDDLE_STATE_HYPHEN:
+                    twiddle_state = TWIDDLE_STATE_BACKSLASH;
+                    break;
+                case TWIDDLE_STATE_BACKSLASH:
+                    twiddle_state = TWIDDLE_STATE_PIPE;
+                    break;
+            }
+
+            twiddle_count = 0;
+        }
+#endif
 
         /* We have a command in the UART */
         if (have_request) {
