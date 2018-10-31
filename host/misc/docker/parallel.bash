@@ -22,6 +22,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+# Usage:
+# parallel.bash [--no-base] [target [target ...]]
+
 # Enable job control
 set -m
 
@@ -45,6 +48,13 @@ success=""
 failure=""
 rels=""
 
+# command line arg
+if [ "${1}" == "--no-base" ]; then
+    echo "*** Won't rebuild the base image"
+    _skip_base=1
+    shift
+fi
+
 loadavg () {
     # usage: loadavg
     # outputs the current load average as an integer
@@ -67,7 +77,7 @@ do_base () {
 wait_for_jobs () {
     # usage: wait_for_jobs n
     # spins until there are fewer than n jobs active
-    [ -z "$1" ] && exit 1
+    [ -z "${1}" ] && exit 1
 
     while [ "$(jobs | wc -l)" -ge "${1}" ]; do
         if [ -z "${waiting}" ]; then
@@ -88,7 +98,7 @@ wait_for_jobs () {
 wait_for_load () {
     # usage: wait_for_load
     # spins until the system load is less than n
-    [ -z "$1" ] && exit 1
+    [ -z "${1}" ] && exit 1
 
     while [ "$(loadavg)" -ge "${1}" ]; do
         if [ -z "${waiting}" ]; then
@@ -109,9 +119,15 @@ wait_for_load () {
 do_spawn () {
     # usage: do_spawn dockerfile...
     # spawns a subprocess to execute a build, being mindful of limits
-    [ -z "$1" ] && exit 1
-    dff=$1
+    [ -z "${1}" ] && exit 1
+
+    dff=${1}
     rel=$(basename -s ".Dockerfile" ${dff})
+
+    if [ ! -f "${dff}" ]; then
+        echo "*** File doesn't exist: ${1}"
+        exit 1
+    fi
 
     wait_for_jobs ${max_builds}
     wait_for_load ${max_load}
@@ -121,30 +137,58 @@ do_spawn () {
     echo "*** Spawned ${rel} pid ${__pid}. Jobs: $(jobs | wc -l), loadavg: $(loadavg)"
 }
 
+crawl_dir () {
+    # usage: crawl_dir path...
+    # outputs a space-seperated list of Dockerfiles in that path
+    # e.g. crawl_dir host/misc/docker -> archlinux centos-7 clang-scan etc...
+    [ -z "${1}" ] && exit 1
+
+    _out=""
+
+    for f in $(ls ${1}/*.Dockerfile); do
+        _out="${_out} $(basename -s ".Dockerfile" ${f})"
+    done
+
+    echo ${_out}
+}
 
 LOGDIR=$(mktemp -d)
 [ -z "${LOGDIR}" ] && echo "Couldn't create a tempdir for logs" && exit 1
 
 echo "*** log dir: ${LOGDIR}"
 
-cd ${basedir}
-echo "*** Running initial build job: _base"
-do_base 2>&1 > ${LOGDIR}/_base.txt
-
-if [ "${__status}" -ne 0 ]; then
-    echo "*** _base build failed, can't continue"
-    cat ${LOGDIR}/_base.txt
-    exit 1
+if [ -z "${*}" ]; then
+    # assume all files
+    candidates=$(crawl_dir ${dfdir})
+else
+    # user selecting a few
+    for candidate in ${*}; do
+        candidates="${candidates} ${candidate}"
+    done
 fi
 
-for dff in $(ls ${dfdir}/*.Dockerfile); do
-    rootname=$(basename -s ".Dockerfile" ${dff})
-    if [ "${rootname}" == "_base" ]; then
+echo "*** Will build: ${candidates}"
+
+cd ${basedir}
+
+if [ -z "${_skip_base}" ]; then
+    echo "*** Running initial build job: _base"
+    do_base 2>&1 > ${LOGDIR}/_base.txt
+
+    if [ "${__status}" -ne 0 ]; then
+        echo "*** _base build failed, can't continue"
+        cat ${LOGDIR}/_base.txt
+        exit 1
+    fi
+fi
+
+for dff in $candidates; do
+    if [ "${dff}" == "_base" ]; then
         continue
     fi
 
-    do_spawn ${dff}
-    WAITPID="${WAITPID} $__pid"
+    do_spawn ${dfdir}/${dff}.Dockerfile
+    WAITPID="${WAITPID} ${__pid}"
 
     # sleep for a bit to provide settling time
     sleep 5
