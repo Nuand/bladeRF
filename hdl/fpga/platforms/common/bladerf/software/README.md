@@ -97,22 +97,51 @@ This is located in: `$QUARTUS_INSTALL_DIR/nios2eds/nios2_command_shell.sh`
 ```
 $ cd $BLADERF_DIR/hdl/quartus
 
-# Replace -s 40 with -s 115 for a bladeRF x115
-$ build_bladerf.sh -s 40 -r hosted
+# Replace <board>, <size>, and <rev> according to the platform you are building.
+$ build_bladerf.sh -b <board> -s <size> -r <rev>
 ```
 
 - Load the FPGA with the resulting image using the bladeRF-cli.  The NIOS II will be loaded and reset in a following step.  This is required to ensure the PCLK from the FX3 is provided to the NIOS II core.
 
 - Launch the Eclipse version provided with Quartus II 15.0, contained located at: `$QUARTUS_INSTALL_DIR/nios2eds/bin/eclipse-nios2`. Create a workspace wherever you see fit.
 
-- Import the bladeRF_nios and bladeRF_nios_bsp projects:
+- Import the bladeRF_nios_bsp project:
   - From the project explorer, right click and select *Import...*
   - Select *General --> Existing projects into Workspace*
   - Select *Root Directory*
-  - Select this directory. You should see both projects checked in the *Projects* pane.
+  - Select this directory. You should see a project labeled `bladeRF_nios_bsp` checked in the *Projects* pane.
   - Click Finish
 
+- Import the bladeRF_nios projects:
+  - Repeat the previous import steps again, but this time select the software directory for the target platform. For example:
+    - `hdl/fpga/platforms/bladerf-micro/software` for bladeRF-micro
+    - `hdl/fpga/platforms/bladerf/software` for bladeRF
+
 - You should now have both projects in your Eclipse workspace. If the C/C++ indexer reports syntax issues due to unknown macro definitions or types, click *Project* -> *C/C++ Index* -> *Rebuild*.
+  - This doesn't always work and you may have to manually add linked source directories:
+    - Right-click the bladeRF_nios project and select *Properties*
+    - Under *C/C++ General --> Paths and Symbols*, click the *Source Location* tab
+    - Click *Link Folder*
+    - Check the box *Link to folder in the file system* and click *Browse...*
+    - Navigate to the `bladeRF_nios` folder in this directory
+    - If Eclipse complains about the folder name (the field at the top of the window), just change it to `bladeRF_nios_common`
+    - Click *OK*
+    - Repeat this for the `fpga_common` directory in the bladeRF root.
+    - Click *OK* to get back to Eclipse
+    - Now Rebuild the C/C++ indexer. You may also have to right-click the project and select *Index --> Search for unresolved includes* or *Index --> Re-resolve unresolved includes*
+  - Eclipse may continue to complain about some Altera-specific includes missing, but these can simply be ignored.
+
+- Building the `bladeRF_nios` project will fail stating that the BSP directory could not be found. This is because the environment variable `WORKDIR` has not been set. To set this:
+  - Right-click the `bladeRF_nios` project and select *Properties*
+  - Under *C/C++ Build --> Environment*, click *Add* to create a new environment variable
+  - For *Name*, type `WORKDIR`
+  - For *Value*, type `work/<board>-<size>-<rev>` where:
+    - `<board>` is the name of the platform (e.g. bladerf or bladerf-micro)
+    - `<size>` is the FPGA size (e.g. 40, 115, A4, A9)
+    - `<rev>` is the project revision (typically 'hosted')
+  - Click *OK*
+  - The `bladeRF_nios` project should now build successfully.
+  - **Remember to update this variable if targeting a different platform later!**
 
 - Connect the JTAG debugger
 
