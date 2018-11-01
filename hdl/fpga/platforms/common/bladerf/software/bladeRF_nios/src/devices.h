@@ -51,22 +51,7 @@
 #   define INLINE static inline
 #   define SIMULATION_FLUSH_UART()
 
-#   define COMMAND_UART_BASE          COMMON_SYSTEM_0_COMMAND_UART_BASE
-#   define RX_TAMER_BASE              COMMON_SYSTEM_0_RX_TAMER_BASE
-#   define TX_TAMER_BASE              COMMON_SYSTEM_0_TX_TAMER_BASE
-#   define RX_TRIGGER_CTL_BASE        COMMON_SYSTEM_0_RX_TRIGGER_CTL_BASE
-#   define TX_TRIGGER_CTL_BASE        COMMON_SYSTEM_0_TX_TRIGGER_CTL_BASE
-#   define PERIPHERAL_SPI_BASE        COMMON_SYSTEM_0_PERIPHERAL_SPI_BASE
-#   define I2C                        COMMON_SYSTEM_0_OPENCORES_I2C_BASE
-
-#   define COMMAND_UART_IRQ           COMMON_SYSTEM_0_COMMAND_UART_IRQ
-#   define COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID COMMON_SYSTEM_0_COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID
-
-#   define RX_TAMER_IRQ                             COMMON_SYSTEM_0_RX_TAMER_IRQ
-#   define RX_TAMER_IRQ_INTERRUPT_CONTROLLER_ID     COMMON_SYSTEM_0_RX_TAMER_IRQ_INTERRUPT_CONTROLLER_ID
-
-#   define TX_TAMER_IRQ                             COMMON_SYSTEM_0_TX_TAMER_IRQ
-#   define TX_TAMER_IRQ_INTERRUPT_CONTROLLER_ID     COMMON_SYSTEM_0_TX_TAMER_IRQ_INTERRUPT_CONTROLLER_ID
+#   define I2C                        OPENCORES_I2C_BASE
 
 /* Time tamer register offsets from the base */
 #   define OC_I2C_PRESCALER    0
@@ -124,7 +109,7 @@
 
 /* Enable libad936x if we have enough RAM. Note that it is very important
  * that all calls to ad9361_* be ifdef-wrapped! */
-#   if COMMON_SYSTEM_0_RAM_SPAN >= 131072
+#   if RAM_SPAN >= 131072
 #       define BLADERF_NIOS_LIBAD936X
 #   endif
 

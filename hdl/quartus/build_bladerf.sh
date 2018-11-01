@@ -328,20 +328,6 @@ echo "    Generating Nios II Qsys for ${board} ..."
 echo "##########################################################################"
 echo ""
 
-if [ -f common_system.qsys ]; then
-    echo "Skipping building common system Qsys"
-else
-    echo "Building common system Qsys"
-    cmd="set nios_impl ${nios_rev}"
-    cmd="${cmd}; set device_family {${DEVICE_FAMILY}}"
-    cmd="${cmd}; set device ${DEVICE}"
-    cmd="${cmd}; set nios_impl ${nios_rev}"
-    cmd="${cmd}; set ram_size $(get_qsys_ram $size)"
-    qsys-script \
-        --script=${common_dir}/build/common_system.tcl \
-        --cmd="${cmd}"
-fi
-
 if [ -f nios_system.qsys ]; then
     echo "Skipping building platform Qsys"
 else
@@ -380,7 +366,7 @@ else
         --settings settings.bsp \
         --type hal \
         --bsp-dir bladeRF_nios_bsp \
-        --cpu-name common_system_0_nios2 \
+        --cpu-name nios2 \
         --script $(readlink -f $QUARTUS_ROOTDIR/..)/nios2eds/sdk2/bin/bsp-set-defaults.tcl \
         --sopc nios_system.sopcinfo \
         --set hal.max_file_descriptors 4 \
