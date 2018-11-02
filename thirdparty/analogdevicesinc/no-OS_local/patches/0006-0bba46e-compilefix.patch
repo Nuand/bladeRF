@@ -1,0 +1,16 @@
+diff --git a/host/libraries/libbladeRF/src/driver/thirdparty/adi/ad9361.c b/host/libraries/libbladeRF/src/driver/thirdparty/adi/ad9361.c
+index 2cd3d26d..b3b5a1bb 100644
+--- a/ad9361/sw/ad9361.c
++++ b/ad9361/sw/ad9361.c
+@@ -40,9 +40,9 @@
+ /***************************** Include Files **********************************/
+ /******************************************************************************/
+ #include "host_config.h"
+-#if 0 == BLADERF_OS_FREEBSD  
++#if !defined(BLADERF_OS_FREEBSD) && !defined(BLADERF_OS_OSX)
+ #include <malloc.h>
+-#endif // BLADERF_OS_FREEBSD
++#endif // BLADERF_OS_FREEBSD + BLADERF_OS_OSX
+ #include <limits.h>
+ #include <stdint.h>
+ #include <stdio.h>

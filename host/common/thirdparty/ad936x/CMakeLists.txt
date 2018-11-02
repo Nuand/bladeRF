@@ -39,15 +39,30 @@ add_library(ad936x STATIC
 )
 
 target_compile_options(ad936x PRIVATE
-    -DNUAND_MODIFICATIONS -Wall -Os
+    -DNUAND_MODIFICATIONS
+    -Wall -Os
 )
 
 if(NOT MSVC)
     target_compile_options(ad936x PRIVATE
-        -ffunction-sections -fdata-sections -fPIC
-        -Wno-unused-but-set-variable -std=gnu11
+        -ffunction-sections
+        -fdata-sections
+        -fPIC
+        -std=gnu11
     )
 endif(NOT MSVC)
+
+if(NOT MSVC AND NOT APPLE)
+    target_compile_options(ad936x PRIVATE
+        -Wno-unused-but-set-variable
+    )
+endif(NOT MSVC AND NOT APPLE)
+
+if(APPLE)
+    target_compile_options(ad936x PRIVATE
+        -Wno-absolute-value
+    )
+endif(APPLE)
 
 if(BUILD_AD936X_DEBUG)
     message(STATUS "libad936x: Enabling debugging output")
