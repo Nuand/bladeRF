@@ -48,12 +48,15 @@
 #include "devcfg.h"
 #include "hop_set.h"
 
+#define VERBOSITY   BLADERF_LOG_LEVEL_INFO
+
 #define TIMEOUT_MS  2500
 #define ITERATIONS  500
-#define SAMPLE_RATE 2000000
+#define SAMPLE_RATE 5000000
+#define BANDWIDTH   5000000
 
 #define NUM_SAMPLES 2000
-#define TS_INC      20000
+#define TS_INC      50000
 #define RETUNE_INC  (NUM_SAMPLES + (TS_INC - NUM_SAMPLES) / 10)
 
 #define SCHEDULE_AHEAD 4
@@ -224,8 +227,9 @@ int main(int argc, char *argv[])
     const char *dev_str = NULL;
     const char *hop_file = NULL;
     const char *mode = NULL;
-    const char *module_str;
-    struct hop_set *hops;
+    const char *module_str = NULL;
+    const char *board_name = NULL;
+    struct hop_set *hops = NULL;
     struct devcfg config;
     bladerf_module module;
     bool quick_tune;
@@ -270,6 +274,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    bladerf_log_set_verbosity(VERBOSITY);
+
     status = bladerf_open(&dev, dev_str);
     if (status != 0) {
         fprintf(stderr, "Unable to open device: %s\n",
@@ -278,10 +284,12 @@ int main(int argc, char *argv[])
         goto out;
     }
 
+    board_name = bladerf_get_board_name(dev);
+
     devcfg_init(&config);
 
     config.tx_samplerate = SAMPLE_RATE;
-    config.tx_bandwidth  = 1500000;
+    config.tx_bandwidth  = BANDWIDTH;
 
     config.samples_per_buffer = 4096;
     config.num_buffers = 16;
@@ -294,7 +302,7 @@ int main(int argc, char *argv[])
     }
 
     if (quick_tune) {
-        status = hop_set_load_quick_tunes(dev, BLADERF_MODULE_TX, hops);
+        status = hop_set_load_quick_tunes(dev, module, hops);
         if (status != 0) {
             goto out;
         }
@@ -306,8 +314,14 @@ int main(int argc, char *argv[])
             struct hop_params p;
             hop_set_next(hops, &p);
 
-            printf("  f=%-10u nint=%-6u nfrac=%-8u flags=0x%02x vcocap=%u\n",
-                    p.f, p.qt.nint, p.qt.nfrac, p.qt.flags, p.qt.vcocap);
+            if (strcasecmp(board_name, "bladerf1") == 0) {
+                printf("  f=%-10u nint=%-6u nfrac=%-8u flags=0x%02x vcocap=%u\n",
+                       p.f, p.qt.nint, p.qt.nfrac, p.qt.flags, p.qt.vcocap);
+            } else if (strcasecmp(board_name, "bladerf2") == 0) {
+                printf("  f=%-10u nios_profile=%-8u rffe_profile=%-8u\n",
+                       p.f, p.qt.nios_profile, p.qt.rffe_profile);
+            }
+
         } else {
             printf("  f=%u\n", hop_set_next(hops, NULL));
         }
@@ -332,7 +346,7 @@ int main(int argc, char *argv[])
     printf("Done.\n");
     fflush(stdout);
 
-    disable_status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
+    disable_status = bladerf_enable_module(dev, module, false);
     if (disable_status != 0) {
         fprintf(stderr, "Failed to disable_status TX module: %s\n",
                 bladerf_strerror(status));
