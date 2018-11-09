@@ -1582,6 +1582,27 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         RETURN_ERROR_STATUS("bladerf2_initialize", status);
     }
 
+    if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
+        /* Cancel any pending re-tunes that may have been left over as the
+         * result of a user application crashing or forgetting to call
+         * bladerf_close() */
+        status =
+            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
+        if (status != 0) {
+            log_warning("Failed to cancel any pending RX retunes: %s\n",
+                        bladerf_strerror(status));
+            return status;
+        }
+
+        status =
+            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
+        if (status != 0) {
+            log_warning("Failed to cancel any pending TX retunes: %s\n",
+                        bladerf_strerror(status));
+            return status;
+        }
+    }
+
     return 0;
 }
 
@@ -1592,10 +1613,30 @@ static void bladerf2_close(struct bladerf *dev)
         struct bladerf_flash_arch *flash_arch  = dev->flash_arch;
 
         if (board_data != NULL) {
+            sync_deinit(&board_data->sync[BLADERF_CHANNEL_RX(0)]);
+            sync_deinit(&board_data->sync[BLADERF_CHANNEL_TX(0)]);
+
+            if (dev->backend->is_fpga_configured(dev) &&
+                have_cap(board_data->capabilities,
+                         BLADERF_CAP_SCHEDULED_RETUNE)) {
+                /* Cancel scheduled retunes here to avoid the device retuning
+                 * underneath the user should they open it again in the future.
+                 *
+                 * This is intended to help developers avoid a situation during
+                 * debugging where they schedule "far" into the future, but hit
+                 * a case where their program aborts or exits early. If we do
+                 * not cancel these scheduled retunes, the device could start
+                 * up and/or "unexpectedly" switch to a different frequency.
+                 */
+                dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
+                dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
+            }
+
             if (board_data->phy != NULL) {
                 ad9361_deinit(board_data->phy);
                 board_data->phy = NULL;
             }
+
             free(board_data);
             board_data = NULL;
         }
