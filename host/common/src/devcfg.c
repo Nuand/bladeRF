@@ -503,6 +503,9 @@ int devcfg_handle_args(int argc, char **argv, const char *option_str,
 int devcfg_apply(struct bladerf *dev, const struct devcfg *c)
 {
     int status;
+    const char *board_name;
+
+    board_name = bladerf_get_board_name(dev);
 
     bladerf_log_set_verbosity(c->verbosity);
 
@@ -563,39 +566,41 @@ int devcfg_apply(struct bladerf *dev, const struct devcfg *c)
         return -1;
     }
 
-    status = bladerf_set_lna_gain(dev, c->lnagain);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set RX LNA gain: %s\n",
-                bladerf_strerror(status));
-        return -1;
-    }
+    if (strcasecmp(board_name, "bladerf1") == 0) {
+        status = bladerf_set_lna_gain(dev, c->lnagain);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set RX LNA gain: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
 
-    status = bladerf_set_rxvga1(dev, c->rxvga1);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set RX VGA1 gain: %s\n",
-                bladerf_strerror(status));
-        return -1;
-    }
+        status = bladerf_set_rxvga1(dev, c->rxvga1);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set RX VGA1 gain: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
 
-    status = bladerf_set_rxvga2(dev, c->rxvga2);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set RX VGA2 gain: %s\n",
-                bladerf_strerror(status));
-        return -1;
-    }
+        status = bladerf_set_rxvga2(dev, c->rxvga2);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set RX VGA2 gain: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
 
-    status = bladerf_set_txvga1(dev, c->txvga1);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set TX VGA1 gain: %s\n",
-                bladerf_strerror(status));
-        return -1;
-    }
+        status = bladerf_set_txvga1(dev, c->txvga1);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set TX VGA1 gain: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
 
-    status = bladerf_set_txvga2(dev, c->txvga2);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set TX VGA2 gain: %s\n",
-                bladerf_strerror(status));
-        return -1;
+        status = bladerf_set_txvga2(dev, c->txvga2);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set TX VGA2 gain: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
     }
 
     return 0;
