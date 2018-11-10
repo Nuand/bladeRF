@@ -3,9 +3,19 @@ package require -exact qsys 16.0
 
 create_system {common_system}
 
-#set_project_property DEVICE_FAMILY {Cyclone IV E}
-#set_project_property DEVICE {EP4CE40F23C8}
 set_project_property HIDE_FROM_IP_CATALOG {false}
+
+if { [info exists device_family] == 0 } {
+    error "Device family variable not set."
+} else {
+    set_project_property DEVICE_FAMILY $device_family
+}
+
+if { [info exists device] == 0 } {
+    error "Device variable not set."
+} else {
+    set_project_property DEVICE $device
+}
 
 if { [info exists nios_impl] == 0 } {
     error "Nios implementation variable not set."

@@ -258,7 +258,7 @@ if [[ ${flow} != "gen" ]] &&
     exit 1
 fi
 
-
+DEVICE_FAMILY=$(get_device_family $size)
 DEVICE=$(get_device $size)
 
 # Check for quartus_sh
@@ -329,21 +329,27 @@ echo "##########################################################################
 echo ""
 
 if [ -f common_system.qsys ]; then
-    echo "Skipping building common system Qsys";
+    echo "Skipping building common system Qsys"
 else
-    echo "Building common system Qsys";
+    echo "Building common system Qsys"
+    cmd="set nios_impl ${nios_rev}"
+    cmd="${cmd}; set device_family \"${DEVICE_FAMILY}\""
+    cmd="${cmd}; set device ${DEVICE}"
     qsys-script \
         --script=${common_dir}/build/common_system.tcl \
-        --cmd="set nios_impl ${nios_rev}"
+        --cmd="${cmd}"
 fi
 
 if [ -f nios_system.qsys ]; then
-    echo "Skipping building platform Qsys";
+    echo "Skipping building platform Qsys"
 else
-    echo "Building platform Qsys";
+    echo "Building platform Qsys"
+    cmd="set nios_impl ${nios_rev}"
+    cmd="${cmd}; set device_family \"${DEVICE_FAMILY}\""
+    cmd="${cmd}; set device ${DEVICE}"
     qsys-script \
         --script=${build_dir}/nios_system.tcl \
-        --cmd="set nios_impl ${nios_rev}"
+        --cmd="${cmd}"
 fi
 
 if [ -f ${build_dir}/platform.sh ]; then
