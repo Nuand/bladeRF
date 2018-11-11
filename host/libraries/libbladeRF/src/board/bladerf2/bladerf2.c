@@ -114,6 +114,10 @@ struct bladerf2_board_data {
     bool low_samplerate_mode;
     bladerf_rfic_rxfir rxfir, rxfir_orig;
     bladerf_rfic_txfir txfir, txfir_orig;
+
+    /* Quick Tune Profile Status */
+    uint16_t quick_tune_tx_profile;
+    uint16_t quick_tune_rx_profile;
 };
 
 /* Macro for logging and returning an error status. This should be used for
@@ -271,6 +275,14 @@ static const bladerf_frequency BLADERF_REFIN_DEFAULT    = 10000000;
 #define TRIMDAC_EN_MASK             0x3
 #define TRIMDAC_EN_ACTIVE           0x0
 #define TRIMDAC_EN_HIGHZ            0x3
+
+/* Number of fast lock profiles that can be stored in the Nios
+ * Make sure this number matches that of the Nios' devices.h */
+#define NUM_BBP_FASTLOCK_PROFILES   256
+
+/* Number of fast lock profiles that can be stored in the RFFE
+ * Make sure this number matches that of the Nios' devices.h */
+#define NUM_RFFE_FASTLOCK_PROFILES  8
 
 /* Board state to string map */
 static const char *bladerf2_state_to_string[] = {
@@ -1290,6 +1302,10 @@ static int bladerf2_initialize(struct bladerf *dev)
     if (status < 0) {
         RETURN_ERROR_STATUS("bladerf_set_pll_refclk", status);
     }
+
+    /* Reset current quick tune profile number */
+    board_data->quick_tune_rx_profile = 0;
+    board_data->quick_tune_tx_profile = 0;
 
     /* Update device state */
     board_data->state = STATE_INITIALIZED;
@@ -2980,11 +2996,6 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         RETURN_INVAL("quick_tune", "is null");
     }
 
-    if (quick_tune->rffe_profile > 8) {
-        RETURN_INVAL_ARG("Quick tune profile number", quick_tune->rffe_profile,
-                         "is not valid");
-    }
-
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
         ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
         RETURN_INVAL_ARG("channel", ch, "is not valid");
@@ -3002,6 +3013,21 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
     port_map = _get_band_port_map_by_freq(ch, true, freq);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
+
+        if( board_data->quick_tune_tx_profile < NUM_BBP_FASTLOCK_PROFILES ) {
+            /* Assign Nios and RFFE profile numbers */
+            quick_tune->nios_profile = board_data->quick_tune_tx_profile++;
+            log_verbose("Quick tune assigned Nios TX fast lock index: %u\n",
+                        quick_tune->nios_profile);
+            quick_tune->rffe_profile = quick_tune->nios_profile %
+                NUM_RFFE_FASTLOCK_PROFILES;
+            log_verbose("Quick tune assigned RFFE TX fast lock index: %u\n",
+                        quick_tune->rffe_profile);
+        } else {
+            log_error("Reached maximum number of TX quick tune profiles.");
+            return BLADERF_ERR_UNEXPECTED;
+        }
+
         /* Create a fast lock profile in the RFIC */
         status = ad9361_tx_fastlock_store(board_data->phy,
                                           quick_tune->rffe_profile);
@@ -3028,6 +3054,21 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         quick_tune->spdt = (port_map->spdt << 6) | (port_map->spdt << 4);
 
     } else {
+
+        if( board_data->quick_tune_rx_profile < NUM_BBP_FASTLOCK_PROFILES ) {
+            /* Assign Nios and RFFE profile numbers */
+            quick_tune->nios_profile = board_data->quick_tune_rx_profile++;
+            log_verbose("Quick tune assigned Nios RX fast lock index: %u\n",
+                        quick_tune->nios_profile);
+            quick_tune->rffe_profile = quick_tune->nios_profile %
+                NUM_RFFE_FASTLOCK_PROFILES;
+            log_verbose("Quick tune assigned RFFE RX fast lock index: %u\n",
+                        quick_tune->rffe_profile);
+        } else {
+            log_error("Reached maximum number of RX quick tune profiles.");
+            return BLADERF_ERR_UNEXPECTED;
+        }
+
         /* Create a fast lock profile in the RFIC */
         status = ad9361_rx_fastlock_store(board_data->phy,
                                           quick_tune->rffe_profile);
