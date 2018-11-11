@@ -333,7 +333,7 @@ if [ -f common_system.qsys ]; then
 else
     echo "Building common system Qsys"
     cmd="set nios_impl ${nios_rev}"
-    cmd="${cmd}; set device_family \"${DEVICE_FAMILY}\""
+    cmd="${cmd}; set device_family {${DEVICE_FAMILY}}"
     cmd="${cmd}; set device ${DEVICE}"
     qsys-script \
         --script=${common_dir}/build/common_system.tcl \
@@ -345,7 +345,7 @@ if [ -f nios_system.qsys ]; then
 else
     echo "Building platform Qsys"
     cmd="set nios_impl ${nios_rev}"
-    cmd="${cmd}; set device_family \"${DEVICE_FAMILY}\""
+    cmd="${cmd}; set device_family {${DEVICE_FAMILY}}"
     cmd="${cmd}; set device ${DEVICE}"
     qsys-script \
         --script=${build_dir}/nios_system.tcl \
