@@ -333,6 +333,8 @@ tx_csv_to_sc16q11_out:
         free(bin_name);
     }
 
+    free(tmp_iq);
+
     if (csv) {
         fclose(csv);
     }
