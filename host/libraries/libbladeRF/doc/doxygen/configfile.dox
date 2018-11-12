@@ -171,6 +171,14 @@ will be applied more than once; e.g. specifying `frequency 2.4G` and then
         <strong>See ::bladerf_vctcxo_tamer_mode for important
         information.</strong>
 
+    <li><b>`biastee_rx <bool>`</b>, <b>`biastee_tx <bool>`</b></li>
+
+        Enables or disables the bias tee supply on the RX or TX ports
+        respectively, via bladerf_set_bias_tee().
+
+        A true value (e.g. `on`) turns the DC bias on, while a false value
+        (e.g. `off`) turns the DC bias off.
+
 </ul>
 
 <h3>Suffixes</h3>

@@ -57,26 +57,30 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
 
     status = BLADERF_ERR_INVAL;
 
-    if (!strcasecmp(opt.key, "tx_biastee_en")) {
-      if (!strcasecmp(opt.value, "1")) {
-        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_TX(0), 1);
-      } else {
-        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_TX(0), 0);
-      }
-      if (status < 0) {
-        log_warning("Unable to set %s", opt.key);
-        return status;
-      }
-    } else if (!strcasecmp(opt.key, "rx_biastee_en")) {
-      if (!strcasecmp(opt.value, "1")) {
-        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_RX(0), 1);
-      } else {
-        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_RX(0), 0);
-      }
-      if (status < 0) {
-        log_warning("Unable to set rx_biastee_en\n");
-        return status; 
-      }
+    if (!strcasecmp(opt.key, "biastee_tx")) {
+        bool enable = false;
+
+        status = str2bool(opt.value, &enable);
+        if (status < 0) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_TX(0), enable);
+        if (status < 0) {
+            return status;
+        }
+    } else if (!strcasecmp(opt.key, "biastee_rx")) {
+        bool enable = false;
+
+        status = str2bool(opt.value, &enable);
+        if (status < 0) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_bias_tee(dev, BLADERF_CHANNEL_RX(0), enable);
+        if (status < 0) {
+            return status;
+        }
     } else if (!strcasecmp(opt.key, "fpga")) {
         status = bladerf_load_fpga(dev, opt.value);
         if (status < 0) {
