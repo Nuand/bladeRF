@@ -104,10 +104,6 @@ Copyright: 2013-2018 Nuand LLC
            2013 Daniel Gröber
 License: LGPL-2.1+
 
-Files: host/libraries/libbladeRF/src/driver/thirdparty/adi/*
-Copyright: 2013-2015 Analog Devices, Inc.
-License: AnalogDevices
-
 Files: host/utilities/*
 Copyright: 2013-2018 Nuand LLC
            2013 Daniel Gröber
@@ -132,6 +128,10 @@ Files: host/libraries/libbladeRF/src/thirdparty/sha256.h
 Copyright: 2005 Colin Percival
            2013 Daniel Gröber
 License: BSD-2-clause
+
+Files: thirdparty/analogdevicesinc/no-OS/*
+Copyright: 2013-2015 Analog Devices, Inc.
+License: AnalogDevices
 
 License: AGPL-3+
  This program is free software: you can redistribute it and/or modify
