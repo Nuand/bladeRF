@@ -119,15 +119,15 @@ endif()
 if(NOT IS_DIRECTORY ${LIBAD936X_UPSTREAM_DIR})
     message(STATUS "libad936x: Attempting to initialize missing submodule")
 
-    find_package(Git QUIET)
+    find_package(Git)
 
-    if(Git_FOUND)
+    if(GIT_FOUND)
         execute_process(
-            COMMAND ${Git_EXECUTABLE} submodule init
+            COMMAND ${GIT_EXECUTABLE} submodule init
             WORKING_DIRECTORY ${LIBAD936X_BLADERF_ROOT}
         )
         execute_process(
-            COMMAND ${Git_EXECUTABLE} submodule update
+            COMMAND ${GIT_EXECUTABLE} submodule update
             WORKING_DIRECTORY ${LIBAD936X_BLADERF_ROOT}
         )
     endif()
