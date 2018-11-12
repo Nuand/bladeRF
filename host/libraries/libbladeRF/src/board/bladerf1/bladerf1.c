@@ -1626,6 +1626,16 @@ static int bladerf1_set_gain_mode(struct bladerf *dev,
     uint32_t config_gpio;
     struct bladerf1_board_data *board_data = dev->board_data;
 
+    uint32_t const TABLE_VERSION = 2; /* Required RX DC cal table version */
+
+    /* Strings used in AGC-unavailable warnings */
+    char const *MGC_WARN = "Manual gain control will be used instead.";
+    char const *FPGA_STR = "download and install FPGA v0.7.0 or newer from "
+                           "https://nuand.com/fpga/";
+    char const *DCCAL_STR = "see \"Generating a DC offset table\" at "
+                            "https://github.com/Nuand/bladeRF/wiki/"
+                            "DC-offset-and-IQ-Imbalance-Correction";
+
     if (mod != BLADERF_MODULE_RX) {
         return BLADERF_ERR_UNSUPPORTED;
     }
@@ -1636,17 +1646,28 @@ static int bladerf1_set_gain_mode(struct bladerf *dev,
 
     if (mode == BLADERF_GAIN_AUTOMATIC || mode == BLADERF_GAIN_DEFAULT) {
         if (!have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT)) {
-            log_error("This FPGA version does not support AGC.\n");
+            log_warning("AGC not supported by FPGA. %s\n", MGC_WARN);
+            log_info("To enable AGC, %s, then %s\n", FPGA_STR, DCCAL_STR);
+            log_debug("%s: expected FPGA >= v0.7.0, got v%u.%u.%u\n",
+                      __FUNCTION__, board_data->fpga_version.major,
+                      board_data->fpga_version.minor,
+                      board_data->fpga_version.patch);
             return BLADERF_ERR_UNSUPPORTED;
         }
 
         if (!board_data->cal.dc_rx) {
-            log_error("RX DC calibration table not found for this board.\n");
+            log_warning("RX DC calibration table not found. %s\n", MGC_WARN);
+            log_info("To enable AGC, %s\n", DCCAL_STR);
             return BLADERF_ERR_UNSUPPORTED;
         }
 
-        if (board_data->cal.dc_rx->version != 2) {
-            log_error("Incompatible RX DC calibration table version.\n");
+        if (board_data->cal.dc_rx->version != TABLE_VERSION) {
+            log_warning("RX DC calibration table is out-of-date. %s\n",
+                        MGC_WARN);
+            log_info("To enable AGC, %s\n", DCCAL_STR);
+            log_debug("%s: expected version %u, got %u\n", __FUNCTION__,
+                      TABLE_VERSION, board_data->cal.dc_rx->version);
+
             return BLADERF_ERR_UNSUPPORTED;
         }
 
