@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.5)
 project(libbladeRF C)
 
+
 ################################################################################
 # Version information
 ################################################################################
@@ -47,6 +48,7 @@ if (NOT EXISTS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
     set(CMAKE_INSTALL_LIBDIR lib)
 endif()
 
+
 ################################################################################
 # Configuration options
 ################################################################################
@@ -87,9 +89,11 @@ option(ENABLE_RFIC_TIMING_CALIBRATION
        OFF
 )
 
+
 ##############################
 # Backend Support
 ##############################
+
 option(ENABLE_BACKEND_USB
     "Enable USB backends. Required when using the bladeRF with a host machine."
     ON
@@ -126,9 +130,11 @@ configure_file(
     @ONLY
 )
 
+
 ################################################################################
 # Additional compiler options
 ################################################################################
+
 if(ENABLE_LIBBLADERF_LOGGING)
     add_definitions(-DLOGGING_ENABLED)
 endif()
@@ -167,10 +173,10 @@ else()
 endif()
 
 
-
 ################################################################################
 # Include paths
 ################################################################################
+
 set(LIBBLADERF_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -181,10 +187,10 @@ set(LIBBLADERF_INCLUDES
 )
 
 
-
 ################################################################################
 # Build dependencies
 ################################################################################
+
 if(MSVC)
     set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${MSVC_C99_INCLUDES})
 
@@ -289,24 +295,21 @@ if(ENABLE_USB_DEV_RESET_ON_OPEN)
     add_definitions(-DENABLE_USB_DEV_RESET_ON_OPEN=1)
 endif()
 
+if(BUILD_AD936X)
+    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ad936x)
+endif(BUILD_AD936X)
+
 include_directories(${LIBBLADERF_INCLUDES})
+
 
 ################################################################################
 # Configure source files
 ################################################################################
-set(LIBBLADERF_AD9361_SOURCE
-        src/driver/thirdparty/adi/ad9361.c
-        src/driver/thirdparty/adi/ad9361_api.c
-        src/driver/thirdparty/adi/ad9361_conv.c
-        src/driver/thirdparty/adi/adc_core.c
-        src/driver/thirdparty/adi/dac_core.c
-        src/driver/thirdparty/adi/util.c
-        src/driver/thirdparty/adi/platform.c
+set(LIBBLADERF_SOURCE_BLADERF2
+        src/board/bladerf2/bladerf2.c
+        src/board/bladerf2/capabilities.c
+        src/board/bladerf2/compatibility.c
 )
-
-if(NOT MSVC)
-    set_source_files_properties(${LIBBLADERF_AD9361_SOURCE} PROPERTIES COMPILE_FLAGS "-std=gnu11")
-endif(NOT MSVC)
 
 set(LIBBLADERF_SOURCE
         src/backend/backend.c
@@ -323,10 +326,6 @@ set(LIBBLADERF_SOURCE
         src/board/bladerf1/calibration.c
         src/board/bladerf1/flash.c
         src/board/bladerf1/image.c
-        src/board/bladerf2/bladerf2.c
-        src/board/bladerf2/capabilities.c
-        src/board/bladerf2/compatibility.c
-        src/board/bladerf2/params.c
         src/board/board.c
         src/expansion/xb100.c
         src/expansion/xb200.c
@@ -350,8 +349,11 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/lms.c
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/band_select.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/parse.c
-        ${LIBBLADERF_AD9361_SOURCE}
 )
+
+if(BUILD_AD936X)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${LIBBLADERF_SOURCE_BLADERF2})
+endif()
 
 if (MSVC)
         set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${CMAKE_CURRENT_BINARY_DIR}/bladerf.rc)
@@ -373,7 +375,7 @@ if(ENABLE_BACKEND_USB)
 endif()
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend//usb/libusb.c)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/libusb.c)
 endif()
 
 if(ENABLE_BACKEND_CYAPI)
@@ -419,6 +421,7 @@ endif()
 
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
+
 ################################################################################
 # Build configuration
 ################################################################################
@@ -448,9 +451,11 @@ set_target_properties(libbladerf_shared PROPERTIES SOVERSION ${VERSION_INFO_MAJO
 include(Shortfile)
 define_file_basename_for_sources(libbladerf_shared)
 
+
 ################################################################################
 # Generate pkg-config file
 ################################################################################
+
 add_subdirectory(include)
 foreach(inc ${LIBBLADERF_INCLUDE_DIR})
     list(APPEND LIBBLADERF_PC_CFLAGS "-I${inc}")
@@ -495,9 +500,11 @@ install(
 )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
+
 ################################################################################
 # Library installation information
 ################################################################################
+
 install(TARGETS libbladerf_shared
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # .so/.dylib
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # .a/.lib
@@ -508,11 +515,14 @@ install(TARGETS libbladerf_shared
 ################################################################################
 # Informational output
 ################################################################################
+
 message(STATUS "libbladeRF version: ${VERSION_INFO}")
+
 
 ################################################################################
 # Doxygen documentation
 ################################################################################
+
 if(BUILD_LIBBLADERF_DOC_EXAMPLES)
     add_subdirectory(doc/examples)
 endif()

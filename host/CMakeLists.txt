@@ -74,6 +74,20 @@ include(CheckLibraryExists)
 check_library_exists(c clock_gettime "time.h" HAVE_CLOCK_GETTIME)
 
 ################################################################################
+# Build third-party libraries
+################################################################################
+# TODO: the build will fail unless this is enabled.
+option(BUILD_AD936X
+       "Include support for the Analog Devices AD936x RFIC."
+       ON)
+option(BUILD_AD936X_DEBUG
+       "Enable debugging output for the AD936x library."
+       OFF)
+ # We do this prior to the rest of host/common, as the compile options are
+# going to be different.
+add_subdirectory(common/thirdparty/ad936x)
+
+################################################################################
 # Compiler configuration
 ################################################################################
 

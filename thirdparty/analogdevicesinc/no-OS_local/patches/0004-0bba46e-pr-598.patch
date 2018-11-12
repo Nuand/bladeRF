@@ -1,0 +1,13 @@
+diff --git a/host/libraries/libbladeRF/src/driver/thirdparty/adi/ad9361.h b/host/libraries/libbladeRF/src/driver/thirdparty/adi/ad9361.h
+index 71b19ff8..f97bc3c9 100644
+--- a/ad9361/sw/ad9361.h
++++ b/ad9361/sw/ad9361.h
+@@ -2843,7 +2843,7 @@
+ #define MIN_SYNTH_FREF			10000000UL /* 10 MHz */
+ #define MIN_VCO_FREQ_HZ			6000000000ULL
+ #define MAX_CARRIER_FREQ_HZ		6000000000ULL
+-#define MIN_CARRIER_FREQ_HZ		70000000ULL
++#define MIN_CARRIER_FREQ_HZ		47000000ULL /* Nuand modification */
+ 
+ #define AD9363A_MAX_CARRIER_FREQ_HZ	3800000000ULL
+ #define AD9363A_MIN_CARRIER_FREQ_HZ	325000000ULL

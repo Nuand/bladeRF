@@ -1,0 +1,18 @@
+--- a/ad9361/sw/ad9361.c	2018-10-11 13:41:55.693429324 -0400
++++ b/ad9361/sw/ad9361.c	2018-10-11 15:23:09.688625891 -0400
+@@ -5614,6 +5614,7 @@
+ 	return ad9361_verify_fir_filter_coef(phy, dest, ntaps, coef);
+ }
+ 
++#ifndef NUAND_MODIFICATIONS
+ /**
+  * Parse the FIR filter file/buffer.
+  * @param phy The AD9361 state structure.
+@@ -5785,6 +5786,7 @@
+ 
+ 	return size;
+ }
++#endif // !NUAND_MODIFICATIONS
+ 
+ /**
+  * Validate FIR filter configuration - on pass enable.

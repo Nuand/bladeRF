@@ -37,11 +37,11 @@
 #include "capabilities.h"
 #include "compatibility.h"
 
+#include "driver/ad936x.h"
 #include "driver/fpga_trigger.h"
 #include "driver/fx3_fw.h"
 #include "driver/ina219.h"
 #include "driver/spi_flash.h"
-#include "driver/thirdparty/adi/ad9361_api.h"
 
 #include "backend/backend_config.h"
 #include "backend/usb/usb.h"
@@ -511,23 +511,23 @@ static const struct bladerf_range bladerf2_pll_refclk_range = {
 
 /* RF Ports */
 static const struct bladerf_ad9361_port_name_map bladerf2_rx_port_map[] = {
-    {   FIELD_INIT(.name, "A_BALANCED"),    FIELD_INIT(.id, A_BALANCED),    },
-    {   FIELD_INIT(.name, "B_BALANCED"),    FIELD_INIT(.id, B_BALANCED),    },
-    {   FIELD_INIT(.name, "C_BALANCED"),    FIELD_INIT(.id, C_BALANCED),    },
-    {   FIELD_INIT(.name, "A_N"),           FIELD_INIT(.id, A_N),           },
-    {   FIELD_INIT(.name, "A_P"),           FIELD_INIT(.id, A_P),           },
-    {   FIELD_INIT(.name, "B_N"),           FIELD_INIT(.id, B_N),           },
-    {   FIELD_INIT(.name, "B_P"),           FIELD_INIT(.id, B_P),           },
-    {   FIELD_INIT(.name, "C_N"),           FIELD_INIT(.id, C_N),           },
-    {   FIELD_INIT(.name, "C_P"),           FIELD_INIT(.id, C_P),           },
-    {   FIELD_INIT(.name, "TX_MON1"),       FIELD_INIT(.id, TX_MON1),       },
-    {   FIELD_INIT(.name, "TX_MON2"),       FIELD_INIT(.id, TX_MON2),       },
-    {   FIELD_INIT(.name, "TX_MON1_2"),     FIELD_INIT(.id, TX_MON1_2),     },
+    {   FIELD_INIT(.name, "A_BALANCED"),    FIELD_INIT(.id, AD936X_A_BALANCED), },
+    {   FIELD_INIT(.name, "B_BALANCED"),    FIELD_INIT(.id, AD936X_B_BALANCED), },
+    {   FIELD_INIT(.name, "C_BALANCED"),    FIELD_INIT(.id, AD936X_C_BALANCED), },
+    {   FIELD_INIT(.name, "A_N"),           FIELD_INIT(.id, AD936X_A_N),        },
+    {   FIELD_INIT(.name, "A_P"),           FIELD_INIT(.id, AD936X_A_P),        },
+    {   FIELD_INIT(.name, "B_N"),           FIELD_INIT(.id, AD936X_B_N),        },
+    {   FIELD_INIT(.name, "B_P"),           FIELD_INIT(.id, AD936X_B_P),        },
+    {   FIELD_INIT(.name, "C_N"),           FIELD_INIT(.id, AD936X_C_N),        },
+    {   FIELD_INIT(.name, "C_P"),           FIELD_INIT(.id, AD936X_C_P),        },
+    {   FIELD_INIT(.name, "TX_MON1"),       FIELD_INIT(.id, AD936X_TX_MON1),    },
+    {   FIELD_INIT(.name, "TX_MON2"),       FIELD_INIT(.id, AD936X_TX_MON2),    },
+    {   FIELD_INIT(.name, "TX_MON1_2"),     FIELD_INIT(.id, AD936X_TX_MON1_2),  },
 };
 
 static const struct bladerf_ad9361_port_name_map bladerf2_tx_port_map[] = {
-    {   FIELD_INIT(.name, "TXA"),           FIELD_INIT(.id, TXA),           },
-    {   FIELD_INIT(.name, "TXB"),           FIELD_INIT(.id, TXB),           },
+    {   FIELD_INIT(.name, "TXA"),           FIELD_INIT(.id, AD936X_TXA),        },
+    {   FIELD_INIT(.name, "TXB"),           FIELD_INIT(.id, AD936X_TXB),        },
 };
 
 static const struct range_band_map bladerf2_rx_range_band_map[] = {
@@ -581,12 +581,12 @@ static const struct band_port_map bladerf2_rx_band_port_map[] = {
     {
         FIELD_INIT(.band,           BAND_LOW),
         FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_LOWBAND),
-        FIELD_INIT(.ad9361_port,    B_BALANCED),
+        FIELD_INIT(.ad9361_port,    AD936X_B_BALANCED),
     },
     {
         FIELD_INIT(.band,           BAND_HIGH),
         FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_HIGHBAND),
-        FIELD_INIT(.ad9361_port,    A_BALANCED),
+        FIELD_INIT(.ad9361_port,    AD936X_A_BALANCED),
     },
 };
 
@@ -599,12 +599,12 @@ static const struct band_port_map bladerf2_tx_band_port_map[] = {
     {
         FIELD_INIT(.band,           BAND_LOW),
         FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_LOWBAND),
-        FIELD_INIT(.ad9361_port,    TXB),
+        FIELD_INIT(.ad9361_port,    AD936X_TXB),
     },
     {
         FIELD_INIT(.band,           BAND_HIGH),
         FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_HIGHBAND),
-        FIELD_INIT(.ad9361_port,    TXA),
+        FIELD_INIT(.ad9361_port,    AD936X_TXA),
     },
 };
 
@@ -647,13 +647,13 @@ static int bladerf2_get_sample_rate(struct bladerf *dev,
 /* Externs */
 /******************************************************************************/
 
-extern AD9361_InitParam ad9361_init_params;
-extern AD9361_RXFIRConfig ad9361_init_rx_fir_config;
-extern AD9361_TXFIRConfig ad9361_init_tx_fir_config;
-extern AD9361_RXFIRConfig ad9361_init_rx_fir_config_dec2;
-extern AD9361_TXFIRConfig ad9361_init_tx_fir_config_int2;
-extern AD9361_RXFIRConfig ad9361_init_rx_fir_config_dec4;
-extern AD9361_TXFIRConfig ad9361_init_tx_fir_config_int4;
+extern AD9361_InitParam bladerf2_rfic_init_params;
+extern AD9361_RXFIRConfig bladerf2_rfic_rx_fir_config;
+extern AD9361_TXFIRConfig bladerf2_rfic_tx_fir_config;
+extern AD9361_RXFIRConfig bladerf2_rfic_rx_fir_config_dec2;
+extern AD9361_TXFIRConfig bladerf2_rfic_tx_fir_config_int2;
+extern AD9361_RXFIRConfig bladerf2_rfic_rx_fir_config_dec4;
+extern AD9361_TXFIRConfig bladerf2_rfic_tx_fir_config_int4;
 extern const float ina219_r_shunt;
 
 
@@ -1182,7 +1182,7 @@ static int bladerf2_initialize(struct bladerf *dev)
 
     /* Initialize AD9361 */
     log_debug("%s: ad9361_init starting\n", __FUNCTION__);
-    status = ad9361_init(&board_data->phy, &ad9361_init_params, dev);
+    status = ad9361_init(&board_data->phy, &bladerf2_rfic_init_params, dev);
     log_debug("%s: ad9361_init complete, status = %d\n", __FUNCTION__, status);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_init", status);
@@ -1476,7 +1476,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     /* Get FPGA size */
     status = spi_flash_read_fpga_size(dev, &board_data->fpga_size);
     if (status < 0) {
-        log_warning("Failed to get FPGA size: %s\n", bladerf_strerror(status));
+        log_warning("Failed to get FPGA size %s\n", bladerf_strerror(status));
     }
 
     if (getenv("BLADERF_FORCE_FPGA_A9")) {
@@ -2219,12 +2219,12 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
     switch (ch) {
         case BLADERF_CHANNEL_RX(0):
             ad9361_channel = 0;
-            gc_mode        = ad9361_init_params.gc_rx1_mode;
+            gc_mode        = bladerf2_rfic_init_params.gc_rx1_mode;
             break;
 
         case BLADERF_CHANNEL_RX(1):
             ad9361_channel = 1;
-            gc_mode        = ad9361_init_params.gc_rx2_mode;
+            gc_mode        = bladerf2_rfic_init_params.gc_rx2_mode;
             break;
 
         default:
@@ -3001,11 +3001,13 @@ static const struct {
             FIELD_INIT(.shift, 0),
         },
         [BLADERF_CORR_PHASE] = {
-            FIELD_INIT(.reg, {REG_RX1_INPUT_A_PHASE_CORR, REG_RX1_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_RX1_INPUT_A_PHASE_CORR,
+                                AD936X_REG_RX1_INPUT_BC_PHASE_CORR  }),
             FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            FIELD_INIT(.reg, {REG_RX1_INPUT_A_GAIN_CORR, REG_RX1_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_RX1_INPUT_A_GAIN_CORR,
+                                AD936X_REG_RX1_INPUT_BC_PHASE_CORR  }),
             FIELD_INIT(.shift, 6),
         }
     },
@@ -3019,47 +3021,57 @@ static const struct {
             FIELD_INIT(.shift, 0),
         },
         [BLADERF_CORR_PHASE] = {
-            FIELD_INIT(.reg, {REG_RX2_INPUT_A_PHASE_CORR, REG_RX2_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_RX2_INPUT_A_PHASE_CORR,
+                                AD936X_REG_RX2_INPUT_BC_PHASE_CORR  }),
             FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            FIELD_INIT(.reg, {REG_RX2_INPUT_A_GAIN_CORR, REG_RX2_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_RX2_INPUT_A_GAIN_CORR,
+                                AD936X_REG_RX2_INPUT_BC_PHASE_CORR  }),
             FIELD_INIT(.shift, 6),
         }
     },
     [BLADERF_CHANNEL_TX(0)].corr = {
         [BLADERF_CORR_DCOFF_I] = {
-            FIELD_INIT(.reg, {REG_TX1_OUT_1_OFFSET_I, REG_TX1_OUT_2_OFFSET_I}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX1_OUT_1_OFFSET_I,
+                                AD936X_REG_TX1_OUT_2_OFFSET_I   }),
             FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_DCOFF_Q] = {
-            FIELD_INIT(.reg, {REG_TX1_OUT_1_OFFSET_Q, REG_TX1_OUT_2_OFFSET_Q}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX1_OUT_1_OFFSET_Q,
+                                AD936X_REG_TX1_OUT_2_OFFSET_Q   }),
             FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_PHASE] = {
-            FIELD_INIT(.reg, {REG_TX1_OUT_1_PHASE_CORR, REG_TX1_OUT_2_PHASE_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX1_OUT_1_PHASE_CORR,
+                                AD936X_REG_TX1_OUT_2_PHASE_CORR }),
             FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            FIELD_INIT(.reg, {REG_TX1_OUT_1_GAIN_CORR, REG_TX1_OUT_2_GAIN_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX1_OUT_1_GAIN_CORR,
+                                AD936X_REG_TX1_OUT_2_GAIN_CORR  }),
             FIELD_INIT(.shift, 6),
         }
     },
     [BLADERF_CHANNEL_TX(1)].corr = {
         [BLADERF_CORR_DCOFF_I] = {
-            FIELD_INIT(.reg, {REG_TX2_OUT_1_OFFSET_I, REG_TX2_OUT_2_OFFSET_I}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX2_OUT_1_OFFSET_I,
+                                AD936X_REG_TX2_OUT_2_OFFSET_I   }),
             FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_DCOFF_Q] = {
-            FIELD_INIT(.reg, {REG_TX2_OUT_1_OFFSET_Q, REG_TX2_OUT_2_OFFSET_Q}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX2_OUT_1_OFFSET_Q,
+                                AD936X_REG_TX2_OUT_2_OFFSET_Q   }),
             FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_PHASE] = {
-            FIELD_INIT(.reg, {REG_TX2_OUT_1_PHASE_CORR, REG_TX2_OUT_2_PHASE_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX2_OUT_1_PHASE_CORR,
+                                AD936X_REG_TX2_OUT_2_PHASE_CORR }),
             FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            FIELD_INIT(.reg, {REG_TX2_OUT_1_GAIN_CORR, REG_TX2_OUT_2_GAIN_CORR}),
+            FIELD_INIT(.reg, {  AD936X_REG_TX2_OUT_1_GAIN_CORR,
+                                AD936X_REG_TX2_OUT_2_GAIN_CORR  }),
             FIELD_INIT(.shift, 6),
         }
     },
@@ -3074,16 +3086,16 @@ static const struct {
         /* A band */
         {
             /* I */
-            {REG_INPUT_A_OFFSETS_1, REG_RX1_INPUT_A_OFFSETS},
+            {AD936X_REG_INPUT_A_OFFSETS_1, AD936X_REG_RX1_INPUT_A_OFFSETS},
             /* Q */
-            {REG_RX1_INPUT_A_OFFSETS, REG_RX1_INPUT_A_Q_OFFSET},
+            {AD936X_REG_RX1_INPUT_A_OFFSETS, AD936X_REG_RX1_INPUT_A_Q_OFFSET},
         },
         /* B/C band */
         {
             /* I */
-            {REG_INPUT_BC_OFFSETS_1, REG_RX1_INPUT_BC_OFFSETS},
+            {AD936X_REG_INPUT_BC_OFFSETS_1, AD936X_REG_RX1_INPUT_BC_OFFSETS},
             /* Q */
-            {REG_RX1_INPUT_BC_OFFSETS, REG_RX1_INPUT_BC_Q_OFFSET},
+            {AD936X_REG_RX1_INPUT_BC_OFFSETS, AD936X_REG_RX1_INPUT_BC_Q_OFFSET},
         },
     },
     /* Channel 2 */
@@ -3091,16 +3103,16 @@ static const struct {
         /* A band */
         {
             /* I */
-            {REG_RX2_INPUT_A_I_OFFSET, REG_RX2_INPUT_A_OFFSETS},
+            {AD936X_REG_RX2_INPUT_A_I_OFFSET, AD936X_REG_RX2_INPUT_A_OFFSETS},
             /* Q */
-            {REG_RX2_INPUT_A_OFFSETS, REG_INPUT_A_OFFSETS_1},
+            {AD936X_REG_RX2_INPUT_A_OFFSETS, AD936X_REG_INPUT_A_OFFSETS_1},
         },
         /* B/C band */
         {
             /* I */
-            {REG_RX2_INPUT_BC_I_OFFSET, REG_RX2_INPUT_BC_OFFSETS},
+            {AD936X_REG_RX2_INPUT_BC_I_OFFSET, AD936X_REG_RX2_INPUT_BC_OFFSETS},
             /* Q */
-            {REG_RX2_INPUT_BC_OFFSETS, REG_INPUT_BC_OFFSETS_1},
+            {AD936X_REG_RX2_INPUT_BC_OFFSETS, AD936X_REG_INPUT_BC_OFFSETS_1},
         },
     },
 };
@@ -3161,7 +3173,7 @@ static int bladerf2_get_correction(struct bladerf *dev,
             RETURN_ERROR_AD9361("ad9361_get_tx_rf_port_output", status);
         }
 
-        low_band = (mode == TXA);
+        low_band = (mode == AD936X_TXA);
     } else {
         uint32_t mode;
 
@@ -3171,11 +3183,11 @@ static int bladerf2_get_correction(struct bladerf *dev,
         }
 
         /* Check if RX RF port mode is supported */
-        if (mode != A_BALANCED && mode != B_BALANCED && mode != C_BALANCED) {
+        if (mode != AD936X_A_BALANCED && mode != AD936X_B_BALANCED && mode != AD936X_C_BALANCED) {
             RETURN_ERROR_STATUS("mode", BLADERF_ERR_UNSUPPORTED);
         }
 
-        low_band = (mode == A_BALANCED);
+        low_band = (mode == AD936X_A_BALANCED);
     }
 
     if ((corr == BLADERF_CORR_DCOFF_I || corr == BLADERF_CORR_DCOFF_Q) &&
@@ -3294,7 +3306,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
             RETURN_ERROR_AD9361("ad9361_get_tx_rf_port_output", status);
         }
 
-        low_band = (mode == TXA);
+        low_band = (mode == AD936X_TXA);
     } else {
         uint32_t mode;
 
@@ -3304,11 +3316,11 @@ static int bladerf2_set_correction(struct bladerf *dev,
         }
 
         /* Check if RX RF port mode is supported */
-        if (mode != A_BALANCED && mode != B_BALANCED && mode != C_BALANCED) {
+        if (mode != AD936X_A_BALANCED && mode != AD936X_B_BALANCED && mode != AD936X_C_BALANCED) {
             RETURN_ERROR_STATUS("mode", BLADERF_ERR_UNSUPPORTED);
         }
 
-        low_band = (mode == A_BALANCED);
+        low_band = (mode == AD936X_A_BALANCED);
     }
 
     if ((corr == BLADERF_CORR_DCOFF_I || corr == BLADERF_CORR_DCOFF_Q) &&
@@ -3400,7 +3412,8 @@ static int bladerf2_set_correction(struct bladerf *dev,
         }
     }
 
-    reg = (BLADERF_CHANNEL_IS_TX(ch)) ? REG_TX_FORCE_BITS : REG_FORCE_BITS;
+    reg = (BLADERF_CHANNEL_IS_TX(ch)) ? AD936X_REG_TX_FORCE_BITS
+                                      : AD936X_REG_FORCE_BITS;
 
     /* Read force bit register */
     status = ad9361_spi_read(board_data->phy->spi, reg);
@@ -4686,7 +4699,7 @@ int bladerf_get_rfic_register(struct bladerf *dev,
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
-    address = AD_READ | AD_CNT(1) | address;
+    address = AD936X_READ | AD936X_CNT(1) | address;
 
     status = dev->backend->ad9361_spi_read(dev, address, &data);
     if (status < 0) {
@@ -4720,7 +4733,7 @@ int bladerf_set_rfic_register(struct bladerf *dev,
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
-    address = AD_WRITE | AD_CNT(1) | address;
+    address = AD936X_WRITE | AD936X_CNT(1) | address;
 
     data = (((uint64_t)val) << 56);
 
@@ -4899,19 +4912,19 @@ int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
 
     switch (rxfir) {
         case BLADERF_RFIC_RXFIR_BYPASS:
-            fir_config = &ad9361_init_rx_fir_config;
+            fir_config = &bladerf2_rfic_rx_fir_config;
             enable     = 0;
             break;
         case BLADERF_RFIC_RXFIR_DEC1:
-            fir_config = &ad9361_init_rx_fir_config;
+            fir_config = &bladerf2_rfic_rx_fir_config;
             enable     = 1;
             break;
         case BLADERF_RFIC_RXFIR_DEC2:
-            fir_config = &ad9361_init_rx_fir_config_dec2;
+            fir_config = &bladerf2_rfic_rx_fir_config_dec2;
             enable     = 1;
             break;
         case BLADERF_RFIC_RXFIR_DEC4:
-            fir_config = &ad9361_init_rx_fir_config_dec4;
+            fir_config = &bladerf2_rfic_rx_fir_config_dec4;
             enable     = 1;
             break;
         default:
@@ -4983,19 +4996,19 @@ int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir txfir)
 
     switch (txfir) {
         case BLADERF_RFIC_TXFIR_BYPASS:
-            fir_config = &ad9361_init_tx_fir_config;
+            fir_config = &bladerf2_rfic_tx_fir_config;
             enable     = 0;
             break;
         case BLADERF_RFIC_TXFIR_INT1:
-            fir_config = &ad9361_init_tx_fir_config;
+            fir_config = &bladerf2_rfic_tx_fir_config;
             enable     = 1;
             break;
         case BLADERF_RFIC_TXFIR_INT2:
-            fir_config = &ad9361_init_tx_fir_config_int2;
+            fir_config = &bladerf2_rfic_tx_fir_config_int2;
             enable     = 1;
             break;
         case BLADERF_RFIC_TXFIR_INT4:
-            fir_config = &ad9361_init_tx_fir_config_int4;
+            fir_config = &bladerf2_rfic_tx_fir_config_int4;
             enable     = 1;
             break;
         default:
