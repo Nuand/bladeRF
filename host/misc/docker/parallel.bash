@@ -152,7 +152,7 @@ crawl_dir () {
     echo ${_out}
 }
 
-LOGDIR=$(mktemp -d)
+LOGDIR=$(mktemp -d /tmp/bladerf-docker-logs.XXXXXXXXXX)
 [ -z "${LOGDIR}" ] && echo "Couldn't create a tempdir for logs" && exit 1
 
 echo "*** log dir: ${LOGDIR}"

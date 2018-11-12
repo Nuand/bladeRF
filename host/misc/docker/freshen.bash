@@ -20,6 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+echo "Cleaning up old containers..."
+docker images -q nuand/bladerf-buildenv | xargs docker rmi
+
 froms=$(grep -h "^FROM" $(dirname "${0}")/*.Dockerfile | grep -v scratch \
         | cut -d' ' -f2 | sort | uniq)
 
