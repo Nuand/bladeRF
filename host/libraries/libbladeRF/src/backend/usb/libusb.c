@@ -165,9 +165,6 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
             if (status < 0) {
                 log_debug("Failed to retrieve serial number\n");
                 memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
-            } else {
-                /* Adjust for > 0 return code */
-                status = 0;
             }
 
             status = libusb_get_string_descriptor_ascii(
@@ -178,9 +175,6 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
             if (status < 0) {
                 log_debug("Failed to retrieve manufacturer string\n");
                 memset(info->manufacturer, 0, BLADERF_DESCRIPTION_LENGTH);
-            } else {
-                /* Adjust for > 0 return code */
-                status = 0;
             }
 
             status = libusb_get_string_descriptor_ascii(
@@ -190,14 +184,15 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
             if (status < 0) {
                 log_debug("Failed to retrieve product string\n");
                 memset(info->product, 0, BLADERF_DESCRIPTION_LENGTH);
-            } else {
-                /* Adjust for > 0 return code */
-                status = 0;
             }
 
             log_debug("Bus %03d Device %03d: %s %s, serial %s\n", info->usb_bus,
                       info->usb_addr, info->manufacturer, info->product,
                       info->serial);
+
+            if (status > 0) {
+                status = 0;
+            }
         }
 
         libusb_close(handle);
