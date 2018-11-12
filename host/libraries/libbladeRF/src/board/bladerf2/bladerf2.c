@@ -1021,7 +1021,6 @@ static bool _check_total_sample_rate(struct bladerf *dev,
     uint32_t reg;
     size_t i;
 
-    bladerf_sample_rate rx_rate, tx_rate;
     bladerf_sample_rate rate_accum = 0;
     size_t active_channels         = 0;
 
@@ -1039,6 +1038,8 @@ static bool _check_total_sample_rate(struct bladerf *dev,
 
     /* Accumulate sample rates for all channels */
     if (_is_rffe_dir_enabled(reg, BLADERF_RX)) {
+        bladerf_sample_rate rx_rate;
+
         status = bladerf2_get_sample_rate(dev, BLADERF_CHANNEL_RX(0), &rx_rate);
         if (status < 0) {
             return false;
@@ -1053,6 +1054,8 @@ static bool _check_total_sample_rate(struct bladerf *dev,
     }
 
     if (_is_rffe_dir_enabled(reg, BLADERF_TX)) {
+        bladerf_sample_rate tx_rate;
+
         status = bladerf2_get_sample_rate(dev, BLADERF_CHANNEL_TX(0), &tx_rate);
         if (status < 0) {
             return false;
@@ -1060,7 +1063,7 @@ static bool _check_total_sample_rate(struct bladerf *dev,
 
         for (i = 0; i < bladerf_get_channel_count(dev, BLADERF_TX); ++i) {
             if (_is_rffe_ch_enabled(reg, BLADERF_CHANNEL_TX(i))) {
-                rate_accum += rx_rate;
+                rate_accum += tx_rate;
                 ++active_channels;
             }
         }
