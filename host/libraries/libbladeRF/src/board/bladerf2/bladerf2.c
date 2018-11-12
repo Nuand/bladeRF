@@ -3892,6 +3892,7 @@ static int bladerf2_load_fpga(struct bladerf *dev,
 
     status = dev->backend->load_fpga(dev, buf, length);
     if (status != 0) {
+        MUTEX_UNLOCK(&dev->lock);
         RETURN_ERROR_STATUS("load_fpga", status);
     }
 

@@ -2889,6 +2889,7 @@ static int bladerf1_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
 
     status = dev->backend->load_fpga(dev, buf, length);
     if (status != 0) {
+        MUTEX_UNLOCK(&dev->lock);
         return status;
     }
 
