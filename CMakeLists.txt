@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
+# Indicate that this is a top-level build
+set(BLADERF_TOP_LEVEL_BUILD ON)
+
 #####################################################################
 # Choose which major components to build
 #####################################################################

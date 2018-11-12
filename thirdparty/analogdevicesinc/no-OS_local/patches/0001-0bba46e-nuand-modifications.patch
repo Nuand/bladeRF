@@ -1,0 +1,919 @@
+diff --git a/ad9361/sw/ad9361.c b/ad9361/sw/ad9361.c
+index fb41cec..b82d6f3 100644
+--- a/ad9361/sw/ad9361.c
++++ b/ad9361/sw/ad9361.c
+@@ -577,7 +577,15 @@ int32_t ad9361_spi_readm(struct spi_device *spi, uint32_t reg,
+ 	buf[0] = cmd >> 8;
+ 	buf[1] = cmd & 0xFF;
+ 
++#ifdef NUAND_MODIFICATIONS
++	// no-op to clear warning
++	buf[0] = buf[1];
++
++	// use alternate spi_read
++	ret = spi_read(spi, cmd, rbuf, num);
++#else
+ 	ret = spi_write_then_read(spi, &buf[0], 2, rbuf, num);
++#endif // NUAND_MODIFICATIONS
+ 	if (ret < 0) {
+ 		dev_err(&spi->dev, "Read Error %"PRId32, ret);
+ 		return ret;
+@@ -668,7 +676,13 @@ int32_t ad9361_spi_write(struct spi_device *spi,
+ 	buf[1] = cmd & 0xFF;
+ 	buf[2] = val;
+ 
++#ifdef NUAND_MODIFICATIONS
++	// use alternate spi_write
++	ret = spi_write(spi, cmd, &(buf[2]), 1);
++#else
+ 	ret = spi_write_then_read(spi, buf, 3, NULL, 0);
++#endif // NUAND_MODIFICATIONS
++
+ 	if (ret < 0) {
+ 		dev_err(&spi->dev, "Write Error %"PRId32, ret);
+ 		return ret;
+@@ -749,7 +763,17 @@ static int32_t ad9361_spi_writem(struct spi_device *spi,
+ 	for (i = 0; i < num; i++)
+ 		buf[2 + i] =  tbuf[i];
+ #endif
++
++#ifdef NUAND_MODIFICATIONS
++	// no-op to clear warning
++	buf[0] = buf[1];
++
++	// use alternate spi_write
++	ret = spi_write(spi, cmd, tbuf, num);
++#else
+ 	ret = spi_write_then_read(spi, buf, num + 2, NULL, 0);
++#endif // NUAND_MODIFICATIONS
++
+ 	if (ret < 0) {
+ 		dev_err(&spi->dev, "Write Error %"PRId32, ret);
+ 		return ret;
+@@ -814,11 +838,22 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
+ {
+ 	int32_t i, cnt = 0, max_cnt = 0, start, max_start = 0;
+ 
++#ifdef NUAND_MODIFICATIONS
++	// add check for failed optimal value search
++	bool found_0 = false;
++	bool found_1 = false;
++#endif // NUAND_MODIFICATIONS
++
+ 	for(i = 0, start = -1; i < (int64_t)size; i++) {
+ 		if (field[i] == 0) {
+ 			if (start == -1)
+ 				start = i;
+ 			cnt++;
++
++#ifdef NUAND_MODIFICATIONS
++			found_0 = true;
++#endif // NUAND_MODIFICATIONS
++
+ 		} else {
+ 			if (cnt > max_cnt) {
+ 				max_cnt = cnt;
+@@ -826,6 +861,11 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
+ 			}
+ 			start = -1;
+ 			cnt = 0;
++
++#ifdef NUAND_MODIFICATIONS
++			found_1 = true;
++#endif // NUAND_MODIFICATIONS
++
+ 		}
+ 	}
+ 
+@@ -836,6 +876,13 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
+ 
+ 	*ret_start = max_start;
+ 
++#ifdef NUAND_MODIFICATIONS
++	if (!found_0 || !found_1) {
++		// All of the values were the same. This is not a healthy result.
++		return -1;
++	}
++#endif // NUAND_MODIFICATIONS
++
+ 	return max_cnt;
+ }
+ 
+@@ -871,6 +918,17 @@ int32_t ad9361_1rx1tx_channel_map(struct ad9361_rf_phy *phy, bool tx, int32_t ch
+  */
+ int32_t ad9361_reset(struct ad9361_rf_phy *phy)
+ {
++#ifdef NUAND_MODIFICATIONS
++	// use alternate gpio accessors
++	if (gpio_is_valid(phy->gpio, phy->pdata->gpio_resetb)) {
++		gpio_set_value(phy->gpio, phy->pdata->gpio_resetb, 0);
++		mdelay(1);
++		gpio_set_value(phy->gpio, phy->pdata->gpio_resetb, 1);
++		mdelay(1);
++		dev_dbg(&phy->spi->dev, "%s: by GPIO", __func__);
++		return 0;
++	}
++#else
+ 	if (gpio_is_valid(phy->pdata->gpio_resetb)) {
+ 		gpio_set_value(phy->pdata->gpio_resetb, 0);
+ 		mdelay(1);
+@@ -879,6 +937,7 @@ int32_t ad9361_reset(struct ad9361_rf_phy *phy)
+ 		dev_dbg(&phy->spi->dev, "%s: by GPIO", __func__);
+ 		return 0;
+ 	}
++#endif // NUAND_MODIFICATIONS
+ 
+ 	/* SPI Soft Reset was removed from the register map, since it doesn't
+ 	 * work reliably. Without a prober HW reset randomness may happen.
+@@ -3378,7 +3437,17 @@ static int32_t ad9361_pp_port_setup(struct ad9361_rf_phy *phy, bool restore_c3)
+ 	ad9361_spi_write(spi, REG_RX_CLOCK_DATA_DELAY, pd->port_ctrl.rx_clk_data_delay);
+ 	ad9361_spi_write(spi, REG_TX_CLOCK_DATA_DELAY, pd->port_ctrl.tx_clk_data_delay);
+ 
++#ifdef NUAND_MODIFICATIONS
++	// set up digital interface slew and drive strength
++	ad9361_spi_write(spi, REG_LVDS_BIAS_CTRL, pd->port_ctrl.lvds_bias_ctrl | CLK_OUT_SLEW(pd->port_ctrl.clk_out_slew));
++	ad9361_spi_write(spi, REG_DIGITAL_IO_CTRL, DATACLK_SLEW(pd->port_ctrl.dataclk_slew) | DATA_PORT_SLEW(pd->port_ctrl.data_port_slew));
++	ad9361_spi_writef(spi, REG_DIGITAL_IO_CTRL, DATACLK_DRIVE, pd->port_ctrl.dataclk_drive);
++	ad9361_spi_writef(spi, REG_DIGITAL_IO_CTRL, DATA_PORT_DRIVE, pd->port_ctrl.data_port_drive);
++	ad9361_spi_writef(spi, REG_DIGITAL_IO_CTRL, CLK_OUT_DRIVE, pd->port_ctrl.clk_out_drive);
++#else
+ 	ad9361_spi_write(spi, REG_LVDS_BIAS_CTRL, pd->port_ctrl.lvds_bias_ctrl);
++#endif // NUAND_MODIFICATIONS
++
+ 	//	ad9361_spi_write(spi, REG_DIGITAL_IO_CTRL, pd->port_ctrl.digital_io_ctrl);
+ 	ad9361_spi_write(spi, REG_LVDS_INVERT_CTRL1, pd->port_ctrl.lvds_invert[0]);
+ 	ad9361_spi_write(spi, REG_LVDS_INVERT_CTRL2, pd->port_ctrl.lvds_invert[1]);
+@@ -4893,26 +4962,49 @@ int32_t ad9361_mcs(struct ad9361_rf_phy *phy, int32_t step)
+ 			MCS_REFCLK_SCALE_EN, 1);
+ 		break;
+ 	case 2:
++#ifdef NUAND_MODIFICATIONS
++		// use alternate gpio accessors
++		if(!gpio_is_valid(phy->gpio, phy->pdata->gpio_sync))
++			break;
++#else
+ 		if(!gpio_is_valid(phy->pdata->gpio_sync))
+ 			break;
++#endif // NUAND_MODIFICATIONS
+ 		/*
+ 		 * NOTE: This is not a regular GPIO -
+ 		 * HDL ensures Multi-chip Synchronization SYNC_IN Pulse Timing
+ 		 * relative to rising and falling edge of REF_CLK
+ 		 */
++#ifdef NUAND_MODIFICATIONS
++		// use alternate gpio accessors
++		if(!gpio_is_valid(phy->gpio, phy->pdata->gpio_sync))
++			break;
++		gpio_set_value(phy->gpio, phy->pdata->gpio_sync, 1);
++		gpio_set_value(phy->gpio, phy->pdata->gpio_sync, 0);
++#else
+ 		gpio_set_value(phy->pdata->gpio_sync, 1);
+ 		gpio_set_value(phy->pdata->gpio_sync, 0);
+ 		break;
++#endif // NUAND_MODIFICATIONS
+ 	case 3:
+ 		ad9361_spi_writef(phy->spi, REG_MULTICHIP_SYNC_AND_TX_MON_CTRL,
+ 			mcs_mask, MCS_BB_ENABLE | MCS_DIGITAL_CLK_ENABLE | MCS_RF_ENABLE);
+ 		break;
+ 	case 4:
++#ifdef NUAND_MODIFICATIONS
++		// use alternate gpio accessors
++		if(!gpio_is_valid(phy->gpio, phy->pdata->gpio_sync))
++			break;
++		gpio_set_value(phy->gpio, phy->pdata->gpio_sync, 1);
++		gpio_set_value(phy->gpio, phy->pdata->gpio_sync, 0);
++		break;
++#else
+ 		if(!gpio_is_valid(phy->pdata->gpio_sync))
+ 			break;
+ 		gpio_set_value(phy->pdata->gpio_sync, 1);
+ 		gpio_set_value(phy->pdata->gpio_sync, 0);
+ 		break;
++#endif // NUAND_MODIFICATIONS
+ 	case 5:
+ 		ad9361_spi_writef(phy->spi, REG_MULTICHIP_SYNC_AND_TX_MON_CTRL,
+ 			mcs_mask, MCS_RF_ENABLE);
+@@ -5758,10 +5850,20 @@ int32_t ad9361_validate_enable_fir(struct ad9361_rf_phy *phy)
+ #else
+ 		int32_t i;
+ 		uint32_t num;
++#ifdef NUAND_MODIFICATIONS
++		// fix memory overrun :x
++		num = sizeof(rx)/sizeof(rx[0]);
++#else
+ 		num = sizeof(rx);
++#endif // NUAND_MODIFICATIONS
+ 		for (i = 0; i < num; i++)
+ 			rx[i] = phy->filt_rx_path_clks[i];
++#ifdef NUAND_MODIFICATIONS
++		// fix memory overrun :x
++		num = sizeof(tx)/sizeof(tx[0]);
++#else
+ 		num = sizeof(tx);
++#endif // NUAND_MODIFICATIONS
+ 		for (i = 0; i < num; i++)
+ 			tx[i] = phy->filt_tx_path_clks[i];
+ #endif
+diff --git a/ad9361/sw/ad9361.h b/ad9361/sw/ad9361.h
+index 376978d..03aea32 100644
+--- a/ad9361/sw/ad9361.h
++++ b/ad9361/sw/ad9361.h
+@@ -3042,6 +3042,15 @@ struct port_control {
+ 	uint8_t			digital_io_ctrl;
+ 	uint8_t			lvds_bias_ctrl;
+ 	uint8_t			lvds_invert[2];
++#ifdef NUAND_MODIFICATIONS
++	// add digital interface drive and clock skew
++	uint8_t			clk_out_drive;
++	uint8_t			dataclk_drive;
++	uint8_t			data_port_drive;
++	uint8_t			clk_out_slew;
++	uint8_t			dataclk_slew;
++	uint8_t			data_port_slew;
++#endif // NUAND_MODIFICATIONS
+ };
+ 
+ struct ctrl_outs_control {
+@@ -3115,7 +3124,12 @@ enum ad9361_pdata_rx_freq {
+ };
+ 
+ enum ad9361_pdata_tx_freq {
++#ifdef NUAND_MODIFICATIONS
++	// this is a name conflict on some platforms
++	IGNORE_FREQ,
++#else
+ 	IGNORE,
++#endif // NUAND_MODIFICATIONS
+ 	DAC_FREQ,
+ 	T2_FREQ,
+ 	T1_FREQ,
+@@ -3310,6 +3324,10 @@ struct ad9361_rf_phy {
+ 	enum dev_id		dev_sel;
+ 	uint8_t 		id_no;
+ 	struct spi_device 	*spi;
++#ifdef NUAND_MODIFICATIONS
++	// add gpio device struct
++	struct gpio_device  *gpio;
++#endif // NUAND_MODIFICATIONS
+ 	struct clk 		*clk_refin;
+ 	struct clk 		*clks[NUM_AD9361_CLKS];
+ 	struct refclk_scale *ref_clk_scale[NUM_AD9361_CLKS];
+diff --git a/ad9361/sw/ad9361_api.c b/ad9361/sw/ad9361_api.c
+index f565163..180315d 100644
+--- a/ad9361/sw/ad9361_api.c
++++ b/ad9361/sw/ad9361_api.c
+@@ -72,7 +72,12 @@ static struct axiadc_chip_info axiadc_chip_info_tbl[] =
+  *
+  * Note: This function will/may affect the data path.
+  */
++#ifdef NUAND_MODIFICATIONS
++// add *userdata parameter
++int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_param, void *userdata)
++#else
+ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_param)
++#endif // NUAND_MODIFICATIONS
+ {
+ 	struct ad9361_rf_phy *phy;
+ 	int32_t ret = 0;
+@@ -89,6 +94,14 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
+ 		return -ENOMEM;
+ 	}
+ 
++#ifdef NUAND_MODIFICATIONS
++	// allocate gpio struct
++	phy->gpio = (struct gpio_device *)zmalloc(sizeof(*phy->gpio));
++	if (!phy->gpio) {
++		return -ENOMEM;
++	}
++#endif // NUAND_MODIFICATIONS
++
+ 	phy->clk_refin = (struct clk *)zmalloc(sizeof(*phy->clk_refin));
+ 	if (!phy->clk_refin) {
+ 		return -ENOMEM;
+@@ -111,6 +124,15 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
+ 	phy->adc_state->phy = phy;
+ #endif
+ 
++#ifdef NUAND_MODIFICATIONS
++	/* Ensure phy->clks and phy->ref_clk_scale are adequately nulled */
++	for (size_t i = 0; i < NUM_AD9361_CLKS; ++i) {
++		phy->clks[i] = NULL;
++		phy->ref_clk_scale[i] = NULL;
++	}
++	phy->clk_data.clks = NULL;
++#endif // NUAND_MODIFICATIONS
++
+ 	/* Device selection */
+ 	phy->dev_sel = init_param->dev_sel;
+ 
+@@ -338,6 +360,16 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
+ 	phy->pdata->port_ctrl.lvds_bias_ctrl |= (init_param->lvds_rx_onchip_termination_enable << 5);
+ 	phy->pdata->rx1rx2_phase_inversion_en = init_param->rx1rx2_phase_inversion_en;
+ 
++#ifdef NUAND_MODIFICATIONS
++	// settings for digital interface drive and slew
++	phy->pdata->port_ctrl.clk_out_drive = init_param->clk_out_drive & 0x1;
++	phy->pdata->port_ctrl.dataclk_drive = init_param->dataclk_drive & 0x1;
++	phy->pdata->port_ctrl.data_port_drive = init_param->data_port_drive & 0x1;
++	phy->pdata->port_ctrl.clk_out_slew = init_param->clk_out_slew & 0x3;
++	phy->pdata->port_ctrl.dataclk_slew = init_param->dataclk_slew & 0x3;
++	phy->pdata->port_ctrl.data_port_slew = init_param->data_port_slew & 0x3;
++#endif // NUAND_MODIFICATIONS
++
+ 	/* GPO Control */
+ 	phy->pdata->gpo_ctrl.gpo0_inactive_state_high_en = init_param->gpo0_inactive_state_high_enable;
+ 	phy->pdata->gpo_ctrl.gpo1_inactive_state_high_en = init_param->gpo1_inactive_state_high_enable;
+@@ -407,11 +439,28 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
+ 	phy->bist_tone_level_dB = 0;
+ 	phy->bist_tone_mask = 0;
+ 
++#ifdef NUAND_MODIFICATIONS
++	// initialize SPI and GPIO
++	ret = spi_init(phy, userdata);
++	if (ret < 0) {
++		goto out;
++	}
++
++	ret = gpio_init(phy, userdata);
++	if (ret < 0) {
++		goto out;
++	}
++#endif // NUAND_MODIFICATIONS
++
+ 	ad9361_reset(phy);
+ 
+ 	ret = ad9361_spi_read(phy->spi, REG_PRODUCT_ID);
+ 	if ((ret & PRODUCT_ID_MASK) != PRODUCT_ID_9361) {
+ 		printf("%s : Unsupported PRODUCT_ID 0x%X", __func__, (unsigned int)ret);
++#ifdef NUAND_MODIFICATIONS
++		// this missing newline, so help me god...
++		printf("\n");
++#endif // NUAND_MODIFICATIONS
+ 		ret = -ENODEV;
+ 		goto out;
+ 	}
+@@ -432,8 +481,16 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
+ 		goto out;
+ 
+ #ifndef AXI_ADC_NOT_PRESENT
++#ifdef NUAND_MODIFICATIONS
++	// use alternate axiadc accessors
++	axiadc_init(phy, userdata);
++	ret = axiadc_read(phy->adc_state, ADI_REG_VERSION, &(phy->adc_state->pcore_version));
++	if (ret < 0)
++		goto out;
++#else
+ 	axiadc_init(phy);
+ 	phy->adc_state->pcore_version = axiadc_read(phy->adc_state, ADI_REG_VERSION);
++#endif // NUAND_MODIFICATIONS
+ #endif
+ 
+ 	ad9361_init_gain_tables(phy);
+@@ -449,7 +506,10 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
+ 		goto out;
+ #endif
+ 
++#ifndef NUAND_MODIFICATIONS
++	// reduce console noise
+ 	printf("%s : AD936x Rev %d successfully initialized\n", __func__, (int)rev);
++#endif // !NUAND_MODIFICATIONS
+ 
+ 	*ad9361_phy = phy;
+ 
+@@ -463,12 +523,60 @@ out:
+ #endif
+ 	free(phy->clk_refin);
+ 	free(phy->pdata);
++
++#ifdef NUAND_MODIFICATIONS
++	// free gpio struct, and also the clock stuff
++	free(phy->gpio);
++	free(phy->clk_data.clks);
++	for (size_t i = 0; i < NUM_AD9361_CLKS; ++i) {
++		free(phy->clks[i]);
++		free(phy->ref_clk_scale[i]);
++	}
++#endif // NUAND_MODIFICATIONS
++
+ 	free(phy);
+ 	printf("%s : AD936x initialization error\n", __func__);
+ 
+ 	return -ENODEV;
+ }
+ 
++#ifdef NUAND_MODIFICATIONS
++/**
++ * Deinitialize the AD9361 part.
++ * @return 0 in case of success, negative error code otherwise.
++ */
++int32_t ad9361_deinit (struct ad9361_rf_phy *phy)
++{
++	if (phy) {
++		/* Put AD9361 part into reset */
++		if (gpio_is_valid(phy->gpio, phy->pdata->gpio_resetb)) {
++			gpio_set_value(phy->gpio, phy->pdata->gpio_resetb, 0);
++		}
++	}
++
++	if (phy) {
++		free(phy->spi);
++		free(phy->gpio);
++#ifndef AXI_ADC_NOT_PRESENT
++		free(phy->adc_conv);
++		free(phy->adc_state);
++#endif
++		free(phy->clk_refin);
++		free(phy->clk_data.clks);
++		free(phy->pdata);
++
++		for (size_t i = 0; i < NUM_AD9361_CLKS; ++i) {
++			free(phy->clks[i]);
++			free(phy->ref_clk_scale[i]);
++		}
++
++		free(phy);
++	}
++
++	return 0;
++}
++#endif // NUAND_MODIFICATIONS
++
+ /**
+  * Set the Enable State Machine (ENSM) mode.
+  * @param phy The AD9361 current state structure.
+@@ -1797,8 +1905,14 @@ int32_t ad9361_set_no_ch_mode(struct ad9361_rf_phy *phy, uint8_t no_ch_mode)
+ 	phy->clks[TX_RFPLL]->rate = ad9361_rfpll_recalc_rate(phy->ref_clk_scale[TX_RFPLL]);
+ 
+ #ifndef AXI_ADC_NOT_PRESENT
++#ifdef NUAND_MODIFICATIONS
++	// use alternate axiadc accessors
++	axiadc_init(phy, phy->adc_state->userdata);
++#else
+ 	axiadc_init(phy);
++#endif // NUAND_MODIFICATIONS
+ #endif
++
+ 	ad9361_setup(phy);
+ #ifndef AXI_ADC_NOT_PRESENT
+ 	/* platform specific wrapper to call ad9361_post_setup() */
+diff --git a/ad9361/sw/ad9361_api.h b/ad9361/sw/ad9361_api.h
+index 77ffa44..ff5d7c5 100644
+--- a/ad9361/sw/ad9361_api.h
++++ b/ad9361/sw/ad9361_api.h
+@@ -240,6 +240,15 @@ typedef struct
+ 	uint8_t		rx1rx2_phase_inversion_en;	/* adi,rx1-rx2-phase-inversion-enable */
+ 	uint8_t		lvds_invert1_control;	/* adi,lvds-invert1-control */
+ 	uint8_t		lvds_invert2_control;	/* adi,lvds-invert2-control */
++#ifdef NUAND_MODIFICATIONS
++	// add digital interface drive and clock slew
++	uint8_t		clk_out_drive;
++	uint8_t		dataclk_drive;
++	uint8_t		data_port_drive;
++	uint8_t		clk_out_slew;
++	uint8_t		dataclk_slew;
++	uint8_t		data_port_slew;
++#endif // NUAND_MODIFICATIONS
+ 	/* GPO Control */
+ 	uint8_t		gpo0_inactive_state_high_enable;	/* adi,gpo0-inactive-state-high-enable */
+ 	uint8_t		gpo1_inactive_state_high_enable;	/* adi,gpo1-inactive-state-high-enable */
+@@ -355,8 +364,15 @@ enum ad9361_ensm_mode {
+ /******************************************************************************/
+ /************************ Functions Declarations ******************************/
+ /******************************************************************************/
++#ifdef NUAND_MODIFICATIONS
++/* Initialize the AD9361 part. */
++int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_param, void *userdata);
++/* Deinitialize the AD9361 part. */
++int32_t ad9361_deinit (struct ad9361_rf_phy *phy);
++#else
+ /* Initialize the AD9361 part. */
+ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_param);
++#endif // NUAND_MODIFICATIONS
+ /* Set the Enable State Machine (ENSM) mode. */
+ int32_t ad9361_set_en_state_machine_mode (struct ad9361_rf_phy *phy, uint32_t mode);
+ /* Get the Enable State Machine (ENSM) mode. */
+diff --git a/ad9361/sw/ad9361_conv.c b/ad9361/sw/ad9361_conv.c
+index b20cb71..0491f91 100644
+--- a/ad9361/sw/ad9361_conv.c
++++ b/ad9361/sw/ad9361_conv.c
+@@ -59,7 +59,18 @@ int32_t ad9361_hdl_loopback(struct ad9361_rf_phy *phy, bool enable)
+ 	struct axiadc_state *st = phy->adc_state;
+ 	int32_t reg, addr, chan;
+ 
++#ifdef NUAND_MODIFICATIONS
++	int ret;
++	uint32_t readval;
++
++	ret = axiadc_read(st, 0x4000, &readval);
++	if (ret < 0)
++		return ret;
++
++	uint32_t version = readval;
++#else
+ 	uint32_t version = axiadc_read(st, 0x4000);
++#endif // NUAND_MODIFICATIONS
+ 
+ 	/* Still there but implemented a bit different */
+ 	if (PCORE_VERSION_MAJOR(version) > 7)
+@@ -68,7 +79,15 @@ int32_t ad9361_hdl_loopback(struct ad9361_rf_phy *phy, bool enable)
+ 		addr = 0x4414;
+ 
+ 	for (chan = 0; chan < conv->chip_info->num_channels; chan++) {
++#ifdef NUAND_MODIFICATIONS
++		ret = axiadc_read(st, addr + (chan) * 0x40, &readval);
++		if (ret < 0)
++			return ret;
++
++		reg = (int32_t)readval;
++#else
+ 		reg = axiadc_read(st, addr + (chan) * 0x40);
++#endif // NUAND_MODIFICATIONS
+ 
+ 		if (PCORE_VERSION_MAJOR(version) > 7) {
+ 			if (enable && reg != 0x8) {
+@@ -156,10 +175,23 @@ static int32_t ad9361_dig_tune_iodelay(struct ad9361_rf_phy *phy, bool tx)
+ 					ADI_PN_ERR | ADI_PN_OOS);
+ 			mdelay(10);
+ 
++#ifdef NUAND_MODIFICATIONS
++			uint32_t stat, tmp;
++
++			for (chan = 0, stat = 0; chan < num_chan; chan++) {
++				ret = axiadc_read(st, ADI_REG_CHAN_STATUS(chan), &tmp);
++				if (ret < 0)
++					return ret;
++				stat |= tmp;
++			}
++			field[j] = stat;
++#else
++
+ 			for (chan = 0, ret = 0; chan < num_chan; chan++)
+ 				ret |= axiadc_read(st, ADI_REG_CHAN_STATUS(chan));
+ 
+ 			field[j] = ret;
++#endif // NUAND_MODIFICATIONS
+ 		}
+ 
+ 		c0 = ad9361_find_opt(&field[0], 32, &s0);
+@@ -233,6 +265,23 @@ int32_t ad9361_dig_interface_timing_analysis(struct ad9361_rf_phy *phy,
+ 
+ 			mdelay(1);
+ 
++#ifdef NUAND_MODIFICATIONS
++			uint32_t tmp, stat;
++			ret = axiadc_read(st, ADI_REG_STATUS, &stat);
++			if (ret < 0)
++				return ret;
++
++			if (stat & ADI_STATUS) {
++				for (chan = 0, stat = 0; chan < 4; chan++) {
++					ret = axiadc_read(st, ADI_REG_CHAN_STATUS(chan), &tmp);
++					if (ret < 0)
++						return ret;
++					stat |= tmp;
++				}
++			} else {
++				stat = 1;
++			}
++#else
+ 			if (axiadc_read(st, ADI_REG_STATUS) & ADI_STATUS) {
+ 				for (chan = 0, ret = 0; chan < 4; chan++)
+ 					ret |= axiadc_read(st, ADI_REG_CHAN_STATUS(chan));
+@@ -240,6 +289,7 @@ int32_t ad9361_dig_interface_timing_analysis(struct ad9361_rf_phy *phy,
+ 			else {
+ 				ret = 1;
+ 			}
++#endif // NUAND_MODIFICATIONS
+ 
+ 			field[i][j] = ret;
+ 		}
+@@ -291,7 +341,13 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
+ 	dev_dbg(&phy->spi->dev, "%s: freq %"PRIu32" flags 0x%X\n", __func__,
+ 			max_freq, flags);
+ 
++#ifdef NUAND_MODIFICATIONS
++	ret = axiadc_read(st, 0x4000, &hdl_dac_version);
++	if (ret < 0)
++		return ret;
++#else
+ 	hdl_dac_version = axiadc_read(st, 0x4000);
++#endif // NUAND_MODIFICATIONS
+ 
+ 	if ((phy->pdata->dig_interface_tune_skipmode == 2) ||
+ 			(flags & RESTORE_DEFAULT)) {
+@@ -345,6 +401,25 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
+ 						ADI_PN_ERR | ADI_PN_OOS);
+ 					mdelay(4);
+ 
++#ifdef NUAND_MODIFICATIONS
++					uint32_t stat;
++					ret = axiadc_read(st, ADI_REG_STATUS, &stat);
++					if (ret < 0)
++						return ret;
++
++					if ((t == 1) || (stat & ADI_STATUS)) {
++						for (chan = 0, stat = 0; chan < num_chan; chan++) {
++							ret = axiadc_read(st, ADI_REG_CHAN_STATUS(chan), &tmp);
++							if (ret < 0)
++								return ret;
++							stat |= tmp;
++						}
++					} else {
++						stat = 1;
++					}
++
++					field[i][j] |= stat;
++#else
+ 					if ((t == 1) || (axiadc_read(st, ADI_REG_STATUS) & ADI_STATUS)) {
+ 						for (chan = 0, ret = 0; chan < num_chan; chan++) {
+ 							ret |= axiadc_read(st, ADI_REG_CHAN_STATUS(chan));
+@@ -355,6 +430,7 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
+ 					}
+ 
+ 					field[i][j] |= ret;
++#endif // NUAND_MODIFICATIONS
+ 				}
+ 			}
+ 			if ((flags & BE_MOREVERBOSE) && max_freq) {
+@@ -414,6 +490,48 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
+ 			axiadc_write(st, 0x4000 + ADI_REG_RSTN, ADI_RSTN | ADI_MMCM_RSTN);
+ 
+ 			for (chan = 0; chan < num_chan; chan++) {
++#ifdef NUAND_MODIFICATIONS
++				ret = axiadc_read(st, ADI_REG_CHAN_CNTRL(chan), &saved_chan_ctrl0[chan]);
++				if (ret < 0)
++					return ret;
++
++				ret = axiadc_write(st, ADI_REG_CHAN_CNTRL(chan),
++								   ADI_FORMAT_SIGNEXT | ADI_FORMAT_ENABLE |
++								   ADI_ENABLE | ADI_IQCOR_ENB);
++				if (ret < 0)
++					return ret;
++
++				ret = axiadc_set_pnsel(st, chan, ADC_PN_CUSTOM);
++				if (ret < 0)
++					return ret;
++
++				ret = axiadc_read(st, 0x4414 + (chan) * 0x40, &saved_chan_ctrl6[chan]);
++				if (ret < 0)
++					return ret;
++
++				if (PCORE_VERSION_MAJOR(hdl_dac_version) > 7)
++				{
++					ret = axiadc_read(st, 0x4418 + (chan) * 0x40, &saved_dsel[chan]);
++					if (ret < 0)
++						return ret;
++
++					ret = axiadc_write(st, 0x4418 + (chan) * 0x40, 9);
++					if (ret < 0)
++						return ret;
++
++					ret = axiadc_write(st, 0x4414 + (chan) * 0x40, 0); /* !IQCOR_ENB */
++					if (ret < 0)
++						return ret;
++
++					ret = axiadc_write(st, 0x4044, 0x1);
++					if (ret < 0)
++						return ret;
++				} else {
++					ret = axiadc_write(st, 0x4414 + (chan) * 0x40, 1); /* DAC_PN_ENB */
++					if (ret < 0)
++						return ret;
++				}
++#else
+ 				saved_chan_ctrl0[chan] = axiadc_read(st, ADI_REG_CHAN_CNTRL(chan));
+ 				axiadc_write(st, ADI_REG_CHAN_CNTRL(chan),
+ 					ADI_FORMAT_SIGNEXT | ADI_FORMAT_ENABLE |
+@@ -429,10 +547,18 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
+ 				}
+ 				else
+ 					axiadc_write(st, 0x4414 + (chan) * 0x40, 1); /* DAC_PN_ENB */
+-
++#endif // NUAND_MODIFICATIONS
+ 			}
+ 			if (PCORE_VERSION_MAJOR(hdl_dac_version) < 8) {
++#ifdef NUAND_MODIFICATIONS
++				ret = axiadc_read(st, 0x4048, &tmp);
++				if (ret < 0)
++					return ret;
++
++				saved = tmp;
++#else
+ 				saved = tmp = axiadc_read(st, 0x4048);
++#endif // NUAND_MODIFICATIONS
+ 				tmp &= ~0xF;
+ 				tmp |= 1;
+ 				axiadc_write(st, 0x4048, tmp);
+@@ -508,8 +634,21 @@ int32_t ad9361_post_setup(struct ad9361_rf_phy *phy)
+ 
+ 	num_chan = (conv->chip_info->num_channels > 4) ? 4 : conv->chip_info->num_channels;
+ 
++#ifdef NUAND_MODIFICATIONS
++	ret = axiadc_write(st, ADI_REG_CNTRL, rx2tx2 ? 0 : ADI_R1_MODE);
++	if (ret < 0)
++		return ret;
++
++	uint32_t u32tmp;
++	ret = axiadc_read(st, 0x4048, &u32tmp);
++	if (ret < 0)
++		return ret;
++
++	tmp = (int32_t)u32tmp;
++#else
+ 	axiadc_write(st, ADI_REG_CNTRL, rx2tx2 ? 0 : ADI_R1_MODE);
+ 	tmp = axiadc_read(st, 0x4048);
++#endif // NUAND_MODIFICATIONS
+ 
+ 	if (!rx2tx2) {
+ 		axiadc_write(st, 0x4048, tmp | BIT(5)); /* R1_MODE */
+@@ -539,14 +678,29 @@ int32_t ad9361_post_setup(struct ad9361_rf_phy *phy)
+ 
+ 	flags = 0x0;
+ 
++#ifdef NUAND_MODIFICATIONS
++	ret = axiadc_read(st, 0x0004, &u32tmp);
++	if (ret < 0)
++		return ret;
++	ret = ad9361_dig_tune(phy, ((conv->chip_info->num_channels > 4) ||
++		u32tmp) ? 0 : 61440000, flags);
++#else
+ 	ret = ad9361_dig_tune(phy, ((conv->chip_info->num_channels > 4) ||
+ 		axiadc_read(st, 0x0004)) ? 0 : 61440000, flags);
++#endif // NUAND_MODIFICATIONS
+ 	if (ret < 0)
+ 		return ret;
+ 
+ 	if (flags & (DO_IDELAY | DO_ODELAY)) {
++#ifdef NUAND_MODIFICATIONS
++		ret = axiadc_read(st, ADI_REG_ID, &u32tmp);
++		if (ret < 0)
++			return ret;
++		ret = ad9361_dig_tune(phy, u32tmp ?  0 : 61440000, flags & BE_VERBOSE);
++#else
+ 		ret = ad9361_dig_tune(phy, (axiadc_read(st, ADI_REG_ID)) ?
+ 			0 : 61440000, flags & BE_VERBOSE);
++#endif // NUAND_MODIFICATIONS
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+diff --git a/ad9361/sw/common.h b/ad9361/sw/common.h
+index bd4b7f7..b140494 100644
+--- a/ad9361/sw/common.h
++++ b/ad9361/sw/common.h
+@@ -47,6 +47,10 @@
+ /******************************************************************************/
+ /********************** Macros and Constants Definitions **********************/
+ /******************************************************************************/
++#ifdef NUAND_MODIFICATIONS
++// just use errno
++#include <errno.h>
++#else
+ #define EIO			5	/* I/O error */
+ #define EAGAIN		11	/* Try again */
+ #define ENOMEM		12	/* Out of memory */
+@@ -54,15 +58,22 @@
+ #define ENODEV		19	/* No such device */
+ #define EINVAL		22	/* Invalid argument */
+ #define ETIMEDOUT	110	/* Connection timed out */
++#endif // NUAND_MODIFICATIONS
+ 
+ /******************************************************************************/
+ /*************************** Types Declarations *******************************/
+ /******************************************************************************/
++
++#ifdef NUAND_MODIFICATIONS
++// just use stdbool
++#include <stdbool.h>
++#else
+ #if defined (__STDC__) && (__STDC_VERSION__ >= 199901L)
+ #include <stdbool.h>
+ #else
+ typedef enum { false, true } bool;
+ #endif
++#endif // NUAND_MODIFICATIONS
+ 
+ struct clk {
+ 	const char	*name;
+diff --git a/ad9361/sw/config.h b/ad9361/sw/config.h
+index 3997bd5..37c9da8 100644
+--- a/ad9361/sw/config.h
++++ b/ad9361/sw/config.h
+@@ -39,6 +39,12 @@
+ #ifndef CONFIG_H_
+ #define CONFIG_H_
+ 
++// BEGIN Nuand modification
++#ifndef NUAND_MODIFICATIONS
++#define NUAND_MODIFICATIONS
++#endif // !NUAND_MODIFICATIONS
++// END Nuand modification
++
+ #define HAVE_VERBOSE_MESSAGES /* Recommended during development prints errors and warnings */
+ //#define HAVE_DEBUG_MESSAGES /* For Debug purposes only */
+ 
+@@ -64,4 +70,11 @@
+ //#define AXI_ADC_NOT_PRESENT
+ //#define TDD_SWITCH_STATE_EXAMPLE
+ 
++#ifdef NUAND_MODIFICATIONS
++#define ALTERA_PLATFORM
++#ifdef AD9361_DEBUG
++#define _DEBUG
++#endif // AD9361_DEBUG
++#endif // NUAND_MODIFICATIONS
++
+ #endif
+diff --git a/ad9361/sw/util.h b/ad9361/sw/util.h
+index 3c88529..f4f7385 100644
+--- a/ad9361/sw/util.h
++++ b/ad9361/sw/util.h
+@@ -50,12 +50,24 @@
+ #include "common.h"
+ #include "config.h"
+ 
++#ifdef NUAND_MODIFICATIONS
++// include adc/dac core headers
++#include "adc_core.h"
++#include "dac_core.h"
++#endif // NUAND_MODIFICATIONS
+ 
+ /******************************************************************************/
+ /********************** Macros and Constants Definitions **********************/
+ /******************************************************************************/
+ #define SUCCESS									0
++#ifdef NUAND_MODIFICATIONS
++// guard on ARRAY_SIZE (already defined in libbladeRF)
++#ifndef ARRAY_SIZE
+ #define ARRAY_SIZE(arr)							(sizeof(arr) / sizeof((arr)[0]))
++#endif
++#else
++#define ARRAY_SIZE(arr)							(sizeof(arr) / sizeof((arr)[0]))
++#endif // NUAND_MODIFICATIONS
+ #define min(x, y)								(((x) < (y)) ? (x) : (y))
+ #define min_t(type, x, y)						(type)min((type)(x), (type)(y))
+ #define max(x, y)								(((x) > (y)) ? (x) : (y))
+@@ -68,6 +80,24 @@
+ #define CLK_IGNORE_UNUSED						BIT(3)
+ #define CLK_GET_RATE_NOCACHE					BIT(6)
+ 
++#ifdef NUAND_MODIFICATIONS
++// Fix a whole slew of MSVC compiler errors...
++#if defined(HAVE_VERBOSE_MESSAGES)
++#define dev_err(dev, format, ...)		{printf(format, ## __VA_ARGS__);printf("\n"); }
++#define dev_warn(dev, format, ...)		{printf(format, ## __VA_ARGS__);printf("\n"); }
++#if defined(HAVE_DEBUG_MESSAGES)
++#define dev_dbg(dev, format, ...)		{printf(format, ## __VA_ARGS__);printf("\n"); }
++#else
++#define dev_dbg(dev, format, ...)	{ if (0) printf(format, ## __VA_ARGS__); }
++#endif
++#define printk(format, ...)			printf(format, ## __VA_ARGS__)
++#else
++#define dev_err(dev, format, ...)	{ if (0) printf(format, ## __VA_ARGS__); }
++#define dev_warn(dev, format, ...)	{ if (0) printf(format, ## __VA_ARGS__); }
++#define dev_dbg(dev, format, ...)	{ if (0) printf(format, ## __VA_ARGS__); }
++#define printk(format, ...)			{ if (0) printf(format, ## __VA_ARGS__); }
++#endif
++#else
+ #if defined(HAVE_VERBOSE_MESSAGES)
+ #define dev_err(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
+ #define dev_warn(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
+@@ -83,18 +113,39 @@
+ #define dev_dbg(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
+ #define printk(format, ...)			({ if (0) printf(format, ## __VA_ARGS__); })
+ #endif
++#endif // NUAND_MODIFICATIONS
+ 
+ struct device {
++#ifdef NUAND_MODIFICATIONS
++	// fix MSVC code C2016
++	void *noop;
++#endif // NUAND_MODIFICATIONS
+ };
+ 
+ struct spi_device {
+ 	struct device	dev;
+ 	uint8_t 		id_no;
++#ifdef NUAND_MODIFICATIONS
++	// add userdata field
++	void			*userdata;
++#endif // NUAND_MODIFICATIONS
++};
++
++#ifdef NUAND_MODIFICATIONS
++// gpio_device struct
++struct gpio_device {
++	void *userdata;
+ };
++#endif // NUAND_MODIFICATIONS
+ 
+ struct axiadc_state {
+ 	struct ad9361_rf_phy	*phy;
+ 	uint32_t				pcore_version;
++#ifdef NUAND_MODIFICATIONS
++	// add DAC DDS state, userdata
++	struct dds_state		dac_dds_state;
++	void					*userdata;
++#endif // NUAND_MODIFICATIONS
+ };
+ 
+ struct axiadc_chip_info {
