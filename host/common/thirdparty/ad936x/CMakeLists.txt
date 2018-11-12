@@ -168,10 +168,13 @@ foreach(cpfile IN ITEMS ${LIBAD936X_UPSTREAM_FILES})
 endforeach(cpfile)
 
 # Patch the upstream files
-file(GLOB LIBAD936X_PATCHES
-     LIST_DIRECTORIES false
-     RELATIVE ${LIBAD936X_PATCH_DIR}
-     "${LIBAD936X_PATCH_DIR}/*.patch"
+set(LIBAD936X_PATCHES
+    0001-0bba46e-nuand-modifications.patch
+    0002-0bba46e-pr-561.patch
+    0003-0bba46e-pr-573.patch
+    0004-0bba46e-pr-598.patch
+    0005-0bba46e-rm-ad9361_parse_fir.patch
+    0006-0bba46e-compilefix.patch
 )
 
 find_package(Patcher REQUIRED)
