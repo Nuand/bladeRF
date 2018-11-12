@@ -2248,7 +2248,9 @@ static int bladerf1_get_rf_port(struct bladerf *dev,
     }
 
     if (!ok) {
-        *port = "unknown";
+        if (port != NULL) {
+            *port = "unknown";
+        }
         log_error("%s: unexpected port id %d\n", __FUNCTION__,
                   BLADERF_CHANNEL_IS_TX(ch) ? tx_pa : rx_lna);
         return BLADERF_ERR_UNEXPECTED;
