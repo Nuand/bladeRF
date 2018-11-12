@@ -646,7 +646,13 @@ static inline int lms_set_frequency(struct bladerf *dev,
                                     bladerf_module mod, uint32_t freq)
 {
     struct lms_freq f;
-    lms_calculate_tuning_params(freq, &f);
+    int status;
+
+    status = lms_calculate_tuning_params(freq, &f);
+    if (status < 0) {
+        return status;
+    }
+
     return lms_set_precalculated_frequency(dev, mod, &f);
 }
 
