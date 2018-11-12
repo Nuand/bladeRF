@@ -344,14 +344,13 @@ void free_opts(struct config_options *optv, int optc)
 int csv2int(const char *line, int ***args)
 {
     const char delim[]   = " \r\n\t,.:"; /* supported delimiters */
-    const size_t MAXLEN  = 128; /* max line length (with newline and null) */
-    static size_t arglen = 2;   /* tunable: initial expected column count */
-
-    char *myline   = NULL; /* local copy of 'line' */
-    char *parsestr = NULL; /* ptr to 'myline' on first strtok_r */
-    char *saveptr  = NULL; /* strtok_r state pointer */
-    int **argout   = NULL; /* array of output values */
-    size_t count   = 0;    /* count of tokens extracted */
+    const size_t MAXLEN  = 128;  /* max line length (with newline and null) */
+    static size_t arglen = 2;    /* tunable: initial expected column count */
+    char *myline         = NULL; /* local copy of 'line' */
+    char *parsestr       = NULL; /* ptr to 'myline' on first strtok_r */
+    char *saveptr        = NULL; /* strtok_r state pointer */
+    int **argout         = NULL; /* array of output values */
+    size_t count         = 0;    /* count of tokens extracted */
     size_t i;
 
     // Validity check
@@ -375,7 +374,7 @@ int csv2int(const char *line, int ***args)
     myline = strncpy(myline, line, MAXLEN - 1);
 
     // Initial allocation of argout
-    argout = malloc(arglen * sizeof(int **));
+    argout = malloc(arglen * sizeof(int *));
     if (NULL == argout) {
         log_error("could not malloc argout\n");
         goto fail;
@@ -395,11 +394,12 @@ int csv2int(const char *line, int ***args)
         if (i >= arglen) {
             arglen *= 2;
             log_verbose("expanding allocation to %zu column(s)\n", arglen);
-            argout = realloc(argout, arglen * sizeof(int *));
-            if (NULL == argout) {
+            int **newargout = realloc(argout, arglen * sizeof(int *));
+            if (NULL == newargout) {
                 log_error("could not realloc(argout,%zu)\n", arglen);
                 goto fail;
             }
+            argout = newargout;
         }
 
         // Allocate memory for this value
