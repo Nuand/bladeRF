@@ -104,6 +104,10 @@ Copyright: 2013-2018 Nuand LLC
            2013 Daniel Gröber
 License: LGPL-2.1+
 
+Files: host/libraries/libbladeRF/src/driver/thirdparty/adi/*
+Copyright: 2013-2015 Analog Devices, Inc.
+License: AnalogDevices
+
 Files: host/utilities/*
 Copyright: 2013-2018 Nuand LLC
            2013 Daniel Gröber
