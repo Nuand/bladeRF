@@ -22,6 +22,13 @@
  * THE SOFTWARE.
  */
 
+#ifdef BLADERF_NIOS_BUILD
+#include "devices.h"
+#endif  // BLADERF_NIOS_BUILD
+
+/* Avoid building this in low-memory situations */
+#if !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
+
 #include "bladerf2_common.h"
 
 /**
@@ -183,3 +190,5 @@ bool _rffe_dir_otherwise_enabled(uint32_t reg, bladerf_channel ch)
 
     return false;
 }
+
+#endif  // !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
