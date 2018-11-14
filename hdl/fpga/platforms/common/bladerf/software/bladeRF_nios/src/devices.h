@@ -122,6 +122,12 @@
 /* Number of fast lock profiles that can be stored in the RFFE */
 #define NUM_RFFE_FASTLOCK_PROFILES 8
 
+/* Enable libad936x if we have enough RAM. Note that it is very important
+ * that all calls to ad9361_* be ifdef-wrapped! */
+#   if COMMON_SYSTEM_0_RAM_SPAN >= 131072
+#       define BLADERF_NIOS_LIBAD936X
+#   endif
+
 #else
 #   define INLINE
     void SIMULATION_FLUSH_UART();

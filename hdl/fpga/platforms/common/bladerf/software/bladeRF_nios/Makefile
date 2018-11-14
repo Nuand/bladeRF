@@ -2,13 +2,15 @@
 #              VARIABLES TO BE DEFINED BY PLATFORM MAKEFILE
 #------------------------------------------------------------------------------
 
-#  - FPGA_COMMON_DIR    : Path to fpga_common
-#  - LIBBLADERF_DIR     : Path to libbladeRF
-#  - BLADERF_COMMON_DIR : Path to common bladeRF_nios dir
-#  - NIOS_BUILD_OUTDIR  : Path to place the Nios build products
-#  - MEM_INIT_DIR       : Path to place the mem_init build products
-#  - BSP_BUILD_OUTDIR   : Path where BSP build products are located
-#  - QUARTUS_OUTDIR     : Path where Quartus build products are located
+#  - FPGA_COMMON_DIR     : Path to fpga_common
+#  - FIRMWARE_COMMON_DIR : Path to firmware_common
+#  - LIBBLADERF_DIR      : Path to libbladeRF
+#  - BLADERF_COMMON_DIR  : Path to common bladeRF_nios dir
+#  - HOST_COMMON_DIR     : Path to host common directory
+#  - NIOS_BUILD_OUTDIR   : Path to place the Nios build products
+#  - MEM_INIT_DIR        : Path to place the mem_init build products
+#  - BSP_BUILD_OUTDIR    : Path where BSP build products are located
+#  - QUARTUS_OUTDIR      : Path where Quartus build products are located
 #
 # Can opionally define these other variables
 #  - ALT_INCLUDE_DIRS
@@ -20,9 +22,10 @@
 
 # List of include directories for -I compiler option (-I added when used).
 # Includes the BSP.
-ALT_INCLUDE_DIRS += -I $(BLADERF_COMMON_DIR)/src \
-                    -I $(FPGA_COMMON_DIR)/include \
-                    -I $(LIBBLADERF_DIR)/include
+ALT_INCLUDE_DIRS += $(BLADERF_COMMON_DIR)/src \
+                    $(FIRMWARE_COMMON_DIR) \
+                    $(FPGA_COMMON_DIR)/include \
+                    $(LIBBLADERF_DIR)/include
 
 # List of library directories for -L linker option (-L added when used).
 # Includes the BSP.
