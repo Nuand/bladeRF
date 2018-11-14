@@ -31,7 +31,7 @@
 #include <libbladeRF.h>
 #else
 #include "libbladeRF_nios_compat.h"
-#endif
+#endif  // !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
 
 #include "ad936x.h"
 #include "host_config.h"
@@ -105,24 +105,6 @@ static bladerf_frequency const RESET_FREQUENCY = 70000000;
 // clang-format on
 
 /**
- * @brief   Round a value into an int
- *
- * @param   x     Value to round
- *
- * @return  int
- */
-#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
-
-/**
- * @brief   Round a value into an int64
- *
- * @param   x     Value to round
- *
- * @return  int64
- */
-#define __round_int64(x) (x >= 0 ? (int64_t)(x + 0.5) : (int64_t)(x - 0.5))
-
-/**
  * RF front end bands
  */
 enum bladerf2_band {
@@ -168,6 +150,142 @@ struct band_port_map {
     uint32_t rfic_port;                   /**< RFIC port configuration */
 };
 
+/**
+ * @brief   Round a value into an int
+ *
+ * @param   x     Value to round
+ *
+ * @return  int
+ */
+#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
+
+/**
+ * @brief   Round a value into an int64
+ *
+ * @param   x     Value to round
+ *
+ * @return  int64
+ */
+#define __round_int64(x) (x >= 0 ? (int64_t)(x + 0.5) : (int64_t)(x - 0.5))
+
+/**
+ * Commands available with the FPGA-based RFIC interface.
+ */
+typedef enum {
+    /** Query the status register. (Read)
+     *
+     * Pass ::BLADERF_CHANNEL_INVALID as the `ch` parameter.
+     *
+     * Return structure:
+     *    +================+========================+
+     *    |      Bit(s)    |         Value          |
+     *    +================+========================+
+     *    |      63:16     | Reserved. Set to 0.    |
+     *    +----------------+------------------------+
+     *    |      15:8      | count of items in      |
+     *    |                | write queue            |
+     *    +----------------+------------------------+
+     *    |        0       | 1 if initialized, 0    |
+     *    |                | otherwise              |
+     *    +----------------+------------------------+
+     */
+    BLADERF_RFIC_COMMAND_STATUS = 0,
+
+    /** Initialize the RFIC. (Read/Write)
+     *
+     * Pass ::BLADERF_CHANNEL_INVALID as the `ch` parameter.
+     *
+     * The Read variant returns `true` if the RFIC has been initialized,
+     * `false` otherwise.
+     */
+    BLADERF_RFIC_COMMAND_INIT = 1,
+
+    /** Enable/disable a channel. (Read/Write)
+     *
+     * Set `data` to `true` to enable the channel, or `false` to disable it.
+     */
+    BLADERF_RFIC_COMMAND_ENABLE = 2,
+
+    /** Sample rate for a channel. (Read/Write)
+     *
+     * Value in samples per second.
+     */
+    BLADERF_RFIC_COMMAND_SAMPLERATE = 3,
+
+    /** Center frequency for a channel. (Read/Write)
+     *
+     * Value in Hz. Read or write.
+     */
+    BLADERF_RFIC_COMMAND_FREQUENCY = 4,
+
+    /** Bandwidth for a channel. (Read/Write)
+     *
+     * Value in Hz.
+     */
+    BLADERF_RFIC_COMMAND_BANDWIDTH = 5,
+
+    /** Gain mode for a channel. (Read/Write)
+     *
+     * Pass a ::bladerf_gain_mode value as the `data` parameter.
+     */
+    BLADERF_RFIC_COMMAND_GAINMODE = 6,
+
+    /** Overall gain for a channel. (Read/Write)
+     *
+     * Value in dB.
+     */
+    BLADERF_RFIC_COMMAND_GAIN = 7,
+
+    /** RSSI (received signal strength indication) for a channel. (Read)
+     *
+     * Value in dB.
+     */
+    BLADERF_RFIC_COMMAND_RSSI = 8,
+
+    /** FIR filter setting for a channel. (Read/Write)
+     *
+     * RX channels should pass a ::bladerf_rfic_rxfir value, TX channels should
+     * pass a ::bladerf_rfic_txfir value.
+     */
+    BLADERF_RFIC_COMMAND_FILTER = 9,
+
+    /** TX Mute setting for a channel. (Read/Write)
+     *
+     * 1 indicates TX mute is enabled, 0 indicates it is not.
+     */
+    BLADERF_RFIC_COMMAND_TXMUTE = 10,
+} bladerf_rfic_command;
+
+/** NIOS_PKT_16x64_RFIC_STATUS return structure
+ *
+ *  +===============+===================================================+
+ *  |      Bit(s)   |         Value                                     |
+ *  +===============+===================================================+
+ *  |      63:16    | Reserved. Set to 0.                               |
+ *  +---------------+---------------------------------------------------+
+ *  |      15:8     | count of items in write queue                     |
+ *  +---------------+---------------------------------------------------+
+ *  |        1      | 1 if the last job executed in the write queue was |
+ *  |               | successful, 0 otherwise                           |
+ *  +---------------+---------------------------------------------------+
+ *  |        0      | 1 if initialized, 0 otherwise                     |
+ *  +---------------+---------------------------------------------------+
+ */
+// clang-format off
+#define BLADERF_RFIC_STATUS_INIT_SHIFT       0
+#define BLADERF_RFIC_STATUS_INIT_MASK        0x1
+#define BLADERF_RFIC_STATUS_WQSUCCESS_SHIFT  1
+#define BLADERF_RFIC_STATUS_WQSUCCESS_MASK   0x1
+#define BLADERF_RFIC_STATUS_WQLEN_SHIFT      8
+#define BLADERF_RFIC_STATUS_WQLEN_MASK       0xff
+
+#define BLADERF_RFIC_RSSI_MULT_SHIFT         32
+#define BLADERF_RFIC_RSSI_MULT_MASK          0xFFFF
+#define BLADERF_RFIC_RSSI_PRE_SHIFT          16
+#define BLADERF_RFIC_RSSI_PRE_MASK           0xFFFF
+#define BLADERF_RFIC_RSSI_SYM_SHIFT          0
+#define BLADERF_RFIC_RSSI_SYM_MASK           0xFFFF
+// clang-format on
 
 /******************************************************************************/
 /* Constants */

@@ -100,8 +100,8 @@
 #define NIOS_PKT_16x64_IDX_RESV2      14
 
 /* Target IDs */
-
 #define NIOS_PKT_16x64_TARGET_AD9361  0x00
+#define NIOS_PKT_16x64_TARGET_RFIC    0x01 /* RFIC control */
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */
@@ -111,6 +111,21 @@
 /* Flag bits */
 #define NIOS_PKT_16x64_FLAG_WRITE     (1 << 0)
 #define NIOS_PKT_16x64_FLAG_SUCCESS   (1 << 1)
+
+/**
+ * Sub-addresses for rfic target.
+ *
+ *    +================+============================================+
+ *    |      Bit(s)    |         Value                              |
+ *    +================+============================================+
+ *    |      15:12     | Reserved. Set to 0.                        |
+ *    +----------------+--------------------------------------------+
+ *    |      11:8      | bladerf_channel & 0xf                      |
+ *    |                | 1111 = system-wide                         |
+ *    +----------------+--------------------------------------------+
+ *    |       7:0      | Subaddress. See bladerf_rfic_command enum. |
+ *    +----------------+--------------------------------------------+
+ */
 
 /* Pack the request buffer */
 static inline void nios_pkt_16x64_pack(uint8_t *buf, uint8_t target, bool write,
