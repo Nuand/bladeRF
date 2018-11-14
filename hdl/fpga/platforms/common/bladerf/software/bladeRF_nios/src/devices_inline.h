@@ -33,9 +33,6 @@
 #include "altera_avalon_jtag_uart_regs.h"
 #include "altera_avalon_pio_regs.h"
 
-#include <stdint.h>
-#include <stdbool.h>
-
 
 static inline uint32_t control_reg_read(void)
 {
