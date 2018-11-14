@@ -37,7 +37,9 @@
 #endif
 
 /* libbladeRF code uses a FIELD_INIT macro as an MSVC workaround */
-#define FIELD_INIT(param, val) param = val
+#define FIELD_INIT(param, ...) param = __VA_ARGS__
+
+#define ARRAY_SIZE(n) (sizeof(n) / sizeof(n[0]))
 
 /* For >= 1.5 GHz uses the high band should be used. Otherwise, the low
  * band should be selected */
@@ -50,6 +52,10 @@
 #define log_warning(...) DBG(__VA_ARGS__)
 #define log_error(...)   DBG(__VA_ARGS__)
 #define log_fatal(...)   DBG(__VA_ARGS__)
+
+/* Output formats... "x" is what alt_printf supports */
+#define PRIi64 "x"
+#define PRIu64 "x"
 
 /* NIOS II builds don't need a device handle. Just forward-declare it to avoid
  * complaints from unused functions */
@@ -75,6 +81,9 @@ struct bladerf;
         control_reg_write(data); \
         0; /* "Return" 0 */ \
     })
+
+/* Stub out pthread type */
+typedef void *pthread_cond_t;
 
 #endif
 
