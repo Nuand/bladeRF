@@ -362,4 +362,17 @@ void command_uart_write_response(uint8_t *resp) {
         printf("Pass.\n\n");
     }
 }
+
+bool rfic_command_write(uint16_t addr, uint64_t data)
+{
+    DBG("%s: addr=%02x data=%08" PRIx64 "\n", __FUNCTION__, addr, data);
+    return true;
+}
+
+bool rfic_command_read(uint16_t addr, uint64_t *data)
+{
+    DBG("%s: addr=%02x *data=%08" PRIx64 "\n", __FUNCTION__, addr, *data);
+    return true;
+}
+
 #endif

@@ -28,7 +28,22 @@
 #include "pkt_handler.h"
 #include "nios_pkt_16x64.h"
 
+void pkt_16x64_init(void);
+
 void pkt_16x64(struct pkt_buf *b);
+
+void pkt_16x64_work(void);
+
+#ifdef BLADERF_NIOS_LIBAD936X
+
+#define PKT_16x64 { \
+    .magic          = NIOS_PKT_16x64_MAGIC, \
+    .init           = pkt_16x64_init, \
+    .exec           = pkt_16x64, \
+    .do_work        = pkt_16x64_work, \
+}
+
+#else
 
 #define PKT_16x64 { \
     .magic          = NIOS_PKT_16x64_MAGIC, \
@@ -37,4 +52,5 @@ void pkt_16x64(struct pkt_buf *b);
     .do_work        = NULL, \
 }
 
+#endif  // BLADERF_NIOS_LIBAD936X
 #endif
