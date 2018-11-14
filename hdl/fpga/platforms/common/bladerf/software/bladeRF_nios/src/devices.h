@@ -581,6 +581,37 @@ uint8_t rx_trigger_ctl_read(void);
  */
 void agc_dc_corr_write(uint16_t addr, uint16_t value);
 
+/**
+ * Initialize the RFIC command handler. Run once at startup.
+ */
+void rfic_command_init(void);
+
+/**
+ * Do background RFIC command processing.
+ */
+void rfic_command_work(void);
+
+/**
+ * RFIC command write
+ *
+ * @param   addr    Address
+ * @param   data    Value
+ *
+ * @return bool (true = success)
+ */
+bool rfic_command_write(uint16_t addr, uint64_t data);
+
+/**
+ * RFIC command read
+ *
+ * @param   addr    Address
+ * @param   data    Value (out)
+ *
+ * @return bool (true = success)
+ */
+bool rfic_command_read(uint16_t addr, uint64_t *data);
+
+
 /* A number of rountines define here are implemented as just a register
  * access, where incurring function call overhead is wasteful. Therefore,
  * these have been implemented as static inline functions.

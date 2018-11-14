@@ -1,7 +1,7 @@
 /* This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2017 Nuand LLC
+ * Copyright (c) 2017-2018 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +33,17 @@ static inline bool perform_write(uint8_t id, uint16_t addr, uint64_t data)
     bool success = true;
 
     switch (id) {
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_16x64_TARGET_AD9361:
             adi_spi_write(addr, data);
             break;
+#endif  // BOARD_BLADERF_MICRO
+
+#ifdef BLADERF_NIOS_LIBAD936X
+        case NIOS_PKT_16x64_TARGET_RFIC:
+            success = rfic_command_write(addr, data);
+            break;
+#endif  // BLADERF_NIOS_LIBAD936X
 
         /* Add user customizations here
 
@@ -58,9 +66,17 @@ static inline bool perform_read(uint8_t id, uint16_t addr, uint64_t *data)
     bool success = true;
 
     switch (id) {
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_16x64_TARGET_AD9361:
             *data = adi_spi_read(addr);
             break;
+#endif  // BOARD_BLADERF_MICRO
+
+#ifdef BLADERF_NIOS_LIBAD936X
+        case NIOS_PKT_16x64_TARGET_RFIC:
+            success = rfic_command_read(addr, data);
+            break;
+#endif  // BLADERF_NIOS_LIBAD936X
 
         /* Add user customizations here
 
@@ -96,4 +112,18 @@ void pkt_16x64(struct pkt_buf *b)
     }
 
     nios_pkt_16x64_resp_pack(b->resp, id, is_write, addr, data, success);
+}
+
+void pkt_16x64_init(void)
+{
+#ifdef BLADERF_NIOS_LIBAD936X
+    rfic_command_init();
+#endif  // BLADERF_NIOS_LIBAD936X
+}
+
+void pkt_16x64_work(void)
+{
+#ifdef BLADERF_NIOS_LIBAD936X
+    rfic_command_work();
+#endif  // BLADERF_NIOS_LIBAD936X
 }
