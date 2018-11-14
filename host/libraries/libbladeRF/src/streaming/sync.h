@@ -27,6 +27,8 @@
 
 #include <libbladeRF.h>
 
+#include "thread.h"
+
 /* These parameters are only written during sync_init */
 struct stream_config {
     bladerf_format format;
