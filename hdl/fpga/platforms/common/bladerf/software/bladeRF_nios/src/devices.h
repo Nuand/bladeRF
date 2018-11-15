@@ -114,6 +114,14 @@
 #   define VT_STAT_ERR_10S   (1<<1)
 #   define VT_STAT_ERR_100S  (1<<2)
 
+/* Number of RFFE fast lock profiles to store in the Nios.
+ * Make sure this matches what is defined in bladerf2.c.
+ */
+#define NUM_BBP_FASTLOCK_PROFILES  256
+
+/* Number of fast lock profiles that can be stored in the RFFE */
+#define NUM_RFFE_FASTLOCK_PROFILES 8
+
 #else
 #   define INLINE
     void SIMULATION_FLUSH_UART();
@@ -131,6 +139,27 @@ extern uint8_t vctcxo_tamer_ctrl_reg;
 
 /* Cached ADF400x registers */
 extern uint32_t adf400x_reg[4];
+
+/* Fast lock profile states */
+enum fastlock_state {
+    FASTLOCK_STATE_INVALID = 0, /* Marks the profile as not used */
+    FASTLOCK_STATE_BBP,         /* Profile is saved in BBP */
+    FASTLOCK_STATE_RFFE,        /* Profile is loaded in RFFE */
+    FASTLOCK_STATE_BBP_RFFE     /* Profile is saved in BBP & loaded in RFFE */
+};
+
+/* Fastlock profile data */
+typedef struct {
+    uint8_t profile_num;        /* RFFE profile number */
+    uint8_t profile_data[16];
+    uint8_t port;
+    uint8_t spdt;
+    volatile enum fastlock_state state;
+} fastlock_profile;
+
+/* Define the fast lock profile storage arrays */
+extern fastlock_profile fastlocks_rx[NUM_BBP_FASTLOCK_PROFILES];
+extern fastlock_profile fastlocks_tx[NUM_BBP_FASTLOCK_PROFILES];
 
 /**
  * Initialize NIOS II device interfaces.
@@ -189,6 +218,47 @@ uint32_t adi_axi_read(uint16_t addr);
  * @param   data    Data to write
  */
 void adi_axi_write(uint16_t addr, uint32_t data);
+
+/**
+ * Save AD9361 fast lock profile data to Nios memory.
+ *
+ * @param is_tx        True if TX profile; false if RX.
+ * @param rffe_profile AD9361 profile number (0-::NUM_RFFE_FASTLOCK_PROFILES)
+ * @param nios_profile Nios profile number (0-::NUM_BBP_FASTLOCK_PROFILES)
+ */
+void ad9361_fastlock_save(bool is_tx, uint8_t rffe_profile,
+                          uint16_t nios_profile);
+
+/**
+ * Load fast lock profile from Nios memory into AD9361 RFIC.
+ *
+ * @param m    Which module to load.
+ * @param *p   Fast lock profile structure
+ */
+void ad9361_fastlock_load(bladerf_module m, fastlock_profile *p);
+
+/**
+ * Recall a stored fast lock profile.
+ *
+ * @param m    Which module to recall.
+ * @param *p   Fast lock profile structure
+ */
+void ad9361_fastlock_recall(bladerf_module m, fastlock_profile *p);
+
+/**
+ * Set the AD9361 port.
+ *
+ * @param *p   Fast lock profile structure
+ */
+void ad9361_rfport_select(fastlock_profile *p);
+
+/**
+ * Set the RF switches.
+ *
+ * @param m    Which module's switches to control.
+ * @param *p   Fast lock profile structure
+ */
+void ad9361_rfspdt_select(bladerf_module m, fastlock_profile *p);
 
 /**
  * Read from Si5338 clock generator register
