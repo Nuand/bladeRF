@@ -103,9 +103,11 @@
 #define NIOS_PKT_8x32_TARGET_VERSION  0x00   /* FPGA version (read only) */
 #define NIOS_PKT_8x32_TARGET_CONTROL  0x01   /* FPGA control/config register */
 #define NIOS_PKT_8x32_TARGET_ADF4351  0x02   /* XB-200 ADF4351 register access
-                                             * (write-only) */
+                                              * (write-only) */
 #define NIOS_PKT_8x32_TARGET_RFFE_CSR 0x03   /* RFFE control & status GPIO */
 #define NIOS_PKT_8x32_TARGET_ADF400X  0x04   /* ADF400x config */
+#define NIOS_PKT_8x32_TARGET_FASTLOCK 0x05   /* Save AD9361 fast lock profile
+                                              * to Nios */
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */
