@@ -266,7 +266,7 @@ set_instance_parameter_value ram {enableDiffWidth} {0}
 set_instance_parameter_value ram {initMemContent} {1}
 set_instance_parameter_value ram {initializationFileName} {onchip_memory2_0}
 set_instance_parameter_value ram {instanceID} {MED}
-set_instance_parameter_value ram {memorySize} {16384.0}
+set_instance_parameter_value ram {memorySize} {32768.0}
 set_instance_parameter_value ram {readDuringWriteMode} {DONT_CARE}
 set_instance_parameter_value ram {simAllowMRAMContentsFile} {0}
 set_instance_parameter_value ram {simMemInitOnlyFilename} {0}
@@ -423,7 +423,7 @@ set_connection_parameter_value nios2.data_master/pb_2.s0 defaultConnection {0}
 
 add_connection nios2.data_master ram.s1
 set_connection_parameter_value nios2.data_master/ram.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.data_master/ram.s1 baseAddress {0x4000}
+set_connection_parameter_value nios2.data_master/ram.s1 baseAddress {0x20000}
 set_connection_parameter_value nios2.data_master/ram.s1 defaultConnection {0}
 
 add_connection nios2.data_master control.s1
@@ -463,7 +463,7 @@ set_connection_parameter_value nios2.instruction_master/nios2.debug_mem_slave de
 
 add_connection nios2.instruction_master ram.s1
 set_connection_parameter_value nios2.instruction_master/ram.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.instruction_master/ram.s1 baseAddress {0x4000}
+set_connection_parameter_value nios2.instruction_master/ram.s1 baseAddress {0x20000}
 set_connection_parameter_value nios2.instruction_master/ram.s1 defaultConnection {0}
 
 add_connection system_clock.clk nios2.clk
