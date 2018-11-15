@@ -676,6 +676,27 @@ int nios_rffe_control_write(struct bladerf *dev, uint32_t value)
     return status;
 }
 
+int nios_rffe_fastlock_save(struct bladerf *dev, bool is_tx,
+                            uint8_t rffe_profile, uint16_t nios_profile)
+{
+    int status;
+    uint8_t  addr;
+    uint32_t data = 0;
+
+    addr = is_tx ? 1 : 0;
+    data = (rffe_profile << 16) | nios_profile;
+
+    status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_FASTLOCK, addr, data);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, data);
+    }
+#endif
+
+    return status;
+}
+
 int nios_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
 {
     int status;
@@ -1026,6 +1047,58 @@ int nios_retune(struct bladerf *dev, bladerf_channel ch,
     }
 
     if ((resp_flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
+        if (timestamp == BLADERF_RETUNE_NOW) {
+            log_debug("FPGA tuning reported failure.\n");
+            status = BLADERF_ERR_UNEXPECTED;
+        } else {
+            log_debug("The FPGA's retune queue is full. Try again after "
+                      "a previous request has completed.\n");
+            status = BLADERF_ERR_QUEUE_FULL;
+        }
+    }
+
+    return status;
+}
+
+int nios_retune2(struct bladerf *dev, bladerf_channel ch,
+                 uint64_t timestamp, uint16_t nios_profile,
+                 uint8_t rffe_profile, uint8_t port,
+                 uint8_t spdt)
+{
+    int status;
+    uint8_t buf[NIOS_PKT_LEN];
+
+    uint8_t resp_flags;
+    uint64_t duration;
+
+    if (timestamp == NIOS_PKT_RETUNE2_CLEAR_QUEUE) {
+        log_verbose("Clearing %s retune queue.\n", channel2str(ch));
+    } else {
+        log_verbose("%s: channel=%s timestamp=%"PRIu64" nios_profile=%u "
+                    "rffe_profile=%u\n\t\t\t\tport=0x%02x spdt=0x%02x\n",
+                    __FUNCTION__, channel2str(ch), timestamp, nios_profile,
+                    rffe_profile, port, spdt);
+    }
+
+    nios_pkt_retune2_pack(buf, ch, timestamp, nios_profile, rffe_profile,
+                          port, spdt);
+
+    status = nios_access(dev, buf);
+    if (status != 0) {
+        return status;
+    }
+
+    nios_pkt_retune2_resp_unpack(buf, &duration, &resp_flags);
+
+    if (resp_flags & NIOS_PKT_RETUNE2_RESP_FLAG_TSVTUNE_VALID) {
+        log_verbose("%s retune operation: duration=%"PRIu64"\n",
+                    channel2str(ch), duration);
+    } else {
+        log_verbose("%s operation duration: %"PRIu64"\n",
+                    channel2str(ch), duration);
+    }
+
+    if ((resp_flags & NIOS_PKT_RETUNE2_RESP_FLAG_SUCCESS) == 0) {
         if (timestamp == BLADERF_RETUNE_NOW) {
             log_debug("FPGA tuning reported failure.\n");
             status = BLADERF_ERR_UNEXPECTED;
