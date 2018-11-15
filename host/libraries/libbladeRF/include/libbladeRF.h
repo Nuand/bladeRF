@@ -1806,8 +1806,10 @@ struct bladerf_quick_tune {
         };
         /* bladeRF2 quick tune parameters */
         struct {
-            uint32_t profile;  /**< Fastlock profile number (0-7) */
-            uint8_t  data[16]; /**< Fastlock profile data */
+            uint16_t nios_profile; /**< Profile number in Nios */
+            uint8_t rffe_profile;  /**< Profile number in RFFE */
+            uint8_t port;          /**< RFFE port settings */
+            uint8_t spdt;          /**< External SPDT settings */
         };
     };
 };

@@ -42,6 +42,7 @@
 #include "driver/fx3_fw.h"
 #include "driver/ina219.h"
 #include "driver/spi_flash.h"
+#include "nios_pkt_retune2.h"
 
 #include "backend/backend_config.h"
 #include "backend/usb/usb.h"
@@ -2970,15 +2971,17 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
                                    bladerf_channel ch,
                                    struct bladerf_quick_tune *quick_tune)
 {
+    const struct band_port_map *port_map;
     struct bladerf2_board_data *board_data;
+    bladerf_frequency freq;
     int status;
 
     if (NULL == quick_tune) {
         RETURN_INVAL("quick_tune", "is null");
     }
 
-    if (quick_tune->profile > 8) {
-        RETURN_INVAL_ARG("Quick tune profile number", quick_tune->profile,
+    if (quick_tune->rffe_profile > 8) {
+        RETURN_INVAL_ARG("Quick tune profile number", quick_tune->rffe_profile,
                          "is not valid");
     }
 
@@ -2991,34 +2994,71 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
 
     board_data = dev->board_data;
 
+    status = bladerf2_get_frequency(dev, ch, &freq);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf2_get_frequency", status);
+    }
+
+    port_map = _get_band_port_map_by_freq(ch, true, freq);
+
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        /* Create a fastlock profile in the RFIC */
+        /* Create a fast lock profile in the RFIC */
         status = ad9361_tx_fastlock_store(board_data->phy,
-                                          quick_tune->profile);
+                                          quick_tune->rffe_profile);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_tx_fastlock_store", status);
         }
-        /* Save the fastlock profile to quick_tune structure */
-        status = ad9361_tx_fastlock_save(board_data->phy,
-                                         quick_tune->profile,
-                                         &quick_tune->data[0]);
+
+        /* Save the fast lock profile to quick_tune structure */
+        /*status = ad9361_tx_fastlock_save(board_data->phy,
+                                         quick_tune->rffe_profile,
+                                         &quick_tune->rffe_profile_data[0]);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_tx_fastlock_save", status);
-        }
+        }*/
+
+        /* Save a copy of the TX fast lock profile to the Nios */
+        dev->backend->rffe_fastlock_save(dev, true, quick_tune->rffe_profile,
+                                         quick_tune->nios_profile);
+
+        /* Set the TX band */
+        quick_tune->port = (port_map->ad9361_port << 6);
+
+        /* Set the TX SPDTs */
+        quick_tune->spdt = (port_map->spdt << 6) | (port_map->spdt << 4);
+
     } else {
-        /* Create a fastlock profile in the RFIC */
+        /* Create a fast lock profile in the RFIC */
         status = ad9361_rx_fastlock_store(board_data->phy,
-                                          quick_tune->profile);
+                                          quick_tune->rffe_profile);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_rx_fastlock_store", status);
         }
-        /* Save the fastlock profile to quick_tune structure */
-        status = ad9361_rx_fastlock_save(board_data->phy,
-                                         quick_tune->profile,
-                                         &quick_tune->data[0]);
+
+        /* Save the fast lock profile to quick_tune structure */
+        /*status = ad9361_rx_fastlock_save(board_data->phy,
+                                         quick_tune->rffe_profile,
+                                         &quick_tune->rffe_profile_data[0]);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_rx_fastlock_save", status);
+        }*/
+
+        /* Save a copy of the RX fast lock profile to the Nios */
+        dev->backend->rffe_fastlock_save(dev, false, quick_tune->rffe_profile,
+                                         quick_tune->nios_profile);
+
+        /* Set the RX bit */
+        quick_tune->port = NIOS_PKT_RETUNE2_PORT_IS_RX_MASK;
+
+        /* Set the RX band */
+        if (port_map->ad9361_port < 3) {
+            quick_tune->port |= (3 << (port_map->ad9361_port << 1));
+        } else {
+            quick_tune->port |= (1 << (port_map->ad9361_port - 3));
         }
+
+        /* Set the RX SPDTs */
+        quick_tune->spdt = (port_map->spdt << 2) | (port_map->spdt);
     }
 
     return 0;
