@@ -250,6 +250,20 @@ int nios_legacy_rffe_control_read(struct bladerf *dev, uint32_t *value);
 int nios_legacy_rffe_control_write(struct bladerf *dev, uint32_t value);
 
 /**
+ * Save an RFFE fast lock profile to the Nios.
+ *
+ * @param           dev          Device handle
+ * @param[in]       is_tx        True if TX profile, false if RX profile
+ * @param[in]       rffe_profile RFFE profile to save
+ * @param[in]       nios_profile Where to save the profile in the Nios
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_rffe_fastlock_save(struct bladerf *dev, bool is_tx,
+                                   uint8_t rffe_profile,
+                                   uint16_t nios_profile);
+
+/**
  * Write to the AD56X1 VCTCXO trim DAC.
  *
  * @param       dev         Device handle

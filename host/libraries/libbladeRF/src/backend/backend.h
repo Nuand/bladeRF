@@ -199,6 +199,10 @@ struct backend_fns {
     int (*rffe_control_write)(struct bladerf *dev, uint32_t value);
     int (*rffe_control_read)(struct bladerf *dev, uint32_t *value);
 
+    /* RFFE-to-Nios fast lock profile saver */
+    int (*rffe_fastlock_save)(struct bladerf *dev, bool is_tx,
+                              uint8_t rffe_profile, uint16_t nios_profile);
+
     /* AD56X1 VCTCXO Trim DAC accessors */
     int (*ad56x1_vctcxo_trim_dac_write)(struct bladerf *dev, uint16_t value);
     int (*ad56x1_vctcxo_trim_dac_read)(struct bladerf *dev, uint16_t *value);
@@ -246,6 +250,15 @@ struct backend_fns {
                   uint8_t vcocap,
                   bool low_band,
                   bool quick_tune);
+
+    /* Schedule a frequency retune2 operation */
+    int (*retune2)(struct bladerf *dev,
+                   bladerf_channel ch,
+                   uint64_t timestamp,
+                   uint16_t nios_profile,
+                   uint8_t rffe_profile,
+                   uint8_t port,
+                   uint8_t spdt);
 
     /* Load firmware from FX3 bootloader */
     int (*load_fw_from_bootloader)(bladerf_backend backend,

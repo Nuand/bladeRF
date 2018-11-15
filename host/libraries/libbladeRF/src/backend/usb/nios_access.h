@@ -216,6 +216,19 @@ int nios_rffe_control_read(struct bladerf *dev, uint32_t *value);
 int nios_rffe_control_write(struct bladerf *dev, uint32_t value);
 
 /**
+ * Save an RFFE fast lock profile to the Nios.
+ *
+ * @param           dev          Device handle
+ * @param[in]       is_tx        True if TX profile, false if RX profile
+ * @param[in]       rffe_profile RFFE profile to save
+ * @param[in]       nios_profile Where to save the profile in the Nios
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_rffe_fastlock_save(struct bladerf *dev, bool is_tx,
+                            uint8_t rffe_profile, uint16_t nios_profile);
+
+/**
  * Write to the AD56X1 VCTCXO trim DAC.
  *
  * @param       dev         Device handle
@@ -459,6 +472,35 @@ int nios_retune(struct bladerf *dev,
                 uint8_t vcocap,
                 bool low_band,
                 bool quick_tune);
+
+/**
+ * Handler for a retune request on bladeRF2 devices. The RFFEs used in these
+ * devices have a concept called fast lock profiles that store all the VCO
+ * information needed to quickly retune to a different frequency. The RFFE
+ * can store up to 8 profiles for RX, and a separate 8 for TX. To use more
+ * profiles, they must be stored in the baseband processor (e.g. the FPGA
+ * or Nios) and loaded into one of the 8 slots as needed.
+ *
+ * Each of these profiles consumes 16 bytes not including the timestamp and
+ * RF port/switch information. This is too large to fit into a single Nios
+ * packet at this time, so to improve retune time, the profiles are stored
+ * in the Nios and the Host will schedule retunes by specifying the Nios
+ * profile to load into the specified RFFE profile slot.
+ *
+ * @param       dev          Device handle
+ * @param[in]   ch           Channel
+ * @param[in]   timestamp    Time to schedule retune at
+ * @param[in]   nios_profile Nios profile number (0-N) to load into the RFFE
+ * @param[in]   rffe_profile RFFE fast lock profile number (0-7) into which
+ *                           the Nios profile will be loaded.
+ * @param[in]   port         RFFE port settings
+ * @param[in]   spdt         RF SPDT switch settings
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_retune2(struct bladerf *dev, bladerf_channel ch,
+                 uint64_t timestamp, uint16_t nios_profile,
+                 uint8_t rffe_profile, uint8_t port, uint8_t spdt);
 
 /**
  * Read trigger register value
