@@ -53,13 +53,14 @@ static const struct test_case *tests[] = {
     &test_case_threads,
 };
 
-#define OPTARG  "d:t:s:v:hL"
+#define OPTARG  "d:t:s:T:v:hL"
 static const struct option long_options[] = {
     { "device",     required_argument,  0,      'd'},
     { "test",       required_argument,  0,      't'},
     { "seed",       required_argument,  0,      's'},
     { "help",       no_argument,        0,      'h'},
     { "xb200",      no_argument,        0,       1 },
+    { "tuningmode", required_argument,  0,      'T'},
     { "list-tests", no_argument,        0,      'L' },
     { "verbosity",  required_argument,  0,      'v'},
     { 0,            0,                  0,       0 },
@@ -83,6 +84,7 @@ void usage(const char *argv0)
     printf("  -h, --help                    Show this text.\n");
     printf("  --xb200                       Test XB-200 functionality.\n");
     printf("                                Device must be present.\n");
+    printf("  --tuningmode <mode>           Tuning mode. 'fpga' or 'host'\n");
     printf("  -L, --list-tests              List available tests.\n");
     printf("  -v, --verbosity <level>       Set libbladeRF verbosity level.\n");
 }
@@ -107,6 +109,7 @@ int get_params(int argc, char *argv[], struct app_params *p)
 
     memset(p, 0, sizeof(p[0]));
     p->randval_seed = 1;
+    p->tuning_mode = BLADERF_TUNING_MODE_INVALID;
 
     while((c = getopt_long(argc, argv, OPTARG, long_options, &idx)) != -1) {
         switch (c) {
@@ -155,6 +158,17 @@ int get_params(int argc, char *argv[], struct app_params *p)
             case 'L':
                 list_tests();
                 return 1;
+
+            case 'T':
+                if (0 == strcmp(optarg, "fpga")) {
+                    p->tuning_mode = BLADERF_TUNING_MODE_FPGA;
+                } else if (0 == strcmp(optarg, "host")) {
+                    p->tuning_mode = BLADERF_TUNING_MODE_HOST;
+                } else {
+                    fprintf(stderr, "Invalid tuning mode: %s\n", optarg);
+                    return -1;
+                }
+                break;
 
             case 'v':
                 level = str2loglevel(optarg, &ok);
@@ -229,6 +243,15 @@ int main(int argc, char *argv[])
         }
     } else {
         expected = BLADERF_XB_NONE;
+    }
+
+    if (p.tuning_mode != BLADERF_TUNING_MODE_INVALID) {
+        status = bladerf_set_tuning_mode(dev, p.tuning_mode);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set tuning mode: %s\n",
+                    bladerf_strerror(status));
+            goto out;
+        }
     }
 
     status = bladerf_expansion_get_attached(dev, &attached);

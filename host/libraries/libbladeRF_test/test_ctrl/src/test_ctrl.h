@@ -56,6 +56,7 @@
 
 struct app_params {
     bool use_xb200;
+    bladerf_tuning_mode tuning_mode;
     char *device_str;
     char *test_name;
     uint64_t randval_seed;
