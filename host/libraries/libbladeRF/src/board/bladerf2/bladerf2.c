@@ -3110,9 +3110,31 @@ static int bladerf2_schedule_retune(struct bladerf *dev,
                                     bladerf_timestamp timestamp,
                                     bladerf_frequency frequency,
                                     struct bladerf_quick_tune *quick_tune)
-
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    if (!have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
+        log_debug("This FPGA version (%u.%u.%u) does not support "
+                  "scheduled retunes.\n",
+                  board_data->fpga_version.major,
+                  board_data->fpga_version.minor,
+                  board_data->fpga_version.patch);
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    if (quick_tune == NULL) {
+        log_error("Scheduled retunes require a quick tune parameter\n");
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->backend->retune2(dev, ch, timestamp,
+                                 quick_tune->nios_profile,
+                                 quick_tune->rffe_profile,
+                                 quick_tune->port,
+                                 quick_tune->spdt);
 }
 
 static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev,
