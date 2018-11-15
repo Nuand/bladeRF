@@ -33,6 +33,7 @@
 #include "host_config.h"
 #include "rel_assert.h"
 #include "test_common.h"
+#include "conversions.h"
 
 #define DECLARE_TEST(name_) \
     extern unsigned int test_##name_(struct bladerf *, struct app_params *p, \

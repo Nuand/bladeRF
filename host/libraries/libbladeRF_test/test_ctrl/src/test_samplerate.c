@@ -22,22 +22,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <inttypes.h>
 #include "host_config.h"
 #include "test_ctrl.h"
+#include <inttypes.h>
 
 DECLARE_TEST_CASE(samplerate);
 
-static int set_and_check(struct bladerf *dev, bladerf_module m,
-                         unsigned int rate)
+
+static int set_and_check(struct bladerf *dev,
+                         bladerf_module m,
+                         bladerf_sample_rate rate)
 {
+    bladerf_sample_rate actual, readback;
     int status;
-    unsigned int actual, readback;
 
     status = bladerf_set_sample_rate(dev, m, rate, &actual);
     if (status != 0) {
-        PR_ERROR("Failed to set sample rate: %s\n",
-                 bladerf_strerror(status));
+        PR_ERROR("Failed to set sample rate: %s\n", bladerf_strerror(status));
         return status;
     }
 
@@ -51,11 +52,12 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
     return 0;
 }
 
-static int set_and_check_rational(struct bladerf *dev, bladerf_module m,
+static int set_and_check_rational(struct bladerf *dev,
+                                  bladerf_module m,
                                   struct bladerf_rational_rate *rate)
 {
-    int status;
     struct bladerf_rational_rate actual, readback;
+    int status;
 
     status = bladerf_set_rational_sample_rate(dev, m, rate, &actual);
     if (status != 0) {
@@ -71,15 +73,14 @@ static int set_and_check_rational(struct bladerf *dev, bladerf_module m,
         return status;
     }
 
-    if (actual.integer != readback.integer  ||
-        actual.num != readback.num          ||
-        actual.den != readback.den          ) {
-
+    if (actual.integer != readback.integer || actual.num != readback.num ||
+        actual.den != readback.den) {
         PR_ERROR("Readback mismatch:\n"
-                 " actual:   int=%"PRIu64" num=%"PRIu64" den=%"PRIu64"\n"
-                 "  readback: int=%"PRIu64" num=%"PRIu64" den=%"PRIu64"\n",
-                 actual.integer, actual.num, actual.den,
-                 readback.integer, readback.num, readback.den);
+                 " actual:   int=%" PRIu64 " num=%" PRIu64 " den=%" PRIu64 "\n"
+                 "  readback: int=%" PRIu64 " num=%" PRIu64 " den=%" PRIu64
+                 "\n",
+                 actual.integer, actual.num, actual.den, readback.integer,
+                 readback.num, readback.den);
 
         return status;
     }
@@ -87,18 +88,20 @@ static int set_and_check_rational(struct bladerf *dev, bladerf_module m,
     return 0;
 }
 
-static int sweep_samplerate(struct bladerf *dev, bladerf_module m, bool quiet)
+static int sweep_samplerate(struct bladerf *dev,
+                            bladerf_module m,
+                            bool quiet,
+                            bladerf_sample_rate min,
+                            bladerf_sample_rate max)
 {
+    size_t const inc = 10000;
+
+    bladerf_sample_rate rate;
+    size_t n;
+    size_t failures = 0;
     int status;
-    unsigned int rate;
-    const unsigned int inc = 10000;
-    unsigned int n;
-    unsigned int failures = 0;
 
-    for (rate = BLADERF_SAMPLERATE_MIN, n = 0;
-         rate <= BLADERF_SAMPLERATE_REC_MAX;
-         rate += inc, n++) {
-
+    for (rate = min, n = 0; rate <= max; rate += inc, n++) {
         status = set_and_check(dev, m, rate);
         if (status != 0) {
             failures++;
@@ -115,22 +118,25 @@ static int sweep_samplerate(struct bladerf *dev, bladerf_module m, bool quiet)
 
 static int random_samplerates(struct bladerf *dev,
                               struct app_params *p,
-                              bladerf_module m, bool quiet)
+                              bladerf_module m,
+                              bool quiet,
+                              bladerf_sample_rate min,
+                              bladerf_sample_rate max)
 {
+    size_t const interations = 2500;
+
+    bladerf_sample_rate rate;
+    size_t i, n;
+    size_t failures = 0;
     int status;
-    unsigned int i, n;
-    const unsigned int interations = 2500;
-    unsigned int rate;
-    unsigned failures = 0;
 
     for (i = n = 0; i < interations; i++, n++) {
-        const unsigned int mod =
-            BLADERF_SAMPLERATE_REC_MAX - BLADERF_SAMPLERATE_MIN + 1;
+        size_t const mod = max - min + 1;
 
         randval_update(&p->randval_state);
 
-        rate = BLADERF_SAMPLERATE_MIN + (p->randval_state % mod);
-        assert(rate <= BLADERF_SAMPLERATE_REC_MAX);
+        rate = min + (p->randval_state % mod);
+        assert(rate <= max);
 
         status = set_and_check(dev, m, rate);
         if (status != 0) {
@@ -148,44 +154,46 @@ static int random_samplerates(struct bladerf *dev,
 
 static int random_rational_samplerates(struct bladerf *dev,
                                        struct app_params *p,
-                                       bladerf_module m, bool quiet)
+                                       bladerf_module m,
+                                       bool quiet,
+                                       bladerf_sample_rate min,
+                                       bladerf_sample_rate max)
 {
-    int status;
-    unsigned int i, n;
-    const unsigned int iterations = 2500;
+    size_t const iterations = 2500;
+
     struct bladerf_rational_rate rate;
+    size_t i, n;
     unsigned failures = 0;
+    int status;
 
     for (i = n = 0; i < iterations; i++, n++) {
-        const uint64_t mod =
-                BLADERF_SAMPLERATE_REC_MAX - BLADERF_SAMPLERATE_MIN;
+        size_t const mod = max - min;
 
         randval_update(&p->randval_state);
-        rate.integer = BLADERF_SAMPLERATE_MIN + (p->randval_state % mod);
+        rate.integer = min + (p->randval_state % mod);
 
-        if (rate.integer < BLADERF_SAMPLERATE_MIN) {
-            rate.integer = BLADERF_SAMPLERATE_MIN;
-        } else if (rate.integer > BLADERF_SAMPLERATE_REC_MAX) {
-            rate.integer = BLADERF_SAMPLERATE_REC_MAX;
+        if (rate.integer < min) {
+            rate.integer = min;
+        } else if (rate.integer > max) {
+            rate.integer = max;
         }
 
-        if (rate.integer != BLADERF_SAMPLERATE_REC_MAX) {
+        if (rate.integer != max) {
             randval_update(&p->randval_state);
-            rate.num = (p->randval_state % BLADERF_SAMPLERATE_REC_MAX);
+            rate.num = (p->randval_state % max);
 
             randval_update(&p->randval_state);
-            rate.den = (p->randval_state % BLADERF_SAMPLERATE_REC_MAX);
+            rate.den = (p->randval_state % max);
 
             if (rate.den == 0) {
                 rate.den = 1;
             }
 
-            while ( (rate.num / rate.den) > BLADERF_SAMPLERATE_REC_MAX) {
+            while ((rate.num / rate.den) > max) {
                 rate.num /= 2;
             }
 
-            while ( (1 + rate.integer + (rate.num / rate.den))
-                        > BLADERF_SAMPLERATE_REC_MAX) {
+            while ((1 + rate.integer + (rate.num / rate.den)) > max) {
                 rate.num /= 2;
             }
 
@@ -198,9 +206,9 @@ static int random_rational_samplerates(struct bladerf *dev,
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
-            PRINT("\r  Sample rate currently set to "
-                   "%-10"PRIu64" %-10"PRIu64"/%-10"PRIu64" Hz...",
-                   rate.integer, rate.num, rate.den);
+            PRINT("\r  Sample rate currently set to %-10" PRIu64 " %-10" PRIu64
+                  "/%-10" PRIu64 " Hz...",
+                  rate.integer, rate.num, rate.den);
             fflush(stdout);
         }
     }
@@ -211,37 +219,51 @@ static int random_rational_samplerates(struct bladerf *dev,
 }
 
 unsigned int test_samplerate(struct bladerf *dev,
-                             struct app_params *p, bool quiet)
+                             struct app_params *p,
+                             bool quiet)
 {
-    unsigned int failures = 0;
+    size_t failures = 0;
+    bladerf_direction dir;
+    int status;
 
-    PRINT("%s: Sweeping RX sample rates...\n", __FUNCTION__);
-    failures += sweep_samplerate(dev, BLADERF_MODULE_RX, quiet);
+    for (dir = BLADERF_RX; dir <= BLADERF_TX; ++dir) {
+        struct bladerf_range const *range;
+        bladerf_sample_rate min, max;
+        bladerf_channel ch =
+            (BLADERF_TX == dir) ? BLADERF_CHANNEL_TX(0) : BLADERF_CHANNEL_RX(0);
 
-    PRINT("%s: Applying random RX sample rates...\n", __FUNCTION__);
-    failures += random_samplerates(dev, p, BLADERF_MODULE_RX, quiet);
+        PRINT("%s: Testing %s...\n", __FUNCTION__, direction2str(dir));
 
-    PRINT("%s: Applying random RX rational sample rates...\n",
-          __FUNCTION__);
-    failures += random_rational_samplerates(dev, p, BLADERF_MODULE_RX, quiet);
+        status = bladerf_get_sample_rate_range(dev, ch, &range);
+        if (status < 0) {
+            PR_ERROR("Failed to get %s sample rate range: %s\n",
+                     direction2str(dir), bladerf_strerror(status));
+            return status;
+        };
 
-    PRINT("%s: Sweeping TX sample rates...\n",
-          __FUNCTION__);
-    failures += sweep_samplerate(dev, BLADERF_MODULE_TX, quiet);
+        min = (range->min * range->scale);
+        max = (range->max * range->scale);
 
-    PRINT("%s: Applying random TX sample rates...\n",
-          __FUNCTION__);
-    failures += random_samplerates(dev, p, BLADERF_MODULE_TX, quiet);
+        PRINT("%s: %s range: %u to %u\n", __FUNCTION__, direction2str(dir), min,
+              max);
 
-    PRINT("%s: Applying random TX rational sample rates...\n",
-          __FUNCTION__);
+        PRINT("%s: Sweeping %s sample rates...\n", __FUNCTION__,
+              direction2str(dir));
+        failures += sweep_samplerate(dev, ch, quiet, min, max);
 
-    failures += random_rational_samplerates(dev, p, BLADERF_MODULE_TX, quiet);
+        PRINT("%s: Applying random %s sample rates...\n", __FUNCTION__,
+              direction2str(dir));
+        failures += random_samplerates(dev, p, ch, quiet, min, max);
+
+        PRINT("%s: Applying random %s rational sample rates...\n", __FUNCTION__,
+              direction2str(dir));
+        failures += random_rational_samplerates(dev, p, ch, quiet, min, max);
+    }
 
     /* Restore the device back to a sane default sample rate, as not to
      * interfere with later tests */
-    failures += set_and_check(dev, BLADERF_MODULE_RX, DEFAULT_SAMPLERATE);
-    failures += set_and_check(dev, BLADERF_MODULE_TX, DEFAULT_SAMPLERATE);
+    failures += set_and_check(dev, BLADERF_CHANNEL_RX(0), DEFAULT_SAMPLERATE);
+    failures += set_and_check(dev, BLADERF_CHANNEL_TX(0), DEFAULT_SAMPLERATE);
 
     return failures;
 }

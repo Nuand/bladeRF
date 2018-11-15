@@ -26,18 +26,18 @@
 
 DECLARE_TEST_CASE(enable_module);
 
-static int enable_module(struct bladerf *dev, bladerf_module m, bool enable)
+
+static int enable_module(struct bladerf *dev, bladerf_channel ch, bool enable)
 {
     int status;
 
-    status = bladerf_enable_module(dev, m, enable);
+    status = bladerf_enable_module(dev, ch, enable);
     if (status != 0) {
-        PR_ERROR("Failed to %s module: %s\n",
-                 enable ? "enable" : "disable",
+        PR_ERROR("Failed to %s module: %s\n", enable ? "enable" : "disable",
                  bladerf_strerror(status));
 
         /* Try to avoid leaving a module on */
-        bladerf_enable_module(dev, m, false);
+        bladerf_enable_module(dev, ch, false);
 
         return status;
     }
@@ -46,41 +46,41 @@ static int enable_module(struct bladerf *dev, bladerf_module m, bool enable)
 }
 
 unsigned int test_enable_module(struct bladerf *dev,
-                                struct app_params *p, bool quiet)
+                                struct app_params *p,
+                                bool quiet)
 {
+    size_t const rx_ch = bladerf_get_channel_count(dev, BLADERF_RX);
+    size_t const tx_ch = bladerf_get_channel_count(dev, BLADERF_TX);
+
+    bladerf_direction dir;
+    int pass;
+    size_t idx;
+    size_t failures = 0;
     int status;
-    unsigned int failures = 0;
 
-    PRINT("%s: Enabling and disabling modules...\n",__FUNCTION__);
+    PRINT("%s: Enabling and disabling channels (%lu RX, %lu TX)...\n",
+          __FUNCTION__, rx_ch, tx_ch);
 
-    status = enable_module(dev, BLADERF_MODULE_RX, false);
-    if (status != 0) {
-        failures++;
-    }
+    // do off, then on, then off
+    for (pass = 0; pass <= 2; ++pass) {
+        bool enable = (1 == (pass % 2));
 
-    status = enable_module(dev, BLADERF_MODULE_RX, true);
-    if (status != 0) {
-        failures++;
-    }
+        // first RX, then TX
+        for (dir = BLADERF_RX; dir <= BLADERF_TX; ++dir) {
+            size_t ch_count = (BLADERF_RX == dir) ? rx_ch : tx_ch;
 
-    status = enable_module(dev, BLADERF_MODULE_RX, false);
-    if (status != 0) {
-        failures++;
-    }
+            // iterate through the channels...
+            for (idx = 0; idx < ch_count; ++idx) {
+                bladerf_channel ch =
+                    (BLADERF_RX == dir ? BLADERF_CHANNEL_RX(idx)
+                                       : BLADERF_CHANNEL_TX(idx));
 
-    status = enable_module(dev, BLADERF_MODULE_TX, false);
-    if (status != 0) {
-        failures++;
-    }
-
-    status = enable_module(dev, BLADERF_MODULE_TX, true);
-    if (status != 0) {
-        failures++;
-    }
-
-    status = enable_module(dev, BLADERF_MODULE_TX, false);
-    if (status != 0) {
-        failures++;
+                status = enable_module(dev, ch, enable);
+                if (status != 0) {
+                    failures++;
+                }
+            }
+        }
     }
 
     return failures;

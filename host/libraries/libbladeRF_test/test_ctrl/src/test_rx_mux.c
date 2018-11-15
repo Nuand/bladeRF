@@ -26,18 +26,18 @@
 
 DECLARE_TEST_CASE(rx_mux);
 
+
 static int set_and_check(struct bladerf *dev, bladerf_rx_mux mux)
 {
-    int status, status_restore;
     bladerf_rx_mux readback;
+    int status, status_restore;
 
     status = bladerf_set_rx_mux(dev, mux);
     if (status != 0) {
-        PR_ERROR("Failed to set rx mux: %s\n",
-                 bladerf_strerror(status));
+        PR_ERROR("Failed to set rx mux: %s\n", bladerf_strerror(status));
 
         /* Try to ensure we don't leave the device in an alternate MUX mode */
-        status_restore = bladerf_set_rx_mux(dev, BLADERF_RX_MUX_BASEBAND_LMS);
+        status_restore = bladerf_set_rx_mux(dev, BLADERF_RX_MUX_BASEBAND);
         if (status_restore) {
             PR_ERROR("Failed to restore rx mux to 'BASEBAND_LMS': %s\n",
                      bladerf_strerror(status_restore));
@@ -53,27 +53,28 @@ static int set_and_check(struct bladerf *dev, bladerf_rx_mux mux)
     }
 
     if (mux != readback) {
-        PR_ERROR("Unexpected rx mux readback=%d, expected=%d\n",
-                 readback, mux);
+        PR_ERROR("Unexpected rx mux readback=%d, expected=%d\n", readback, mux);
         return -1;
     }
 
     return 0;
 }
 
-unsigned int test_rx_mux(struct bladerf *dev,
-                           struct app_params *p, bool quiet)
+unsigned int test_rx_mux(struct bladerf *dev, struct app_params *p, bool quiet)
 {
-    int status;
-    size_t i;
-    unsigned int failures = 0;
-    const bladerf_rx_mux muxes[] = {
-        BLADERF_RX_MUX_BASEBAND_LMS,
+    bladerf_rx_mux const muxes[] = {
+        // clang-format off
+        BLADERF_RX_MUX_BASEBAND,
         BLADERF_RX_MUX_12BIT_COUNTER,
         BLADERF_RX_MUX_32BIT_COUNTER,
         BLADERF_RX_MUX_DIGITAL_LOOPBACK,
-        BLADERF_RX_MUX_BASEBAND_LMS /* Restore normal operation */
+        BLADERF_RX_MUX_BASEBAND /* Restore normal operation */
+        // clang-format on
     };
+
+    size_t i;
+    size_t failures = 0;
+    int status;
 
     PRINT("%s: Setting and checking rx muxes...\n", __FUNCTION__);
 
@@ -86,4 +87,3 @@ unsigned int test_rx_mux(struct bladerf *dev,
 
     return failures;
 }
-

@@ -27,44 +27,41 @@
 
 DECLARE_TEST_CASE(frequency);
 
-/* Due to some known rounding issues, the readback may be +/- 1 Hz. We'll not
- * fail out on this for now... */
-static inline bool freq_match(uint64_t a, uint64_t b)
+
+/* Due to some known rounding issues, the readback may be off. We'll not fail
+ * out on this for now... */
+static inline bool freq_match(bladerf_frequency a, bladerf_frequency b)
 {
-    if (a == b) {
-        return true;
-    } else if (b > 0 && (a == (b - 1))) {
-        return true;
-    } else if (b < BLADERF_FREQUENCY_MAX && (a == (b + 1)) ) {
-        return true;
-    } else {
-        return false;
-    }
+    bladerf_frequency const allowed_slack = (a >= 3000000000) ? 5 : 3;
+
+    return (a >= (b - allowed_slack) && a <= (b + allowed_slack));
 }
 
-
-static int set_and_check(struct bladerf *dev, bladerf_module m,
-                         uint64_t freq, uint64_t prev_freq)
+static int set_and_check(struct bladerf *dev,
+                         bladerf_module m,
+                         bladerf_frequency freq,
+                         bladerf_frequency prev_freq)
 {
+    bladerf_frequency readback;
     int status;
-    uint64_t readback;
 
     status = bladerf_set_frequency(dev, m, freq);
     if (status != 0) {
-        PR_ERROR("Failed to set frequency: %"PRIu64" Hz (Prev: %"PRIu64" Hz): %s\n",
+        PR_ERROR("Failed to set frequency: %" BLADERF_PRIuFREQ
+                 " Hz (Prev: %" BLADERF_PRIuFREQ " Hz): %s\n",
                  freq, prev_freq, bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_get_frequency(dev, m, &readback);
     if (status != 0) {
-        PR_ERROR("Failed to get frequency: %s\n",
-                 bladerf_strerror(status));
+        PR_ERROR("Failed to get frequency: %s\n", bladerf_strerror(status));
         return status;
     }
 
     if (!freq_match(freq, readback)) {
-        PR_ERROR("Frequency (%"PRIu64") != Readback value (%"PRIu64")\n",
+        PR_ERROR("Frequency (%" BLADERF_PRIuFREQ
+                 ") != Readback value (%" BLADERF_PRIuFREQ ")\n",
                  freq, readback);
 
         return -1;
@@ -73,23 +70,29 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
     return status;
 }
 
-static unsigned int freq_sweep(struct bladerf *dev, bladerf_module m,
-                               unsigned int min, bool quiet)
+static int freq_sweep(struct bladerf *dev,
+                      bladerf_module m,
+                      bladerf_frequency min,
+                      bladerf_frequency max,
+                      bool quiet)
 {
+    size_t const repetitions = 3;
+    size_t const inc         = 1000000;
+
+    bladerf_frequency freq      = 0;
+    bladerf_frequency prev_freq = 0;
+    size_t n, r;
+    size_t failures = 0;
     int status;
-    unsigned int freq, prev_freq = 0;
-    unsigned int n, r;
-    const unsigned int repetitions = 3;
-    const unsigned int inc = 1000000;
-    unsigned int failures = 0;
 
     for (r = 0; r < repetitions; r++) {
-        for (freq = min, n = 0; freq <= BLADERF_FREQUENCY_MAX; freq += inc, n++) {
+        for (freq = min, n = 0; freq <= max; freq += inc, n++) {
             status = set_and_check(dev, m, freq, prev_freq);
             if (status != 0) {
                 failures++;
             } else if (n % 50 == 0) {
-                PRINT("\r  Currently tuned to %-10u Hz...", freq);
+                PRINT("\r  Currently tuned to %-10" BLADERF_PRIuFREQ " Hz...",
+                      freq);
                 fflush(stdout);
             }
 
@@ -102,30 +105,37 @@ static unsigned int freq_sweep(struct bladerf *dev, bladerf_module m,
     return failures;
 }
 
-static int random_tuning(struct bladerf *dev, struct app_params *p,
-                         bladerf_module m, unsigned int min, bool quiet)
+static int random_tuning(struct bladerf *dev,
+                         struct app_params *p,
+                         bladerf_module m,
+                         bladerf_frequency min,
+                         bladerf_frequency max,
+                         bool quiet)
 {
-    int status = 0;
-    unsigned int i, n;
-    const unsigned int num_iterations = 10000;
-    unsigned int freq, prev_freq = 0;
-    unsigned int failures = 0;
+    size_t const num_iterations = 10000;
+
+    bladerf_frequency freq      = 0;
+    bladerf_frequency prev_freq = 0;
+    size_t i, n;
+    size_t failures = 0;
+    int status;
 
     for (i = n = 0; i < num_iterations; i++, n++) {
         randval_update(&p->randval_state);
-        freq = min + (p->randval_state % BLADERF_FREQUENCY_MAX);
+        freq = min + (p->randval_state % max);
 
         if (freq < min) {
-            freq  = BLADERF_FREQUENCY_MIN;
-        } else if (freq > BLADERF_FREQUENCY_MAX) {
-            freq = BLADERF_FREQUENCY_MAX;
+            freq = min;
+        } else if (freq > max) {
+            freq = max;
         }
 
         status = set_and_check(dev, m, freq, prev_freq);
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
-            PRINT("\r  Currently tuned to %-10u Hz...", freq);
+            PRINT("\r  Currently tuned to %-10" BLADERF_PRIuFREQ " Hz...",
+                  freq);
             fflush(stdout);
         }
 
@@ -137,25 +147,43 @@ static int random_tuning(struct bladerf *dev, struct app_params *p,
     return failures;
 }
 
-unsigned int test_frequency(struct bladerf *dev, struct app_params *p,
+unsigned int test_frequency(struct bladerf *dev,
+                            struct app_params *p,
                             bool quiet)
 {
-    unsigned int failures = 0;
-    const unsigned int min = p->use_xb200 ?
-                                BLADERF_FREQUENCY_MIN_XB200 :
-                                BLADERF_FREQUENCY_MIN;
+    size_t failures = 0;
+    bladerf_direction dir;
+    int status;
 
-    PRINT("%s: Performing RX frequency sweep...\n", __FUNCTION__);
-    failures += freq_sweep(dev, BLADERF_MODULE_RX, min, quiet);
+    for (dir = BLADERF_RX; dir <= BLADERF_TX; ++dir) {
+        struct bladerf_range const *range;
+        bladerf_frequency min, max;
+        bladerf_channel ch =
+            (BLADERF_TX == dir) ? BLADERF_CHANNEL_TX(0) : BLADERF_CHANNEL_RX(0);
 
-    PRINT("%s: Performing random RX tuning...\n", __FUNCTION__);
-    failures += random_tuning(dev, p, BLADERF_MODULE_RX, min, quiet);
+        PRINT("%s: Testing %s...\n", __FUNCTION__, direction2str(dir));
 
-    PRINT("%s: Performing TX frequency sweep...\n", __FUNCTION__);
-    failures += freq_sweep(dev, BLADERF_MODULE_TX, min, quiet);
+        status = bladerf_get_frequency_range(dev, ch, &range);
+        if (status < 0) {
+            PR_ERROR("Failed to get %s frequency range: %s\n",
+                     direction2str(dir), bladerf_strerror(status));
+            return status;
+        };
 
-    PRINT("%s: Performing random TX tuning...\n", __FUNCTION__);
-    failures += random_tuning(dev, p, BLADERF_MODULE_TX, min, quiet);
+        min = (range->min * range->scale);
+        max = (range->max * range->scale);
+
+        PRINT("%s: %s range: %" BLADERF_PRIuFREQ " to %" BLADERF_PRIuFREQ "\n",
+              __FUNCTION__, direction2str(dir), min, max);
+
+        PRINT("%s: Performing %s frequency sweep...\n", __FUNCTION__,
+              direction2str(dir));
+        failures += freq_sweep(dev, ch, min, max, quiet);
+
+        PRINT("%s: Performing random %s tuning...\n", __FUNCTION__,
+              direction2str(dir));
+        failures += random_tuning(dev, p, ch, min, max, quiet);
+    }
 
     return failures;
 }
