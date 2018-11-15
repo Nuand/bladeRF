@@ -168,6 +168,7 @@ C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_8x64.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_16x64.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_32x32.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_retune.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_retune2.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_legacy.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/devices_sim.c
 C_SRCS += $(FPGA_COMMON_DIR)/src/lms.c
