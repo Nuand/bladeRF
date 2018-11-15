@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 #include "test_ctrl.h"
+#include <string.h>
 
 DECLARE_TEST_CASE(correction);
 
@@ -170,9 +171,15 @@ static unsigned random_vals(struct bladerf *dev, struct app_params *p,
 
 
 unsigned int test_correction(struct bladerf *dev,
-                             struct app_params *p, bool quiet)
+                             struct app_params *p,
+                             bool quiet)
 {
     unsigned int failures = 0;
+
+    if (0 != strcmp(bladerf_get_board_name(dev), "bladerf1")) {
+        PRINT("%s: board is not a bladerf1, skipping\n", __FUNCTION__);
+        return 0;
+    }
 
     PRINT("%s: Sweeping RX corrections...\n", __FUNCTION__);
     failures += sweep_vals(dev, BLADERF_MODULE_RX, quiet);
