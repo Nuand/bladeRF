@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 #include "test_ctrl.h"
+#include <string.h>
 
 DECLARE_TEST_CASE(sampling);
 
@@ -71,12 +72,16 @@ static int set_and_check(struct bladerf *dev, bladerf_sampling s)
 }
 
 unsigned int test_sampling(struct bladerf *dev,
-                           struct app_params *p, bool quiet)
+                           struct app_params *p,
+                           bool quiet)
 {
     int status;
     unsigned int failures = 0;
 
-    PRINT("%s: Setting and reading back sampling modes...\n", __FUNCTION__);
+    if (0 != strcmp(bladerf_get_board_name(dev), "bladerf1")) {
+        PRINT("%s: board is not a bladerf1, skipping\n", __FUNCTION__);
+        return 0;
+    }
 
     status = set_and_check(dev, BLADERF_SAMPLING_EXTERNAL);
     if (status != 0) {
@@ -95,4 +100,3 @@ unsigned int test_sampling(struct bladerf *dev,
 
     return failures;
 }
-

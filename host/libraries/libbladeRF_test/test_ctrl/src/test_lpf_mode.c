@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 #include "test_ctrl.h"
+#include <string.h>
 
 DECLARE_TEST_CASE(lpf_mode);
 
@@ -87,9 +88,15 @@ static inline int test_module(struct bladerf *dev, bladerf_module m)
 }
 
 unsigned int test_lpf_mode(struct bladerf *dev,
-                           struct app_params *p, bool quiet)
+                           struct app_params *p,
+                           bool quiet)
 {
     unsigned int failures = 0;
+
+    if (0 != strcmp(bladerf_get_board_name(dev), "bladerf1")) {
+        PRINT("%s: board is not a bladerf1, skipping\n", __FUNCTION__);
+        return 0;
+    }
 
     PRINT("%s: Setting and reading back RX LPF modes...\n", __FUNCTION__);
     failures += test_module(dev, BLADERF_MODULE_RX);
