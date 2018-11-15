@@ -26,15 +26,15 @@
 
 DECLARE_TEST_CASE(loopback);
 
+
 static int set_and_check(struct bladerf *dev, bladerf_loopback l)
 {
-    int status, status_disable_lb;
     bladerf_loopback readback;
+    int status, status_disable_lb;
 
     status = bladerf_set_loopback(dev, l);
     if (status != 0) {
-        PR_ERROR("Failed to set loopback: %s\n",
-                 bladerf_strerror(status));
+        PR_ERROR("Failed to set loopback: %s\n", bladerf_strerror(status));
 
         /* Try to ensure we don't leave the device in loopback */
         status_disable_lb = bladerf_set_loopback(dev, BLADERF_LB_NONE);
@@ -53,8 +53,7 @@ static int set_and_check(struct bladerf *dev, bladerf_loopback l)
     }
 
     if (l != readback) {
-        PR_ERROR("Unexpected loopback readback=%d, expected=%d\n",
-                 readback, l);
+        PR_ERROR("Unexpected loopback readback=%d, expected=%d\n", readback, l);
         return -1;
     }
 
@@ -62,33 +61,31 @@ static int set_and_check(struct bladerf *dev, bladerf_loopback l)
 }
 
 unsigned int test_loopback(struct bladerf *dev,
-                           struct app_params *p, bool quiet)
+                           struct app_params *p,
+                           bool quiet)
 {
+    size_t count, i;
+    size_t failures = 0;
     int status;
-    size_t i;
-    unsigned int failures = 0;
-    const bladerf_loopback modes[] = {
-        BLADERF_LB_NONE,
-        BLADERF_LB_FIRMWARE,
-        BLADERF_LB_BB_TXLPF_RXVGA2,
-        BLADERF_LB_BB_TXVGA1_RXVGA2,
-        BLADERF_LB_BB_TXLPF_RXLPF,
-        BLADERF_LB_BB_TXVGA1_RXLPF,
-        BLADERF_LB_RF_LNA1,
-        BLADERF_LB_RF_LNA2,
-        BLADERF_LB_RF_LNA3,
-        BLADERF_LB_NONE,    /* Ensure we don't leave the device in loopback */
-    };
 
     PRINT("%s: Setting and checking loopback modes...\n", __FUNCTION__);
 
-    for (i = 0; i < ARRAY_SIZE(modes); i++) {
-        status = set_and_check(dev, modes[i]);
+    struct bladerf_loopback_modes const *modes = NULL;
+
+    count = bladerf_get_loopback_modes(dev, &modes);
+
+    for (i = 0; i < count; i++) {
+        PRINT("%s: Trying %s...\n", __FUNCTION__, modes[i].name);
+        status = set_and_check(dev, modes[i].mode);
         if (status != 0) {
             failures++;
         }
     }
 
+    status = set_and_check(dev, BLADERF_LB_NONE);
+    if (status != 0) {
+        failures++;
+    }
+
     return failures;
 }
-
