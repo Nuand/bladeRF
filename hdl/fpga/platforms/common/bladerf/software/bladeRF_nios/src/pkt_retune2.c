@@ -49,6 +49,7 @@ enum entry_state {
                                * this entry and are awaiting the ISR */
     ENTRY_STATE_READY,        /* The timer interrupt has fired - we should
                                * handle this retune */
+    ENTRY_STATE_DONE,         /* Retune is complete */
 };
 
 struct queue_entry {
@@ -103,6 +104,7 @@ static inline uint8_t dequeue_retune(struct queue *q, struct queue_entry *e)
         memcpy(&e, &q->entries[q->rem_idx], sizeof(e[0]));
     }
 
+    q->entries[q->rem_idx].state = ENTRY_STATE_DONE;
     q->rem_idx = (q->rem_idx + 1) & (RETUNE2_QUEUE_MAX - 1);
 
     q->count--;
@@ -112,12 +114,27 @@ static inline uint8_t dequeue_retune(struct queue *q, struct queue_entry *e)
 }
 
 /* Get the state of the next item in the retune queue */
-static inline struct queue_entry * peek_next_retune(struct queue *q)
+static inline struct queue_entry* peek_next_retune(struct queue *q)
 {
-    if (q->count == 0) {
+    if (q == NULL) {
+        return NULL;
+    } else if (q->count == 0) {
         return NULL;
     } else {
         return &q->entries[q->rem_idx];
+    }
+}
+
+/* Get the queue element at the given offset relative to the removal index */
+static inline struct queue_entry* peek_next_retune_offset(struct queue *q,
+                                                           uint8_t offset)
+{
+    if (q == NULL) {
+        return NULL;
+    } else if (q->count == 0) {
+        return NULL;
+    } else {
+        return &q->entries[(q->rem_idx + offset) & (RETUNE2_QUEUE_MAX - 1)];
     }
 }
 
@@ -145,6 +162,36 @@ static inline void profile_load(bladerf_module module, fastlock_profile *p)
     }
 
     ad9361_fastlock_load(module, p);
+}
+
+static inline void profile_load_scheduled(struct queue *q,
+                                          bladerf_module module)
+{
+    struct queue_entry *e;
+    uint32_t i;
+    uint8_t  used = 0;
+
+    if ((q == NULL) || (q->count == 0)) {
+        return;
+    }
+
+    /* Check the contents of the retune queue and load all the profiles we can
+     * without causing them to step on each other. This should reduce retune
+     * times in most scenarios because the profile will have already been
+     * loaded into the RFFE when it becomes time to retune. */
+    for (i = 0; i < q->count; i++) {
+        e = peek_next_retune_offset(q, i);
+        if( e != NULL ) {
+            if (e->state == ENTRY_STATE_NEW) {
+                if ( !(used & (1 << e->profile->profile_num)) ) {
+                    /* Profile slot is available in RFFE, fill it */
+                    profile_load(module, e->profile);
+                    /* Mark profile slot used */
+                    used |= 1 << e->profile->profile_num;
+                }
+            }
+        }
+    }
 }
 
 static inline void profile_activate(bladerf_module module, fastlock_profile *p)
@@ -359,10 +406,12 @@ void pkt_retune2(struct pkt_buf *b)
         switch (module) {
             case BLADERF_MODULE_RX:
                 queue_size = enqueue_retune(&rx_queue, profile, timestamp);
+                profile_load_scheduled(&rx_queue, module);
                 break;
 
             case BLADERF_MODULE_TX:
                 queue_size = enqueue_retune(&tx_queue, profile, timestamp);
+                profile_load_scheduled(&tx_queue, module);
                 break;
 
             default:
