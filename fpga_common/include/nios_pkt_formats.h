@@ -24,6 +24,7 @@
 
 #include "nios_pkt_legacy.h"
 #include "nios_pkt_retune.h"
+#include "nios_pkt_retune2.h"
 #include "nios_pkt_8x8.h"
 #include "nios_pkt_8x16.h"
 #include "nios_pkt_8x32.h"
