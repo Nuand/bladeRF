@@ -85,7 +85,8 @@ architecture arch of command_uart is
         std_logic_vector(to_unsigned(character'pos('E'),8)),    -- 16x64
         std_logic_vector(to_unsigned(character'pos('K'),8)),    -- 32x32
         std_logic_vector(to_unsigned(character'pos('N'),8)),    -- Legacy
-        std_logic_vector(to_unsigned(character'pos('T'),8))     -- Retune
+        std_logic_vector(to_unsigned(character'pos('T'),8)),    -- Retune
+        std_logic_vector(to_unsigned(character'pos('U'),8))     -- Retune2
     ) ;
 
     signal command_in : std_logic ;
