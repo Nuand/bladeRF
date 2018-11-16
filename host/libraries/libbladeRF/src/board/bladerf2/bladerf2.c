@@ -2467,28 +2467,38 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     /* If the requested sample rate is outside of the native range, we must
      * adjust the FIR filtering. */
     if (_is_within_range(&bladerf2_sample_rate_range_4x, rate)) {
-        log_debug("enabling 4x decimation/interpolation filters\n");
+        bladerf_rfic_rxfir rxfir;
+        bladerf_rfic_txfir txfir;
 
-        status = bladerf_get_rfic_rx_fir(dev, &(board_data->rxfir_orig));
+        status = bladerf_get_rfic_rx_fir(dev, &rxfir);
         if (status < 0) {
             RETURN_ERROR_STATUS("bladerf_get_rfic_rx_fir", status);
         }
 
-        status = bladerf_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEC4);
-        if (status < 0) {
-            RETURN_ERROR_STATUS("bladerf_set_rfic_rx_fir", status);
-        }
-
-        status = bladerf_get_rfic_tx_fir(dev, &(board_data->txfir_orig));
+        status = bladerf_get_rfic_tx_fir(dev, &txfir);
         if (status < 0) {
             RETURN_ERROR_STATUS("bladerf_get_rfic_tx_fir", status);
         }
-        status = bladerf_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_INT4);
-        if (status < 0) {
-            RETURN_ERROR_STATUS("bladerf_set_rfic_tx_fir", status);
-        }
 
-        board_data->low_samplerate_mode = true;
+        if (rxfir != BLADERF_RFIC_RXFIR_DEC4 ||
+            txfir != BLADERF_RFIC_TXFIR_INT4 ||
+            !board_data->low_samplerate_mode) {
+            log_debug("enabling 4x decimation/interpolation filters\n");
+
+            board_data->rxfir_orig = rxfir;
+            status = bladerf_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEC4);
+            if (status < 0) {
+                RETURN_ERROR_STATUS("bladerf_set_rfic_rx_fir", status);
+            }
+
+            board_data->txfir_orig = txfir;
+            status = bladerf_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_INT4);
+            if (status < 0) {
+                RETURN_ERROR_STATUS("bladerf_set_rfic_tx_fir", status);
+            }
+
+            board_data->low_samplerate_mode = true;
+        }
     }
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
@@ -3183,7 +3193,8 @@ static int bladerf2_get_correction(struct bladerf *dev,
         }
 
         /* Check if RX RF port mode is supported */
-        if (mode != AD936X_A_BALANCED && mode != AD936X_B_BALANCED && mode != AD936X_C_BALANCED) {
+        if (mode != AD936X_A_BALANCED && mode != AD936X_B_BALANCED &&
+            mode != AD936X_C_BALANCED) {
             RETURN_ERROR_STATUS("mode", BLADERF_ERR_UNSUPPORTED);
         }
 
@@ -3316,7 +3327,8 @@ static int bladerf2_set_correction(struct bladerf *dev,
         }
 
         /* Check if RX RF port mode is supported */
-        if (mode != AD936X_A_BALANCED && mode != AD936X_B_BALANCED && mode != AD936X_C_BALANCED) {
+        if (mode != AD936X_A_BALANCED && mode != AD936X_B_BALANCED &&
+            mode != AD936X_C_BALANCED) {
             RETURN_ERROR_STATUS("mode", BLADERF_ERR_UNSUPPORTED);
         }
 
