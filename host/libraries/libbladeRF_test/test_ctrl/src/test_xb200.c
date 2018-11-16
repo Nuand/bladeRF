@@ -27,23 +27,21 @@
 DECLARE_TEST_CASE(xb200);
 
 static int set_and_check_paths(struct bladerf *dev,
-                               bladerf_module m,
+                               bladerf_channel ch,
                                bladerf_xb200_path p)
 {
     int status;
     bladerf_xb200_path readback;
 
-    status = bladerf_xb200_set_path(dev, m, p);
+    status = bladerf_xb200_set_path(dev, ch, p);
     if (status != 0) {
-        PR_ERROR("Failed to set XB-200 path: %s\n",
-                 bladerf_strerror(status));
+        PR_ERROR("Failed to set XB-200 path: %s\n", bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_xb200_get_path(dev, m, &readback);
+    status = bladerf_xb200_get_path(dev, ch, &readback);
     if (status != 0) {
-        PR_ERROR("Failed to set XB-200 path: %s\n",
-                 bladerf_strerror(status));
+        PR_ERROR("Failed to set XB-200 path: %s\n", bladerf_strerror(status));
         return status;
     }
 
@@ -56,20 +54,20 @@ static int set_and_check_paths(struct bladerf *dev,
 }
 
 static int set_and_check_filterbank(struct bladerf *dev,
-                                    bladerf_module m,
+                                    bladerf_channel ch,
                                     bladerf_xb200_filter f)
 {
     int status;
     bladerf_xb200_filter readback;
 
-    status = bladerf_xb200_set_filterbank(dev, m, f);
+    status = bladerf_xb200_set_filterbank(dev, ch, f);
     if (status != 0) {
         PR_ERROR("Failed to set XB-200 filter bank: %s\n",
                  bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_xb200_get_filterbank(dev, m, &readback);
+    status = bladerf_xb200_get_filterbank(dev, ch, &readback);
     if (status != 0) {
         PR_ERROR("Failed to read back filter bank: %s\n",
                  bladerf_strerror(status));
@@ -77,8 +75,8 @@ static int set_and_check_filterbank(struct bladerf *dev,
     }
 
     if (f != readback) {
-        PR_ERROR("Mismatch detected -- fiterbank=%d, readback=%d\n",
-                 f, readback);
+        PR_ERROR("Mismatch detected -- fiterbank=%d, readback=%d\n", f,
+                 readback);
         return -1;
     }
 
@@ -90,26 +88,24 @@ static int test_paths(struct bladerf *dev)
     int status;
     unsigned int failures = 0;
 
-    status = set_and_check_paths(dev, BLADERF_MODULE_RX,
-                                 BLADERF_XB200_BYPASS);
+    status =
+        set_and_check_paths(dev, BLADERF_CHANNEL_RX(0), BLADERF_XB200_BYPASS);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_paths(dev, BLADERF_MODULE_RX,
-                                 BLADERF_XB200_MIX);
+    status = set_and_check_paths(dev, BLADERF_CHANNEL_RX(0), BLADERF_XB200_MIX);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_paths(dev, BLADERF_MODULE_TX,
-                                 BLADERF_XB200_BYPASS);
+    status =
+        set_and_check_paths(dev, BLADERF_CHANNEL_TX(0), BLADERF_XB200_BYPASS);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_paths(dev, BLADERF_MODULE_TX,
-                                 BLADERF_XB200_MIX);
+    status = set_and_check_paths(dev, BLADERF_CHANNEL_TX(0), BLADERF_XB200_MIX);
     if (status != 0) {
         failures++;
     }
@@ -122,49 +118,49 @@ static int test_filterbanks(struct bladerf *dev)
     int status;
     unsigned int failures = 0;
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_RX,
-                                      BLADERF_XB200_50M);
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_RX(0),
+                                      BLADERF_XB200_50M);  //
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_RX,
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_RX(0),
                                       BLADERF_XB200_144M);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_RX,
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_RX(0),
                                       BLADERF_XB200_222M);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_RX,
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_RX(0),
                                       BLADERF_XB200_CUSTOM);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_TX,
-                                      BLADERF_XB200_50M);
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_TX(0),
+                                      BLADERF_XB200_50M);  //
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_TX,
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_TX(0),
                                       BLADERF_XB200_144M);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_TX,
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_TX(0),
                                       BLADERF_XB200_222M);
     if (status != 0) {
         failures++;
     }
 
-    status = set_and_check_filterbank(dev, BLADERF_MODULE_TX,
+    status = set_and_check_filterbank(dev, BLADERF_CHANNEL_TX(0),
                                       BLADERF_XB200_CUSTOM);
     if (status != 0) {
         failures++;
@@ -182,7 +178,7 @@ unsigned int test_xb200(struct bladerf *dev, struct app_params *p, bool quiet)
     }
 
     PRINT("%s: Setting and reading back filter bank settings...\n",
-           __FUNCTION__);
+          __FUNCTION__);
     failures += test_filterbanks(dev);
 
     PRINT("%s: Setting and reading back path settings...\n", __FUNCTION__);

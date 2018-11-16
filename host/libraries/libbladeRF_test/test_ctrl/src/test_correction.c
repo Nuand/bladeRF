@@ -62,24 +62,26 @@ const struct correction {
     },
 };
 
-static int set_and_check(struct bladerf *dev, const struct correction *c,
-                         bladerf_module m, int16_t val)
+static int set_and_check(struct bladerf *dev,
+                         const struct correction *c,
+                         bladerf_channel ch,
+                         int16_t val)
 {
     int status;
     int16_t readback, scaled_readback, scaled_val;
 
-    status = bladerf_set_correction(dev, m, c->type, val);
+    status = bladerf_set_correction(dev, ch, c->type, val);
     if (status != 0) {
-        PR_ERROR("Failed to set %s correction: %s\n",
-                 c->name, bladerf_strerror(status));
+        PR_ERROR("Failed to set %s correction: %s\n", c->name,
+                 bladerf_strerror(status));
 
         return status;
     }
 
-    status = bladerf_get_correction(dev, m, c->type, &readback);
+    status = bladerf_get_correction(dev, ch, c->type, &readback);
     if (status != 0) {
-        PR_ERROR("Failed to get %s correction: %s\n",
-                 c->name, bladerf_strerror(status));
+        PR_ERROR("Failed to get %s correction: %s\n", c->name,
+                 bladerf_strerror(status));
 
         return status;
     }
@@ -89,34 +91,33 @@ static int set_and_check(struct bladerf *dev, const struct correction *c,
     switch (c->type) {
         case BLADERF_CORR_LMS_DCOFF_I:
         case BLADERF_CORR_LMS_DCOFF_Q:
-            if (m == BLADERF_MODULE_RX) {
-                if (val == -2048) {
+            if (!BLADERF_CHANNEL_IS_TX(ch)) {
+                if (val <= -2048) {
                     val = -2047;
                 }
-                scaled_val = val / 64;
+                scaled_val      = val / 64;
                 scaled_readback = val / 64;
             } else {
-                scaled_val = val / 128;
+                scaled_val      = val / 128;
                 scaled_readback = val / 128;
             }
             break;
 
         default:
-            scaled_val = val;
+            scaled_val      = val;
             scaled_readback = readback;
             break;
     }
 
     if (scaled_val != scaled_readback) {
-        PR_ERROR("Correction mismatch, val=%d, readback=%d\n",
-                 val, readback);
+        PR_ERROR("Correction mismatch, val=%d, readback=%d\n", val, readback);
         return -1;
     }
 
     return 0;
 }
 
-static int sweep_vals(struct bladerf *dev, bladerf_module m, bool quiet)
+static int sweep_vals(struct bladerf *dev, bladerf_channel ch, bool quiet)
 {
     int status;
     int val;
@@ -127,7 +128,7 @@ static int sweep_vals(struct bladerf *dev, bladerf_module m, bool quiet)
         PRINT("    %s\n", corrections[i].name);
 
         for (val = corrections[i].min; val <= corrections[i].max; val++) {
-            status = set_and_check(dev, &corrections[i], m, val);
+            status = set_and_check(dev, &corrections[i], ch, val);
             if (status != 0) {
                 failures++;
             }
@@ -137,19 +138,21 @@ static int sweep_vals(struct bladerf *dev, bladerf_module m, bool quiet)
     return failures;
 }
 
-static unsigned random_vals(struct bladerf *dev, struct app_params *p,
-                            bladerf_module m, bool quiet)
+static unsigned random_vals(struct bladerf *dev,
+                            struct app_params *p,
+                            bladerf_channel ch,
+                            bool quiet)
 {
     int status;
     int val, j;
     size_t i;
-    const int iterations = 2500;
+    const int iterations  = 2500;
     unsigned int failures = 0;
 
     for (i = 0; i < ARRAY_SIZE(corrections); i++) {
         PRINT("    %s\n", corrections[i].name);
 
-        for (j = 0; j < iterations; j++ ){
+        for (j = 0; j < iterations; j++) {
             randval_update(&p->randval_state);
             val = corrections[i].min + (p->randval_state % corrections[i].max);
 
@@ -159,7 +162,7 @@ static unsigned random_vals(struct bladerf *dev, struct app_params *p,
                 val = corrections[i].max;
             }
 
-            status = set_and_check(dev, &corrections[i], m, val);
+            status = set_and_check(dev, &corrections[i], ch, val);
             if (status != 0) {
                 failures++;
             }
@@ -182,16 +185,16 @@ unsigned int test_correction(struct bladerf *dev,
     }
 
     PRINT("%s: Sweeping RX corrections...\n", __FUNCTION__);
-    failures += sweep_vals(dev, BLADERF_MODULE_RX, quiet);
+    failures += sweep_vals(dev, BLADERF_CHANNEL_RX(0), quiet);
 
     PRINT("%s: Random RX corrections...\n", __FUNCTION__);
-    failures += random_vals(dev, p, BLADERF_MODULE_RX, quiet);
+    failures += random_vals(dev, p, BLADERF_CHANNEL_RX(0), quiet);
 
     PRINT("%s: Sweeping TX corrections...\n", __FUNCTION__);
-    failures += sweep_vals(dev, BLADERF_MODULE_TX, quiet);
+    failures += sweep_vals(dev, BLADERF_CHANNEL_TX(0), quiet);
 
     PRINT("%s: Random TX corrections...\n", __FUNCTION__);
-    failures += random_vals(dev, p, BLADERF_MODULE_TX, quiet);
+    failures += random_vals(dev, p, BLADERF_CHANNEL_TX(0), quiet);
 
     return failures;
 }

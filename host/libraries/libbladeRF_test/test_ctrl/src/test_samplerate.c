@@ -30,19 +30,19 @@ DECLARE_TEST_CASE(samplerate);
 
 
 static int set_and_check(struct bladerf *dev,
-                         bladerf_module m,
+                         bladerf_channel ch,
                          bladerf_sample_rate rate)
 {
     bladerf_sample_rate actual, readback;
     int status;
 
-    status = bladerf_set_sample_rate(dev, m, rate, &actual);
+    status = bladerf_set_sample_rate(dev, ch, rate, &actual);
     if (status != 0) {
         PR_ERROR("Failed to set sample rate: %s\n", bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_get_sample_rate(dev, m, &readback);
+    status = bladerf_get_sample_rate(dev, ch, &readback);
     if (status != 0) {
         PR_ERROR("Failed to read back sample rate: %s\n",
                  bladerf_strerror(status));
@@ -53,20 +53,20 @@ static int set_and_check(struct bladerf *dev,
 }
 
 static int set_and_check_rational(struct bladerf *dev,
-                                  bladerf_module m,
+                                  bladerf_channel ch,
                                   struct bladerf_rational_rate *rate)
 {
     struct bladerf_rational_rate actual, readback;
     int status;
 
-    status = bladerf_set_rational_sample_rate(dev, m, rate, &actual);
+    status = bladerf_set_rational_sample_rate(dev, ch, rate, &actual);
     if (status != 0) {
         PR_ERROR("Failed to set rational sample rate: %s\n",
                  bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_get_rational_sample_rate(dev, m, &readback);
+    status = bladerf_get_rational_sample_rate(dev, ch, &readback);
     if (status != 0) {
         PR_ERROR("Failed to read back rational sample rate: %s\n",
                  bladerf_strerror(status));
@@ -89,7 +89,7 @@ static int set_and_check_rational(struct bladerf *dev,
 }
 
 static int sweep_samplerate(struct bladerf *dev,
-                            bladerf_module m,
+                            bladerf_channel ch,
                             bool quiet,
                             bladerf_sample_rate min,
                             bladerf_sample_rate max)
@@ -102,7 +102,7 @@ static int sweep_samplerate(struct bladerf *dev,
     int status;
 
     for (rate = min, n = 0; rate <= max; rate += inc, n++) {
-        status = set_and_check(dev, m, rate);
+        status = set_and_check(dev, ch, rate);
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
@@ -118,7 +118,7 @@ static int sweep_samplerate(struct bladerf *dev,
 
 static int random_samplerates(struct bladerf *dev,
                               struct app_params *p,
-                              bladerf_module m,
+                              bladerf_channel ch,
                               bool quiet,
                               bladerf_sample_rate min,
                               bladerf_sample_rate max)
@@ -138,7 +138,7 @@ static int random_samplerates(struct bladerf *dev,
         rate = min + (p->randval_state % mod);
         assert(rate <= max);
 
-        status = set_and_check(dev, m, rate);
+        status = set_and_check(dev, ch, rate);
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
@@ -154,7 +154,7 @@ static int random_samplerates(struct bladerf *dev,
 
 static int random_rational_samplerates(struct bladerf *dev,
                                        struct app_params *p,
-                                       bladerf_module m,
+                                       bladerf_channel ch,
                                        bool quiet,
                                        bladerf_sample_rate min,
                                        bladerf_sample_rate max)
@@ -202,7 +202,7 @@ static int random_rational_samplerates(struct bladerf *dev,
             rate.den = 1;
         }
 
-        status = set_and_check_rational(dev, m, &rate);
+        status = set_and_check_rational(dev, ch, &rate);
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {

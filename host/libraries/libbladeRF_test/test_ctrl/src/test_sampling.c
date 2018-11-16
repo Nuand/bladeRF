@@ -46,8 +46,8 @@ static int set_and_check(struct bladerf *dev, bladerf_sampling s)
 
     status = bladerf_set_sampling(dev, s);
     if (status != 0) {
-        PR_ERROR("Failed to set sampling=%s: %s\n",
-                 sampling_str(s), bladerf_strerror(status));
+        PR_ERROR("Failed to set sampling=%s: %s\n", sampling_str(s),
+                 bladerf_strerror(status));
 
         return status;
     }

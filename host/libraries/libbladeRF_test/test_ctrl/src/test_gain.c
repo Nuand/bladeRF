@@ -47,7 +47,7 @@ static int get_lna_gain(struct bladerf *dev, int *gain)
     bladerf_lna_gain lna_gain = BLADERF_LNA_GAIN_UNKNOWN;
 
     status = bladerf_get_lna_gain(dev, &lna_gain);
-    if (status == 0) {
+    if (0 == status) {
         *gain = (int) lna_gain;
     }
 
