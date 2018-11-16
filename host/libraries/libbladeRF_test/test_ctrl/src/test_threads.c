@@ -195,6 +195,23 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
     size_t failures = 0;
     int status;
 
+    // Workaround for https://github.com/Nuand/bladeRF/issues/705
+    if (0 == strcmp(bladerf_get_board_name(dev), "bladerf2")) {
+        bladerf_tuning_mode mode;
+
+        status = bladerf_get_tuning_mode(dev, &mode);
+        if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+            PR_ERROR("  Could not get current tuning mode\n");
+            return 1;
+        }
+
+        if (mode != BLADERF_TUNING_MODE_FPGA) {
+            PR_ERROR("  Cannot successfully run this test with host-based "
+                     "tuning on the bladerf2 (bug #705)\n");
+            return 1;
+        }
+    }
+
     PRINT("%s: Running full-duplex stream with multiple control threads...\n",
           __FUNCTION__);
     PRINT("  Printing output from test_frequency for status...\n");
