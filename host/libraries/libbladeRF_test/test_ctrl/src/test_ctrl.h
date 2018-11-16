@@ -67,6 +67,7 @@ struct app_params {
     char *test_name;
     uint64_t randval_seed;
     uint64_t randval_state;
+    bool module_enabled;
 };
 
 

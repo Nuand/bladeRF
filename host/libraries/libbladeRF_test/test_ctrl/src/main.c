@@ -111,8 +111,9 @@ int get_params(int argc, char *argv[], struct app_params *p)
     bladerf_log_level level;
 
     memset(p, 0, sizeof(p[0]));
-    p->randval_seed = 1;
-    p->tuning_mode  = BLADERF_TUNING_MODE_INVALID;
+    p->randval_seed   = 1;
+    p->tuning_mode    = BLADERF_TUNING_MODE_INVALID;
+    p->module_enabled = false;
 
     while ((c = getopt_long(argc, argv, OPTARG, long_options, &idx)) != -1) {
         switch (c) {

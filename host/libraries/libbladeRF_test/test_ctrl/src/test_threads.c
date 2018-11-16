@@ -199,6 +199,8 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
           __FUNCTION__);
     PRINT("  Printing output from test_frequency for status...\n");
 
+    p->module_enabled = true;
+
     init_task(&rx, dev, BLADERF_RX);
     init_task(&tx, dev, BLADERF_TX);
 
@@ -262,11 +264,12 @@ out:
     deinit_task(&rx);
     deinit_task(&tx);
 
+    p->module_enabled = false;
+
     status = bladerf_set_loopback(dev, BLADERF_LB_NONE);
     if (status != 0) {
         PR_ERROR("Failed to disable loopback: %s\n", bladerf_strerror(status));
         failures++;
-        goto out;
     }
 
     free(threads);
