@@ -26,43 +26,46 @@
 /* This test is intended to execise one or more threads making control calls
  * while concurrently runing full duplex streams via the sync interface */
 
-#include <pthread.h>
 #include "test_ctrl.h"
+#include <pthread.h>
 
 DECLARE_TEST_CASE(threads);
 
 struct sync_task {
     struct bladerf *dev;
+    bladerf_direction direction;
     pthread_t thread;
     pthread_mutex_t lock;
     bool launched;
     bool run;
     int status;
-    bladerf_module module;
 };
 
 struct thread_test_case {
-    const unsigned int iterations;
-    const bool quiet;
-    const struct test_case *test;
+    size_t const iterations;
+    bool const quiet;
+    struct test_case const *test;
 };
 
 struct thread_state {
     bool launched;
     struct bladerf *dev;
     struct app_params *p;
-    unsigned int failures;
-    const struct thread_test_case *tc;
+    size_t failures;
+    struct thread_test_case const *tc;
     pthread_t thread;
 };
 
 static const struct thread_test_case tc[] = {
+    // clang-format off
     { 100,  true,   &test_case_xb200 },
     { 75,   true,   &test_case_gain },
     { 25,   true,   &test_case_bandwidth },
     { 1,    true,   &test_case_correction },
     { 1,    false,  &test_case_frequency },
+    // clang-format on
 };
+
 
 static inline void get_sync_task_state(struct sync_task *t, bool *run)
 {
@@ -71,47 +74,46 @@ static inline void get_sync_task_state(struct sync_task *t, bool *run)
     pthread_mutex_unlock(&t->lock);
 }
 
-static void * stream_task(void *arg)
+static void *stream_task(void *arg)
 {
-    int status;
-    struct sync_task *t = (struct sync_task *) arg;
+    struct sync_task *t = (struct sync_task *)arg;
+    int16_t *samples    = NULL;
+    bladerf_channel_layout layout;
     bool run;
-    int16_t *samples = NULL;
+    int status;
 
     samples = calloc(DEFAULT_BUF_LEN, 2 * sizeof(int16_t));
-    if (samples == NULL) {
+    if (NULL == samples) {
         status = BLADERF_ERR_MEM;
         goto out;
     }
 
-    status = bladerf_sync_config(t->dev, t->module,
-                                 BLADERF_FORMAT_SC16_Q11,
-                                 DEFAULT_NUM_BUFFERS,
-                                 DEFAULT_BUF_LEN,
-                                 DEFAULT_NUM_XFERS,
-                                 DEFAULT_TIMEOUT_MS);
+    layout = (BLADERF_RX == t->direction) ? BLADERF_RX_X1 : BLADERF_TX_X1;
+
+    status = bladerf_sync_config(t->dev, layout, BLADERF_FORMAT_SC16_Q11,
+                                 DEFAULT_NUM_BUFFERS, DEFAULT_BUF_LEN,
+                                 DEFAULT_NUM_XFERS, DEFAULT_TIMEOUT_MS);
     if (status != 0) {
         goto out;
     }
 
-    status = bladerf_enable_module(t->dev, t->module, true);
+    status = bladerf_enable_module(t->dev, t->direction, true);
     if (status != 0) {
         goto out;
     }
 
     get_sync_task_state(t, &run);
-    while (run && status == 0) {
-        if (BLADERF_RX == t->module) {
+    while (run && 0 == status) {
+        if (BLADERF_RX == t->direction) {
             status = bladerf_sync_rx(t->dev, samples, DEFAULT_BUF_LEN, NULL,
-                           DEFAULT_TIMEOUT_MS);
+                                     DEFAULT_TIMEOUT_MS);
         } else {
             status = bladerf_sync_tx(t->dev, samples, DEFAULT_BUF_LEN, NULL,
-                           DEFAULT_TIMEOUT_MS);
+                                     DEFAULT_TIMEOUT_MS);
         }
 
         if (status != 0) {
-            PR_ERROR("%s failed with: %s\n",
-                     (t->module == BLADERF_MODULE_RX ? "RX" : "TX"),
+            PR_ERROR("%s failed with: %s\n", direction2str(t->direction),
                      bladerf_strerror(status));
         }
 
@@ -120,10 +122,10 @@ static void * stream_task(void *arg)
 
 
 out:
-    if (status == 0) {
-        status = bladerf_enable_module(t->dev, t->module, false);
+    if (0 == status) {
+        status = bladerf_enable_module(t->dev, t->direction, false);
     } else {
-        bladerf_enable_module(t->dev, t->module, false);
+        bladerf_enable_module(t->dev, t->direction, false);
     }
 
     free(samples);
@@ -133,20 +135,24 @@ out:
     return NULL;
 }
 
-static void init_task(struct sync_task *t, struct bladerf *dev, bladerf_module m)
+static void init_task(struct sync_task *t,
+                      struct bladerf *dev,
+                      bladerf_direction dir)
 {
-    t->dev = dev;
+    t->dev       = dev;
+    t->launched  = false;
+    t->run       = true;
+    t->status    = 0;
+    t->direction = dir;
     pthread_mutex_init(&t->lock, NULL);
-    t->launched = false;
-    t->run = true;
-    t->status = 0;
-    t->module = m;
 }
 
 static int launch_task(struct sync_task *t)
 {
-    int status = pthread_create(&t->thread, NULL, stream_task, t);
-    if (status == 0) {
+    int status;
+
+    status = pthread_create(&t->thread, NULL, stream_task, t);
+    if (0 == status) {
         t->launched = true;
     }
 
@@ -167,46 +173,49 @@ static inline int deinit_task(struct sync_task *t)
 }
 
 
-void * run_test_fn(void *arg)
+void *run_test_fn(void *arg)
 {
-    unsigned int i;
-    struct thread_state *s = (struct thread_state *) arg;
+    struct thread_state *s = (struct thread_state *)arg;
+    size_t i;
+
     for (i = 0; i < s->tc->iterations; i++) {
         s->failures += s->tc->test->fn(s->dev, s->p, s->tc->quiet);
     }
+
     return NULL;
 }
 
 unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
 {
-    int status;
-    unsigned int failures = 0;
-    size_t i;
+    size_t const num_threads = ARRAY_SIZE(tc);
+
     struct sync_task rx, tx;
     struct thread_state *threads = NULL;
-    const size_t num_threads = ARRAY_SIZE(tc);
+    size_t i;
+    size_t failures = 0;
+    int status;
 
     PRINT("%s: Running full-duplex stream with multiple control threads...\n",
           __FUNCTION__);
     PRINT("  Printing output from test_frequency for status...\n");
 
-    init_task(&rx, dev, BLADERF_MODULE_RX);
-    init_task(&tx, dev, BLADERF_MODULE_TX);
+    init_task(&rx, dev, BLADERF_RX);
+    init_task(&tx, dev, BLADERF_TX);
 
     threads = calloc(num_threads, sizeof(threads[0]));
-    if (threads == NULL) {
+    if (NULL == threads) {
         return 1;
     }
 
     for (i = 0; i < ARRAY_SIZE(tc); i++) {
         threads[i].launched = false;
-        threads[i].dev = dev;
-        threads[i].p = p;
+        threads[i].dev      = dev;
+        threads[i].p        = p;
         threads[i].failures = 0;
-        threads[i].tc = &tc[i];
+        threads[i].tc       = &tc[i];
     }
 
-    status = bladerf_set_loopback(dev, BLADERF_LB_BB_TXVGA1_RXVGA2);
+    status = bladerf_set_loopback(dev, BLADERF_LB_FIRMWARE);
     if (status != 0) {
         PR_ERROR("Failed to enable loopback: %s\n", bladerf_strerror(status));
         failures++;
@@ -218,20 +227,20 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
         goto out;
     }
 
-    if(launch_task(&tx) != 0) {
+    if (launch_task(&tx) != 0) {
         PR_ERROR("%s: Failed to launch TX thread\n", __FUNCTION__);
         goto out;
     }
 
     for (i = 0; i < num_threads; i++) {
-        if (!p->use_xb200 && threads[i].tc->test->fn == test_xb200) {
+        if (!p->use_xb200 && test_xb200 == threads[i].tc->test->fn) {
             continue;
         }
 
-        status = pthread_create(&threads[i].thread, NULL,
-                                run_test_fn, &threads[i]);
+        status =
+            pthread_create(&threads[i].thread, NULL, run_test_fn, &threads[i]);
 
-        if (status == 0) {
+        if (0 == status) {
             PRINT("  Started test_%s thread...\n", threads[i].tc->test->name);
             threads[i].launched = true;
         } else {

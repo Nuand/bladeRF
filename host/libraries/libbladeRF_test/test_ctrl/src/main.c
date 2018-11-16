@@ -27,18 +27,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
-#include <limits.h>
-#include <getopt.h>
 #include <errno.h>
+#include <getopt.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "test_ctrl.h"
 #include "conversions.h"
+#include "test_ctrl.h"
 
 static const struct test_case *tests[] = {
+    // clang-format off
     &test_case_sampling,
     &test_case_lpf_mode,
     &test_case_enable_module,
@@ -51,25 +52,27 @@ static const struct test_case *tests[] = {
     &test_case_gain,
     &test_case_frequency,
     &test_case_threads,
+    // clang-format on
 };
 
-#define OPTARG  "d:t:s:T:v:hL"
+#define OPTARG "d:t:s:T:v:hL"
 static const struct option long_options[] = {
+    // clang-format off
     { "device",     required_argument,  0,      'd'},
     { "test",       required_argument,  0,      't'},
     { "seed",       required_argument,  0,      's'},
     { "help",       no_argument,        0,      'h'},
     { "xb200",      no_argument,        0,       1 },
     { "tuningmode", required_argument,  0,      'T'},
-    { "list-tests", no_argument,        0,      'L' },
+    { "list-tests", no_argument,        0,      'L'},
     { "verbosity",  required_argument,  0,      'v'},
     { 0,            0,                  0,       0 },
+    // clang-format on
 };
 
-struct stats
-{
+struct stats {
     bool ran;
-    unsigned int failures;
+    size_t failures;
 };
 
 void usage(const char *argv0)
@@ -109,9 +112,9 @@ int get_params(int argc, char *argv[], struct app_params *p)
 
     memset(p, 0, sizeof(p[0]));
     p->randval_seed = 1;
-    p->tuning_mode = BLADERF_TUNING_MODE_INVALID;
+    p->tuning_mode  = BLADERF_TUNING_MODE_INVALID;
 
-    while((c = getopt_long(argc, argv, OPTARG, long_options, &idx)) != -1) {
+    while ((c = getopt_long(argc, argv, OPTARG, long_options, &idx)) != -1) {
         switch (c) {
             case 'd':
                 if (p->device_str) {
@@ -119,7 +122,7 @@ int get_params(int argc, char *argv[], struct app_params *p)
                     return -1;
                 } else {
                     p->device_str = strdup(optarg);
-                    if (p->device_str == NULL) {
+                    if (NULL == p->device_str) {
                         perror("strdup");
                         return -1;
                     }
@@ -132,7 +135,7 @@ int get_params(int argc, char *argv[], struct app_params *p)
                     return -1;
                 } else {
                     p->test_name = strdup(optarg);
-                    if (p->test_name == NULL) {
+                    if (NULL == p->test_name) {
                         perror("strdup");
                         return -1;
                     }
@@ -190,24 +193,24 @@ int get_params(int argc, char *argv[], struct app_params *p)
 
 int main(int argc, char *argv[])
 {
-    int status;
     struct app_params p;
-    size_t i;
     struct bladerf *dev = NULL;
-    bladerf_xb expected, attached;
     struct stats *stats = NULL;
-    bool pass = true;
+    bool pass           = true;
+    bladerf_xb expected, attached;
+    size_t i;
+    int status;
 
     status = get_params(argc, argv, &p);
     if (status != 0) {
-        if (status == 1) {
+        if (1 == status) {
             status = 0;
         }
         goto out;
     }
 
     for (i = 0; i < ARRAY_SIZE(tests); i++) {
-        if (p.test_name == NULL || !strcasecmp(p.test_name, tests[i]->name)) {
+        if (NULL == p.test_name || !strcasecmp(p.test_name, tests[i]->name)) {
             break;
         }
     }
@@ -219,7 +222,7 @@ int main(int argc, char *argv[])
     }
 
     stats = calloc(ARRAY_SIZE(tests), sizeof(stats[0]));
-    if (stats == NULL) {
+    if (NULL == stats) {
         perror("calloc");
         status = -1;
         goto out;
@@ -268,9 +271,9 @@ int main(int argc, char *argv[])
     }
 
     for (i = 0; i < ARRAY_SIZE(tests); i++) {
-        if (p.test_name == NULL || !strcasecmp(p.test_name, tests[i]->name)) {
-            randval_init(&p.randval_state,  p.randval_seed);
-            stats[i].ran = true;
+        if (NULL == p.test_name || !strcasecmp(p.test_name, tests[i]->name)) {
+            randval_init(&p.randval_state, p.randval_seed);
+            stats[i].ran      = true;
             stats[i].failures = tests[i]->fn(dev, &p, false);
         }
     }
@@ -279,7 +282,7 @@ int main(int argc, char *argv[])
     puts("--------------------------------------------");
     for (i = 0; i < ARRAY_SIZE(tests); i++) {
         if (stats[i].ran) {
-            printf("%16s %u\n", tests[i]->name, stats[i].failures);
+            printf("%16s %zu\n", tests[i]->name, stats[i].failures);
         }
 
         if (stats[i].failures != 0) {
