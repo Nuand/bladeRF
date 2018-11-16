@@ -271,13 +271,16 @@ unsigned int test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
                     continue;
                 }
 
-                /* Enable the channel */
-                status = bladerf_enable_module(dev, CHANNEL, true);
-                if (status < 0) {
-                    PR_ERROR("Failed to enable channel %s: %s\n",
-                             channel2str(CHANNEL), bladerf_strerror(status));
-                    failures += 1;
-                    continue;
+                if (!p->module_enabled) {
+                    /* Enable the channel */
+                    status = bladerf_enable_module(dev, CHANNEL, true);
+                    if (status < 0) {
+                        PR_ERROR("Failed to enable channel %s: %s\n",
+                                 channel2str(CHANNEL),
+                                 bladerf_strerror(status));
+                        failures += 1;
+                        continue;
+                    }
                 }
 
                 PRINT("%s: Performing gain sweep on %s...\n", __FUNCTION__,
@@ -288,13 +291,16 @@ unsigned int test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
                       channel2str(CHANNEL));
                 failures += random_gains(dev, p, CHANNEL, quiet);
 
-                /* Deactivate the channel */
-                status = bladerf_enable_module(dev, CHANNEL, false);
-                if (status < 0) {
-                    PR_ERROR("Failed to deactivate channel %s: %s\n",
-                             channel2str(CHANNEL), bladerf_strerror(status));
-                    failures += 1;
-                    continue;
+                if (!p->module_enabled) {
+                    /* Deactivate the channel */
+                    status = bladerf_enable_module(dev, CHANNEL, false);
+                    if (status < 0) {
+                        PR_ERROR("Failed to deactivate channel %s: %s\n",
+                                 channel2str(CHANNEL),
+                                 bladerf_strerror(status));
+                        failures += 1;
+                        continue;
+                    }
                 }
 
                 /* Return to previous gain control mode */
