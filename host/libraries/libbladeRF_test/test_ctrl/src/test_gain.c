@@ -23,177 +23,290 @@
  * THE SOFTWARE.
  */
 #include "test_ctrl.h"
+#include <string.h>
 
 DECLARE_TEST_CASE(gain);
 
+#define MAX_STAGES 8
+
 struct gain {
-    const char *name;
-    int min;
-    int max;
-    int inc;
-    int (*set)(struct bladerf *dev, int gain);
-    int (*get)(struct bladerf *dev, int *gain);
+    char const *name;
+    float min;
+    float max;
+    float inc;
 };
 
-static int set_lna_gain(struct bladerf *dev, int gain)
-{
-    bladerf_lna_gain lna_gain = (bladerf_lna_gain) gain;
-    return bladerf_set_lna_gain(dev, lna_gain);
-}
-
-static int get_lna_gain(struct bladerf *dev, int *gain)
-{
-    int status;
-    bladerf_lna_gain lna_gain = BLADERF_LNA_GAIN_UNKNOWN;
-
-    status = bladerf_get_lna_gain(dev, &lna_gain);
-    if (0 == status) {
-        *gain = (int) lna_gain;
-    }
-
-    return status;
-}
-
-const struct gain gains[] = {
-    {
-        "TXVGA1",
-        BLADERF_TXVGA1_GAIN_MIN,
-        BLADERF_TXVGA1_GAIN_MAX,
-        1,
-        bladerf_set_txvga1,
-        bladerf_get_txvga1
-    },
-
-    {
-        "TXVGA2",
-        BLADERF_TXVGA2_GAIN_MIN,
-        BLADERF_TXVGA2_GAIN_MAX,
-        1,
-        bladerf_set_txvga2,
-        bladerf_get_txvga2
-    },
-
-    {
-        "LNA",
-        BLADERF_LNA_GAIN_BYPASS,
-        BLADERF_LNA_GAIN_MAX,
-        1,
-        set_lna_gain,
-        get_lna_gain,
-    },
-
-    {
-        "RXVGA1",
-        BLADERF_RXVGA1_GAIN_MIN,
-        BLADERF_RXVGA1_GAIN_MAX,
-        1,
-        bladerf_set_rxvga1,
-        bladerf_get_rxvga1,
-    },
-
-    {
-        "RXVGA2",
-        BLADERF_RXVGA2_GAIN_MIN,
-        BLADERF_RXVGA2_GAIN_MAX,
-        3,
-        bladerf_set_rxvga2,
-        bladerf_get_rxvga2,
-    },
-
-    /* TODO exercise overall bladerf_set_gain() function */
-};
-
-static inline int set_and_check(struct bladerf *dev, const struct gain *g,
+static inline int set_and_check(struct bladerf *dev,
+                                bladerf_channel ch,
+                                struct gain const *g,
                                 int gain)
 {
-    int status;
     int readback;
+    int status;
 
-    status = g->set(dev, gain);
-    if (status != 0) {
-        PR_ERROR("Failed to set %s gain: %s\n",
-                 g->name, bladerf_strerror(status));
-        return status;
+    if (0 == strcmp(g->name, "overall")) {
+        status = bladerf_set_gain(dev, ch, gain);
+        if (status != 0) {
+            PR_ERROR("Failed to set %s gain: %s\n", g->name,
+                     bladerf_strerror(status));
+            return status;
+        }
+
+        status = bladerf_get_gain(dev, ch, &readback);
+        if (status != 0) {
+            PR_ERROR("Failed to read back %s gain: %s\n", g->name,
+                     bladerf_strerror(status));
+            return status;
+        }
+    } else {
+        status = bladerf_set_gain_stage(dev, ch, g->name, gain);
+        if (status != 0) {
+            PR_ERROR("Failed to set %s gain: %s\n", g->name,
+                     bladerf_strerror(status));
+            return status;
+        }
+
+        status = bladerf_get_gain_stage(dev, ch, g->name, &readback);
+        if (status != 0) {
+            PR_ERROR("Failed to read back %s gain: %s\n", g->name,
+                     bladerf_strerror(status));
+            return status;
+        }
     }
-
-    status = g->get(dev, &readback);
-    if (status != 0) {
-        PR_ERROR("Failed to read back %s gain: %s\n",
-                 g->name, bladerf_strerror(status));
-        return status;
-    }
-
     if (gain != readback) {
-        PR_ERROR("Erroneous %s gain readback=%d, expected=%d\n",
-                 g->name, readback, gain);
+        PR_ERROR("Erroneous %s gain readback=%d, expected=%d\n", g->name,
+                 readback, gain);
         return -1;
     }
 
     return 0;
 }
 
-static unsigned int gain_sweep(struct bladerf *dev, bool quiet)
+static unsigned int gain_sweep(struct bladerf *dev,
+                               bladerf_channel ch,
+                               bool quiet)
 {
-    int status;
-    int gain;
-    unsigned int failures = 0;
+    char const **stages = NULL;
+    size_t failures     = 0;
     size_t i;
+    int status;
 
-    for (i = 0; i < ARRAY_SIZE(gains); i++) {
-        PRINT("    %s\n", gains[i].name);
+    stages = calloc(MAX_STAGES + 1, sizeof(char *));
+    if (NULL == stages) {
+        PR_ERROR("Failed to calloc gain stage array\n");
+        return -1;
+    }
+
+    int const n_stages = bladerf_get_gain_stages(dev, ch, stages, MAX_STAGES);
+    if (n_stages < 0) {
+        PR_ERROR("Failed to enumerate gain stages: %s\n",
+                 bladerf_strerror(n_stages));
+        failures = -1;
+        goto out;
+    }
+
+    for (i = 0; i <= (unsigned)n_stages; i++) {
+        struct bladerf_range const *range;
+        struct gain stage;
+        int gain;
+
+        if ((unsigned)n_stages == i) {
+            // magic null value
+            stage.name = "overall";
+
+            PRINT("    %s\n", stage.name);
+
+            status = bladerf_get_gain_range(dev, ch, &range);
+            if (status < 0) {
+                PR_ERROR("Failed to retrieve range of overall gain: %s\n",
+                         bladerf_strerror(n_stages));
+                failures++;
+                continue;
+            }
+        } else {
+            stage.name = stages[i];
+
+            PRINT("    %s\n", stage.name);
+
+            status = bladerf_get_gain_stage_range(dev, ch, stage.name, &range);
+            if (status < 0) {
+                PR_ERROR("Failed to retrieve range of gain stage %s: %s\n",
+                         stage.name, bladerf_strerror(n_stages));
+                failures++;
+                continue;
+            }
+        }
+
+        stage.min = (range->min * range->scale);
+        stage.max = (range->max * range->scale);
+        stage.inc = range->step;
+
         fflush(stdout);
-        for (gain = gains[i].min; gain <= gains[i].max; gain += gains[i].inc) {
-            status = set_and_check(dev, &gains[i], gain);
+        for (gain = stage.min; gain <= stage.max; gain += stage.inc) {
+            status = set_and_check(dev, ch, &stage, gain);
             if (status != 0) {
                 failures++;
             }
         }
-
     }
+
+out:
+    free(stages);
 
     return failures;
 }
 
-static int random_gains(struct bladerf *dev, struct app_params *p, bool quiet)
+static int random_gains(struct bladerf *dev,
+                        struct app_params *p,
+                        bladerf_channel ch,
+                        bool quiet)
 {
-    int status, gain;
-    unsigned int i, j;
-    const unsigned int iterations = 250;
-    unsigned int failures = 0;
+    size_t const iterations = 250;
 
-    for (i = 0; i < ARRAY_SIZE(gains); i++) {
-        const int n_incs = (gains[i].max - gains[i].min) / gains[i].inc;
-        PRINT("    %s\n", gains[i].name);
+    char const **stages = NULL;
+    size_t failures     = 0;
+    size_t i, j;
+    int status;
+
+    stages = calloc(MAX_STAGES + 1, sizeof(char *));
+    if (NULL == stages) {
+        PR_ERROR("Failed to calloc gain stage array\n");
+        return -1;
+    }
+
+    int const n_stages = bladerf_get_gain_stages(dev, ch, stages, MAX_STAGES);
+    if (n_stages < 0) {
+        PR_ERROR("Failed to enumerate gain stages: %s\n",
+                 bladerf_strerror(n_stages));
+        failures = -1;
+        goto out;
+    }
+
+    for (i = 0; i <= (unsigned)n_stages; i++) {
+        struct bladerf_range const *range;
+        struct gain stage;
+        int gain;
+
+        if ((unsigned)n_stages == i) {
+            // magic null value
+            stage.name = "overall";
+
+            PRINT("    %s\n", stage.name);
+
+            status = bladerf_get_gain_range(dev, ch, &range);
+            if (status < 0) {
+                PR_ERROR("Failed to retrieve range of overall gain: %s\n",
+                         bladerf_strerror(n_stages));
+                failures++;
+                continue;
+            }
+        } else {
+            stage.name = stages[i];
+
+            PRINT("    %s\n", stage.name);
+
+            status = bladerf_get_gain_stage_range(dev, ch, stage.name, &range);
+            if (status < 0) {
+                PR_ERROR("Failed to retrieve range of gain stage %s: %s\n",
+                         stage.name, bladerf_strerror(n_stages));
+                failures++;
+                continue;
+            }
+        }
+
+        stage.min = (range->min * range->scale);
+        stage.max = (range->max * range->scale);
+        stage.inc = (range->step * range->scale);
+
+        int const n_incs = (stage.max - stage.min) / stage.inc;
 
         for (j = 0; j < iterations; j++) {
             randval_update(&p->randval_state);
-            gain = gains[i].min + (p->randval_state % n_incs) * gains[i].inc;
+            gain = stage.min + (p->randval_state % n_incs) * stage.inc;
 
-            if (gain > gains[i].max) {
-                gain = gains[i].max;
-            } else if (gain < gains[i].min) {
-                gain = gains[i].min;
+            if (gain > stage.max) {
+                gain = stage.max;
+            } else if (gain < stage.min) {
+                gain = stage.min;
             }
 
-            status = set_and_check(dev, &gains[i], gain);
+            status = set_and_check(dev, ch, &stage, gain);
             if (status != 0) {
                 failures++;
             }
         }
     }
+
+out:
+    free(stages);
 
     return failures;
 }
 
 unsigned int test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
 {
-    unsigned int failures = 0;
+    size_t failures = 0;
 
-    PRINT("%s: Performing gain sweep...\n", __FUNCTION__);
-    failures += gain_sweep(dev, quiet);
+    ITERATE_DIRECTIONS({
+        ITERATE_CHANNELS(
+            DIRECTION, (bladerf_get_channel_count(dev, DIRECTION)), ({
+                bladerf_gain_mode old_mode;
+                int status;
 
-    PRINT("%s: Applying random gains...\n", __FUNCTION__);
-    failures += random_gains(dev, p, quiet);
+                /* Switch to manual gain control */
+                status = bladerf_get_gain_mode(dev, CHANNEL, &old_mode);
+                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                    PR_ERROR(
+                        "Failed to get current gain mode on channel %s: %s\n",
+                        channel2str(CHANNEL), bladerf_strerror(status));
+                    failures += 1;
+                    continue;
+                }
+
+                status = bladerf_set_gain_mode(dev, CHANNEL, BLADERF_GAIN_MGC);
+                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                    PR_ERROR("Failed to set gain mode on channel %s: %s\n",
+                             channel2str(CHANNEL), bladerf_strerror(status));
+                    failures += 1;
+                    continue;
+                }
+
+                /* Enable the channel */
+                status = bladerf_enable_module(dev, CHANNEL, true);
+                if (status < 0) {
+                    PR_ERROR("Failed to enable channel %s: %s\n",
+                             channel2str(CHANNEL), bladerf_strerror(status));
+                    failures += 1;
+                    continue;
+                }
+
+                PRINT("%s: Performing gain sweep on %s...\n", __FUNCTION__,
+                      channel2str(CHANNEL));
+                failures += gain_sweep(dev, CHANNEL, quiet);
+
+                PRINT("%s: Applying random gains on %s...\n", __FUNCTION__,
+                      channel2str(CHANNEL));
+                failures += random_gains(dev, p, CHANNEL, quiet);
+
+                /* Deactivate the channel */
+                status = bladerf_enable_module(dev, CHANNEL, false);
+                if (status < 0) {
+                    PR_ERROR("Failed to deactivate channel %s: %s\n",
+                             channel2str(CHANNEL), bladerf_strerror(status));
+                    failures += 1;
+                    continue;
+                }
+
+                /* Return to previous gain control mode */
+                status = bladerf_set_gain_mode(dev, CHANNEL, old_mode);
+                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                    PR_ERROR("Failed to set gain mode on channel %s: %s\n",
+                             channel2str(CHANNEL), bladerf_strerror(status));
+                    failures += 1;
+                    continue;
+                }
+            }));  // ITERATE_CHANNELS
+    });           // ITERATE_DIRECTIONS
 
     return failures;
 }
