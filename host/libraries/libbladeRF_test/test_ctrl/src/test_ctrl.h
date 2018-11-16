@@ -25,35 +25,40 @@
 #ifndef TEST_CTRL_H_
 #define TEST_CTRL_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <libbladeRF.h>
+#include "conversions.h"
 #include "host_config.h"
 #include "rel_assert.h"
 #include "test_common.h"
-#include "conversions.h"
+#include <libbladeRF.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#define DECLARE_TEST(name_) \
+#define DECLARE_TEST(name_)                                                  \
     extern unsigned int test_##name_(struct bladerf *, struct app_params *p, \
-                                     bool quiet); \
+                                     bool quiet);                            \
     extern const struct test_case test_case_##name_;
 #endif
 
 #define DECLARE_TEST_CASE(name_) \
     const struct test_case test_case_##name_ = { #name_, &test_##name_ }
 
-#define PRINT(...) \
-    do { if (!quiet) { printf(__VA_ARGS__); fflush(stdout); } } while(0)
+#define PRINT(...)               \
+    do {                         \
+        if (!quiet) {            \
+            printf(__VA_ARGS__); \
+            fflush(stdout);      \
+        }                        \
+    } while (0)
 
 #define PR_ERROR(...) fprintf(stderr, "\n(!) " __VA_ARGS__)
 
-#define DEFAULT_BUF_LEN     16384
+#define DEFAULT_BUF_LEN 16384
 #define DEFAULT_NUM_BUFFERS 16
-#define DEFAULT_NUM_XFERS   8
-#define DEFAULT_TIMEOUT_MS  10000
-#define DEFAULT_SAMPLERATE  1000000
+#define DEFAULT_NUM_XFERS 8
+#define DEFAULT_TIMEOUT_MS 10000
+#define DEFAULT_SAMPLERATE 1000000
 
 struct app_params {
     bool use_xb200;
@@ -69,6 +74,27 @@ struct test_case {
     const char *name;
     unsigned int (*fn)(struct bladerf *dev, struct app_params *p, bool quiet);
 };
+
+// _thing should expect a 'DIRECTION' parameter
+#define ITERATE_DIRECTIONS(_thing)                                           \
+    do {                                                                     \
+        bladerf_direction DIRECTION;                                         \
+        for (DIRECTION = BLADERF_RX; DIRECTION <= BLADERF_TX; ++DIRECTION) { \
+            _thing;                                                          \
+        }                                                                    \
+    } while (0)
+
+// _thing should expect a 'CHANNEL' parameter
+#define ITERATE_CHANNELS(_dir, _count, _thing)                     \
+    do {                                                           \
+        size_t i;                                                  \
+        for (i = 0; i < _count; ++i) {                             \
+            bladerf_channel CHANNEL = (BLADERF_TX == _dir)         \
+                                          ? BLADERF_CHANNEL_TX(i)  \
+                                          : BLADERF_CHANNEL_RX(i); \
+            _thing;                                                \
+        }                                                          \
+    } while (0)
 
 DECLARE_TEST(bandwidth);
 DECLARE_TEST(correction);
