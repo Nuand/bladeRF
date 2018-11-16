@@ -1348,6 +1348,11 @@ static void _apportion_gain(struct bladerf_range const *range,
     int headroom  = __unscale_int(range, range->max) - *stage_gain;
     int allotment = (headroom >= *overall_gain) ? *overall_gain : headroom;
 
+    /* Enforce step size */
+    while (0 != (allotment % range->step)) {
+        --allotment;
+    }
+
     *stage_gain += allotment;
     *overall_gain -= allotment;
 }
@@ -1419,6 +1424,7 @@ static int set_rx_gain(struct bladerf *dev, int gain)
     struct bladerf_range const *rxvga1_range = NULL;
     struct bladerf_range const *rxvga2_range = NULL;
     bladerf_channel const ch                 = BLADERF_CHANNEL_RX(0);
+    int orig_gain                            = gain;
     int lna, rxvga1, rxvga2;
     int status;
 
@@ -1472,6 +1478,14 @@ static int set_rx_gain(struct bladerf *dev, int gain)
 
         _apportion_gain(rxvga2_range, &rxvga2, &gain);
         _apportion_gain(rxvga1_range, &rxvga1, &gain);
+    }
+
+    // verification
+    if (gain != 0) {
+        log_warning("%s: unable to achieve requested gain %d (missed by %d)\n",
+                    __FUNCTION__, orig_gain, gain);
+        log_debug("%s: gain=%d -> rxvga1=%d lna=%d rxvga2=%d remainder=%d\n",
+                  __FUNCTION__, orig_gain, rxvga1, lna, rxvga2, gain);
     }
 
     // that should do it.  actually apply the changes:
@@ -1543,6 +1557,7 @@ static int set_tx_gain(struct bladerf *dev, int gain)
     struct bladerf_range const *txvga1_range = NULL;
     struct bladerf_range const *txvga2_range = NULL;
     bladerf_channel const ch                 = BLADERF_CHANNEL_TX(0);
+    int orig_gain                            = gain;
     int txvga1, txvga2;
     int status;
 
@@ -1570,6 +1585,14 @@ static int set_tx_gain(struct bladerf *dev, int gain)
 
     // apportion gain to TXVGA1
     _apportion_gain(txvga1_range, &txvga1, &gain);
+
+    // verification
+    if (gain != 0) {
+        log_warning("%s: unable to achieve requested gain %d (missed by %d)\n",
+                    __FUNCTION__, orig_gain, gain);
+        log_debug("%s: gain=%d -> txvga2=%d txvga1=%d remainder=%d\n",
+                  __FUNCTION__, orig_gain, txvga2, txvga1, gain);
+    }
 
     status = lms_txvga1_set_gain(dev, txvga1);
     if (status < 0) {
