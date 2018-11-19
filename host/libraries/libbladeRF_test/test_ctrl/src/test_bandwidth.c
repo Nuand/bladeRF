@@ -61,7 +61,7 @@ static failure_count sweep_bandwidths(struct bladerf *dev,
                                       bladerf_bandwidth min,
                                       bladerf_bandwidth max)
 {
-    size_t const inc = 250000;
+    bladerf_bandwidth const inc = 250000;
 
     bladerf_bandwidth b;
     failure_count failures = 0;
@@ -135,8 +135,8 @@ failure_count test_bandwidth(struct bladerf *dev,
                 return status;
             };
 
-            min = (range->min * range->scale);
-            max = (range->max * range->scale);
+            min = (bladerf_bandwidth)(range->min * range->scale);
+            max = (bladerf_bandwidth)(range->max * range->scale);
 
             PRINT("%s: %s range: %u to %u\n", __FUNCTION__, direction2str(dir),
                   min, max);

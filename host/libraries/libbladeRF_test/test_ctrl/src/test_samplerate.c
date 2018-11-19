@@ -94,7 +94,7 @@ static failure_count sweep_samplerate(struct bladerf *dev,
                                       bladerf_sample_rate min,
                                       bladerf_sample_rate max)
 {
-    size_t const inc = 10000;
+    bladerf_sample_rate const inc = 10000;
 
     bladerf_sample_rate rate;
     size_t n;
@@ -131,7 +131,7 @@ static failure_count random_samplerates(struct bladerf *dev,
     int status;
 
     for (i = n = 0; i < interations; i++, n++) {
-        size_t const mod = max - min + 1;
+        bladerf_sample_rate const mod = max - min + 1;
 
         randval_update(&p->randval_state);
 
@@ -246,8 +246,8 @@ failure_count test_samplerate(struct bladerf *dev,
                 return status;
             };
 
-            min = (range->min * range->scale);
-            max = (range->max * range->scale);
+            min = (bladerf_sample_rate)(range->min * range->scale);
+            max = (bladerf_sample_rate)(range->max * range->scale);
 
             PRINT("%s: %s range: %u to %u\n", __FUNCTION__, direction2str(dir),
                   min, max);
