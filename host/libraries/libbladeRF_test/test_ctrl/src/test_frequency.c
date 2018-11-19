@@ -154,39 +154,43 @@ failure_count test_frequency(struct bladerf *dev,
     failure_count failures = 0;
     int status;
 
-    ITERATE_DIRECTIONS({
-        ITERATE_CHANNELS(
-            DIRECTION, 1, ({
-                struct bladerf_range const *range;
-                bladerf_frequency min, max;
+    bladerf_direction dir;
 
-                PRINT("%s: Testing %s...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
+    FOR_EACH_DIRECTION(dir)
+    {
+        size_t i;
+        bladerf_channel ch;
 
-                status = bladerf_get_frequency_range(dev, CHANNEL, &range);
-                if (status < 0) {
-                    PR_ERROR("Failed to get %s frequency range: %s\n",
-                             direction2str(DIRECTION),
-                             bladerf_strerror(status));
-                    return status;
-                };
+        FOR_EACH_CHANNEL(dir, 1, i, ch)
+        {
+            struct bladerf_range const *range;
+            bladerf_frequency min, max;
 
-                min = (range->min * range->scale);
-                max = (range->max * range->scale);
+            PRINT("%s: Testing %s...\n", __FUNCTION__, direction2str(dir));
 
-                PRINT("%s: %s range: %" BLADERF_PRIuFREQ
-                      " to %" BLADERF_PRIuFREQ "\n",
-                      __FUNCTION__, direction2str(DIRECTION), min, max);
+            status = bladerf_get_frequency_range(dev, ch, &range);
+            if (status < 0) {
+                PR_ERROR("Failed to get %s frequency range: %s\n",
+                         direction2str(dir), bladerf_strerror(status));
+                return status;
+            };
 
-                PRINT("%s: Performing %s frequency sweep...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
-                failures += freq_sweep(dev, CHANNEL, min, max, quiet);
+            min = (range->min * range->scale);
+            max = (range->max * range->scale);
 
-                PRINT("%s: Performing random %s tuning...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
-                failures += random_tuning(dev, p, CHANNEL, min, max, quiet);
-            }));  // ITERATE_CHANNELS
-    });           // ITERATE_DIRECTIONS
+            PRINT("%s: %s range: %" BLADERF_PRIuFREQ " to %" BLADERF_PRIuFREQ
+                  "\n",
+                  __FUNCTION__, direction2str(dir), min, max);
+
+            PRINT("%s: Performing %s frequency sweep...\n", __FUNCTION__,
+                  direction2str(dir));
+            failures += freq_sweep(dev, ch, min, max, quiet);
+
+            PRINT("%s: Performing random %s tuning...\n", __FUNCTION__,
+                  direction2str(dir));
+            failures += random_tuning(dev, p, ch, min, max, quiet);
+        }
+    }
 
     return failures;
 }
