@@ -221,8 +221,7 @@ int main(int argc, char *argv[])
     int status = EXIT_FAILURE;
     struct option *options = NULL;
     struct app_params params;
-    pthread_t rx_thread = 0;
-    pthread_t tx_thread = 0;
+    pthread_t rx_thread, tx_thread;
 
     params.rx = false;
     params.tx = false;
