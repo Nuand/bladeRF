@@ -102,6 +102,7 @@ static failure_count freq_sweep(struct bladerf *dev,
 
     PRINT("\n");
     fflush(stdout);
+
     return failures;
 }
 
@@ -144,6 +145,7 @@ static failure_count random_tuning(struct bladerf *dev,
 
     PRINT("\n");
     fflush(stdout);
+
     return failures;
 }
 
@@ -175,8 +177,8 @@ failure_count test_frequency(struct bladerf *dev,
                 return status;
             };
 
-            min = (range->min * range->scale);
-            max = (range->max * range->scale);
+            min = (bladerf_frequency)(range->min * range->scale);
+            max = (bladerf_frequency)(range->max * range->scale);
 
             PRINT("%s: %s range: %" BLADERF_PRIuFREQ " to %" BLADERF_PRIuFREQ
                   "\n",

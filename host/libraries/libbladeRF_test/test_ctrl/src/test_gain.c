@@ -29,6 +29,8 @@ DECLARE_TEST_CASE(gain);
 
 #define MAX_STAGES 8
 
+#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
+
 struct gain {
     char const *name;
     float min;
@@ -108,7 +110,7 @@ static failure_count gain_sweep(struct bladerf *dev,
     for (i = 0; i <= (unsigned)n_stages; i++) {
         struct bladerf_range const *range;
         struct gain stage;
-        int gain;
+        float gain;
 
         if ((unsigned)n_stages == i) {
             // magic null value
@@ -137,13 +139,13 @@ static failure_count gain_sweep(struct bladerf *dev,
             }
         }
 
-        stage.min = (range->min * range->scale);
-        stage.max = (range->max * range->scale);
-        stage.inc = range->step;
+        stage.min = (float)(range->min * range->scale);
+        stage.max = (float)(range->max * range->scale);
+        stage.inc = (float)range->step;
 
         fflush(stdout);
         for (gain = stage.min; gain <= stage.max; gain += stage.inc) {
-            status = set_and_check(dev, ch, &stage, gain);
+            status = set_and_check(dev, ch, &stage, __round_int(gain));
             if (status != 0) {
                 failures++;
             }
@@ -151,7 +153,7 @@ static failure_count gain_sweep(struct bladerf *dev,
     }
 
 out:
-    free(stages);
+    free((char **)stages);
 
     return failures;
 }
@@ -185,7 +187,6 @@ static failure_count random_gains(struct bladerf *dev,
     for (i = 0; i <= (unsigned)n_stages; i++) {
         struct bladerf_range const *range;
         struct gain stage;
-        int gain;
 
         if ((unsigned)n_stages == i) {
             // magic null value
@@ -218,9 +219,11 @@ static failure_count random_gains(struct bladerf *dev,
         stage.max = (range->max * range->scale);
         stage.inc = (range->step * range->scale);
 
-        int const n_incs = (stage.max - stage.min) / stage.inc;
+        int const n_incs = __round_int((stage.max - stage.min) / stage.inc);
 
         for (j = 0; j < iterations; j++) {
+            float gain;
+
             randval_update(&p->randval_state);
             gain = stage.min + (p->randval_state % n_incs) * stage.inc;
 
@@ -230,7 +233,7 @@ static failure_count random_gains(struct bladerf *dev,
                 gain = stage.min;
             }
 
-            status = set_and_check(dev, ch, &stage, gain);
+            status = set_and_check(dev, ch, &stage, __round_int(gain));
             if (status != 0) {
                 failures++;
             }
@@ -238,7 +241,7 @@ static failure_count random_gains(struct bladerf *dev,
     }
 
 out:
-    free(stages);
+    free((char **)stages);
 
     return failures;
 }
