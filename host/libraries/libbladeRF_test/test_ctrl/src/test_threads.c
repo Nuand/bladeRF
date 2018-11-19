@@ -51,7 +51,7 @@ struct thread_state {
     bool launched;
     struct bladerf *dev;
     struct app_params *p;
-    size_t failures;
+    failure_count failures;
     struct thread_test_case const *tc;
     pthread_t thread;
 };
@@ -185,14 +185,14 @@ void *run_test_fn(void *arg)
     return NULL;
 }
 
-unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
+failure_count test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
 {
     size_t const num_threads = ARRAY_SIZE(tc);
 
     struct sync_task rx, tx;
     struct thread_state *threads = NULL;
     size_t i;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     // Workaround for https://github.com/Nuand/bladeRF/issues/705

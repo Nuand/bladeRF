@@ -88,17 +88,17 @@ static int set_and_check_rational(struct bladerf *dev,
     return 0;
 }
 
-static int sweep_samplerate(struct bladerf *dev,
-                            bladerf_channel ch,
-                            bool quiet,
-                            bladerf_sample_rate min,
-                            bladerf_sample_rate max)
+static failure_count sweep_samplerate(struct bladerf *dev,
+                                      bladerf_channel ch,
+                                      bool quiet,
+                                      bladerf_sample_rate min,
+                                      bladerf_sample_rate max)
 {
     size_t const inc = 10000;
 
     bladerf_sample_rate rate;
     size_t n;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     for (rate = min, n = 0; rate <= max; rate += inc, n++) {
@@ -116,18 +116,18 @@ static int sweep_samplerate(struct bladerf *dev,
     return failures;
 }
 
-static int random_samplerates(struct bladerf *dev,
-                              struct app_params *p,
-                              bladerf_channel ch,
-                              bool quiet,
-                              bladerf_sample_rate min,
-                              bladerf_sample_rate max)
+static failure_count random_samplerates(struct bladerf *dev,
+                                        struct app_params *p,
+                                        bladerf_channel ch,
+                                        bool quiet,
+                                        bladerf_sample_rate min,
+                                        bladerf_sample_rate max)
 {
     size_t const interations = 2500;
 
     bladerf_sample_rate rate;
     size_t i, n;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     for (i = n = 0; i < interations; i++, n++) {
@@ -152,12 +152,12 @@ static int random_samplerates(struct bladerf *dev,
     return failures;
 }
 
-static int random_rational_samplerates(struct bladerf *dev,
-                                       struct app_params *p,
-                                       bladerf_channel ch,
-                                       bool quiet,
-                                       bladerf_sample_rate min,
-                                       bladerf_sample_rate max)
+static failure_count random_rational_samplerates(struct bladerf *dev,
+                                                 struct app_params *p,
+                                                 bladerf_channel ch,
+                                                 bool quiet,
+                                                 bladerf_sample_rate min,
+                                                 bladerf_sample_rate max)
 {
     size_t const iterations = 2500;
 
@@ -218,11 +218,11 @@ static int random_rational_samplerates(struct bladerf *dev,
     return failures;
 }
 
-unsigned int test_samplerate(struct bladerf *dev,
-                             struct app_params *p,
-                             bool quiet)
+failure_count test_samplerate(struct bladerf *dev,
+                              struct app_params *p,
+                              bool quiet)
 {
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     ITERATE_DIRECTIONS({

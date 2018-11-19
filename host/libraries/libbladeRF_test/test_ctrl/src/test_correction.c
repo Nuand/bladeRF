@@ -117,12 +117,14 @@ static int set_and_check(struct bladerf *dev,
     return 0;
 }
 
-static int sweep_vals(struct bladerf *dev, bladerf_channel ch, bool quiet)
+static failure_count sweep_vals(struct bladerf *dev,
+                                bladerf_channel ch,
+                                bool quiet)
 {
     int status;
     int val;
     size_t i;
-    unsigned int failures = 0;
+    failure_count failures = 0;
 
     for (i = 0; i < ARRAY_SIZE(corrections); i++) {
         PRINT("    %s\n", corrections[i].name);
@@ -138,16 +140,16 @@ static int sweep_vals(struct bladerf *dev, bladerf_channel ch, bool quiet)
     return failures;
 }
 
-static unsigned random_vals(struct bladerf *dev,
-                            struct app_params *p,
-                            bladerf_channel ch,
-                            bool quiet)
+static failure_count random_vals(struct bladerf *dev,
+                                 struct app_params *p,
+                                 bladerf_channel ch,
+                                 bool quiet)
 {
     int status;
     int val, j;
     size_t i;
     const int iterations  = 2500;
-    unsigned int failures = 0;
+    failure_count failures = 0;
 
     for (i = 0; i < ARRAY_SIZE(corrections); i++) {
         PRINT("    %s\n", corrections[i].name);
@@ -173,11 +175,11 @@ static unsigned random_vals(struct bladerf *dev,
 }
 
 
-unsigned int test_correction(struct bladerf *dev,
-                             struct app_params *p,
-                             bool quiet)
+failure_count test_correction(struct bladerf *dev,
+                              struct app_params *p,
+                              bool quiet)
 {
-    unsigned int failures = 0;
+    failure_count failures = 0;
 
     if (0 != strcmp(bladerf_get_board_name(dev), "bladerf1")) {
         PRINT("%s: board is not a bladerf1, skipping\n", __FUNCTION__);

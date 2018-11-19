@@ -82,12 +82,12 @@ static inline int set_and_check(struct bladerf *dev,
     return 0;
 }
 
-static unsigned int gain_sweep(struct bladerf *dev,
-                               bladerf_channel ch,
-                               bool quiet)
+static failure_count gain_sweep(struct bladerf *dev,
+                                bladerf_channel ch,
+                                bool quiet)
 {
-    char const **stages = NULL;
-    size_t failures     = 0;
+    char const **stages    = NULL;
+    failure_count failures = 0;
     size_t i;
     int status;
 
@@ -156,15 +156,15 @@ out:
     return failures;
 }
 
-static int random_gains(struct bladerf *dev,
-                        struct app_params *p,
-                        bladerf_channel ch,
-                        bool quiet)
+static failure_count random_gains(struct bladerf *dev,
+                                  struct app_params *p,
+                                  bladerf_channel ch,
+                                  bool quiet)
 {
     size_t const iterations = 250;
 
-    char const **stages = NULL;
-    size_t failures     = 0;
+    char const **stages    = NULL;
+    failure_count failures = 0;
     size_t i, j;
     int status;
 
@@ -243,9 +243,9 @@ out:
     return failures;
 }
 
-unsigned int test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
+failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
 {
-    size_t failures = 0;
+    failure_count failures = 0;
 
     ITERATE_DIRECTIONS({
         ITERATE_CHANNELS(

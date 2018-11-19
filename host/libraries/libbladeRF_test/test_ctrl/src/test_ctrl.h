@@ -35,9 +35,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DECLARE_TEST(name_)                                                  \
-    extern unsigned int test_##name_(struct bladerf *, struct app_params *p, \
-                                     bool quiet);                            \
+typedef size_t failure_count;
+
+#define DECLARE_TEST(name_)                                                   \
+    extern failure_count test_##name_(struct bladerf *, struct app_params *p, \
+                                      bool quiet);                            \
     extern const struct test_case test_case_##name_;
 #endif
 
@@ -73,7 +75,7 @@ struct app_params {
 
 struct test_case {
     const char *name;
-    unsigned int (*fn)(struct bladerf *dev, struct app_params *p, bool quiet);
+    failure_count (*fn)(struct bladerf *dev, struct app_params *p, bool quiet);
 };
 
 // _thing should expect a 'DIRECTION' parameter

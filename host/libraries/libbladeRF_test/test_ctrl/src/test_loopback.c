@@ -60,12 +60,12 @@ static int set_and_check(struct bladerf *dev, bladerf_loopback l)
     return 0;
 }
 
-unsigned int test_loopback(struct bladerf *dev,
-                           struct app_params *p,
-                           bool quiet)
+failure_count test_loopback(struct bladerf *dev,
+                            struct app_params *p,
+                            bool quiet)
 {
     size_t count, i;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     PRINT("%s: Setting and checking loopback modes...\n", __FUNCTION__);
