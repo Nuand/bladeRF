@@ -26,6 +26,9 @@
 #ifndef AD936X_H_
 #define AD936X_H_
 
+#include <inttypes.h>
+#include <stdbool.h>
+
 /**
  * The purpose of this header file is to allow the use of libad9361 without
  * including all of the unnecessary defines, etc, used during compilation.
@@ -528,12 +531,6 @@ struct rf_rssi {
     uint8_t duration;
 };
 
-int32_t ad9361_set_tx_atten(struct ad9361_rf_phy *phy,
-                            uint32_t atten_mdb,
-                            bool tx1,
-                            bool tx2,
-                            bool immed);
-int32_t ad9361_get_tx_atten(struct ad9361_rf_phy *phy, uint32_t tx_num);
 int32_t ad9361_get_rx_gain(struct ad9361_rf_phy *phy,
                            uint32_t rx_id,
                            struct rf_rx_gain *rx_gain);

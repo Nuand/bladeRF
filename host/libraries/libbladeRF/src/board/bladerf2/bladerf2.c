@@ -998,7 +998,7 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
 
     board_data = dev->board_data;
     phy        = board_data->phy;
-    port       = (ch >> 1) + 1;
+    port       = (ch >> 1);
     cached     = _get_tx_gain_cache(dev, ch);
 
     if (board_data->tx_mute[ch >> 1] == state) {
@@ -1007,7 +1007,10 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
     }
 
     if (state) {
-        cached = ad9361_get_tx_atten(phy, port);
+        status = ad9361_get_tx_attenuation(phy, port, &cached);
+        if (status != 0) {
+            RETURN_ERROR_AD9361("failed to get current tx attenuation", status);
+        }
         atten  = MUTED_ATTEN;
     } else {
         atten = cached;
@@ -1020,7 +1023,7 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
 
     log_debug("%s: %smuting TX%d (cached: %d)\n", __FUNCTION__,
               state ? "" : "un", port, cached);
-    status = ad9361_set_tx_atten(phy, atten, (port == 1), (port == 2), true);
+    status = ad9361_set_tx_attenuation(phy, port, atten);
     if (status != 0) {
         RETURN_ERROR_AD9361("failed to set tx atten", status);
     }
