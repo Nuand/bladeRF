@@ -83,10 +83,10 @@ static int set_and_check_filterbank(struct bladerf *dev,
     return 0;
 }
 
-static int test_paths(struct bladerf *dev)
+static failure_count test_paths(struct bladerf *dev)
 {
     int status;
-    unsigned int failures = 0;
+    failure_count failures = 0;
 
     status =
         set_and_check_paths(dev, BLADERF_CHANNEL_RX(0), BLADERF_XB200_BYPASS);
@@ -113,10 +113,10 @@ static int test_paths(struct bladerf *dev)
     return failures;
 }
 
-static int test_filterbanks(struct bladerf *dev)
+static failure_count test_filterbanks(struct bladerf *dev)
 {
     int status;
-    unsigned int failures = 0;
+    failure_count failures = 0;
 
     status = set_and_check_filterbank(dev, BLADERF_CHANNEL_RX(0),
                                       BLADERF_XB200_50M);  //
@@ -169,9 +169,9 @@ static int test_filterbanks(struct bladerf *dev)
     return failures;
 }
 
-unsigned int test_xb200(struct bladerf *dev, struct app_params *p, bool quiet)
+failure_count test_xb200(struct bladerf *dev, struct app_params *p, bool quiet)
 {
-    unsigned int failures = 0;
+    failure_count failures = 0;
 
     if (!p->use_xb200) {
         return 0;

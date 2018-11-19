@@ -71,12 +71,12 @@ static int set_and_check(struct bladerf *dev, bladerf_sampling s)
     return 0;
 }
 
-unsigned int test_sampling(struct bladerf *dev,
-                           struct app_params *p,
-                           bool quiet)
+failure_count test_sampling(struct bladerf *dev,
+                            struct app_params *p,
+                            bool quiet)
 {
     int status;
-    unsigned int failures = 0;
+    failure_count failures = 0;
 
     if (0 != strcmp(bladerf_get_board_name(dev), "bladerf1")) {
         PRINT("%s: board is not a bladerf1, skipping\n", __FUNCTION__);

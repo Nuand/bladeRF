@@ -60,7 +60,7 @@ static int set_and_check(struct bladerf *dev, bladerf_rx_mux mux)
     return 0;
 }
 
-unsigned int test_rx_mux(struct bladerf *dev, struct app_params *p, bool quiet)
+failure_count test_rx_mux(struct bladerf *dev, struct app_params *p, bool quiet)
 {
     bladerf_rx_mux const muxes[] = {
         // clang-format off
@@ -73,7 +73,7 @@ unsigned int test_rx_mux(struct bladerf *dev, struct app_params *p, bool quiet)
     };
 
     size_t i;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     PRINT("%s: Setting and checking rx muxes...\n", __FUNCTION__);

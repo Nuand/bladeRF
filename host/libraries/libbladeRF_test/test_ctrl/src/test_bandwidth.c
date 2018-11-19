@@ -56,15 +56,15 @@ static int set_and_check(struct bladerf *dev,
     return 0;
 }
 
-static size_t sweep_bandwidths(struct bladerf *dev,
-                               bladerf_module m,
-                               bladerf_bandwidth min,
-                               bladerf_bandwidth max)
+static failure_count sweep_bandwidths(struct bladerf *dev,
+                                      bladerf_module m,
+                                      bladerf_bandwidth min,
+                                      bladerf_bandwidth max)
 {
     size_t const inc = 250000;
 
     bladerf_bandwidth b;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     for (b = min; b < max; b += inc) {
@@ -77,17 +77,17 @@ static size_t sweep_bandwidths(struct bladerf *dev,
     return failures;
 }
 
-static size_t random_bandwidths(struct bladerf *dev,
-                                bladerf_module m,
-                                struct app_params *p,
-                                bladerf_bandwidth min,
-                                bladerf_bandwidth max)
+static failure_count random_bandwidths(struct bladerf *dev,
+                                       bladerf_module m,
+                                       struct app_params *p,
+                                       bladerf_bandwidth min,
+                                       bladerf_bandwidth max)
 {
     size_t const iterations = 1500;
 
     bladerf_bandwidth bw;
     size_t i;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     for (i = 0; i < iterations; i++) {
@@ -107,11 +107,11 @@ static size_t random_bandwidths(struct bladerf *dev,
     return failures;
 }
 
-unsigned int test_bandwidth(struct bladerf *dev,
-                            struct app_params *p,
-                            bool quiet)
+failure_count test_bandwidth(struct bladerf *dev,
+                             struct app_params *p,
+                             bool quiet)
 {
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     ITERATE_DIRECTIONS({

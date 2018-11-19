@@ -70,11 +70,11 @@ static int set_and_check(struct bladerf *dev,
     return status;
 }
 
-static int freq_sweep(struct bladerf *dev,
-                      bladerf_module m,
-                      bladerf_frequency min,
-                      bladerf_frequency max,
-                      bool quiet)
+static failure_count freq_sweep(struct bladerf *dev,
+                                bladerf_module m,
+                                bladerf_frequency min,
+                                bladerf_frequency max,
+                                bool quiet)
 {
     size_t const repetitions = 3;
     size_t const inc         = 1000000;
@@ -82,7 +82,7 @@ static int freq_sweep(struct bladerf *dev,
     bladerf_frequency freq      = 0;
     bladerf_frequency prev_freq = 0;
     size_t n, r;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     for (r = 0; r < repetitions; r++) {
@@ -105,19 +105,19 @@ static int freq_sweep(struct bladerf *dev,
     return failures;
 }
 
-static int random_tuning(struct bladerf *dev,
-                         struct app_params *p,
-                         bladerf_module m,
-                         bladerf_frequency min,
-                         bladerf_frequency max,
-                         bool quiet)
+static failure_count random_tuning(struct bladerf *dev,
+                                   struct app_params *p,
+                                   bladerf_module m,
+                                   bladerf_frequency min,
+                                   bladerf_frequency max,
+                                   bool quiet)
 {
     size_t const num_iterations = 10000;
 
     bladerf_frequency freq      = 0;
     bladerf_frequency prev_freq = 0;
     size_t i, n;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     for (i = n = 0; i < num_iterations; i++, n++) {
@@ -147,11 +147,11 @@ static int random_tuning(struct bladerf *dev,
     return failures;
 }
 
-unsigned int test_frequency(struct bladerf *dev,
-                            struct app_params *p,
-                            bool quiet)
+failure_count test_frequency(struct bladerf *dev,
+                             struct app_params *p,
+                             bool quiet)
 {
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
     ITERATE_DIRECTIONS({

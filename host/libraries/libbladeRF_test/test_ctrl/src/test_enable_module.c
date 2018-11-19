@@ -45,9 +45,9 @@ static int enable_module(struct bladerf *dev, bladerf_channel ch, bool enable)
     return status;
 }
 
-unsigned int test_enable_module(struct bladerf *dev,
-                                struct app_params *p,
-                                bool quiet)
+failure_count test_enable_module(struct bladerf *dev,
+                                 struct app_params *p,
+                                 bool quiet)
 {
     size_t const rx_ch = bladerf_get_channel_count(dev, BLADERF_RX);
     size_t const tx_ch = bladerf_get_channel_count(dev, BLADERF_TX);
@@ -55,10 +55,10 @@ unsigned int test_enable_module(struct bladerf *dev,
     bladerf_direction dir;
     int pass;
     size_t idx;
-    size_t failures = 0;
+    failure_count failures = 0;
     int status;
 
-    PRINT("%s: Enabling and disabling channels (%lu RX, %lu TX)...\n",
+    PRINT("%s: Enabling and disabling channels (%zu RX, %zu TX)...\n",
           __FUNCTION__, rx_ch, tx_ch);
 
     // do off, then on, then off
