@@ -37,7 +37,7 @@
 #include "capabilities.h"
 #include "compatibility.h"
 
-#include "driver/ad936x.h"
+#include "ad936x.h"
 #include "driver/fpga_trigger.h"
 #include "driver/fx3_fw.h"
 #include "driver/ina219.h"

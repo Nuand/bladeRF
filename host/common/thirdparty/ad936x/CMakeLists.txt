@@ -11,6 +11,8 @@ set(LIBAD936X_BLADERF_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../..")
 set(LIBAD936X_LOCAL_DIR "${LIBAD936X_BLADERF_ROOT}/thirdparty/analogdevicesinc/no-OS_local")
 # libbladeRF relative path
 set(LIBAD936X_LIBBLADERF_DIR "${LIBAD936X_BLADERF_ROOT}/host/libraries/libbladeRF")
+# fpga_common relative path
+set(LIBAD936X_FPGACOMMON_DIR "${LIBAD936X_BLADERF_ROOT}/fpga_common")
 
 # Patch files live here
 set(LIBAD936X_PATCH_DIR "${LIBAD936X_LOCAL_DIR}/patches")
@@ -35,7 +37,7 @@ add_library(ad936x STATIC
     ${LIBAD936X_PLATFORM_DIR}/platform.c
     ${LIBAD936X_PLATFORM_DIR}/adc_core.c
     ${LIBAD936X_PLATFORM_DIR}/dac_core.c
-    ${LIBAD936X_PLATFORM_DIR}/params.c
+    ${LIBAD936X_FPGACOMMON_DIR}/src/ad936x_params.c
 )
 
 target_compile_options(ad936x PRIVATE
@@ -154,7 +156,6 @@ set(LIBAD936X_UPSTREAM_FILES
     ad9361_api.h
     ad9361_conv.c
     common.h
-    config.h
     util.c
     util.h
 )

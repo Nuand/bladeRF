@@ -794,35 +794,6 @@ index bd4b7f7..b140494 100644
  
  struct clk {
  	const char	*name;
-diff --git a/ad9361/sw/config.h b/ad9361/sw/config.h
-index 3997bd5..37c9da8 100644
---- a/ad9361/sw/config.h
-+++ b/ad9361/sw/config.h
-@@ -39,6 +39,12 @@
- #ifndef CONFIG_H_
- #define CONFIG_H_
- 
-+// BEGIN Nuand modification
-+#ifndef NUAND_MODIFICATIONS
-+#define NUAND_MODIFICATIONS
-+#endif // !NUAND_MODIFICATIONS
-+// END Nuand modification
-+
- #define HAVE_VERBOSE_MESSAGES /* Recommended during development prints errors and warnings */
- //#define HAVE_DEBUG_MESSAGES /* For Debug purposes only */
- 
-@@ -64,4 +70,11 @@
- //#define AXI_ADC_NOT_PRESENT
- //#define TDD_SWITCH_STATE_EXAMPLE
- 
-+#ifdef NUAND_MODIFICATIONS
-+#define ALTERA_PLATFORM
-+#ifdef AD9361_DEBUG
-+#define _DEBUG
-+#endif // AD9361_DEBUG
-+#endif // NUAND_MODIFICATIONS
-+
- #endif
 diff --git a/ad9361/sw/util.h b/ad9361/sw/util.h
 index 3c88529..f4f7385 100644
 --- a/ad9361/sw/util.h
