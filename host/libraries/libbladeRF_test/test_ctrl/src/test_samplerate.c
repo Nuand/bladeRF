@@ -225,49 +225,60 @@ failure_count test_samplerate(struct bladerf *dev,
     failure_count failures = 0;
     int status;
 
-    ITERATE_DIRECTIONS({
-        ITERATE_CHANNELS(
-            DIRECTION, 1, ({
-                struct bladerf_range const *range;
-                bladerf_sample_rate min, max;
+    bladerf_direction dir;
 
-                PRINT("%s: Testing %s...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
+    FOR_EACH_DIRECTION(dir)
+    {
+        size_t i;
+        bladerf_channel ch;
 
-                status = bladerf_get_sample_rate_range(dev, CHANNEL, &range);
-                if (status < 0) {
-                    PR_ERROR("Failed to get %s sample rate range: %s\n",
-                             direction2str(DIRECTION),
-                             bladerf_strerror(status));
-                    return status;
-                };
+        FOR_EACH_CHANNEL(dir, 1, i, ch)
+        {
+            struct bladerf_range const *range;
+            bladerf_sample_rate min, max;
 
-                min = (range->min * range->scale);
-                max = (range->max * range->scale);
+            PRINT("%s: Testing %s...\n", __FUNCTION__, direction2str(dir));
 
-                PRINT("%s: %s range: %u to %u\n", __FUNCTION__,
-                      direction2str(DIRECTION), min, max);
+            status = bladerf_get_sample_rate_range(dev, ch, &range);
+            if (status < 0) {
+                PR_ERROR("Failed to get %s sample rate range: %s\n",
+                         direction2str(dir), bladerf_strerror(status));
+                return status;
+            };
 
-                PRINT("%s: Sweeping %s sample rates...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
-                failures += sweep_samplerate(dev, CHANNEL, quiet, min, max);
+            min = (range->min * range->scale);
+            max = (range->max * range->scale);
 
-                PRINT("%s: Applying random %s sample rates...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
-                failures +=
-                    random_samplerates(dev, p, CHANNEL, quiet, min, max);
+            PRINT("%s: %s range: %u to %u\n", __FUNCTION__, direction2str(dir),
+                  min, max);
 
-                PRINT("%s: Applying random %s rational sample rates...\n",
-                      __FUNCTION__, direction2str(DIRECTION));
-                failures += random_rational_samplerates(dev, p, CHANNEL, quiet,
-                                                        min, max);
-            }));  // ITERATE_CHANNELS
-    });           // ITERATE_DIRECTIONS
+            PRINT("%s: Sweeping %s sample rates...\n", __FUNCTION__,
+                  direction2str(dir));
+            failures += sweep_samplerate(dev, ch, quiet, min, max);
+
+            PRINT("%s: Applying random %s sample rates...\n", __FUNCTION__,
+                  direction2str(dir));
+            failures += random_samplerates(dev, p, ch, quiet, min, max);
+
+            PRINT("%s: Applying random %s rational sample rates...\n",
+                  __FUNCTION__, direction2str(dir));
+            failures +=
+                random_rational_samplerates(dev, p, ch, quiet, min, max);
+        }
+    }
 
     /* Restore the device back to a sane default sample rate, as not to
      * interfere with later tests */
-    failures += set_and_check(dev, BLADERF_CHANNEL_RX(0), DEFAULT_SAMPLERATE);
-    failures += set_and_check(dev, BLADERF_CHANNEL_TX(0), DEFAULT_SAMPLERATE);
+    FOR_EACH_DIRECTION(dir)
+    {
+        size_t i;
+        bladerf_channel ch;
+
+        FOR_EACH_CHANNEL(dir, 1, i, ch)
+        {
+            failures += set_and_check(dev, ch, DEFAULT_SAMPLERATE);
+        }
+    }
 
     return failures;
 }

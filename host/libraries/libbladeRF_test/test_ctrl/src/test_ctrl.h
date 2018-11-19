@@ -78,26 +78,39 @@ struct test_case {
     failure_count (*fn)(struct bladerf *dev, struct app_params *p, bool quiet);
 };
 
-// _thing should expect a 'DIRECTION' parameter
-#define ITERATE_DIRECTIONS(_thing)                                           \
-    do {                                                                     \
-        bladerf_direction DIRECTION;                                         \
-        for (DIRECTION = BLADERF_RX; DIRECTION <= BLADERF_TX; ++DIRECTION) { \
-            _thing;                                                          \
-        }                                                                    \
-    } while (0)
+/**
+ * @brief      Translate a bladerf_direction and channel number to a
+ *             bladerf_channel
+ *
+ * @param      _dir  Direction
+ * @param      _idx  Channel number
+ *
+ * @return     BLADERF_CHANNEL_TX(_idx) or BLADERF_CHANNEL_RX(_idx)
+ */
+#define CHANNEL_IDX(_dir, _idx) \
+    (BLADERF_TX == _dir) ? BLADERF_CHANNEL_TX(_idx) : BLADERF_CHANNEL_RX(_idx)
 
-// _thing should expect a 'CHANNEL' parameter
-#define ITERATE_CHANNELS(_dir, _count, _thing)                     \
-    do {                                                           \
-        size_t i;                                                  \
-        for (i = 0; i < _count; ++i) {                             \
-            bladerf_channel CHANNEL = (BLADERF_TX == _dir)         \
-                                          ? BLADERF_CHANNEL_TX(i)  \
-                                          : BLADERF_CHANNEL_RX(i); \
-            _thing;                                                \
-        }                                                          \
-    } while (0)
+/**
+ * @brief      Iterate over all bladerf_directions
+ *
+ * @param      _dir  Direction
+ */
+#define FOR_EACH_DIRECTION(_dir) \
+    for (_dir = BLADERF_RX; _dir <= BLADERF_TX; ++_dir)
+
+/**
+ * @brief      Iterate over all channels in a given direction
+ *
+ * @param      _dir      Direction
+ * @param      _count    Number of channels
+ * @param[out] _index    Index variable (size_t)
+ * @param[out] _channel  Channel variable (bladerf_channel)
+ *
+ * @return     { description_of_the_return_value }
+ */
+#define FOR_EACH_CHANNEL(_dir, _count, _index, _channel)                    \
+    for (_index = 0, _channel = CHANNEL_IDX(_dir, _index); _index < _count; \
+         ++_index, _channel   = CHANNEL_IDX(_dir, _index))
 
 DECLARE_TEST(bandwidth);
 DECLARE_TEST(correction);

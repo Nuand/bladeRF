@@ -114,38 +114,42 @@ failure_count test_bandwidth(struct bladerf *dev,
     failure_count failures = 0;
     int status;
 
-    ITERATE_DIRECTIONS({
-        ITERATE_CHANNELS(
-            DIRECTION, 1, ({
-                struct bladerf_range const *range;
-                bladerf_bandwidth min, max;
+    bladerf_direction dir;
 
-                PRINT("%s: Testing %s...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
+    FOR_EACH_DIRECTION(dir)
+    {
+        size_t i;
+        bladerf_channel ch;
 
-                status = bladerf_get_bandwidth_range(dev, CHANNEL, &range);
-                if (status < 0) {
-                    PR_ERROR("Failed to get %s bandwidth range: %s\n",
-                             direction2str(DIRECTION),
-                             bladerf_strerror(status));
-                    return status;
-                };
+        FOR_EACH_CHANNEL(dir, 1, i, ch)
+        {
+            struct bladerf_range const *range;
+            bladerf_bandwidth min, max;
 
-                min = (range->min * range->scale);
-                max = (range->max * range->scale);
+            PRINT("%s: Testing %s...\n", __FUNCTION__, direction2str(dir));
 
-                PRINT("%s: %s range: %u to %u\n", __FUNCTION__,
-                      direction2str(DIRECTION), min, max);
+            status = bladerf_get_bandwidth_range(dev, ch, &range);
+            if (status < 0) {
+                PR_ERROR("Failed to get %s bandwidth range: %s\n",
+                         direction2str(dir), bladerf_strerror(status));
+                return status;
+            };
 
-                PRINT("%s: Sweeping %s bandwidths...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
-                failures += sweep_bandwidths(dev, CHANNEL, min, max);
+            min = (range->min * range->scale);
+            max = (range->max * range->scale);
 
-                PRINT("%s: Applying random %s bandwidths...\n", __FUNCTION__,
-                      direction2str(DIRECTION));
-                failures += random_bandwidths(dev, CHANNEL, p, min, max);
-            }));  // ITERATE_CHANNELS
-    });           // ITERATE_DIRECTIONS
+            PRINT("%s: %s range: %u to %u\n", __FUNCTION__, direction2str(dir),
+                  min, max);
+
+            PRINT("%s: Sweeping %s bandwidths...\n", __FUNCTION__,
+                  direction2str(dir));
+            failures += sweep_bandwidths(dev, ch, min, max);
+
+            PRINT("%s: Applying random %s bandwidths...\n", __FUNCTION__,
+                  direction2str(dir));
+            failures += random_bandwidths(dev, ch, p, min, max);
+        }
+    }
 
     return failures;
 }

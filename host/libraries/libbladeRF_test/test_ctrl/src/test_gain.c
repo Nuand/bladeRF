@@ -247,72 +247,75 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
 {
     failure_count failures = 0;
 
-    ITERATE_DIRECTIONS({
-        ITERATE_CHANNELS(
-            DIRECTION, (bladerf_get_channel_count(dev, DIRECTION)), ({
-                bladerf_gain_mode old_mode;
-                int status;
+    bladerf_direction dir;
 
-                /* Switch to manual gain control */
-                status = bladerf_get_gain_mode(dev, CHANNEL, &old_mode);
-                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
-                    PR_ERROR(
-                        "Failed to get current gain mode on channel %s: %s\n",
-                        channel2str(CHANNEL), bladerf_strerror(status));
+    FOR_EACH_DIRECTION(dir)
+    {
+        size_t i;
+        bladerf_channel ch;
+
+        FOR_EACH_CHANNEL(dir, bladerf_get_channel_count(dev, dir), i, ch)
+        {
+            bladerf_gain_mode old_mode;
+            int status;
+
+            /* Switch to manual gain control */
+            status = bladerf_get_gain_mode(dev, ch, &old_mode);
+            if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                PR_ERROR("Failed to get current gain mode on channel %s: %s\n",
+                         channel2str(ch), bladerf_strerror(status));
+                failures += 1;
+                continue;
+            }
+
+            status = bladerf_set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
+            if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                PR_ERROR("Failed to set gain mode on channel %s: %s\n",
+                         channel2str(ch), bladerf_strerror(status));
+                failures += 1;
+                continue;
+            }
+
+            if (!p->module_enabled) {
+                /* Enable the channel */
+                status = bladerf_enable_module(dev, ch, true);
+                if (status < 0) {
+                    PR_ERROR("Failed to enable channel %s: %s\n",
+                             channel2str(ch), bladerf_strerror(status));
                     failures += 1;
                     continue;
                 }
+            }
 
-                status = bladerf_set_gain_mode(dev, CHANNEL, BLADERF_GAIN_MGC);
-                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
-                    PR_ERROR("Failed to set gain mode on channel %s: %s\n",
-                             channel2str(CHANNEL), bladerf_strerror(status));
+            PRINT("%s: Performing gain sweep on %s...\n", __FUNCTION__,
+                  channel2str(ch));
+            failures += gain_sweep(dev, ch, quiet);
+
+            PRINT("%s: Applying random gains on %s...\n", __FUNCTION__,
+                  channel2str(ch));
+            failures += random_gains(dev, p, ch, quiet);
+
+            if (!p->module_enabled) {
+                /* Deactivate the channel */
+                status = bladerf_enable_module(dev, ch, false);
+                if (status < 0) {
+                    PR_ERROR("Failed to deactivate channel %s: %s\n",
+                             channel2str(ch), bladerf_strerror(status));
                     failures += 1;
                     continue;
                 }
+            }
 
-                if (!p->module_enabled) {
-                    /* Enable the channel */
-                    status = bladerf_enable_module(dev, CHANNEL, true);
-                    if (status < 0) {
-                        PR_ERROR("Failed to enable channel %s: %s\n",
-                                 channel2str(CHANNEL),
-                                 bladerf_strerror(status));
-                        failures += 1;
-                        continue;
-                    }
-                }
-
-                PRINT("%s: Performing gain sweep on %s...\n", __FUNCTION__,
-                      channel2str(CHANNEL));
-                failures += gain_sweep(dev, CHANNEL, quiet);
-
-                PRINT("%s: Applying random gains on %s...\n", __FUNCTION__,
-                      channel2str(CHANNEL));
-                failures += random_gains(dev, p, CHANNEL, quiet);
-
-                if (!p->module_enabled) {
-                    /* Deactivate the channel */
-                    status = bladerf_enable_module(dev, CHANNEL, false);
-                    if (status < 0) {
-                        PR_ERROR("Failed to deactivate channel %s: %s\n",
-                                 channel2str(CHANNEL),
-                                 bladerf_strerror(status));
-                        failures += 1;
-                        continue;
-                    }
-                }
-
-                /* Return to previous gain control mode */
-                status = bladerf_set_gain_mode(dev, CHANNEL, old_mode);
-                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
-                    PR_ERROR("Failed to set gain mode on channel %s: %s\n",
-                             channel2str(CHANNEL), bladerf_strerror(status));
-                    failures += 1;
-                    continue;
-                }
-            }));  // ITERATE_CHANNELS
-    });           // ITERATE_DIRECTIONS
+            /* Return to previous gain control mode */
+            status = bladerf_set_gain_mode(dev, ch, old_mode);
+            if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                PR_ERROR("Failed to set gain mode on channel %s: %s\n",
+                         channel2str(ch), bladerf_strerror(status));
+                failures += 1;
+                continue;
+            }
+        }
+    }
 
     return failures;
 }
