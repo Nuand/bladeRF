@@ -69,8 +69,8 @@ int CALL_CONV bladerf_set_bias_tee(struct bladerf *dev,
 /**
  * @defgroup FN_BLADERF2_LOW_LEVEL Low-level accessors
  *
- * In a most cases, higher-level routines should be used. These routines are
- * only intended to support development and testing.
+ * In most cases, higher-level routines should be used. These routines are only
+ * intended to support development and testing.
  *
  * Use these routines with great care, and be sure to reference the relevant
  * schematics, data sheets, and source code (i.e., firmware and hdl).
@@ -134,7 +134,7 @@ int CALL_CONV bladerf_get_rfic_temperature(struct bladerf *dev, float *val);
  *        value (e.g. in dBm) is desired, a calibration should be performed
  *        against a reference signal.
  *
- * @note  See `src/board/bladerf2/params.c` for the RSSI control parameters.
+ * @note  See `fpga_common/src/ad936x_params.c` for the RSSI control parameters.
  *
  * Reference: AD9361 Reference Manual UG-570
  *
@@ -171,11 +171,11 @@ int CALL_CONV bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
  * RFIC RX FIR filter choices
  */
 typedef enum {
-    BLADERF_RFIC_RXFIR_BYPASS, /**< No filter */
-    BLADERF_RFIC_RXFIR_CUSTOM, /**< Custom FIR filter (currently unused) */
-    BLADERF_RFIC_RXFIR_DEC1,   /**< Decimate by 1 (default) */
-    BLADERF_RFIC_RXFIR_DEC2,   /**< Decimate by 2 */
-    BLADERF_RFIC_RXFIR_DEC4,   /**< Decimate by 4 */
+    BLADERF_RFIC_RXFIR_BYPASS = 0, /**< No filter */
+    BLADERF_RFIC_RXFIR_CUSTOM,     /**< Custom FIR filter (currently unused) */
+    BLADERF_RFIC_RXFIR_DEC1,       /**< Decimate by 1 (default) */
+    BLADERF_RFIC_RXFIR_DEC2,       /**< Decimate by 2 */
+    BLADERF_RFIC_RXFIR_DEC4,       /**< Decimate by 4 */
 } bladerf_rfic_rxfir;
 
 /** Default RFIC RX FIR filter */
@@ -185,11 +185,11 @@ typedef enum {
  * RFIC TX FIR filter choices
  */
 typedef enum {
-    BLADERF_RFIC_TXFIR_BYPASS, /**< No filter (default) */
-    BLADERF_RFIC_TXFIR_CUSTOM, /**< Custom FIR filter (currently unused) */
-    BLADERF_RFIC_TXFIR_INT1,   /**< Interpolate by 1 */
-    BLADERF_RFIC_TXFIR_INT2,   /**< Interpolate by 2 */
-    BLADERF_RFIC_TXFIR_INT4,   /**< Interpolate by 4 */
+    BLADERF_RFIC_TXFIR_BYPASS = 0, /**< No filter (default) */
+    BLADERF_RFIC_TXFIR_CUSTOM,     /**< Custom FIR filter (currently unused) */
+    BLADERF_RFIC_TXFIR_INT1,       /**< Interpolate by 1 */
+    BLADERF_RFIC_TXFIR_INT2,       /**< Interpolate by 2 */
+    BLADERF_RFIC_TXFIR_INT4,       /**< Interpolate by 4 */
 } bladerf_rfic_txfir;
 
 /** Default RFIC TX FIR filter */
@@ -200,6 +200,8 @@ typedef enum {
  *
  * @param   dev     Device handle
  * @param   rxfir   RX FIR selection
+ *
+ * @note  See `fpga_common/src/ad936x_params.c` for FIR parameters.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -213,6 +215,8 @@ int CALL_CONV bladerf_get_rfic_rx_fir(struct bladerf *dev,
  * @param   dev     Device handle
  * @param   rxfir   RX FIR selection
  *
+ * @note  See `fpga_common/src/ad936x_params.c` for FIR parameters.
+ *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
@@ -225,6 +229,8 @@ int CALL_CONV bladerf_set_rfic_rx_fir(struct bladerf *dev,
  * @param   dev     Device handle
  * @param   txfir   TX FIR selection
  *
+ * @note  See `fpga_common/src/ad936x_params.c` for FIR parameters.
+ *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
@@ -236,6 +242,8 @@ int CALL_CONV bladerf_get_rfic_tx_fir(struct bladerf *dev,
  *
  * @param   dev     Device handle
  * @param   txfir   TX FIR selection
+ *
+ * @note  See `fpga_common/src/ad936x_params.c` for FIR parameters.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
