@@ -306,8 +306,11 @@ include_directories(${LIBBLADERF_INCLUDES})
 # Configure source files
 ################################################################################
 set(LIBBLADERF_SOURCE_BLADERF2
+        ${BLADERF_FPGA_COMMON_SOURCE_DIR}/ad936x_helpers.c
+        ${BLADERF_FPGA_COMMON_SOURCE_DIR}/bladerf2_common.c
         src/board/bladerf2/bladerf2.c
         src/board/bladerf2/capabilities.c
+        src/board/bladerf2/common.c
         src/board/bladerf2/compatibility.c
 )
 
@@ -349,6 +352,7 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/lms.c
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/band_select.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/parse.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/range.c
 )
 
 if(BUILD_AD936X)
