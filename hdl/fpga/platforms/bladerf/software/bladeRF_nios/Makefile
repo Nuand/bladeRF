@@ -14,6 +14,9 @@ QUARTUS_OUTDIR     := $(QUARTUS_WORKDIR)/output_files
 
 ALT_INCLUDE_DIRS   += -I ./src
 
+C_SRCS             += $(FPGA_COMMON_DIR)/src/lms.c
+C_SRCS             += $(FPGA_COMMON_DIR)/src/band_select.c
+C_SRCS             += $(BLADERF_COMMON_DIR)/src/pkt_retune.c
 C_SRCS             += ./src/bladeRF_nios.c
 
 #------------------------------------------------------------------------------

@@ -43,7 +43,6 @@
 #include "pkt_8x64.h"
 #include "pkt_16x64.h"
 #include "pkt_32x32.h"
-#include "pkt_retune.h"
 #include "pkt_retune2.h"
 #include "pkt_legacy.h"
 #include "debug.h"
@@ -84,7 +83,6 @@
  * to include the magic header byte value in the `magics` array.
  */
 static const struct pkt_handler pkt_handlers[] = {
-    PKT_RETUNE,
     PKT_RETUNE2,
     PKT_8x8,
     PKT_8x16,
