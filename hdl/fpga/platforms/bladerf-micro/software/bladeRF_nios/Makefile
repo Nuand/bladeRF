@@ -14,6 +14,7 @@ QUARTUS_OUTDIR     := $(QUARTUS_WORKDIR)/output_files
 
 ALT_INCLUDE_DIRS   += -I ./src
 
+C_SRCS             += $(BLADERF_COMMON_DIR)/src/pkt_retune2.c
 C_SRCS             += ./src/bladeRF_nios.c
 
 #------------------------------------------------------------------------------
