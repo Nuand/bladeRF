@@ -32,7 +32,8 @@ DECLARE_TEST_CASE(frequency);
  * out on this for now... */
 static inline bool freq_match(bladerf_frequency a, bladerf_frequency b)
 {
-    bladerf_frequency const allowed_slack = (a >= 3000000000) ? 5 : 3;
+    bladerf_frequency const band_split = 3000000000UL;
+    bladerf_frequency const allowed_slack = (a >= band_split) ? 5 : 3;
 
     return (a >= (b - allowed_slack) && a <= (b + allowed_slack));
 }
