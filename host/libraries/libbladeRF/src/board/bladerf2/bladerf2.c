@@ -55,6 +55,7 @@
 #include "helpers/file.h"
 #include "helpers/version.h"
 #include "helpers/wallclock.h"
+#include "iterators.h"
 #include "version.h"
 
 #include "bladerf2_common.h"
@@ -111,6 +112,8 @@ static int _bladerf2_initialize(struct bladerf *dev)
     struct bladerf_version required_fw_version, required_fpga_version;
     uint32_t reg;
     int status;
+    size_t i;
+    bladerf_channel ch;
 
     /* Test for uninitialized dev struct */
     NULL_CHECK(dev);
@@ -217,11 +220,12 @@ static int _bladerf2_initialize(struct bladerf *dev)
     CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
 
     /* Mute TX channels */
-    board_data->tx_mute[0] = false;
-    board_data->tx_mute[1] = false;
-
-    CHECK_STATUS(txmute_set(phy, BLADERF_CHANNEL_TX(0), true));
-    CHECK_STATUS(txmute_set(phy, BLADERF_CHANNEL_TX(1), true));
+    FOR_EACH_CHANNEL(BLADERF_TX, dev->board->get_channel_count(dev, BLADERF_TX),
+                     i, ch)
+    {
+        board_data->tx_mute[i] = false;
+        CHECK_STATUS(txmute_set(phy, ch, true));
+    }
 
     /* Update device state */
     board_data->state = STATE_INITIALIZED;
@@ -507,20 +511,18 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         /* Cancel any pending re-tunes that may have been left over as the
          * result of a user application crashing or forgetting to call
          * bladerf_close() */
-        status =
-            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
-        if (status != 0) {
-            log_warning("Failed to cancel any pending RX retunes: %s\n",
-                        bladerf_strerror(status));
-            return status;
-        }
 
-        status =
-            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
-        if (status != 0) {
-            log_warning("Failed to cancel any pending TX retunes: %s\n",
-                        bladerf_strerror(status));
-            return status;
+        bladerf_direction dir;
+
+        FOR_EACH_DIRECTION(dir)
+        {
+            size_t idx;
+            bladerf_channel ch;
+
+            FOR_EACH_CHANNEL(dir, 1, idx, ch)
+            {
+                CHECK_STATUS(dev->board->cancel_scheduled_retunes(dev, ch));
+            }
         }
     }
 
@@ -534,23 +536,34 @@ static void bladerf2_close(struct bladerf *dev)
         struct bladerf_flash_arch *flash_arch  = dev->flash_arch;
 
         if (board_data != NULL) {
-            sync_deinit(&board_data->sync[BLADERF_CHANNEL_RX(0)]);
-            sync_deinit(&board_data->sync[BLADERF_CHANNEL_TX(0)]);
+            bladerf_direction dir;
 
-            if (dev->backend->is_fpga_configured(dev) &&
-                have_cap(board_data->capabilities,
-                         BLADERF_CAP_SCHEDULED_RETUNE)) {
-                /* Cancel scheduled retunes here to avoid the device retuning
-                 * underneath the user should they open it again in the future.
-                 *
-                 * This is intended to help developers avoid a situation during
-                 * debugging where they schedule "far" into the future, but hit
-                 * a case where their program aborts or exits early. If we do
-                 * not cancel these scheduled retunes, the device could start
-                 * up and/or "unexpectedly" switch to a different frequency.
-                 */
-                dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
-                dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
+            FOR_EACH_DIRECTION(dir)
+            {
+                size_t idx;
+                bladerf_channel ch;
+
+                FOR_EACH_CHANNEL(dir, 1, idx, ch)
+                {
+                    sync_deinit(&board_data->sync[ch]);
+
+                    /* Cancel scheduled retunes here to avoid the device
+                     * retuning underneath the user should they open it again in
+                     * the future.
+                     *
+                     * This is intended to help developers avoid a situation
+                     * during debugging where they schedule "far" into the
+                     * future, but hit a case where their program aborts or
+                     * exits early. If we do not cancel these scheduled retunes,
+                     * the device could start up and/or "unexpectedly" switch to
+                     * a different frequency.
+                     */
+                    if (dev->backend->is_fpga_configured(dev) &&
+                        have_cap(board_data->capabilities,
+                                 BLADERF_CAP_SCHEDULED_RETUNE)) {
+                        dev->board->cancel_scheduled_retunes(dev, ch);
+                    }
+                }
             }
 
             if (board_data->phy != NULL) {
@@ -1490,6 +1503,8 @@ static int bladerf2_select_band(struct bladerf *dev,
 
     struct bladerf2_board_data *board_data = dev->board_data;
     struct ad9361_rf_phy *phy              = board_data->phy;
+    bladerf_direction dir = BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX;
+    bladerf_channel bch;
     uint32_t reg;
     size_t i;
 
@@ -1497,10 +1512,8 @@ static int bladerf2_select_band(struct bladerf *dev,
     CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
 
     /* We have to do this for all the channels sharing the same LO. */
-    for (i = 0; i < 2; ++i) {
-        bladerf_channel bch = BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_CHANNEL_TX(i)
-                                                        : BLADERF_CHANNEL_RX(i);
-
+    FOR_EACH_CHANNEL(dir, dev->board->get_channel_count(dev, dir), i, bch)
+    {
         /* Is this channel enabled? */
         bool enable = _rffe_ch_enabled(reg, bch);
 
@@ -1692,40 +1705,32 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
                                    bladerf_channel ch,
                                    struct bladerf_quick_tune *quick_tune)
 {
-    const struct band_port_map *port_map;
-    struct bladerf2_board_data *board_data;
-    bladerf_frequency freq;
-    int status;
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    NULL_CHECK(quick_tune);
 
-    if (NULL == quick_tune) {
-        RETURN_INVAL("quick_tune", "is null");
-    }
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct ad9361_rf_phy *phy              = board_data->phy;
+    struct band_port_map const *pm         = NULL;
+
+    bladerf_frequency freq;
 
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
         ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
         RETURN_INVAL_ARG("channel", ch, "is not valid");
     }
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_STATUS(dev->board->get_frequency(dev, ch, &freq));
 
-    board_data = dev->board_data;
-
-    status = bladerf2_get_frequency(dev, ch, &freq);
-    if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf2_get_frequency", status);
-    }
-
-    port_map = _get_band_port_map_by_freq(ch, freq);
+    pm = _get_band_port_map_by_freq(ch, freq);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-
-        if( board_data->quick_tune_tx_profile < NUM_BBP_FASTLOCK_PROFILES ) {
+        if (board_data->quick_tune_tx_profile < NUM_BBP_FASTLOCK_PROFILES) {
             /* Assign Nios and RFFE profile numbers */
             quick_tune->nios_profile = board_data->quick_tune_tx_profile++;
             log_verbose("Quick tune assigned Nios TX fast lock index: %u\n",
                         quick_tune->nios_profile);
-            quick_tune->rffe_profile = quick_tune->nios_profile %
-                NUM_RFFE_FASTLOCK_PROFILES;
+            quick_tune->rffe_profile =
+                quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
             log_verbose("Quick tune assigned RFFE TX fast lock index: %u\n",
                         quick_tune->rffe_profile);
         } else {
@@ -1734,39 +1739,31 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         }
 
         /* Create a fast lock profile in the RFIC */
-        status = ad9361_tx_fastlock_store(board_data->phy,
-                                          quick_tune->rffe_profile);
-        if (status < 0) {
-            RETURN_ERROR_AD9361("ad9361_tx_fastlock_store", status);
-        }
+        CHECK_AD936X(ad9361_tx_fastlock_store(phy, quick_tune->rffe_profile));
 
         /* Save the fast lock profile to quick_tune structure */
-        /*status = ad9361_tx_fastlock_save(board_data->phy,
-                                         quick_tune->rffe_profile,
-                                         &quick_tune->rffe_profile_data[0]);
-        if (status < 0) {
-            RETURN_ERROR_AD9361("ad9361_tx_fastlock_save", status);
-        }*/
+        // CHECK_AD936X(ad9361_tx_fastlock_save(
+        //     phy, quick_tune->rffe_profile,
+        //     &quick_tune->rffe_profile_data[0]));
 
         /* Save a copy of the TX fast lock profile to the Nios */
         dev->backend->rffe_fastlock_save(dev, true, quick_tune->rffe_profile,
                                          quick_tune->nios_profile);
 
         /* Set the TX band */
-        quick_tune->port = (port_map->rfic_port << 6);
+        quick_tune->port = (pm->rfic_port << 6);
 
         /* Set the TX SPDTs */
-        quick_tune->spdt = (port_map->spdt << 6) | (port_map->spdt << 4);
+        quick_tune->spdt = (pm->spdt << 6) | (pm->spdt << 4);
 
     } else {
-
-        if( board_data->quick_tune_rx_profile < NUM_BBP_FASTLOCK_PROFILES ) {
+        if (board_data->quick_tune_rx_profile < NUM_BBP_FASTLOCK_PROFILES) {
             /* Assign Nios and RFFE profile numbers */
             quick_tune->nios_profile = board_data->quick_tune_rx_profile++;
             log_verbose("Quick tune assigned Nios RX fast lock index: %u\n",
                         quick_tune->nios_profile);
-            quick_tune->rffe_profile = quick_tune->nios_profile %
-                NUM_RFFE_FASTLOCK_PROFILES;
+            quick_tune->rffe_profile =
+                quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
             log_verbose("Quick tune assigned RFFE RX fast lock index: %u\n",
                         quick_tune->rffe_profile);
         } else {
@@ -1775,19 +1772,12 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         }
 
         /* Create a fast lock profile in the RFIC */
-        status = ad9361_rx_fastlock_store(board_data->phy,
-                                          quick_tune->rffe_profile);
-        if (status < 0) {
-            RETURN_ERROR_AD9361("ad9361_rx_fastlock_store", status);
-        }
+        CHECK_AD936X(ad9361_rx_fastlock_store(phy, quick_tune->rffe_profile));
 
         /* Save the fast lock profile to quick_tune structure */
-        /*status = ad9361_rx_fastlock_save(board_data->phy,
-                                         quick_tune->rffe_profile,
-                                         &quick_tune->rffe_profile_data[0]);
-        if (status < 0) {
-            RETURN_ERROR_AD9361("ad9361_rx_fastlock_save", status);
-        }*/
+        // CHECK_AD936X(ad9361_rx_fastlock_save(
+        //     phy, quick_tune->rffe_profile,
+        //     &quick_tune->rffe_profile_data[0]));
 
         /* Save a copy of the RX fast lock profile to the Nios */
         dev->backend->rffe_fastlock_save(dev, false, quick_tune->rffe_profile,
@@ -1797,14 +1787,14 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         quick_tune->port = NIOS_PKT_RETUNE2_PORT_IS_RX_MASK;
 
         /* Set the RX band */
-        if (port_map->rfic_port < 3) {
-            quick_tune->port |= (3 << (port_map->rfic_port << 1));
+        if (pm->rfic_port < 3) {
+            quick_tune->port |= (3 << (pm->rfic_port << 1));
         } else {
-            quick_tune->port |= (1 << (port_map->rfic_port - 3));
+            quick_tune->port |= (1 << (pm->rfic_port - 3));
         }
 
         /* Set the RX SPDTs */
-        quick_tune->spdt = (port_map->spdt << 2) | (port_map->spdt);
+        quick_tune->spdt = (pm->spdt << 2) | (pm->spdt);
     }
 
     return 0;
@@ -1816,9 +1806,10 @@ static int bladerf2_schedule_retune(struct bladerf *dev,
                                     bladerf_frequency frequency,
                                     struct bladerf_quick_tune *quick_tune)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
-
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    NULL_CHECK(quick_tune);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
         log_debug("This FPGA version (%u.%u.%u) does not support "
@@ -1830,30 +1821,19 @@ static int bladerf2_schedule_retune(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    if (quick_tune == NULL) {
-        log_error("Scheduled retunes require a quick tune parameter\n");
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    return dev->backend->retune2(dev, ch, timestamp,
-                                 quick_tune->nios_profile,
-                                 quick_tune->rffe_profile,
-                                 quick_tune->port,
+    return dev->backend->retune2(dev, ch, timestamp, quick_tune->nios_profile,
+                                 quick_tune->rffe_profile, quick_tune->port,
                                  quick_tune->spdt);
 }
 
 static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev,
                                              bladerf_channel ch)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
-    int status;
-
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
-        status = dev->backend->retune2(dev, ch, NIOS_PKT_RETUNE2_CLEAR_QUEUE,
-                                       0, 0, 0, 0);
-    } else {
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    if (!have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
         log_debug("This FPGA version (%u.%u.%u) does not support "
                   "scheduled retunes.\n",
                   board_data->fpga_version.major,
@@ -1863,7 +1843,8 @@ static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return status;
+    return dev->backend->retune2(dev, ch, NIOS_PKT_RETUNE2_CLEAR_QUEUE, 0, 0, 0,
+                                 0);
 }
 
 
@@ -2621,15 +2602,16 @@ static int bladerf2_device_reset(struct bladerf *dev)
 static int bladerf2_set_tuning_mode(struct bladerf *dev,
                                     bladerf_tuning_mode mode)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
-
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
 
     if (mode == BLADERF_TUNING_MODE_FPGA &&
         !have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
         log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
                   "provided tuning mode (%d)\n",
-                  board_data->fpga_version.major, board_data->fpga_version.minor,
+                  board_data->fpga_version.major,
+                  board_data->fpga_version.minor,
                   board_data->fpga_version.patch, mode);
         return BLADERF_ERR_UNSUPPORTED;
     }
@@ -2651,9 +2633,10 @@ static int bladerf2_set_tuning_mode(struct bladerf *dev,
 static int bladerf2_get_tuning_mode(struct bladerf *dev,
                                     bladerf_tuning_mode *mode)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
-
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+    NULL_CHECK(mode);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
 
     *mode = board_data->tuning_mode;
 
