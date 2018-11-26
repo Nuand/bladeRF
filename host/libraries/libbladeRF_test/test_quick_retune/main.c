@@ -27,9 +27,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include <unistd.h>
 #include <libbladeRF.h>
 #include "conversions.h"
+#include "host_config.h"
 
 #define VERBOSITY BLADERF_LOG_LEVEL_INFO
 
