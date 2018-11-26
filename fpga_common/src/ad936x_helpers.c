@@ -140,6 +140,7 @@ enum rf_gain_ctrl_mode gainmode_bladerf_to_ad9361(bladerf_gain_mode gainmode,
 {
     struct bladerf_rfic_gain_mode_map const *mode_map;
     size_t mode_map_len;
+    size_t i;
 
     mode_map     = bladerf2_rx_gain_mode_map;
     mode_map_len = ARRAY_SIZE(bladerf2_rx_gain_mode_map);
@@ -148,7 +149,7 @@ enum rf_gain_ctrl_mode gainmode_bladerf_to_ad9361(bladerf_gain_mode gainmode,
         *ok = false;
     }
 
-    for (size_t i = 0; i < mode_map_len; ++i) {
+    for (i = 0; i < mode_map_len; ++i) {
         if (mode_map[i].brf_mode == gainmode) {
             if (NULL != ok) {
                 *ok = true;
@@ -165,6 +166,7 @@ bladerf_gain_mode gainmode_ad9361_to_bladerf(enum rf_gain_ctrl_mode gainmode,
 {
     struct bladerf_rfic_gain_mode_map const *mode_map;
     size_t mode_map_len;
+    size_t i;
 
     mode_map     = bladerf2_rx_gain_mode_map;
     mode_map_len = ARRAY_SIZE(bladerf2_rx_gain_mode_map);
@@ -173,7 +175,7 @@ bladerf_gain_mode gainmode_ad9361_to_bladerf(enum rf_gain_ctrl_mode gainmode,
         *ok = false;
     }
 
-    for (size_t i = 0; i < mode_map_len; ++i) {
+    for (i = 0; i < mode_map_len; ++i) {
         if (mode_map[i].rfic_mode == gainmode) {
             if (NULL != ok) {
                 *ok = true;
