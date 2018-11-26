@@ -1810,7 +1810,7 @@ static inline int write_vcocap(struct bladerf *dev, uint8_t base,
 #define VCO_NORM 0x00
 #define VCO_LOW  0x01
 
-#ifdef LOGGING_ENABLED
+#if defined(LOGGING_ENABLED) || defined(BLADERF_NIOS_DEBUG)
 static const char *vtune_str(uint8_t value) {
     switch (value) {
         case VCO_HIGH:
