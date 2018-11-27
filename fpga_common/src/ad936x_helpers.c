@@ -19,6 +19,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#ifdef BLADERF_NIOS_BUILD
+#include "devices.h"
+#endif  // BLADERF_NIOS_BUILD
+
+/* Avoid building this in low-memory situations */
+#if !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
+
 #if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
 #include "log.h"
 #endif
@@ -27,7 +34,6 @@
 #include "bladerf2_common.h"
 
 static bool tx_mute_state[2] = { false };
-
 
 uint32_t txmute_get_cached(struct ad9361_rf_phy *phy, bladerf_channel ch)
 {
@@ -186,3 +192,5 @@ bladerf_gain_mode gainmode_ad9361_to_bladerf(enum rf_gain_ctrl_mode gainmode,
 
     return 0;
 }
+
+#endif  // !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)

@@ -1,3 +1,10 @@
+#ifdef BLADERF_NIOS_BUILD
+#include "devices.h"
+#endif  // BLADERF_NIOS_BUILD
+
+/* Avoid building this in low-memory situations */
+#if !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
+
 #include "ad9361_api.h"
 #include "platform.h"
 
@@ -725,3 +732,5 @@ AD9361_TXFIRConfig bladerf2_rfic_tx_fir_config_int4 = {
     { 0, 0, 0, 0, 0, 0 },  // tx_path_clks[6]
     0                      // tx_bandwidth
 };
+
+#endif  // !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
