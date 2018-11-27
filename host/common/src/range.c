@@ -19,6 +19,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#ifdef BLADERF_NIOS_BUILD
+#include "devices.h"
+#endif  // BLADERF_NIOS_BUILD
+
+/* Avoid building this in low-memory situations */
+#if !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
+
 #include "range.h"
 
 #if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
@@ -63,3 +70,5 @@ int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
 
     return value;
 }
+
+#endif  // !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
