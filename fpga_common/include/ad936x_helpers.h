@@ -22,6 +22,12 @@
 #ifndef FPGA_COMMON_AD936X_HELPERS_H_
 #define FPGA_COMMON_AD936X_HELPERS_H_
 
+#ifdef BLADERF_NIOS_BUILD
+#include "devices.h"
+#endif  // BLADERF_NIOS_BUILD
+
+#if !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
+
 #if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
 #include <libbladeRF.h>
 #else
@@ -117,4 +123,5 @@ enum rf_gain_ctrl_mode gainmode_bladerf_to_ad9361(bladerf_gain_mode gainmode,
 bladerf_gain_mode gainmode_ad9361_to_bladerf(enum rf_gain_ctrl_mode gainmode,
                                              bool *ok);
 
-#endif
+#endif  // !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
+#endif  // FPGA_COMMON_AD936X_HELPERS_H_
