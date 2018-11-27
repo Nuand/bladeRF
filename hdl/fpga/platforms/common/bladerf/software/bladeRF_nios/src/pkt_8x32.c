@@ -49,14 +49,18 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint32_t *data)
             *data = rffe_csr_read();
             break;
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x32_TARGET_ADF400X:
             *data = adf400x_spi_read(addr);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x32_TARGET_FASTLOCK:
             DBG("Read from AD9361 fast lock not supported.\n");
             *data = 0x00;
             return false;
+#endif  // BOARD_BLADERF_MICRO
 
         default:
             DBG("Invalid id: 0x%x\n", id);
@@ -86,13 +90,17 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint32_t data)
             rffe_csr_write(data);
             break;
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x32_TARGET_ADF400X:
             adf400x_spi_write(data);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x32_TARGET_FASTLOCK:
             ad9361_fastlock_save( (addr == 1), (data >> 16), (data & 0xff));
             break;
+#endif  // BOARD_BLADERF_MICRO
 
         default:
             DBG("Invalid id: 0x%x\n", id);

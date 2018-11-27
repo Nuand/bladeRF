@@ -95,13 +95,17 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint16_t *data)
             iq_corr_read(addr, data);
             break;
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x16_TARGET_AD56X1_DAC:
             ad56x1_vctcxo_trim_dac_read(data);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x16_TARGET_INA219:
             *data = ina219_read(addr);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
         /* Add user customizations here
 
@@ -135,13 +139,17 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint16_t data)
             agc_dc_corr_write(addr, data);
             break;
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x16_TARGET_AD56X1_DAC:
             ad56x1_vctcxo_trim_dac_write(data);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x16_TARGET_INA219:
             ina219_write(addr, data);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
         /* Add user customizations here
 

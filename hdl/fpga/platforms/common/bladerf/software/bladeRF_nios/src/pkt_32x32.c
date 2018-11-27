@@ -55,9 +55,11 @@ static inline bool perform_write(uint8_t id, uint32_t addr, uint32_t data)
             }
             break;
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_32x32_TARGET_ADI_AXI:
             adi_axi_write(addr, data);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
         /* Add user customizations here
 
@@ -87,9 +89,11 @@ static inline bool perform_read(uint8_t id, uint32_t addr, uint32_t *data)
             *data = expansion_port_get_direction() & addr;
             break;
 
+#ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_32x32_TARGET_ADI_AXI:
             *data = adi_axi_read(addr);
             break;
+#endif  // BOARD_BLADERF_MICRO
 
         /* Add user customizations here
 
