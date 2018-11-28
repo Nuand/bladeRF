@@ -312,6 +312,8 @@ set(LIBBLADERF_SOURCE_BLADERF2
         src/board/bladerf2/capabilities.c
         src/board/bladerf2/common.c
         src/board/bladerf2/compatibility.c
+        src/board/bladerf2/rfic_fpga.c
+        src/board/bladerf2/rfic_host.c
 )
 
 set(LIBBLADERF_SOURCE

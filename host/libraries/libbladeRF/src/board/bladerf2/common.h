@@ -42,6 +42,90 @@ enum bladerf2_vctcxo_trim_source {
     TRIM_SOURCE_AUXDAC
 };
 
+enum bladerf2_rfic_command_mode {
+    RFIC_COMMAND_HOST, /**< Host-based control */
+    RFIC_COMMAND_FPGA, /**< FPGA-based control */
+};
+
+struct controller_fns {
+    bool (*is_present)(struct bladerf *dev);
+    bool (*is_initialized)(struct bladerf *dev);
+    bool (*is_standby)(struct bladerf *dev);
+
+    int (*initialize)(struct bladerf *dev);
+    int (*standby)(struct bladerf *dev);
+    int (*deinitialize)(struct bladerf *dev);
+
+    int (*enable_module)(struct bladerf *dev, bladerf_channel ch, bool enable);
+
+    int (*get_sample_rate)(struct bladerf *dev,
+                           bladerf_channel ch,
+                           bladerf_sample_rate *rate);
+    int (*set_sample_rate)(struct bladerf *dev,
+                           bladerf_channel ch,
+                           bladerf_sample_rate rate);
+
+    int (*get_frequency)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_frequency *frequency);
+    int (*set_frequency)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_frequency frequency);
+    int (*select_band)(struct bladerf *dev,
+                       bladerf_channel ch,
+                       bladerf_frequency frequency);
+
+    int (*get_bandwidth)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_bandwidth *bandwidth);
+    int (*set_bandwidth)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_bandwidth bandwidth,
+                         bladerf_bandwidth *actual);
+
+    int (*get_gain_mode)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_gain_mode *mode);
+    int (*set_gain_mode)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_gain_mode mode);
+
+    int (*get_gain)(struct bladerf *dev, bladerf_channel ch, int *gain);
+    int (*set_gain)(struct bladerf *dev, bladerf_channel ch, int gain);
+
+    int (*get_gain_stage)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          char const *stage,
+                          int *gain);
+    int (*set_gain_stage)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          char const *stage,
+                          int gain);
+
+    int (*get_rssi)(struct bladerf *dev,
+                    bladerf_channel ch,
+                    int *pre_rssi,
+                    int *sym_rssi);
+
+    int (*get_filter)(struct bladerf *dev,
+                      bladerf_channel ch,
+                      bladerf_rfic_rxfir *rxfir,
+                      bladerf_rfic_txfir *txfir);
+    int (*set_filter)(struct bladerf *dev,
+                      bladerf_channel ch,
+                      bladerf_rfic_rxfir rxfir,
+                      bladerf_rfic_txfir txfir);
+
+    int (*get_txmute)(struct bladerf *dev, bladerf_channel ch, bool *state);
+    int (*set_txmute)(struct bladerf *dev, bladerf_channel ch, bool state);
+
+    int (*store_fastlock_profile)(struct bladerf *dev,
+                                  bladerf_channel ch,
+                                  uint32_t profile);
+
+    enum bladerf2_rfic_command_mode const command_mode;
+};
+
 struct bladerf2_board_data {
     /* Board state */
     enum {
@@ -77,22 +161,21 @@ struct bladerf2_board_data {
     /* Synchronous interface handles */
     struct bladerf_sync sync[2];
 
-    /* TX Mute Status */
-    bool tx_mute[2];
-
     /* VCTCXO trim state */
     enum bladerf2_vctcxo_trim_source trim_source;
     uint16_t trimdac_last_value;   /**< saved running value */
     uint16_t trimdac_stored_value; /**< cached value read from SPI flash */
 
-    /* RFIC FIR Filter status */
-    bool low_samplerate_mode;
-    bladerf_rfic_rxfir rxfir, rxfir_orig;
-    bladerf_rfic_txfir txfir, txfir_orig;
-
     /* Quick Tune Profile Status */
     uint16_t quick_tune_tx_profile;
     uint16_t quick_tune_rx_profile;
+
+    /* RFIC backend command handling */
+    struct controller_fns const *rfic;
+
+    /* RFIC FIR Filter status */
+    bladerf_rfic_rxfir rxfir;
+    bladerf_rfic_txfir txfir;
 };
 
 struct bladerf_rfic_status_register {
@@ -311,6 +394,25 @@ char const *bladerf2_state_to_string[4];
         MUTEX_LOCK(__lock);       \
         _thing;                   \
         MUTEX_UNLOCK(__lock);     \
+    } while (0)
+
+/**
+ * @brief   Execute command block, conditional to _mode
+ *
+ * @param   _dev     Device handle
+ * @param   _mode    Command mode
+ * @param   _thing   Block to do if it happens
+ */
+#define IF_COMMAND_MODE(_dev, _mode, _thing)               \
+    do {                                                   \
+        NULL_CHECK(_dev);                                  \
+        NULL_CHECK(_dev->board_data);                      \
+                                                           \
+        struct bladerf2_board_data *bd = _dev->board_data; \
+                                                           \
+        if (bd->rfic->command_mode == _mode) {             \
+            _thing;                                        \
+        };                                                 \
     } while (0)
 
 
