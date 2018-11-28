@@ -368,6 +368,18 @@ int str2lnagain(const char *str, bladerf_lna_gain *gain)
     }
 }
 
+char const *tuningmode2str(bladerf_tuning_mode mode)
+{
+    switch (mode) {
+        case BLADERF_TUNING_MODE_HOST:
+            return "Host";
+        case BLADERF_TUNING_MODE_FPGA:
+            return "FPGA";
+        default:
+            return "Unknown";
+    }
+}
+
 const char *backend_description(bladerf_backend b)
 {
     switch (b) {

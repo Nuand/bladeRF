@@ -198,6 +198,15 @@ char const *loopback2str(bladerf_loopback loopback);
 int str2lnagain(const char *str, bladerf_lna_gain *gain);
 
 /**
+ * @brief      Convert a tuning mode to a string const
+ *
+ * @param[in]  mode  The tuning mode
+ *
+ * @return     NUL-terminated string
+ */
+char const *tuningmode2str(bladerf_tuning_mode mode);
+
+/**
  * Get a string description of the specified bladeRF backend
  *
  * @param  b       Backend to get a string for
