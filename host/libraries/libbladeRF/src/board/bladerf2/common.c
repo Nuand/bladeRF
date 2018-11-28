@@ -219,6 +219,7 @@ bladerf_tuning_mode default_tuning_mode(struct bladerf *dev)
     struct bladerf2_board_data *board_data = dev->board_data;
     bladerf_tuning_mode mode;
     char const *env_var;
+    extern struct controller_fns const rfic_fpga_control;
 
     if (have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
         mode = BLADERF_TUNING_MODE_FPGA;
@@ -246,6 +247,14 @@ bladerf_tuning_mode default_tuning_mode(struct bladerf *dev)
         } else {
             log_debug("Invalid tuning mode override: %s\n", env_var);
         }
+    }
+
+    /* Check if the FPGA actually has RFIC control built in */
+    if (BLADERF_TUNING_MODE_FPGA == mode &&
+        !rfic_fpga_control.is_present(dev)) {
+        log_debug("FPGA does not have RFIC tuning capabilities, "
+                  "defaulting to host-based control.\n");
+        mode = BLADERF_TUNING_MODE_HOST;
     }
 
     switch (mode) {

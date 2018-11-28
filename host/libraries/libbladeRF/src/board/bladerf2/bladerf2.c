@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2017 Nuand LLC
+ * Copyright (C) 2017-2018 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -116,22 +116,15 @@ static struct bladerf_loopback_modes const bladerf2_loopback_modes[] = {
 static int _bladerf2_initialize(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data;
-    struct ad9361_rf_phy *phy;
     struct bladerf_version required_fw_version, required_fpga_version;
-    uint32_t reg;
     int status;
-    size_t i;
-    bladerf_channel ch;
 
     /* Test for uninitialized dev struct */
     NULL_CHECK(dev);
     NULL_CHECK(dev->board_data);
 
     /* Initialize board_data struct and members */
-    board_data                      = dev->board_data;
-    board_data->rxfir_orig          = BLADERF_RFIC_RXFIR_DEFAULT;
-    board_data->txfir_orig          = BLADERF_RFIC_TXFIR_DEFAULT;
-    board_data->low_samplerate_mode = false;
+    board_data = dev->board_data;
 
     /* Read FPGA version */
     CHECK_STATUS(
@@ -186,63 +179,23 @@ static int _bladerf2_initialize(struct bladerf *dev)
     CHECK_STATUS(
         dev->backend->set_fpga_protocol(dev, BACKEND_FPGA_PROTOCOL_NIOSII));
 
-    /* Initialize RFFE control */
-    CHECK_STATUS(dev->backend->rffe_control_write(
-        dev, (1 << RFFE_CONTROL_ENABLE) | (1 << RFFE_CONTROL_TXNRX)));
-
     /* Initialize INA219 */
-    /* For reasons unknown, this fails if done immediately after
-     * ad9361_set_rx_fir_config when DEBUG is not defined. It shouldn't make
-     * a difference, but it does. TODO: Investigate/fix this */
     CHECK_STATUS(ina219_init(dev, ina219_r_shunt));
 
-    /* Initialize AD9361 */
-    log_debug("%s: ad9361_init starting\n", __FUNCTION__);
-    CHECK_AD936X(
-        ad9361_init(&board_data->phy, &bladerf2_rfic_init_params, dev));
-    log_debug("%s: ad9361_init complete\n", __FUNCTION__);
-
-    if (NULL == board_data->phy || NULL == board_data->phy->pdata) {
-        RETURN_ERROR_STATUS("ad9361_init struct initialization",
-                            BLADERF_ERR_UNEXPECTED);
-    }
-
-    phy = board_data->phy;
-
-    /* Force AD9361 to a non-default freq. This will entice it to do a proper
-     * re-tuning when we set it back to the default freq later on. */
-    CHECK_AD936X(ad9361_set_tx_lo_freq(phy, RESET_FREQUENCY));
-    CHECK_AD936X(ad9361_set_rx_lo_freq(phy, RESET_FREQUENCY));
-
-    /* Set up AD9361 FIR filters */
-    /* TODO: permit specification of filter taps, for the truly brave */
-    CHECK_STATUS(bladerf_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEFAULT));
-    CHECK_STATUS(bladerf_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_DEFAULT));
-
-    /* Disable AD9361 until we need it */
-    CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
-
-    reg &= ~(1 << RFFE_CONTROL_TXNRX);
-    reg &= ~(1 << RFFE_CONTROL_ENABLE);
-
-    CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
-
-    /* Mute TX channels */
-    FOR_EACH_CHANNEL(BLADERF_TX, dev->board->get_channel_count(dev, BLADERF_TX),
-                     i, ch)
-    {
-        board_data->tx_mute[i] = false;
-        CHECK_STATUS(txmute_set(phy, ch, true));
-    }
+    /* Set tuning mode. This will trigger initialization of the RFIC.
+     *
+     * RFIC initialization consists of:
+     *  - RFFE register initialization
+     *  - RFIC initialization
+     *  - Setting initial frequency
+     *  - Setting up FIR filters
+     *  - Disabling RX and TX on the RFIC
+     *  - Muting the TX
+     */
+    CHECK_STATUS(dev->board->set_tuning_mode(dev, default_tuning_mode(dev)));
 
     /* Update device state */
     board_data->state = STATE_INITIALIZED;
-
-    /* Set RFIC to desired frequency */
-    CHECK_STATUS(dev->board->set_frequency(dev, BLADERF_CHANNEL_TX(0),
-                                           phy->pdata->tx_synth_freq));
-    CHECK_STATUS(dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0),
-                                           phy->pdata->rx_synth_freq));
 
     /* Initialize VCTCXO trim DAC to stored value */
     uint16_t *trimval = &(board_data->trimdac_stored_value);
@@ -541,6 +494,7 @@ static void bladerf2_close(struct bladerf *dev)
 {
     if (dev != NULL) {
         struct bladerf2_board_data *board_data = dev->board_data;
+        struct controller_fns const *rfic      = board_data->rfic;
         struct bladerf_flash_arch *flash_arch  = dev->flash_arch;
 
         if (board_data != NULL) {
@@ -574,10 +528,8 @@ static void bladerf2_close(struct bladerf *dev)
                 }
             }
 
-            if (board_data->phy != NULL) {
-                ad9361_deinit(board_data->phy);
-                board_data->phy = NULL;
-            }
+            // Put RFIC into standby mode
+            rfic->standby(dev);
 
             free(board_data);
             board_data = NULL;
@@ -733,204 +685,14 @@ static int bladerf2_enable_module(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
 
-    bladerf_direction dir = BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX;
-
-    uint32_t reg;       /* RFFE register value */
-    uint32_t reg_old;   /* Original RFFE register value */
-    int ch_bit;         /* RFFE MIMO channel bit */
-    int dir_bit;        /* RFFE RX/TX enable bit */
-    bool ch_pending;    /* Requested channel state differs */
-    bool dir_enable;    /* Direction is enabled */
-    bool dir_pending;   /* Requested direction state differs */
-    bool backend_clear; /* Backend requires reset */
-
-    bladerf_frequency freq = 0;
-
-    static uint64_t lastrun = 0; /* nsec value at last run */
-
-    /* Look up the RFFE bits affecting this channel */
-    ch_bit  = _get_rffe_control_bit_for_ch(ch);
-    dir_bit = _get_rffe_control_bit_for_dir(dir);
-    if (ch_bit < 0 || dir_bit < 0) {
-        RETURN_ERROR_STATUS("_get_rffe_control_bit", BLADERF_ERR_INVAL);
-    }
-
-    /* Query the current frequency if necessary */
-    if (enable) {
-        CHECK_STATUS(dev->board->get_frequency(dev, ch, &freq));
-    }
-
-    /**
-     * If we are moving from 0 active channels to 1 active channel:
-     *  Channel:    Setup SPDT, MIMO, TX Mute
-     *  Direction:  Setup ENABLE/TXNRX, RFIC port
-     *  Backend:    Enable
-     *
-     * If we are moving from 1 active channel to 0 active channels:
-     *  Channel:    Teardown SPDT, MIMO, TX Mute
-     *  Direction:  Teardown ENABLE/TXNRX, RFIC port, Sync
-     *  Backend:    Disable
-     *
-     * If we are enabling an nth channel, where n > 1:
-     *  Channel:    Setup SPDT, MIMO, TX Mute
-     *  Direction:  no change
-     *  Backend:    Clear
-     *
-     * If we are disabling an nth channel, where n > 1:
-     *  Channel:    Teardown SPDT, MIMO, TX Mute
-     *  Direction:  no change
-     *  Backend:    no change
-     */
-
-    /* Read RFFE control register */
-    CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
-
-    reg_old = reg;
-
-    ch_pending = _rffe_ch_enabled(reg, ch) != enable;
-
-    /* Channel Setup/Teardown */
-    if (ch_pending) {
-        /* Modify SPDT bits */
-        CHECK_STATUS(_modify_spdt_bits_by_freq(&reg, ch, enable, freq));
-
-        /* Modify MIMO channel enable bits */
-        if (enable) {
-            reg |= (1 << ch_bit);
-        } else {
-            reg &= ~(1 << ch_bit);
-        }
-
-        /* Set/unset TX mute */
-        if (BLADERF_CHANNEL_IS_TX(ch)) {
-            txmute_set(phy, ch, !enable);
-        }
-
-        /* Warn the user if the sample rate isn't reasonable */
-        if (enable) {
-            check_total_sample_rate(dev);
-        }
-    }
-
-    dir_enable  = enable || does_rffe_dir_have_enabled_ch(reg, dir);
-    dir_pending = _rffe_dir_enabled(reg, dir) != dir_enable;
-
-    /* Direction Setup/Teardown */
-    if (dir_pending) {
-        /* Modify ENABLE/TXNRX bits */
-        if (dir_enable) {
-            reg |= (1 << dir_bit);
-        } else {
-            reg &= ~(1 << dir_bit);
-        }
-
-        /* Select RFIC port */
-        CHECK_STATUS(set_ad9361_port_by_freq(phy, ch, dir_enable, freq));
-
-        /* Tear down sync interface if required */
-        if (!dir_enable) {
-            sync_deinit(&board_data->sync[dir]);
-            perform_format_deconfig(dev, dir);
-        }
-    }
-
-    /* Reset FIFO if we are enabling an additional RX channel */
-    backend_clear = enable && !dir_pending && BLADERF_RX == dir;
-
-    /* Debug logging */
-    uint64_t nsec = wallclock_get_current_nsec();
-
-    log_debug("%s: %s%d ch_en=%d ch_pend=%d dir_en=%d dir_pend=%d be_clr=%d "
-              "reg=0x%08x->0x%08x nsec=%" PRIu64 " (delta: %" PRIu64 ")\n",
-              __FUNCTION__, BLADERF_TX == dir ? "TX" : "RX", (ch >> 1) + 1,
-              enable, ch_pending, dir_enable, dir_pending, backend_clear,
-              reg_old, reg, nsec, nsec - lastrun);
-
-    lastrun = nsec;
-
-    /* Write RFFE control register */
-    if (reg_old != reg) {
-        CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
-    } else {
-        log_debug("%s: reg value unchanged? (%08x)\n", __FUNCTION__, reg);
-    }
-
-    /* Backend Setup/Teardown/Reset */
-    if (dir_pending || backend_clear) {
-        if (!dir_enable || backend_clear) {
-            CHECK_STATUS(dev->backend->enable_module(dev, dir, false));
-        }
-
-        if (dir_enable || backend_clear) {
-            CHECK_STATUS(dev->backend->enable_module(dev, dir, true));
-        }
-    }
-
-    return 0;
+    return board_data->rfic->enable_module(dev, ch, enable);
 }
+
 
 /******************************************************************************/
 /* Gain */
 /******************************************************************************/
-
-static int _get_gain_range(struct bladerf *dev,
-                           bladerf_channel ch,
-                           char const *stage,
-                           struct bladerf_gain_range const **gainrange)
-{
-    NULL_CHECK(gainrange);
-
-    struct bladerf_gain_range const *ranges = NULL;
-    size_t ranges_len;
-    bladerf_frequency frequency = 0;
-    size_t i;
-
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        ranges     = bladerf2_tx_gain_ranges;
-        ranges_len = ARRAY_SIZE(bladerf2_tx_gain_ranges);
-    } else {
-        ranges     = bladerf2_rx_gain_ranges;
-        ranges_len = ARRAY_SIZE(bladerf2_rx_gain_ranges);
-    }
-
-    CHECK_STATUS(dev->board->get_frequency(dev, ch, &frequency));
-
-    for (i = 0; i < ranges_len; ++i) {
-        // if the frequency range matches, and either:
-        //  both the range name and the stage name are null, or
-        //  neither name is null and the strings match
-        // then we found our match
-        struct bladerf_gain_range const *range = &(ranges[i]);
-        struct bladerf_range const *rfreq      = &(range->frequency);
-
-        if (is_within_range(rfreq, frequency) &&
-            ((NULL == range->name && NULL == stage) ||
-             (range->name != NULL && stage != NULL &&
-              (strcmp(range->name, stage) == 0)))) {
-            *gainrange = range;
-            return 0;
-        }
-    }
-
-    return BLADERF_ERR_INVAL;
-}
-
-static int _get_gain_offset(struct bladerf *dev,
-                            bladerf_channel ch,
-                            float *offset)
-{
-    NULL_CHECK(offset);
-
-    struct bladerf_gain_range const *gainrange = NULL;
-
-    CHECK_STATUS(_get_gain_range(dev, ch, NULL, &gainrange));
-
-    *offset = gainrange->offset;
-
-    return 0;
-}
 
 static int bladerf2_get_gain_stage_range(struct bladerf *dev,
                                          bladerf_channel ch,
@@ -941,9 +703,8 @@ static int bladerf2_get_gain_stage_range(struct bladerf *dev,
     NULL_CHECK(range);
 
     struct bladerf_gain_range const *ranges = NULL;
-    size_t ranges_len;
-    bladerf_frequency frequency;
-    size_t i;
+    bladerf_frequency frequency             = 0;
+    size_t i, ranges_len;
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         ranges     = bladerf2_tx_gain_ranges;
@@ -1017,6 +778,11 @@ static int bladerf2_get_gain_stages(struct bladerf *dev,
     unsigned int ranges_len;
     size_t i, j;
 
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        *stages = NULL;
+        return 0;
+    });
+
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         ranges     = bladerf2_tx_gain_ranges;
         ranges_len = ARRAY_SIZE(bladerf2_tx_gain_ranges);
@@ -1073,26 +839,8 @@ static int bladerf2_get_gain_mode(struct bladerf *dev,
     NULL_CHECK(mode);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    uint8_t const rfic_channel             = ch >> 1;
-    uint8_t gc_mode;
-    bool ok;
 
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        RETURN_ERROR_STATUS("bladerf2_get_gain_mode(tx)",
-                            BLADERF_ERR_UNSUPPORTED);
-    }
-
-    /* Get the gain */
-    CHECK_AD936X(ad9361_get_rx_gain_control_mode(phy, rfic_channel, &gc_mode));
-
-    /* Mode conversion */
-    *mode = gainmode_ad9361_to_bladerf(gc_mode, &ok);
-    if (!ok) {
-        RETURN_INVAL("mode", "is not valid");
-    }
-
-    return 0;
+    return board_data->rfic->get_gain_mode(dev, ch, mode);
 }
 
 static int bladerf2_set_gain_mode(struct bladerf *dev,
@@ -1102,44 +850,8 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    uint8_t const rfic_channel             = ch >> 1;
-    enum rf_gain_ctrl_mode gc_mode;
 
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        RETURN_ERROR_STATUS("bladerf2_set_gain_mode(tx)",
-                            BLADERF_ERR_UNSUPPORTED);
-    }
-
-    /* Channel conversion */
-    switch (ch) {
-        case BLADERF_CHANNEL_RX(0):
-            gc_mode = bladerf2_rfic_init_params.gc_rx1_mode;
-            break;
-
-        case BLADERF_CHANNEL_RX(1):
-            gc_mode = bladerf2_rfic_init_params.gc_rx2_mode;
-            break;
-
-        default:
-            log_error("%s: unknown channel index (%d)\n", __FUNCTION__, ch);
-            return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    /* Mode conversion */
-    if (mode != BLADERF_GAIN_DEFAULT) {
-        bool ok;
-
-        gc_mode = gainmode_bladerf_to_ad9361(mode, &ok);
-        if (!ok) {
-            RETURN_INVAL("mode", "is not valid");
-        }
-    }
-
-    /* Set the mode! */
-    CHECK_AD936X(ad9361_set_rx_gain_control_mode(phy, rfic_channel, gc_mode));
-
-    return 0;
+    return board_data->rfic->set_gain_mode(dev, ch, mode);
 }
 
 static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
@@ -1147,37 +859,21 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     CHECK_BOARD_STATE(STATE_INITIALIZED);
     NULL_CHECK(gain);
 
-    float offset;
-    int val = 0;
+    struct bladerf2_board_data *board_data = dev->board_data;
 
-    CHECK_STATUS(_get_gain_offset(dev, ch, &offset));
-
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        CHECK_STATUS(dev->board->get_gain_stage(dev, ch, "dsa", &val));
-    } else {
-        CHECK_STATUS(dev->board->get_gain_stage(dev, ch, "full", &val));
-    }
-
-    *gain = __round_int(val + offset);
-
-    return 0;
+    return board_data->rfic->get_gain(dev, ch, gain);
 }
 
 static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    float offset = 0.0f;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct bladerf_range const *range      = NULL;
 
-    CHECK_STATUS(_get_gain_offset(dev, ch, &offset));
+    CHECK_STATUS(dev->board->get_gain_range(dev, ch, &range));
 
-    gain -= __round_int(offset);
-
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        return dev->board->set_gain_stage(dev, ch, "dsa", gain);
-    } else {
-        return dev->board->set_gain_stage(dev, ch, "full", gain);
-    }
+    return board_data->rfic->set_gain(dev, ch, clamp_to_range(range, gain));
 }
 
 static int bladerf2_get_gain_stage(struct bladerf *dev,
@@ -1190,45 +886,8 @@ static int bladerf2_get_gain_stage(struct bladerf *dev,
     NULL_CHECK(gain);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    struct bladerf_range const *range      = NULL;
-    uint8_t const rfic_channel             = ch >> 1;
 
-    CHECK_STATUS(dev->board->get_gain_stage_range(dev, ch, stage, &range));
-
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        if (strcmp(stage, "dsa") == 0) {
-            uint32_t atten;
-
-            if (board_data->tx_mute[rfic_channel]) {
-                /* TX is muted, get cached value */
-                atten = txmute_get_cached(phy, ch);
-            } else {
-                /* Get actual value from hardware */
-                CHECK_AD936X(
-                    ad9361_get_tx_attenuation(phy, rfic_channel, &atten));
-            }
-
-            /* Flip sign, unscale */
-            *gain = -(__unscale_int(range, atten));
-            return 0;
-        }
-    } else {
-        struct rf_rx_gain rx_gain;
-
-        CHECK_AD936X(ad9361_get_rx_gain(phy, rfic_channel + 1, &rx_gain));
-
-        if (strcmp(stage, "full") == 0) {
-            *gain = __unscale_int(range, rx_gain.gain_db);
-            return 0;
-        } else if (strcmp(stage, "digital") == 0) {
-            *gain = __unscale_int(range, rx_gain.digital_gain);
-            return 0;
-        }
-    }
-
-    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
-    return 0;
+    return board_data->rfic->get_gain_stage(dev, ch, stage, gain);
 }
 
 static int bladerf2_set_gain_stage(struct bladerf *dev,
@@ -1240,39 +899,12 @@ static int bladerf2_set_gain_stage(struct bladerf *dev,
     NULL_CHECK(stage);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    uint8_t const rfic_channel             = ch >> 1;
     struct bladerf_range const *range      = NULL;
-
-    int val;
 
     CHECK_STATUS(dev->board->get_gain_stage_range(dev, ch, stage, &range));
 
-    /* Scale/round/clamp as required */
-    val = __scale_int(range, clamp_to_range(range, gain));
-
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        if (strcmp(stage, "dsa") == 0) {
-            if (board_data->tx_mute[rfic_channel]) {
-                /* TX not currently active, so cache the value */
-                CHECK_STATUS(txmute_set_cached(phy, ch, -val));
-            } else {
-                /* TX is active, so apply immediately */
-                CHECK_AD936X(
-                    ad9361_set_tx_attenuation(phy, rfic_channel, -val));
-            }
-
-            return 0;
-        }
-    } else {
-        if (strcmp(stage, "full") == 0) {
-            CHECK_AD936X(ad9361_set_rx_rf_gain(phy, rfic_channel, val));
-            return 0;
-        }
-    }
-
-    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
-    return 0;
+    return board_data->rfic->set_gain_stage(dev, ch, stage,
+                                            clamp_to_range(range, gain));
 }
 
 
@@ -1340,15 +972,8 @@ static int bladerf2_get_sample_rate(struct bladerf *dev,
     NULL_CHECK(rate);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
 
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        CHECK_AD936X(ad9361_get_tx_sampling_freq(phy, rate));
-    } else {
-        CHECK_AD936X(ad9361_get_rx_sampling_freq(phy, rate));
-    }
-
-    return 0;
+    return board_data->rfic->get_sample_rate(dev, ch, rate);
 }
 
 static int bladerf2_set_sample_rate(struct bladerf *dev,
@@ -1359,59 +984,68 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
+    struct controller_fns const *rfic      = board_data->rfic;
     struct bladerf_range const *range      = NULL;
+    bladerf_sample_rate current;
+    bool old_low, new_low;
+    bladerf_rfic_rxfir rxfir;
+    bladerf_rfic_txfir txfir;
 
+    /* Range checking */
     CHECK_STATUS(dev->board->get_sample_rate_range(dev, ch, &range));
 
     if (!is_within_range(range, rate)) {
         return BLADERF_ERR_RANGE;
     }
 
-    /* If the requested sample rate is outside of the native range, we must
-     * adjust the FIR filtering. */
-    if (is_within_range(&bladerf2_sample_rate_range_4x, rate)) {
-        bladerf_rfic_rxfir rxfir;
-        bladerf_rfic_txfir txfir;
+    /* Get current sample rate, and check it against the low-rate range */
+    CHECK_STATUS(dev->board->get_sample_rate(dev, ch, &current));
 
-        CHECK_STATUS(bladerf2_get_rfic_rx_fir(dev, &rxfir));
+    old_low = is_within_range(&bladerf2_sample_rate_range_4x, current);
+    new_low = is_within_range(&bladerf2_sample_rate_range_4x, rate);
 
-        CHECK_STATUS(bladerf2_get_rfic_tx_fir(dev, &txfir));
+    /* Get current filter status */
+    if (new_low || old_low) {
+        CHECK_STATUS(
+            rfic->get_filter(dev, BLADERF_CHANNEL_RX(0), &rxfir, NULL));
+        CHECK_STATUS(
+            rfic->get_filter(dev, BLADERF_CHANNEL_TX(0), NULL, &txfir));
+    }
 
+    /* If the requested sample rate is below the native range, we must implement
+     * a 4x decimation/interpolation filter on the RFIC. */
+    if (new_low) {
         if (rxfir != BLADERF_RFIC_RXFIR_DEC4 ||
-            txfir != BLADERF_RFIC_TXFIR_INT4 ||
-            !board_data->low_samplerate_mode) {
-            log_debug("enabling 4x decimation/interpolation filters\n");
+            txfir != BLADERF_RFIC_TXFIR_INT4) {
+            log_debug("%s: enabling 4x decimation/interpolation filters\n",
+                      __FUNCTION__);
 
-            board_data->rxfir_orig = rxfir;
-            CHECK_STATUS(
-                bladerf2_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEC4));
-
-            board_data->txfir_orig = txfir;
-            CHECK_STATUS(
-                bladerf2_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_INT4));
-
-            board_data->low_samplerate_mode = true;
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
+                                          BLADERF_RFIC_RXFIR_DEC4, 0));
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0,
+                                          BLADERF_RFIC_TXFIR_INT4));
         }
     }
 
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        CHECK_AD936X(ad9361_set_tx_sampling_freq(phy, rate));
-    } else {
-        CHECK_AD936X(ad9361_set_rx_sampling_freq(phy, rate));
+    /* Set the sample rate */
+    CHECK_STATUS(rfic->set_sample_rate(dev, ch, rate));
+
+    /* If the previous sample rate was below the native range, but the new one
+     * isn't, switch back to the default filters. */
+    if (old_low && !new_low) {
+        if (rxfir != BLADERF_RFIC_RXFIR_DEFAULT ||
+            txfir != BLADERF_RFIC_TXFIR_DEFAULT) {
+            log_debug("%s: disabling 4x decimation/interpolation filters\n",
+                      __FUNCTION__);
+
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
+                                          BLADERF_RFIC_RXFIR_DEFAULT, 0));
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0,
+                                          BLADERF_RFIC_TXFIR_DEFAULT));
+        }
     }
 
-    if (board_data->low_samplerate_mode &&
-        !is_within_range(&bladerf2_sample_rate_range_4x, rate)) {
-        log_debug("disabling 4x decimation/interpolation filters\n");
-
-        CHECK_STATUS(bladerf2_set_rfic_rx_fir(dev, board_data->rxfir_orig));
-
-        CHECK_STATUS(bladerf2_set_rfic_tx_fir(dev, board_data->txfir_orig));
-
-        board_data->low_samplerate_mode = false;
-    }
-
+    /* If requested, fetch the new sample rate and return it. */
     if (actual != NULL) {
         CHECK_STATUS(dev->board->get_sample_rate(dev, ch, actual));
     }
@@ -1443,18 +1077,10 @@ static int bladerf2_get_bandwidth(struct bladerf *dev,
                                   bladerf_bandwidth *bandwidth)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
-    NULL_CHECK(bandwidth);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
 
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        CHECK_AD936X(ad9361_get_tx_rf_bandwidth(phy, bandwidth));
-    } else {
-        CHECK_AD936X(ad9361_get_rx_rf_bandwidth(phy, bandwidth));
-    }
-
-    return 0;
+    return board_data->rfic->get_bandwidth(dev, ch, bandwidth);
 }
 
 static int bladerf2_set_bandwidth(struct bladerf *dev,
@@ -1465,24 +1091,8 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    struct bladerf_range const *range      = NULL;
 
-    CHECK_STATUS(dev->board->get_bandwidth_range(dev, ch, &range));
-
-    bandwidth = (bladerf_bandwidth)clamp_to_range(range, bandwidth);
-
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        CHECK_AD936X(ad9361_set_tx_rf_bandwidth(phy, bandwidth));
-    } else {
-        CHECK_AD936X(ad9361_set_rx_rf_bandwidth(phy, bandwidth));
-    }
-
-    if (actual != NULL) {
-        return dev->board->get_bandwidth(dev, ch, actual);
-    }
-
-    return 0;
+    return board_data->rfic->set_bandwidth(dev, ch, bandwidth, actual);
 }
 
 
@@ -1509,35 +1119,11 @@ static int bladerf2_select_band(struct bladerf *dev,
                                 bladerf_channel ch,
                                 bladerf_frequency frequency)
 {
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    bladerf_direction dir = BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX;
-    bladerf_channel bch;
-    uint32_t reg;
-    size_t i;
 
-    /* Read RFFE control register */
-    CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
-
-    /* We have to do this for all the channels sharing the same LO. */
-    FOR_EACH_CHANNEL(dir, dev->board->get_channel_count(dev, dir), i, bch)
-    {
-        /* Is this channel enabled? */
-        bool enable = _rffe_ch_enabled(reg, bch);
-
-        /* Update SPDT bits accordingly */
-        CHECK_STATUS(_modify_spdt_bits_by_freq(&reg, bch, enable, frequency));
-    }
-
-    CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
-
-    /* Set AD9361 port */
-    CHECK_STATUS(
-        set_ad9361_port_by_freq(phy, ch, _rffe_ch_enabled(reg, ch), frequency));
-
-    return 0;
+    return board_data->rfic->select_band(dev, ch, frequency);
 }
 
 static int bladerf2_get_frequency(struct bladerf *dev,
@@ -1548,15 +1134,8 @@ static int bladerf2_get_frequency(struct bladerf *dev,
     NULL_CHECK(frequency);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
 
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        CHECK_AD936X(ad9361_get_tx_lo_freq(phy, frequency));
-    } else {
-        CHECK_AD936X(ad9361_get_rx_lo_freq(phy, frequency));
-    }
-
-    return 0;
+    return board_data->rfic->get_frequency(dev, ch, frequency);
 }
 
 static int bladerf2_set_frequency(struct bladerf *dev,
@@ -1566,26 +1145,8 @@ static int bladerf2_set_frequency(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    struct bladerf_range const *range      = NULL;
 
-    CHECK_STATUS(dev->board->get_frequency_range(dev, ch, &range));
-
-    if (!is_within_range(range, frequency)) {
-        return BLADERF_ERR_RANGE;
-    }
-
-    /* Set up band selection */
-    CHECK_STATUS(dev->board->select_band(dev, ch, frequency));
-
-    /* Change LO frequency */
-    if (BLADERF_CHANNEL_IS_TX(ch)) {
-        CHECK_AD936X(ad9361_set_tx_lo_freq(phy, frequency));
-    } else {
-        CHECK_AD936X(ad9361_set_rx_lo_freq(phy, frequency));
-    }
-
-    return 0;
+    return board_data->rfic->set_frequency(dev, ch, frequency);
 }
 
 
@@ -1605,6 +1166,11 @@ static int bladerf2_set_rf_port(struct bladerf *dev,
     unsigned int pm_len                         = 0;
     uint32_t port_id                            = UINT32_MAX;
     size_t i;
+
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        log_debug("%s: FPGA command mode not supported\n", __FUNCTION__);
+        return BLADERF_ERR_UNSUPPORTED;
+    });
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         pm     = bladerf2_tx_port_map;
@@ -1649,6 +1215,11 @@ static int bladerf2_get_rf_port(struct bladerf *dev,
     bool ok;
     size_t i;
 
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        log_debug("%s: FPGA command mode not supported\n", __FUNCTION__);
+        return BLADERF_ERR_UNSUPPORTED;
+    });
+
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         pm     = bladerf2_tx_port_map;
         pm_len = ARRAY_SIZE(bladerf2_tx_port_map);
@@ -1687,6 +1258,11 @@ static int bladerf2_get_rf_ports(struct bladerf *dev,
     unsigned int pm_len;
     size_t i;
 
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        *ports = NULL;
+        return 0;
+    });
+
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         pm     = bladerf2_tx_port_map;
         pm_len = ARRAY_SIZE(bladerf2_tx_port_map);
@@ -1719,7 +1295,7 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
     NULL_CHECK(quick_tune);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
+    struct controller_fns const *rfic      = board_data->rfic;
     struct band_port_map const *pm         = NULL;
 
     bladerf_frequency freq;
@@ -1749,12 +1325,8 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         }
 
         /* Create a fast lock profile in the RFIC */
-        CHECK_AD936X(ad9361_tx_fastlock_store(phy, quick_tune->rffe_profile));
-
-        /* Save the fast lock profile to quick_tune structure */
-        // CHECK_AD936X(ad9361_tx_fastlock_save(
-        //     phy, quick_tune->rffe_profile,
-        //     &quick_tune->rffe_profile_data[0]));
+        CHECK_STATUS(
+            rfic->store_fastlock_profile(dev, ch, quick_tune->rffe_profile));
 
         /* Save a copy of the TX fast lock profile to the Nios */
         dev->backend->rffe_fastlock_save(dev, true, quick_tune->rffe_profile,
@@ -1782,12 +1354,8 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         }
 
         /* Create a fast lock profile in the RFIC */
-        CHECK_AD936X(ad9361_rx_fastlock_store(phy, quick_tune->rffe_profile));
-
-        /* Save the fast lock profile to quick_tune structure */
-        // CHECK_AD936X(ad9361_rx_fastlock_save(
-        //     phy, quick_tune->rffe_profile,
-        //     &quick_tune->rffe_profile_data[0]));
+        CHECK_STATUS(
+            rfic->store_fastlock_profile(dev, ch, quick_tune->rffe_profile));
 
         /* Save a copy of the RX fast lock profile to the Nios */
         dev->backend->rffe_fastlock_save(dev, false, quick_tune->rffe_profile,
@@ -2026,6 +1594,11 @@ static int bladerf2_get_correction(struct bladerf *dev,
     unsigned int shift;
     int32_t val;
 
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        log_debug("%s: FPGA command mode not supported\n", __FUNCTION__);
+        return BLADERF_ERR_UNSUPPORTED;
+    });
+
     /* Validate channel */
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
         ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
@@ -2152,6 +1725,11 @@ static int bladerf2_set_correction(struct bladerf *dev,
     uint16_t reg, data;
     unsigned int shift;
     int32_t val;
+
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        log_debug("%s: FPGA command mode not supported\n", __FUNCTION__);
+        return BLADERF_ERR_UNSUPPORTED;
+    });
 
     /* Validate channel */
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
@@ -2609,15 +2187,24 @@ static int bladerf2_device_reset(struct bladerf *dev)
 /* Tuning mode */
 /******************************************************************************/
 
+extern struct controller_fns const rfic_host_control;
+extern struct controller_fns const rfic_fpga_control;
+
+struct controller_fns const *rfic_control_fns[] = {
+    &rfic_host_control,
+    &rfic_fpga_control,
+};
+
 static int bladerf2_set_tuning_mode(struct bladerf *dev,
                                     bladerf_tuning_mode mode)
 {
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
+    bool has_cap = have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING);
+    int status   = 0;
 
-    if (mode == BLADERF_TUNING_MODE_FPGA &&
-        !have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
+    if (!has_cap && BLADERF_TUNING_MODE_FPGA == mode) {
         log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
                   "provided tuning mode (%d)\n",
                   board_data->fpga_version.major,
@@ -2626,10 +2213,26 @@ static int bladerf2_set_tuning_mode(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
     }
 
+    /* Test to make sure this FPGA actually will do FPGA-based tuning */
+    if (BLADERF_TUNING_MODE_FPGA == mode) {
+        if (!rfic_fpga_control.is_present(dev)) {
+            log_debug("FPGA does not have RFIC control target, bailing out.\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    }
+
+    log_debug("%s: Tuning mode: %s\n", __FUNCTION__, tuningmode2str(mode));
+
+    /* Do the tuning mode change */
     switch (mode) {
         case BLADERF_TUNING_MODE_HOST:
-            log_debug("Tuning mode: host\n");
+            board_data->rfic = &rfic_host_control;
             break;
+
+        case BLADERF_TUNING_MODE_FPGA:
+            board_data->rfic = &rfic_fpga_control;
+            break;
+
         default:
             assert(!"Invalid tuning mode.");
             return BLADERF_ERR_INVAL;
@@ -2637,7 +2240,43 @@ static int bladerf2_set_tuning_mode(struct bladerf *dev,
 
     board_data->tuning_mode = mode;
 
-    return 0;
+    /* De-initialize RFIC if it's initialized by another tuning mode */
+    switch (board_data->rfic->command_mode) {
+        case RFIC_COMMAND_HOST:
+            if (has_cap && (rfic_fpga_control.is_initialized(dev) ||
+                            rfic_fpga_control.is_standby(dev))) {
+                log_info("%s: Releasing FPGA RFIC control\n", __FUNCTION__);
+                status = rfic_fpga_control.deinitialize(dev);
+            }
+            break;
+
+        case RFIC_COMMAND_FPGA:
+            if (rfic_host_control.is_initialized(dev) ||
+                rfic_host_control.is_standby(dev)) {
+                log_info("%s: Releasing Host RFIC control\n", __FUNCTION__);
+                status = rfic_host_control.deinitialize(dev);
+            }
+            break;
+
+        default:
+            assert(!"Invalid RFIC control mode.");
+            return BLADERF_ERR_INVAL;
+    }
+
+    if (status < 0) {
+        RETURN_ERROR_STATUS("failed to release RFIC control", status);
+    }
+
+    /* Initialize RFIC, if it hasn't yet been initialized */
+    if (!board_data->rfic->is_initialized(dev)) {
+        log_info("%s: Initializing %s RFIC control\n", __FUNCTION__,
+                 tuningmode2str(mode));
+        return board_data->rfic->initialize(dev);
+    } else {
+        log_debug("%s: Maintaining %s RFIC control\n", __FUNCTION__,
+                  tuningmode2str(mode));
+        return 0;
+    }
 }
 
 static int bladerf2_get_tuning_mode(struct bladerf *dev,
@@ -2677,6 +2316,16 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback mode)
     bool firmware_loopback                 = false;
     int32_t bist_loopback                  = 0;
 
+
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        if (BLADERF_LB_RFIC_BIST == mode) {
+            log_debug(
+                "%s: BLADERF_LB_RFIC_BIST not supported in FPGA command mode\n",
+                __FUNCTION__);
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    });
+
     switch (mode) {
         case BLADERF_LB_NONE:
             break;
@@ -2691,8 +2340,10 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback mode)
             return BLADERF_ERR_UNEXPECTED;
     }
 
-    /* Set digital loopback state */
-    CHECK_AD936X(ad9361_bist_loopback(phy, bist_loopback));
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_HOST, {
+        /* Set digital loopback state */
+        CHECK_AD936X(ad9361_bist_loopback(phy, bist_loopback));
+    });
 
     /* Set firmware loopback state */
     CHECK_STATUS(dev->backend->set_firmware_loopback(dev, firmware_loopback));
@@ -2718,13 +2369,16 @@ static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *mode)
         return 0;
     }
 
-    /* Note: this returns void */
-    ad9361_get_bist_loopback(phy, &ad9361_loopback);
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_HOST, {
+        /* Read AD9361 bist loopback */
+        /* Note: this returns void */
+        ad9361_get_bist_loopback(phy, &ad9361_loopback);
 
-    if (ad9361_loopback == 1) {
-        *mode = BLADERF_LB_RFIC_BIST;
-        return 0;
-    }
+        if (ad9361_loopback == 1) {
+            *mode = BLADERF_LB_RFIC_BIST;
+            return 0;
+        }
+    });
 
     *mode = BLADERF_LB_NONE;
 
@@ -3274,6 +2928,11 @@ int bladerf_get_rfic_temperature(struct bladerf *dev, float *val)
     struct bladerf2_board_data *board_data = dev->board_data;
     struct ad9361_rf_phy *phy              = board_data->phy;
 
+    IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
+        log_debug("%s: FPGA command mode not supported\n", __FUNCTION__);
+        return BLADERF_ERR_UNSUPPORTED;
+    });
+
     WITH_MUTEX(&dev->lock, { *val = ad9361_get_temp(phy) / 1000.0F; });
 
     return 0;
@@ -3289,31 +2948,11 @@ int bladerf_get_rfic_rssi(struct bladerf *dev,
     NULL_CHECK(pre_rssi);
     NULL_CHECK(sym_rssi);
 
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct controller_fns const *rfic      = board_data->rfic;
+
     WITH_MUTEX(&dev->lock, {
-        struct bladerf2_board_data *board_data = dev->board_data;
-        struct ad9361_rf_phy *phy              = board_data->phy;
-        uint8_t const rfic_channel             = ch >> 1;
-        int pre;
-        int sym;
-
-        if (BLADERF_CHANNEL_IS_TX(ch)) {
-            uint32_t rssi = 0;
-
-            CHECK_AD936X_LOCKED(ad9361_get_tx_rssi(phy, rfic_channel, &rssi));
-
-            pre = __round_int(rssi / 1000.0);
-            sym = __round_int(rssi / 1000.0);
-        } else {
-            struct rf_rssi rssi;
-
-            CHECK_AD936X_LOCKED(ad9361_get_rx_rssi(phy, rfic_channel, &rssi));
-
-            pre = __round_int(rssi.preamble / (float)rssi.multiplier);
-            sym = __round_int(rssi.symbol / (float)rssi.multiplier);
-        }
-
-        *pre_rssi = -pre;
-        *sym_rssi = -sym;
+        CHECK_STATUS_LOCKED(rfic->get_rssi(dev, ch, pre_rssi, sym_rssi));
     });
 
     return 0;
@@ -3344,8 +2983,9 @@ static int bladerf2_get_rfic_rx_fir(struct bladerf *dev,
     NULL_CHECK(rxfir);
 
     struct bladerf2_board_data *board_data = dev->board_data;
+    struct controller_fns const *rfic      = board_data->rfic;
 
-    *rxfir = board_data->rxfir;
+    CHECK_STATUS(rfic->get_filter(dev, BLADERF_CHANNEL_RX(0), rxfir, NULL));
 
     return 0;
 }
@@ -3356,42 +2996,23 @@ static int bladerf2_set_rfic_rx_fir(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    AD9361_RXFIRConfig *fir_config         = NULL;
-    uint8_t enable;
+    struct controller_fns const *rfic      = board_data->rfic;
 
-    if (BLADERF_RFIC_RXFIR_CUSTOM == rxfir) {
-        log_warning("custom FIR not implemented, assuming default\n");
-        rxfir = BLADERF_RFIC_RXFIR_DEFAULT;
+    /* Verify that sample rate is not too low */
+    if (rxfir != BLADERF_RFIC_RXFIR_DEC4) {
+        bladerf_sample_rate sr;
+
+        CHECK_STATUS(
+            dev->board->get_sample_rate(dev, BLADERF_CHANNEL_RX(0), &sr));
+
+        if (is_within_range(&bladerf2_sample_rate_range_4x, sr)) {
+            log_error("%s: invalid FIR filter: sample rate too low (%d < %d)\n",
+                      __FUNCTION__, sr, bladerf2_sample_rate_range_4x.min);
+            return BLADERF_ERR_INVAL;
+        }
     }
 
-    switch (rxfir) {
-        case BLADERF_RFIC_RXFIR_BYPASS:
-            fir_config = &bladerf2_rfic_rx_fir_config;
-            enable     = 0;
-            break;
-        case BLADERF_RFIC_RXFIR_DEC1:
-            fir_config = &bladerf2_rfic_rx_fir_config;
-            enable     = 1;
-            break;
-        case BLADERF_RFIC_RXFIR_DEC2:
-            fir_config = &bladerf2_rfic_rx_fir_config_dec2;
-            enable     = 1;
-            break;
-        case BLADERF_RFIC_RXFIR_DEC4:
-            fir_config = &bladerf2_rfic_rx_fir_config_dec4;
-            enable     = 1;
-            break;
-        default:
-            assert(!"Bug: unhandled rxfir selection");
-            return BLADERF_ERR_UNEXPECTED;
-    }
-
-    CHECK_AD936X(ad9361_set_rx_fir_config(phy, *fir_config));
-
-    CHECK_AD936X(ad9361_set_rx_fir_en_dis(phy, enable));
-
-    board_data->rxfir = rxfir;
+    CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0), rxfir, 0));
 
     return 0;
 }
@@ -3403,8 +3024,9 @@ static int bladerf2_get_rfic_tx_fir(struct bladerf *dev,
     NULL_CHECK(txfir);
 
     struct bladerf2_board_data *board_data = dev->board_data;
+    struct controller_fns const *rfic      = board_data->rfic;
 
-    *txfir = board_data->txfir;
+    CHECK_STATUS(rfic->get_filter(dev, BLADERF_CHANNEL_TX(0), NULL, txfir));
 
     return 0;
 }
@@ -3415,42 +3037,23 @@ static int bladerf2_set_rfic_tx_fir(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-    AD9361_TXFIRConfig *fir_config         = NULL;
-    uint8_t enable;
+    struct controller_fns const *rfic      = board_data->rfic;
 
-    if (BLADERF_RFIC_TXFIR_CUSTOM == txfir) {
-        log_warning("custom FIR not implemented, assuming default\n");
-        txfir = BLADERF_RFIC_TXFIR_DEFAULT;
+    /* Verify that sample rate is not too low */
+    if (txfir != BLADERF_RFIC_TXFIR_INT4) {
+        bladerf_sample_rate sr;
+
+        CHECK_STATUS(
+            dev->board->get_sample_rate(dev, BLADERF_CHANNEL_TX(0), &sr));
+
+        if (is_within_range(&bladerf2_sample_rate_range_4x, sr)) {
+            log_error("%s: invalid FIR filter: sample rate too low (%d < %d)\n",
+                      __FUNCTION__, sr, bladerf2_sample_rate_range_4x.min);
+            return BLADERF_ERR_INVAL;
+        }
     }
 
-    switch (txfir) {
-        case BLADERF_RFIC_TXFIR_BYPASS:
-            fir_config = &bladerf2_rfic_tx_fir_config;
-            enable     = 0;
-            break;
-        case BLADERF_RFIC_TXFIR_INT1:
-            fir_config = &bladerf2_rfic_tx_fir_config;
-            enable     = 1;
-            break;
-        case BLADERF_RFIC_TXFIR_INT2:
-            fir_config = &bladerf2_rfic_tx_fir_config_int2;
-            enable     = 1;
-            break;
-        case BLADERF_RFIC_TXFIR_INT4:
-            fir_config = &bladerf2_rfic_tx_fir_config_int4;
-            enable     = 1;
-            break;
-        default:
-            assert(!"Bug: unhandled txfir selection");
-            return BLADERF_ERR_UNEXPECTED;
-    }
-
-    CHECK_AD936X(ad9361_set_tx_fir_config(phy, *fir_config));
-
-    CHECK_AD936X(ad9361_set_tx_fir_en_dis(phy, enable));
-
-    board_data->txfir = txfir;
+    CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0, txfir));
 
     return 0;
 }
@@ -3501,6 +3104,7 @@ int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir txfir)
 /******************************************************************************/
 /* Low level PLL Accessors */
 /******************************************************************************/
+
 static int bladerf_pll_configure(struct bladerf *dev, uint16_t R, uint16_t N)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
@@ -3975,16 +3579,25 @@ int bladerf_get_rf_switch_config(struct bladerf *dev,
     WITH_MUTEX(&dev->lock, {
         struct bladerf2_board_data *board_data = dev->board_data;
         struct ad9361_rf_phy *phy              = board_data->phy;
+        struct controller_fns const *rfic      = board_data->rfic;
         uint32_t val;
         uint32_t reg;
 
         /* Get AD9361 status */
-        CHECK_AD936X_LOCKED(ad9361_get_tx_rf_port_output(phy, &val));
+        if (RFIC_COMMAND_HOST == rfic->command_mode) {
+            CHECK_AD936X_LOCKED(ad9361_get_tx_rf_port_output(phy, &val));
+        } else {
+            val = 0xFF;
+        }
 
         config->tx1_rfic_port = val;
         config->tx2_rfic_port = val;
 
-        CHECK_AD936X_LOCKED(ad9361_get_rx_rf_port_input(phy, &val));
+        if (RFIC_COMMAND_HOST == rfic->command_mode) {
+            CHECK_AD936X_LOCKED(ad9361_get_rx_rf_port_input(phy, &val));
+        } else {
+            val = 0xFF;
+        }
 
         config->rx1_rfic_port = val;
         config->rx2_rfic_port = val;
