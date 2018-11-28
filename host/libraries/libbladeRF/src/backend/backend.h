@@ -195,13 +195,19 @@ struct backend_fns {
     int (*adi_axi_write)(struct bladerf *dev, uint32_t addr, uint32_t data);
     int (*adi_axi_read)(struct bladerf *dev, uint32_t addr, uint32_t *data);
 
+    /* RFIC command accessors */
+    int (*rfic_command_write)(struct bladerf *dev, uint16_t cmd, uint64_t data);
+    int (*rfic_command_read)(struct bladerf *dev, uint16_t cmd, uint64_t *data);
+
     /* RFFE control accessors */
     int (*rffe_control_write)(struct bladerf *dev, uint32_t value);
     int (*rffe_control_read)(struct bladerf *dev, uint32_t *value);
 
     /* RFFE-to-Nios fast lock profile saver */
-    int (*rffe_fastlock_save)(struct bladerf *dev, bool is_tx,
-                              uint8_t rffe_profile, uint16_t nios_profile);
+    int (*rffe_fastlock_save)(struct bladerf *dev,
+                              bool is_tx,
+                              uint8_t rffe_profile,
+                              uint16_t nios_profile);
 
     /* AD56X1 VCTCXO Trim DAC accessors */
     int (*ad56x1_vctcxo_trim_dac_write)(struct bladerf *dev, uint16_t value);

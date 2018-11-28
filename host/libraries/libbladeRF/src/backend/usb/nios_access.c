@@ -76,7 +76,7 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
                                     buf, NIOS_PKT_LEN,
                                     PERIPHERAL_TIMEOUT_MS);
 
-    if (status != 0) {
+    if (status != 0 && status != BLADERF_ERR_TIMEOUT) {
         log_error("Failed to receive NIOS II response: %s\n",
                   bladerf_strerror(status));
     }
@@ -640,6 +640,36 @@ int nios_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data)
     if (status == 0) {
         log_verbose("%s: Wrote 0x%08" PRIx32 " to   addr 0x%04" PRIx32 "\n",
                     __FUNCTION__, data, addr);
+    }
+#endif
+
+    return status;
+}
+
+int nios_rfic_command_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
+{
+    int status;
+
+    status = nios_16x64_read(dev, NIOS_PKT_16x64_TARGET_RFIC, cmd, data);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
+    if (status == 0) {
+        log_verbose("%s: Read 0x%04x 0x%08x\n", __FUNCTION__, cmd, *data);
+    }
+#endif
+
+    return status;
+}
+
+int nios_rfic_command_write(struct bladerf *dev, uint16_t cmd, uint64_t data)
+{
+    int status;
+
+    status = nios_16x64_write(dev, NIOS_PKT_16x64_TARGET_RFIC, cmd, data);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
+    if (status == 0) {
+        log_verbose("%s: Write 0x%04x 0x%08x\n", __FUNCTION__, cmd, data);
     }
 #endif
 

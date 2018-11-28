@@ -194,6 +194,28 @@ int nios_adi_axi_read(struct bladerf *dev, uint32_t cmd, uint32_t *data);
 int nios_adi_axi_write(struct bladerf *dev, uint32_t cmd, uint32_t data);
 
 /**
+ * Read RFIC command
+ * 
+ * @param       dev     Device handle
+ * @param[in]   cmd     Command: `(command & 0xFF) + ((channel & 0xF) << 8)`
+ * @param[out]  data    Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_rfic_command_read(struct bladerf *dev, uint16_t cmd, uint64_t *data);
+
+/**
+ * Write RFIC command
+ *
+ * @param       dev     Device handle
+ * @param[in]   cmd     Command: `(command & 0xFF) + ((channel & 0xF) << 8)`
+ * @param[in]   data    Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_rfic_command_write(struct bladerf *dev, uint16_t cmd, uint64_t data);
+
+/**
  * Read RFFE control register.
  *
  * @param           dev         Device handle
