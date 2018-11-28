@@ -21,8 +21,8 @@
 
 #include <inttypes.h>
 
-#include "log.h"
 #include "helpers/version.h"
+#include "log.h"
 
 #include "capabilities.h"
 
@@ -57,13 +57,37 @@ uint64_t bladerf2_get_fw_capabilities(const struct bladerf_version *fw_version)
     return capabilities;
 }
 
-uint64_t bladerf2_get_fpga_capabilities(const struct bladerf_version *fpga_version)
+uint64_t bladerf2_get_fpga_capabilities(
+    const struct bladerf_version *fpga_version)
 {
     uint64_t capabilities = 0;
 
+    if (version_fields_greater_or_equal(fpga_version, 0, 1, 0)) {
+        capabilities |= BLADERF_CAP_TIMESTAMPS;
+    }
+
+    if (version_fields_greater_or_equal(fpga_version, 0, 3, 0)) {
+        capabilities |= BLADERF_CAP_PKT_HANDLER_FMT;
+    }
+
+    if (version_fields_greater_or_equal(fpga_version, 0, 3, 2)) {
+        capabilities |= BLADERF_CAP_VCTCXO_TRIMDAC_READ;
+    }
+
+    if (version_fields_greater_or_equal(fpga_version, 0, 4, 1)) {
+        capabilities |= BLADERF_CAP_MASKED_XBIO_WRITE;
+    }
+
+    if (version_fields_greater_or_equal(fpga_version, 0, 6, 0)) {
+        capabilities |= BLADERF_CAP_TRX_SYNC_TRIG;
+    }
+
     if (version_fields_greater_or_equal(fpga_version, 0, 10, 0)) {
-        capabilities |= BLADERF_CAP_FPGA_TUNING;
         capabilities |= BLADERF_CAP_SCHEDULED_RETUNE;
+    }
+
+    if (version_fields_greater_or_equal(fpga_version, 0, 10, 1)) {
+        capabilities |= BLADERF_CAP_FPGA_TUNING;
     }
 
     return capabilities;
