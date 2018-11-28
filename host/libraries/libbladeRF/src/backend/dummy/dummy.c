@@ -49,7 +49,8 @@ static int dummy_open(struct bladerf *dev, struct bladerf_devinfo *info)
     return BLADERF_ERR_NODEV;
 }
 
-static int dummy_set_fpga_protocol(struct bladerf *dev, backend_fpga_protocol fpga_protocol)
+static int dummy_set_fpga_protocol(struct bladerf *dev,
+                                   backend_fpga_protocol fpga_protocol)
 {
     return 0;
 }
@@ -69,7 +70,9 @@ static int dummy_get_flash_id(struct bladerf *dev, uint8_t *mid, uint8_t *did)
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int dummy_load_fpga(struct bladerf *dev, const uint8_t *image, size_t image_size)
+static int dummy_load_fpga(struct bladerf *dev,
+                           const uint8_t *image,
+                           size_t image_size)
 {
     return 0;
 }
@@ -92,19 +95,24 @@ static int dummy_get_fpga_version(struct bladerf *dev,
 }
 
 static int dummy_erase_flash_blocks(struct bladerf *dev,
-                                    uint32_t eb, uint16_t count)
+                                    uint32_t eb,
+                                    uint16_t count)
 {
     return 0;
 }
 
-static int dummy_read_flash_pages(struct bladerf *dev, uint8_t *buf,
-                                  uint32_t page, uint32_t count)
+static int dummy_read_flash_pages(struct bladerf *dev,
+                                  uint8_t *buf,
+                                  uint32_t page,
+                                  uint32_t count)
 {
     return 0;
 }
 
-static int dummy_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
-                                   uint32_t page, uint32_t count)
+static int dummy_write_flash_pages(struct bladerf *dev,
+                                   const uint8_t *buf,
+                                   uint32_t page,
+                                   uint32_t count)
 {
     return 0;
 }
@@ -130,7 +138,7 @@ static int dummy_get_otp(struct bladerf *dev, char *otp)
 }
 
 static int dummy_get_device_speed(struct bladerf *dev,
-                                 bladerf_dev_speed *device_speed)
+                                  bladerf_dev_speed *device_speed)
 {
     return 0;
 }
@@ -146,7 +154,8 @@ static int dummy_config_gpio_read(struct bladerf *dev, uint32_t *val)
 }
 
 static int dummy_expansion_gpio_write(struct bladerf *dev,
-                                      uint32_t mask, uint32_t val)
+                                      uint32_t mask,
+                                      uint32_t val)
 {
     return 0;
 }
@@ -157,7 +166,8 @@ static int dummy_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
 }
 
 static int dummy_expansion_gpio_dir_write(struct bladerf *dev,
-                                          uint32_t mask, uint32_t val)
+                                          uint32_t mask,
+                                          uint32_t val)
 {
     return 0;
 }
@@ -197,7 +207,8 @@ static int dummy_get_iq_phase_correction(struct bladerf *dev,
     return 0;
 }
 
-static int dummy_get_timestamp(struct bladerf *dev, bladerf_direction dir,
+static int dummy_get_timestamp(struct bladerf *dev,
+                               bladerf_direction dir,
                                uint64_t *val)
 {
     return 0;
@@ -233,22 +244,30 @@ static int dummy_ina219_read(struct bladerf *dev, uint8_t addr, uint16_t *data)
     return 0;
 }
 
-static int dummy_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data)
+static int dummy_ad9361_spi_write(struct bladerf *dev,
+                                  uint16_t cmd,
+                                  uint64_t data)
 {
     return 0;
 }
 
-static int dummy_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
+static int dummy_ad9361_spi_read(struct bladerf *dev,
+                                 uint16_t cmd,
+                                 uint64_t *data)
 {
     return 0;
 }
 
-static int dummy_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data)
+static int dummy_adi_axi_write(struct bladerf *dev,
+                               uint32_t addr,
+                               uint32_t data)
 {
     return 0;
 }
 
-static int dummy_adi_axi_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
+static int dummy_adi_axi_read(struct bladerf *dev,
+                              uint32_t addr,
+                              uint32_t *data)
 {
     return 0;
 }
@@ -263,18 +282,22 @@ static int dummy_rffe_control_read(struct bladerf *dev, uint32_t *value)
     return 0;
 }
 
-static int dummy_rffe_fastlock_save(struct bladerf *dev, bool is_tx,
-                                    uint8_t rffe_profile, uint16_t nios_profile)
+static int dummy_rffe_fastlock_save(struct bladerf *dev,
+                                    bool is_tx,
+                                    uint8_t rffe_profile,
+                                    uint16_t nios_profile)
 {
     return 0;
 }
 
-static int dummy_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
+static int dummy_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev,
+                                              uint16_t value)
 {
     return 0;
 }
 
-static int dummy_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
+static int dummy_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev,
+                                             uint16_t *value)
 {
     return 0;
 }
@@ -289,12 +312,16 @@ static int dummy_adf400x_read(struct bladerf *dev, uint8_t addr, uint32_t *data)
     return 0;
 }
 
-static int dummy_vctcxo_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)
+static int dummy_vctcxo_dac_write(struct bladerf *dev,
+                                  uint8_t addr,
+                                  uint16_t value)
 {
     return 0;
 }
 
-static int dummy_vctcxo_dac_read(struct bladerf *dev, uint8_t addr, uint16_t *value)
+static int dummy_vctcxo_dac_read(struct bladerf *dev,
+                                 uint8_t addr,
+                                 uint16_t *value)
 {
     return 0;
 }
@@ -328,18 +355,21 @@ static int dummy_get_firmware_loopback(struct bladerf *dev, bool *is_enabled)
     return 0;
 }
 
-static int dummy_enable_module(struct bladerf *dev, bladerf_direction dir,
+static int dummy_enable_module(struct bladerf *dev,
+                               bladerf_direction dir,
                                bool enable)
 {
     return 0;
 }
 
-static int dummy_init_stream(struct bladerf_stream *stream, size_t num_transfers)
+static int dummy_init_stream(struct bladerf_stream *stream,
+                             size_t num_transfers)
 {
     return 0;
 }
 
-static int dummy_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
+static int dummy_stream(struct bladerf_stream *stream,
+                        bladerf_channel_layout layout)
 {
     return 0;
 }
@@ -357,9 +387,14 @@ static void dummy_deinit_stream(struct bladerf_stream *stream)
     return;
 }
 
-static int dummy_retune(struct bladerf *dev, bladerf_channel ch,
-                        uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                        uint8_t  freqsel, uint8_t vcocap, bool low_band,
+static int dummy_retune(struct bladerf *dev,
+                        bladerf_channel ch,
+                        uint64_t timestamp,
+                        uint16_t nint,
+                        uint32_t nfrac,
+                        uint8_t freqsel,
+                        uint8_t vcocap,
+                        bool low_band,
                         bool quick_tune)
 {
     return 0;
@@ -367,7 +402,8 @@ static int dummy_retune(struct bladerf *dev, bladerf_channel ch,
 
 
 static int dummy_load_fw_from_bootloader(bladerf_backend backend,
-                                         uint8_t bus, uint8_t addr,
+                                         uint8_t bus,
+                                         uint8_t addr,
                                          struct fx3_firmware *fw)
 {
     return 0;
@@ -379,15 +415,19 @@ static int dummy_read_fw_log(struct bladerf *dev, logger_entry *e)
     return 0;
 }
 
-static int dummy_read_trigger(struct bladerf *dev, bladerf_channel ch,
-                       bladerf_trigger_signal trigger, uint8_t * value)
+static int dummy_read_trigger(struct bladerf *dev,
+                              bladerf_channel ch,
+                              bladerf_trigger_signal trigger,
+                              uint8_t *value)
 {
     *value = 0;
     return 0;
 }
 
-static int dummy_write_trigger(struct bladerf *dev, bladerf_channel ch,
-                        bladerf_trigger_signal trigger, uint8_t value)
+static int dummy_write_trigger(struct bladerf *dev,
+                               bladerf_channel ch,
+                               bladerf_trigger_signal trigger,
+                               uint8_t value)
 {
     return 0;
 }
@@ -457,14 +497,15 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.rffe_fastlock_save, dummy_rffe_fastlock_save),
 
-    FIELD_INIT(.ad56x1_vctcxo_trim_dac_write, dummy_ad56x1_vctcxo_trim_dac_write),
+    FIELD_INIT(.ad56x1_vctcxo_trim_dac_write,
+               dummy_ad56x1_vctcxo_trim_dac_write),
     FIELD_INIT(.ad56x1_vctcxo_trim_dac_read, dummy_ad56x1_vctcxo_trim_dac_read),
 
     FIELD_INIT(.adf400x_write, dummy_adf400x_write),
     FIELD_INIT(.adf400x_read, dummy_adf400x_read),
 
     FIELD_INIT(.vctcxo_dac_write, dummy_vctcxo_dac_write),
-    FIELD_INIT(.vctcxo_dac_read,  dummy_vctcxo_dac_read),
+    FIELD_INIT(.vctcxo_dac_read, dummy_vctcxo_dac_read),
 
     FIELD_INIT(.set_vctcxo_tamer_mode, dummy_set_vctcxo_tamer_mode),
     FIELD_INIT(.get_vctcxo_tamer_mode, dummy_get_vctcxo_tamer_mode),

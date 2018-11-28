@@ -1202,6 +1202,9 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.adi_axi_write, nios_legacy_adi_axi_write),
     FIELD_INIT(.adi_axi_read, nios_legacy_adi_axi_read),
 
+    FIELD_INIT(.rfic_command_write, nios_legacy_rfic_command_write),
+    FIELD_INIT(.rfic_command_read, nios_legacy_rfic_command_read),
+
     FIELD_INIT(.rffe_control_write, nios_legacy_rffe_control_write),
     FIELD_INIT(.rffe_control_read, nios_legacy_rffe_control_read),
 
@@ -1307,6 +1310,9 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.adi_axi_write, nios_adi_axi_write),
     FIELD_INIT(.adi_axi_read, nios_adi_axi_read),
+
+    FIELD_INIT(.rfic_command_write, nios_rfic_command_write),
+    FIELD_INIT(.rfic_command_read, nios_rfic_command_read),
 
     FIELD_INIT(.rffe_control_write, nios_rffe_control_write),
     FIELD_INIT(.rffe_control_read, nios_rffe_control_read),
