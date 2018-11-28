@@ -54,13 +54,8 @@
 #define BLADERF_CAP_TIMESTAMPS (1 << 2)
 
 /**
- * FPGA version 0.2.0 introduced NIOS-based tuning support.
- */
-#define BLADERF_CAP_FPGA_TUNING (1 << 3)
-
-/**
- * FPGA version 0.2.0 also introduced scheduled retune support. The
- * re-use of this capability bit is intentional.
+ * FPGA v0.2.0 introduced scheduled retune support on the bladeRF 1, and FPGA
+ * v0.10.0 introduced it on the bladeRF 2.
  */
 #define BLADERF_CAP_SCHEDULED_RETUNE (1 << 3)
 
@@ -107,6 +102,12 @@
  * FPGA v0.7.0 introduced AGC DC correction Look-Up-Table
  */
 #define BLADERF_CAP_AGC_DC_LUT (1 << 10)
+
+/**
+ * FPGA v0.2.0 introduced NIOS-based tuning support on the bladeRF 1, and FPGA
+ * v0.10.1 introduced it on the bladeRF 2.
+ */
+#define BLADERF_CAP_FPGA_TUNING (1 << 11)
 
 /**
  * Firmware 1.7.1 introduced firmware-based loopback
