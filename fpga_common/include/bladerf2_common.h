@@ -169,6 +169,15 @@ struct band_port_map {
 #define __round_int64(x) (x >= 0 ? (int64_t)(x + 0.5) : (int64_t)(x - 0.5))
 
 /**
+ * Subcommands for the BLADERF_RFIC_COMMAND_INIT RFIC command.
+ */
+typedef enum {
+    BLADERF_RFIC_INIT_STATE_OFF = 0, /** Non-initialized state */
+    BLADERF_RFIC_INIT_STATE_ON,      /** Initialized ("open") */
+    BLADERF_RFIC_INIT_STATE_STANDBY, /** Standby ("closed") */
+} bladerf_rfic_init_state;
+
+/**
  * Commands available with the FPGA-based RFIC interface.
  */
 typedef enum {
@@ -195,8 +204,7 @@ typedef enum {
      *
      * Pass ::BLADERF_CHANNEL_INVALID as the `ch` parameter.
      *
-     * The Read variant returns `true` if the RFIC has been initialized,
-     * `false` otherwise.
+     * Pass/expect a ::bladerf_rfic_init_state value as the `data` parameter.
      */
     BLADERF_RFIC_COMMAND_INIT = 1,
 
