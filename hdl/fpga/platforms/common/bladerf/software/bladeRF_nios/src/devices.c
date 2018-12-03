@@ -43,6 +43,9 @@ uint16_t vctcxo_trim_dac_value = 0x7FFF;
 uint8_t vctcxo_tamer_ctrl_reg = 0x00;
 
 #ifdef BOARD_BLADERF_MICRO
+/* Common bladeRF2 header */
+#include "bladerf2_common.h"
+
 /* Cached version of ADF400x registers */
 uint32_t adf400x_reg[4] = { 0 };
 
@@ -563,17 +566,21 @@ void adi_rfport_select(fastlock_profile *p)
 #ifdef BOARD_BLADERF_MICRO
 void adi_rfspdt_select(bladerf_module m, fastlock_profile *p)
 {
-    static const uint32_t tx_spdt_mask = 0x7800;
-    static const uint32_t rx_spdt_mask = 0x03c0;
+    static const uint32_t tx_spdt_shift = RFFE_CONTROL_TX_SPDT_1;
+    static const uint32_t tx_spdt_mask  = (0xF << tx_spdt_shift);
+    static const uint32_t rx_spdt_shift = RFFE_CONTROL_RX_SPDT_1;
+    static const uint32_t rx_spdt_mask  = (0xF << rx_spdt_shift);
 
     uint32_t rffe_gpio;
 
     rffe_gpio = rffe_csr_read();
 
     if (BLADERF_CHANNEL_IS_TX(m)) {
-        rffe_gpio = (rffe_gpio & ~tx_spdt_mask) | (p->spdt >> 4);
+        rffe_gpio &= (~tx_spdt_mask);
+        rffe_gpio |= ((p->spdt >> 4) << tx_spdt_shift);
     } else {
-        rffe_gpio = (rffe_gpio & ~rx_spdt_mask) | (p->spdt & 0xf);
+        rffe_gpio &= (~rx_spdt_mask);
+        rffe_gpio |= ((p->spdt & 0xf) << rx_spdt_shift);
     }
 
     rffe_csr_write(rffe_gpio);
