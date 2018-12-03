@@ -36,6 +36,41 @@
 #define COMMAND_QUEUE_FULL 0xff
 #define COMMAND_QUEUE_EMPTY 0xfe
 
+/**
+ * @brief      Translate a bladerf_direction and channel number to a
+ *             bladerf_channel
+ *
+ * @param      _dir  Direction
+ * @param      _idx  Channel number
+ *
+ * @return     BLADERF_CHANNEL_TX(_idx) or BLADERF_CHANNEL_RX(_idx)
+ */
+#define CHANNEL_IDX(_dir, _idx) \
+    (BLADERF_TX == _dir) ? BLADERF_CHANNEL_TX(_idx) : BLADERF_CHANNEL_RX(_idx)
+
+/**
+ * @brief      Iterate over all bladerf_directions
+ *
+ * @param      _dir  Direction
+ */
+#define FOR_EACH_DIRECTION(_dir) \
+    for (_dir = BLADERF_RX; _dir <= BLADERF_TX; ++_dir)
+
+/**
+ * @brief      Iterate over all channels in a given direction
+ *
+ * @param      _dir      Direction
+ * @param      _count    Number of channels
+ * @param[out] _index    Index variable (size_t)
+ * @param[out] _channel  Channel variable (bladerf_channel)
+ *
+ * @return     { description_of_the_return_value }
+ */
+#define FOR_EACH_CHANNEL(_dir, _count, _index, _channel)                    \
+    for (_index = 0, _channel = CHANNEL_IDX(_dir, _index); _index < _count; \
+         ++_index, _channel   = CHANNEL_IDX(_dir, _index))
+
+
 /* Packet decoding debugging output */
 static char const RFIC_DBG_FMT[] = "%s: cmd=%s ch=%s state=%s [%x]=%x(-%x)\n";
 #define RFIC_DBG(prefix, cmd, ch, state, addr, data) \
@@ -74,6 +109,9 @@ struct rfic_queue {
 };
 
 struct rfic_state {
+    /* Initialization state */
+    bladerf_rfic_init_state init_state;
+
     /* AD9361 state structure */
     struct ad9361_rf_phy *phy;
 
@@ -86,6 +124,9 @@ struct rfic_state {
 
     /* Frequency retrieval is invalid due to fastlock shenanigans */
     bool frequency_invalid[NUM_MODULES];
+
+    /* TX mute state at standby */
+    bool tx_mute_state[2];
 };
 
 uint8_t rfic_enqueue(struct rfic_queue *q,
