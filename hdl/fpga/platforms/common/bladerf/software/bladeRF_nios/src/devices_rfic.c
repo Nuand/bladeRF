@@ -35,6 +35,7 @@
 #include "ad936x.h"
 #include "ad936x_helpers.h"
 #include "devices_rfic.h"
+#include "pkt_retune2.h"
 
 extern AD9361_InitParam bladerf2_rfic_init_params;
 extern AD9361_RXFIRConfig bladerf2_rfic_rx_fir_config;
@@ -54,6 +55,10 @@ static struct rfic_state state;
 /* Helpers */
 /******************************************************************************/
 
+static bool _rfic_cmd_wr_frequency(bladerf_channel channel, uint64_t frequency);
+static bool _rfic_cmd_wr_filter(bladerf_channel channel, uint64_t data);
+static bool _rfic_cmd_wr_samplerate(bladerf_channel channel, uint64_t rate);
+
 #define CHECK_BOOL(_fn)        \
     do {                       \
         int s = _fn;           \
@@ -65,7 +70,178 @@ static struct rfic_state state;
 
 static inline bool _is_initialized(struct ad9361_rf_phy *phy)
 {
-    return phy != NULL;
+    return BLADERF_RFIC_INIT_STATE_ON == state.init_state;
+}
+
+static void _rfic_clear_rffe_control()
+{
+    uint32_t reg;
+
+    reg = rffe_csr_read();
+    reg &= ~(1 << RFFE_CONTROL_TXNRX);
+    reg &= ~(1 << RFFE_CONTROL_ENABLE);
+    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_1);
+    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_2);
+    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_1);
+    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_2);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_0);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_0);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_1);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_1);
+    rffe_csr_write(reg);
+}
+
+static bool _rfic_deinitialize()
+{
+    uint32_t reg;
+
+    /* Unset RFFE bits controlling RFIC */
+    _rfic_clear_rffe_control();
+
+    if (NULL != state.phy) {
+        /* Deinitialize AD9361 */
+        CHECK_BOOL(ad9361_deinit(state.phy));
+        state.phy = NULL;
+    } else {
+        DBG("%s: state.phy already null?\n", __FUNCTION__);
+    }
+
+    reg = rffe_csr_read();
+    reg &= ~(1 << RFFE_CONTROL_RESET_N);
+    rffe_csr_write(reg);
+
+    state.init_state = BLADERF_RFIC_INIT_STATE_OFF;
+
+    DBG("*** RFIC Control Deinitialized ***\n");
+
+    return true;
+}
+
+static bool _rfic_initialize()
+{
+    AD9361_InitParam *init_param = &bladerf2_rfic_init_params;
+    bladerf_direction dir;
+    bladerf_channel ch;
+    uint32_t reg;
+    size_t i;
+
+    /* Unset RFFE bits controlling RFIC */
+    _rfic_clear_rffe_control();
+
+    if (NULL == state.phy) {
+        /* Initialize AD9361 */
+        state.init_state = BLADERF_RFIC_INIT_STATE_OFF;
+
+        DBG("--- Initializing AD9361 ---\n");
+
+        reg = rffe_csr_read();
+        reg &= ~(1 << RFFE_CONTROL_RESET_N);
+        rffe_csr_write(reg);
+
+        usleep(1000);
+
+        reg = rffe_csr_read();
+        reg |= 1 << RFFE_CONTROL_RESET_N;
+        rffe_csr_write(reg);
+
+        CHECK_BOOL(ad9361_init(&state.phy, init_param, NULL));
+    }
+
+    if (NULL == state.phy) {
+        /* Oh no */
+        DBG("%s: ad9361_init failed silently\n", __FUNCTION__);
+        state.init_state = BLADERF_RFIC_INIT_STATE_OFF;
+        return false;
+    }
+
+    /* Per-module initialization */
+    FOR_EACH_DIRECTION(dir)
+    {
+        FOR_EACH_CHANNEL(dir, 1, i, ch)
+        {
+            if (BLADERF_RFIC_INIT_STATE_OFF == state.init_state) {
+                bladerf_frequency init_freq;
+                bladerf_sample_rate init_samprate;
+
+                if (BLADERF_CHANNEL_IS_TX(ch)) {
+                    init_freq     = init_param->tx_synthesizer_frequency_hz;
+                    init_samprate = init_param->tx_path_clock_frequencies[5];
+                } else {
+                    init_freq     = init_param->rx_synthesizer_frequency_hz;
+                    init_samprate = init_param->rx_path_clock_frequencies[5];
+                }
+
+                // why? i don't know
+                init_freq >>= 32;
+
+                CHECK_BOOL(_rfic_cmd_wr_frequency(ch, RESET_FREQUENCY));
+
+                CHECK_BOOL(_rfic_cmd_wr_filter(
+                    ch, (BLADERF_TX == dir) ? BLADERF_RFIC_TXFIR_DEFAULT
+                                            : BLADERF_RFIC_RXFIR_DEFAULT));
+
+                CHECK_BOOL(_rfic_cmd_wr_samplerate(ch, init_samprate));
+
+                CHECK_BOOL(_rfic_cmd_wr_frequency(ch, init_freq));
+            }
+        }
+    }
+
+    /* Per-channel initialization */
+    FOR_EACH_CHANNEL(BLADERF_TX, 2, i, ch)
+    {
+        if (BLADERF_RFIC_INIT_STATE_OFF == state.init_state) {
+            CHECK_BOOL(txmute_set_cached(
+                state.phy, BLADERF_CHANNEL_TX(i),
+                bladerf2_rfic_init_params.tx_attenuation_mdB));
+            CHECK_BOOL(txmute_set(state.phy, BLADERF_CHANNEL_TX(i), false));
+        }
+
+        if (BLADERF_RFIC_INIT_STATE_STANDBY == state.init_state) {
+            CHECK_BOOL(txmute_set(state.phy, BLADERF_CHANNEL_TX(i),
+                                  (state.tx_mute_state[i])));
+        }
+    }
+
+    state.init_state = BLADERF_RFIC_INIT_STATE_ON;
+
+    DBG("*** RFIC Control Initialized ***\n");
+
+    return true;
+}
+
+static bool _rfic_standby()
+{
+    size_t i;
+    bladerf_direction dir;
+
+    /* Unset RFFE bits controlling RFIC */
+    _rfic_clear_rffe_control();
+
+    if (NULL == state.phy) {
+        /* We weren't initialized to begin with, apparently. */
+        state.init_state = BLADERF_RFIC_INIT_STATE_OFF;
+    } else {
+        /* Cache current txmute state and put it aside */
+        for (i = 0; i < 2; ++i) {
+            CHECK_BOOL(txmute_get(state.phy, BLADERF_CHANNEL_TX(i),
+                                  &state.tx_mute_state[i]));
+            CHECK_BOOL(txmute_set(state.phy, BLADERF_CHANNEL_TX(i), true));
+        }
+
+        /* Reset frequency if it's invalid */
+        FOR_EACH_DIRECTION(dir)
+        {
+            if (state.frequency_invalid[dir]) {
+            }
+        }
+    }
+
+    state.init_state = BLADERF_RFIC_INIT_STATE_STANDBY;
+
+    DBG("*** RFIC Control Standby ***\n");
+
+    return true;
 }
 
 
@@ -96,47 +272,30 @@ static bool _rfic_cmd_rd_status(bladerf_channel channel, uint64_t *data)
  */
 static bool _rfic_cmd_wr_init(bladerf_channel channel, uint64_t data)
 {
-    if (data > 0) {
-        uint32_t reg;
+    bladerf_rfic_init_state new_state = (bladerf_rfic_init_state)data;
 
-        if (_is_initialized(state.phy)) {
-            DBG("%s: already initialized\n", __FUNCTION__);
-            return true;
-        }
-
-        /* Initialize AD9361 */
-        CHECK_BOOL(ad9361_init(&state.phy, &bladerf2_rfic_init_params, NULL));
-
-        /* Clear TXNRX and ENABLE */
-        reg = rffe_csr_read();
-        reg &= ~(1 << RFFE_CONTROL_TXNRX);
-        reg &= ~(1 << RFFE_CONTROL_ENABLE);
-        rffe_csr_write(reg);
-
-        /* Initialize TX mute */
-        CHECK_BOOL(
-            txmute_set_cached(state.phy, BLADERF_CHANNEL_TX(0),
-                              bladerf2_rfic_init_params.tx_attenuation_mdB));
-        CHECK_BOOL(
-            txmute_set_cached(state.phy, BLADERF_CHANNEL_TX(1),
-                              bladerf2_rfic_init_params.tx_attenuation_mdB));
-        CHECK_BOOL(txmute_set(state.phy, BLADERF_CHANNEL_TX(0), 0));
-        CHECK_BOOL(txmute_set(state.phy, BLADERF_CHANNEL_TX(1), 0));
-
-        return true;
-    } else {
-        if (NULL != state.phy) {
-            CHECK_BOOL(ad9361_deinit(state.phy));
-            state.phy = NULL;
-        }
-
+    if (state.init_state == new_state) {
+        DBG("%s: already in state %x\n", __FUNCTION__, state.init_state);
         return true;
     }
+
+    switch (new_state) {
+        case BLADERF_RFIC_INIT_STATE_OFF:
+            return _rfic_deinitialize();
+
+        case BLADERF_RFIC_INIT_STATE_ON:
+            return _rfic_initialize();
+
+        case BLADERF_RFIC_INIT_STATE_STANDBY:
+            return _rfic_standby();
+    }
+
+    return false;
 }
 
 static bool _rfic_cmd_rd_init(bladerf_channel channel, uint64_t *data)
 {
-    *data = _is_initialized(state.phy);
+    *data = (uint64_t)state.init_state;
     return true;
 }
 
@@ -159,6 +318,7 @@ static bool _rfic_cmd_wr_enable(bladerf_channel ch, uint64_t data)
     bool dir_enable;  /* Direction: target state */
     bool dir_pending; /* Direction: target state is not initial state */
 
+    bladerf_channel subch;
     bladerf_frequency freq = 0;
 
     /* Verify that this is not a wildcard channel */
@@ -212,6 +372,13 @@ static bool _rfic_cmd_wr_enable(bladerf_channel ch, uint64_t data)
         if (dir_enable) {
             reg |= (1 << _get_rffe_control_bit_for_dir(dir));
         } else {
+            size_t i;
+
+            FOR_EACH_CHANNEL(dir, 2, i, subch)
+            {
+                CHECK_BOOL(_modify_spdt_bits_by_freq(&reg, subch, false, 0));
+            }
+
             reg &= ~(1 << _get_rffe_control_bit_for_dir(dir));
         }
 
