@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <signal.h>
 #include <libbladeRF.h>
 #include "conversions.h"
 #include "host_config.h"
@@ -57,6 +58,20 @@ typedef struct {
 /* Spacing between hop frequencies */
 #define FREQ_INCREMENT       ((bladerf_frequency) 0.500e6)
 
+bool is_running = true;
+
+void sig_handler(int signo)
+{
+    if (signo == SIGINT) {
+        fprintf(stderr, "received SIGINT\n");
+        if (!is_running) {
+            fprintf(stderr, "received another SIGINT, aborting\n");
+            abort();
+        }
+        is_running = false;
+    }
+}
+
 int run_test(struct bladerf *dev)
 {
     const char *board_name;
@@ -79,7 +94,7 @@ int run_test(struct bladerf *dev)
         samples[i] = samples[i+1] = 1448;;
     }
 
-    status = bladerf_sync_config(dev, BLADERF_MODULE_TX,
+    status = bladerf_sync_config(dev, BLADERF_TX_X1,
                                  BLADERF_FORMAT_SC16_Q11,
                                  16, 4096, 8, TIMEOUT_MS);
     if (status != 0) {
@@ -113,14 +128,21 @@ int run_test(struct bladerf *dev)
 
     /* Get the quick tune data */
     for( f = 0; f < NUM_FREQS; f++ ) {
-        status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, freqs[f].f);
+        if (!is_running) {
+            fprintf(stderr, "Stopping test...\n");
+            status = 0;
+            goto out;
+        }
+
+        status = bladerf_set_frequency(dev, BLADERF_CHANNEL_TX(0), freqs[f].f);
         if (status != 0) {
             fprintf(stderr, "Failed to set frequency to %" PRIu64 ": %s\n",
                     freqs[f].f, bladerf_strerror(status));
             goto out;
         }
 
-        status = bladerf_get_quick_tune(dev, BLADERF_MODULE_TX, &freqs[f].qt);
+        status = bladerf_get_quick_tune(dev, BLADERF_CHANNEL_TX(0),
+                                        &freqs[f].qt);
         if (status != 0) {
             fprintf(stderr, "Failed to get quick tune %u: %s\n",
                     f, bladerf_strerror(status));
@@ -130,7 +152,7 @@ int run_test(struct bladerf *dev)
 
     /* Enable and run! */
 
-    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
+    status = bladerf_enable_module(dev, BLADERF_CHANNEL_TX(0), true);
     if (status != 0) {
         fprintf(stderr, "Failed to enable module: %s\n",
                 bladerf_strerror(status));
@@ -139,6 +161,12 @@ int run_test(struct bladerf *dev)
 
     for (i = 0; i < ITERATIONS; i++) {
         for( f = 0; f < NUM_FREQS; f++ ) {
+
+            if (!is_running) {
+                fprintf(stderr, "Stopping test...\n");
+                status = 0;
+                goto out;
+            }
 
             if( DWELL_TIME_US > 999999 ) {
                 printf("hopseq[%u] = %u\n", f, hopseq[f]);
@@ -150,7 +178,7 @@ int run_test(struct bladerf *dev)
                 }
             }
 
-            status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
+            status = bladerf_schedule_retune(dev, BLADERF_CHANNEL_TX(0),
                                              BLADERF_RETUNE_NOW, 0,
                                              &freqs[hopseq[f]].qt);
 
@@ -173,7 +201,7 @@ int run_test(struct bladerf *dev)
 
 out:
     free(samples);
-    bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
+    bladerf_enable_module(dev, BLADERF_CHANNEL_TX(0), false);
     return status;
 }
 
@@ -183,12 +211,16 @@ int main(int argc, char *argv[])
     struct bladerf *dev = NULL;
     const char *devstr = NULL;
 
-    if (argc > 2 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
-        fprintf(stderr, "TX a tone across 4 frequencies.\n");
+    if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
+        fprintf(stderr, "TX a tone across %d frequencies.\n", NUM_FREQS);
         fprintf(stderr, "Usage: %s [device string]\n", argv[0]);
         return 1;
     } else {
         devstr = argv[1];
+    }
+
+    if (signal(SIGINT, sig_handler) == SIG_ERR) {
+        fprintf(stderr, "Unable to catch SIGINT signals\n");
     }
 
     bladerf_log_set_verbosity(VERBOSITY);
