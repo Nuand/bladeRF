@@ -254,6 +254,13 @@ typedef enum {
      * 1 indicates TX mute is enabled, 0 indicates it is not.
      */
     BLADERF_RFIC_COMMAND_TXMUTE = 10,
+
+    /** Store Fastlock profile. (Write)
+     *
+     * Stores the current tuning into a fastlock profile, for later recall
+     */
+    BLADERF_RFIC_COMMAND_FASTLOCK = 11,
+
 } bladerf_rfic_command;
 
 /** NIOS_PKT_16x64_RFIC_STATUS return structure
