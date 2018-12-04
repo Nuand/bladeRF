@@ -698,6 +698,19 @@ static bool _rfic_cmd_rd_txmute(bladerf_channel channel, uint64_t *data)
     return false;
 }
 
+static bool _rfic_cmd_wr_fastlock(bladerf_channel channel, uint64_t data)
+{
+    uint32_t profile = (uint32_t)data;
+
+    if (BLADERF_CHANNEL_IS_TX(channel)) {
+        CHECK_BOOL(ad9361_tx_fastlock_store(state.phy, profile));
+    } else {
+        CHECK_BOOL(ad9361_rx_fastlock_store(state.phy, profile));
+    }
+
+    return true;
+}
+
 
 /******************************************************************************/
 /* Dispatchers */
@@ -765,6 +778,11 @@ struct rfic_command_fns const funcs[] = {
         FIELD_INIT(.command, BLADERF_RFIC_COMMAND_TXMUTE),
         FIELD_INIT(.write, _rfic_cmd_wr_txmute),
         FIELD_INIT(.read, _rfic_cmd_rd_txmute),
+    },
+    {
+        FIELD_INIT(.command, BLADERF_RFIC_COMMAND_FASTLOCK),
+        FIELD_INIT(.write, _rfic_cmd_wr_fastlock),
+        FIELD_INIT(.read, NULL),
     },
     // clang-format on
 };
