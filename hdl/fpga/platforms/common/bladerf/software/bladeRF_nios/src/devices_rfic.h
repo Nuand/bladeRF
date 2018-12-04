@@ -83,6 +83,9 @@ struct rfic_state {
     /* RX and TX FIR filter memory */
     bladerf_rfic_rxfir rxfir;
     bladerf_rfic_txfir txfir;
+
+    /* Frequency retrieval is invalid due to fastlock shenanigans */
+    bool frequency_invalid[NUM_MODULES];
 };
 
 uint8_t rfic_enqueue(struct rfic_queue *q,
@@ -95,6 +98,8 @@ uint8_t rfic_dequeue(struct rfic_queue *q, struct rfic_queue_entry *e);
 struct rfic_queue_entry *rfic_queue_peek(struct rfic_queue *q);
 
 void rfic_queue_reset(struct rfic_queue *q);
+
+void rfic_invalidate_frequency(bladerf_module module);
 
 static inline bool _rfic_chan_is_system(uint8_t ch)
 {
