@@ -88,23 +88,25 @@ It is possible to build, load, and debug the Nios software over JTAG using the I
 
 (***Linux Users: Ensure you've installed udev rules for your JTAG debugger***)
 
-GDB Command-Line Debugging
+Command-Line Debugging with GDB
 ============================
 
 - Connect the USB Blaster JTAG debugger
 
 - It may be helpful to open several terminal windows/splits for the next few steps.
-  - Terminal 1, cd into `$BLADERF_DIR/hdl/quartus`
-    - Used for (re)building the FPGA image, and
+  - Terminal 1, for:
+    - (Re)building the FPGA image
     - Loading the FPGA image
-  - Terminal 2, cd into `$BLADERF_DIR/hdl/fpga/platforms/<platform>/software/bladeRF_nios`
-    - Used for (re)building the Nios,
-    - Downloading the resulting ELF to the FPGA, and
+  - Terminal 2, for:
+    - (Re)building the Nios
+    - Downloading the resulting ELF to the FPGA via the USB Blaster debugger
     - Starting the `nios2-gdb-server` (may use another terminal window for this if desired)
-  - Terminal 3, cd into `$BLADERF_DIR/hdl/quartus/work/<platform>-<size>-<rev>/bladeRF_nios`
-    - Used for debugging the Nios with `nios2-elf-gdb`
-  - Terminal 4 (optional/as-needed)
-    - Running the host application that exercises the bladeRF
+  - Terminal 3, for:
+    - Performing the Nios debugging with `nios2-elf-gdb`
+  - Terminal 4 (optional), for:
+    - Running the host application exercising the bladeRF
+  - Terminal 5 (optional), for:
+    - Viewing/editing Nios code (helpful for figuring out where to place breakpoints)
 
 - In Terminal 1:
   - Start *NIOS II command shell*. This is a bash shell that has environment variables required by Quartus already defined.
@@ -115,7 +117,7 @@ GDB Command-Line Debugging
     # Replace <board>, <size>, and <rev> according to the platform you are building.
     $ build_bladerf.sh -b <board> -s <size> -r <rev>
     ```
-  - Load the bladeRF FPGA
+  - Load the FPGA image into the bladeRF device
     ```
     $ bladeRF-cli -l /path/to/hosted.rbf
     ```
@@ -124,14 +126,14 @@ GDB Command-Line Debugging
   - Start *NIOS II command shell*.
     - `$QUARTUS_INSTALL_DIR/nios2eds/nios2_command_shell.sh`
   - cd into `$BLADERF_DIR/hdl/fpga/platforms/<platform>/software/bladeRF_nios`
-  - For something to do, let's rebuild the Nios. To do this, we must define the `WORKDIR` variable for the make script. This path is relative to the `$BLADERF_DIR/hdl/quartus` directory. Substitute <platform> with the bladeRF platform (e.g. bladerf or bladerf-micro), <size> is the FPGA size (e.g. 40, 115, A4, A9), and <rev> is the revision (e.g. hosted).
+  - For something to do, let's rebuild the Nios. To do this, we must define the `WORKDIR` variable for the make script. This path is relative to the `$BLADERF_DIR/hdl/quartus` directory. Substitute \<platform\> with the bladeRF platform (e.g. bladerf or bladerf-micro), \<size\> with the FPGA size (e.g. 40, 115, A4, A9), and \<rev\> with the revision (e.g. hosted).
     - `make WORKDIR=work/<platform>-<size>-<rev> clean`
     - `make WORKDIR=work/<platform>-<size>-<rev> all`
-  - Now let's download the new ELF into the FPGA. Because the FPGA has already been loaded in a previous step, all this does is re-write the appropriate memory space within the FPGA with the new Nios program.
+  - Download the new ELF into the FPGA. Because the FPGA has already been loaded in a previous step, all this does is re-write the appropriate memory space within the FPGA with the new Nios program.
     - `make WORKDIR=work/<platform>-<size>-<rev> download-elf`
-  - And now start the gdb server
+  - Finally, start the gdb server
     - `nios2-gdb-server --tcpport 8888 --tcppersist`
-      - This may return the error, "Unable to bind (98)". This happens when the previous step hasn't released the debugger. Give it a minute or two and it should release by itself. If not, unplugging the debugger and plugging it back in should do the trick. You may have to re-download the ELF.
+      - This may return the error, "Unable to bind (98)". This happens when the previous step still has a use lock on the debugger pod. Give it a minute or two and try again. If it still fails, unplugging the debugger and plugging it back in should do the trick.
 
 - In Terminal 3:
   - Start *NIOS II command shell*.
@@ -140,27 +142,29 @@ GDB Command-Line Debugging
   - Start the Nios gdb client:
     - `nios2-elf-gdb -ex "target remote localhost:8888" bladeRF_nios.elf`
   - The Nios processor will now be in a paused state. This lets us setup breakpoints and whatnot as needed for debug. When ready to begin the debug process, issue the `continue` command. This will unpause the Nios.
-    - If a breakpoint is hit, gdb will pause the Nios again until you issue another `continue` command. This may cause a timeout and break the user application. Breakpoints can have [commands associated with them](https://ftp.gnu.org/old-gnu/Manuals/gdb/html_node/gdb_34.html), so when one is hit, gdb can immediately print a value and continue. Often, the print operation is slow enough that it times out the interface as well. Tips on how to avoid this will be discussed in another section.
+    - If a breakpoint is hit, gdb will pause the Nios again until you issue another `continue` command. This may cause a timeout and break the user application. Breakpoints can have [commands associated with them](https://ftp.gnu.org/old-gnu/Manuals/gdb/html_node/gdb_34.html), so when one is hit, gdb can immediately print a value and continue. The print operation is slow enough that if more than a few characters are printed, it will trigger a timeout in libbladeRF. Refer to the *Debugging Tips* section for how to increase the timeout.
 
 - In Terminal 4:
   - Run the host software (e.g. bladeRF-cli or some custom program). The general idea is that this software is interacting with the bladeRF/Nios in some way that you want to monitor in gdb in the previous step.
 
-GDB Debugging: TIPS
+At this point, the Nios code can be edited, recompiled, and downloaded to the FPGA without rebuilding the entire FPGA image. The exception to this is if you are finished debugging and want to embed the changes into the FPGA image, or if the Nios codebase increases such that it no longer fits in the RAM allocated. To rebuild the Nios, quit out of gdb in Terminal 3 and return to Terminal 2. Ctrl-C the `nios2-gdb-server`, rebuild/download the ELF using `make`, and restart `nios2-gdb-server` as described above. Repeat the steps listed in Terminal 3 and 4, above.
+
+Debugging Tips
 ============================
 
 **Timeouts**
 
 When debugging with gdb, it is often desirable to print the values of variables for any number of reasons. The problem is, the print operation is slow and will cause the host/bladeRF interface to timeout. To make debugging easier, this timeout can be increased.
 
-- Open `$BLADERF_DIR/host/libraries/libbladeRF/src/backend/usb/usb.h`
+- Open [host/libraries/libbladeRF/src/backend/usb/usb.h](../../../../../../host/libraries/libbladeRF/src/backend/usb/usb.h)
 - Find the line that defines `PERIPHERAL_TIMEOUT_MS` and change it from `250` to a higher value such as `2500` for 2.5 seconds, or `10000` for 10 seconds.
 - Save the file and rebuild/install libbladeRF.
 
 **Variable has been optimized out**
 
-Another common occurence when debugging is finding out that a variable has been optimized out and its value is not printable. The best way to get around this is to reduce the level of compilter optimization. This can be done as follows:
+Another common occurence when debugging is finding out that a variable has been optimized out and its value is not printable. The best way to get around this is to reduce the level of compiler optimization. This can be done as follows:
 
-- Open `$BLADERF_DIR/hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/Makefile`
+- Open [hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/Makefile](../../../../../../hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/Makefile)
 - Find the line `APP_CFLAGS_OPTIMIZATION`
 - It will have the default optimization for size (`-Os`). Change it to no optimization: `-O0`.
 - Save the file.
@@ -170,7 +174,7 @@ To increase the Nios RAM size:
 
 - Open `$BLADERF_DIR/hdl/fpga/platforms/<platform>/build/platform.conf`
 - Find the `get_qsys_ram` function, and change the return value to be the nearest power of 2 larger than the required memory size from the above. Sometimes simply doubling the existing return value is good enough.
-- Rebuild the FPGA in its entirety. This is required because the FPGA needs to instantiate more block RAMs to fit the larger Nios, and it will restructure the logic around this.
+- Rebuild the FPGA in its entirety. This is required because the FPGA needs to instantiate more block RAMs to fit the larger Nios, and it will need to re-fit the surrounding logic.
 
 Eclipse GUI Debugging
 =====================
