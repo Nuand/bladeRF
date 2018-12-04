@@ -292,6 +292,8 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     dev->flash_arch->manufacturer_id = 0x0;
     dev->flash_arch->device_id       = 0x0;
 
+    board_data->rfic_reset_on_close = false;
+
     /* Read firmware version */
     CHECK_STATUS(dev->backend->get_fw_version(dev, &board_data->fw_version));
 
@@ -528,8 +530,18 @@ static void bladerf2_close(struct bladerf *dev)
                 }
             }
 
-            // Put RFIC into standby mode
-            rfic->standby(dev);
+            if (board_data->rfic_reset_on_close) {
+                /* We need to fully de-initialize the RFIC, so it can be reset
+                 * on the next open. This seems to be necessary after doing
+                 * direct SPI control of the RFIC.
+                 */
+                rfic->deinitialize(dev);
+            } else {
+                /* Put the RFIC into standby mode. This will shut down any
+                 * current RF activity, but it will not lose the RF state.
+                 */
+                rfic->standby(dev);
+            }
 
             free(board_data);
             board_data = NULL;
@@ -1374,6 +1386,11 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         /* Set the RX SPDTs */
         quick_tune->spdt = (pm->spdt << 2) | (pm->spdt);
     }
+
+    /* Workaround: the RFIC can end up in a bad state after fastlock use, and
+     * needs to be reset and re-initialized. This is likely due to our direct
+     * SPI writes causing state incongruence. */
+    board_data->rfic_reset_on_close = true;
 
     return 0;
 }
