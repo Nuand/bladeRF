@@ -352,11 +352,18 @@ static bool _rfic_cmd_wr_frequency(bladerf_channel channel, uint64_t frequency)
 
     if (BLADERF_CHANNEL_IS_TX(channel)) {
         CHECK_BOOL(ad9361_set_tx_lo_freq(state.phy, frequency));
+        state.frequency_invalid[BLADERF_TX] = false;
     } else {
         CHECK_BOOL(ad9361_set_rx_lo_freq(state.phy, frequency));
+        state.frequency_invalid[BLADERF_RX] = false;
     }
 
     return true;
+}
+
+void rfic_invalidate_frequency(bladerf_module module)
+{
+    state.frequency_invalid[module] = true;
 }
 
 /**
@@ -376,8 +383,14 @@ static bool _rfic_cmd_rd_frequency(bladerf_channel channel, uint64_t *frequency)
     };
 
     if (BLADERF_CHANNEL_IS_TX(channel)) {
+        if (state.frequency_invalid[BLADERF_TX]) {
+            return false;
+        }
         CHECK_BOOL(ad9361_get_tx_lo_freq(state.phy, &readval));
     } else {
+        if (state.frequency_invalid[BLADERF_RX]) {
+            return false;
+        }
         CHECK_BOOL(ad9361_get_rx_lo_freq(state.phy, &readval));
     }
 

@@ -29,6 +29,10 @@
 #include "devices.h"
 #include "debug.h"
 
+#ifdef BLADERF_NIOS_LIBAD936X
+void rfic_invalidate_frequency(bladerf_module module);
+#endif  // BLADERF_NIOS_LIBAD936X
+
 #ifdef BLADERF_NIOS_DEBUG
     volatile uint32_t pkt_retune2_error_count = 0;
 #   define INCREMENT_ERROR_COUNT() do { pkt_retune2_error_count++; } while (0)
@@ -199,6 +203,11 @@ static inline void profile_activate(bladerf_module module, fastlock_profile *p)
     if (p == NULL) {
         return;
     }
+
+#ifdef BLADERF_NIOS_LIBAD936X
+    /* Invalidate current frequency knowledge */
+    rfic_invalidate_frequency(module);
+#endif  // BLADERF_NIOS_LIBAD936X
 
     /* Activate the RFFE fast lock profile */
     adi_fastlock_recall(module, p);
