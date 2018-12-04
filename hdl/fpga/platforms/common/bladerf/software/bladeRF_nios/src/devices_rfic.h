@@ -147,6 +147,9 @@ static inline char const *_rfic_cmdstr(uint8_t cmd)
         case BLADERF_RFIC_COMMAND_TXMUTE:
             return "TXMUTE  ";
 
+        case BLADERF_RFIC_COMMAND_FASTLOCK:
+            return "FASTLOCK";
+
         default:
             return "        ";
     }
