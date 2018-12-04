@@ -212,6 +212,7 @@ static bool _rfic_initialize()
 
 static bool _rfic_standby()
 {
+    AD9361_InitParam *init_param = &bladerf2_rfic_init_params;
     size_t i;
     bladerf_direction dir;
 
@@ -233,6 +234,15 @@ static bool _rfic_standby()
         FOR_EACH_DIRECTION(dir)
         {
             if (state.frequency_invalid[dir]) {
+                if (BLADERF_TX == dir) {
+                    CHECK_BOOL(_rfic_cmd_wr_frequency(
+                        BLADERF_CHANNEL_TX(0),
+                        init_param->tx_synthesizer_frequency_hz));
+                } else {
+                    CHECK_BOOL(_rfic_cmd_wr_frequency(
+                        BLADERF_CHANNEL_RX(0),
+                        init_param->rx_synthesizer_frequency_hz));
+                }
             }
         }
     }
