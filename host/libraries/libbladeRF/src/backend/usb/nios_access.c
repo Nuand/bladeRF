@@ -62,9 +62,8 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
     print_buf("NIOS II REQ:", buf, NIOS_PKT_LEN);
 
     /* Send the command */
-    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT,
-                                     buf, NIOS_PKT_LEN,
-                                     PERIPHERAL_TIMEOUT_MS);
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT, buf,
+                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
     if (status != 0) {
         log_error("Failed to send NIOS II request: %s\n",
                   bladerf_strerror(status));
@@ -72,14 +71,36 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
     }
 
     /* Retrieve the request */
-    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN,
-                                    buf, NIOS_PKT_LEN,
-                                    PERIPHERAL_TIMEOUT_MS);
-
-    if (status != 0 && status != BLADERF_ERR_TIMEOUT) {
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN, buf,
+                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
+    if (status != 0) {
         log_error("Failed to receive NIOS II response: %s\n",
                   bladerf_strerror(status));
     }
+
+    print_buf("NIOS II res:", buf, NIOS_PKT_LEN);
+
+    return status;
+}
+
+/* Variant that doesn't output to log_error on error. */
+static int nios_access_quiet(struct bladerf *dev, uint8_t *buf)
+{
+    struct bladerf_usb *usb = dev->backend_data;
+    int status;
+
+    print_buf("NIOS II REQ:", buf, NIOS_PKT_LEN);
+
+    /* Send the command */
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT, buf,
+                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
+    if (status != 0) {
+        return status;
+    }
+
+    /* Retrieve the request */
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN, buf,
+                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
 
     print_buf("NIOS II res:", buf, NIOS_PKT_LEN);
 
@@ -235,8 +256,10 @@ static int nios_8x32_write(struct bladerf *dev, uint8_t id,
     }
 }
 
-static int nios_16x64_read(struct bladerf *dev, uint8_t id,
-                           uint16_t addr, uint64_t *data)
+static int nios_16x64_read(struct bladerf *dev,
+                           uint8_t id,
+                           uint16_t addr,
+                           uint64_t *data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -244,7 +267,13 @@ static int nios_16x64_read(struct bladerf *dev, uint8_t id,
 
     nios_pkt_16x64_pack(buf, id, false, addr, 0);
 
-    status = nios_access(dev, buf);
+    /* RFIC access times out occasionally, and this is fine. */
+    if (NIOS_PKT_16x64_TARGET_RFIC == id) {
+        status = nios_access_quiet(dev, buf);
+    } else {
+        status = nios_access(dev, buf);
+    }
+
     if (status != 0) {
         return status;
     }
@@ -260,8 +289,10 @@ static int nios_16x64_read(struct bladerf *dev, uint8_t id,
     }
 }
 
-static int nios_16x64_write(struct bladerf *dev, uint8_t id,
-                            uint16_t addr, uint64_t data)
+static int nios_16x64_write(struct bladerf *dev,
+                            uint8_t id,
+                            uint16_t addr,
+                            uint64_t data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -269,7 +300,13 @@ static int nios_16x64_write(struct bladerf *dev, uint8_t id,
 
     nios_pkt_16x64_pack(buf, id, true, addr, data);
 
-    status = nios_access(dev, buf);
+    /* RFIC access times out occasionally, and this is fine. */
+    if (NIOS_PKT_16x64_TARGET_RFIC == id) {
+        status = nios_access_quiet(dev, buf);
+    } else {
+        status = nios_access(dev, buf);
+    }
+
     if (status != 0) {
         return status;
     }
