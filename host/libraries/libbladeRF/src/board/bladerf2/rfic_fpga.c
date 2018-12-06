@@ -81,20 +81,6 @@ static int _rfic_cmd_write(struct bladerf *dev,
 /* Build RFIC address from bladerf_rfic_command and bladerf_channel */
 #define RFIC_ADDRESS(cmd, ch) ((cmd & 0xFF) + ((ch & 0xF) << 8))
 
-static bladerf_rfic_init_state _rfic_fpga_get_init_state(struct bladerf *dev)
-{
-    uint64_t data;
-    int status;
-
-    status = _rfic_cmd_read(dev, BLADERF_CHANNEL_INVALID,
-                            BLADERF_RFIC_COMMAND_INIT, &data);
-    if (status < 0) {
-        return BLADERF_RFIC_INIT_STATE_OFF;
-    }
-
-    return (bladerf_rfic_init_state)data;
-}
-
 static int _rfic_fpga_get_status(
     struct bladerf *dev, struct bladerf_rfic_status_register *rfic_status)
 {
@@ -198,14 +184,47 @@ static bool _rfic_fpga_is_present(struct bladerf *dev)
     return true;
 }
 
+static int _rfic_fpga_get_init_state(struct bladerf *dev,
+                                     bladerf_rfic_init_state *state)
+{
+    uint64_t data;
+
+    CHECK_STATUS(_rfic_cmd_read(dev, BLADERF_CHANNEL_INVALID,
+                                BLADERF_RFIC_COMMAND_INIT, &data));
+
+    *state = (bladerf_rfic_init_state)data;
+
+    return 0;
+}
+
 static bool _rfic_fpga_is_initialized(struct bladerf *dev)
 {
-    return _rfic_fpga_get_init_state(dev) == BLADERF_RFIC_INIT_STATE_ON;
+    bladerf_rfic_init_state state;
+    int status;
+
+    status = _rfic_fpga_get_init_state(dev, &state);
+    if (status < 0) {
+        log_error("%s: failed to get RFIC initialization state: %s\n",
+                  __FUNCTION__, bladerf_strerror(status));
+        return false;
+    }
+
+    return BLADERF_RFIC_INIT_STATE_ON == state;
 }
 
 static bool _rfic_fpga_is_standby(struct bladerf *dev)
 {
-    return _rfic_fpga_get_init_state(dev) == BLADERF_RFIC_INIT_STATE_STANDBY;
+    bladerf_rfic_init_state state;
+    int status;
+
+    status = _rfic_fpga_get_init_state(dev, &state);
+    if (status < 0) {
+        log_error("%s: failed to get RFIC initialization state: %s\n",
+                  __FUNCTION__, bladerf_strerror(status));
+        return false;
+    }
+
+    return BLADERF_RFIC_INIT_STATE_STANDBY == state;
 }
 
 static int _rfic_fpga_initialize(struct bladerf *dev)
@@ -706,6 +725,7 @@ struct controller_fns const rfic_fpga_control = {
     FIELD_INIT(.is_present, _rfic_fpga_is_present),
     FIELD_INIT(.is_standby, _rfic_fpga_is_standby),
     FIELD_INIT(.is_initialized, _rfic_fpga_is_initialized),
+    FIELD_INIT(.get_init_state, _rfic_fpga_get_init_state),
 
     FIELD_INIT(.initialize, _rfic_fpga_initialize),
     FIELD_INIT(.standby, _rfic_fpga_standby),

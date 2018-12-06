@@ -51,6 +51,7 @@ struct controller_fns {
     bool (*is_present)(struct bladerf *dev);
     bool (*is_initialized)(struct bladerf *dev);
     bool (*is_standby)(struct bladerf *dev);
+    int (*get_init_state)(struct bladerf *dev, bladerf_rfic_init_state *state);
 
     int (*initialize)(struct bladerf *dev);
     int (*standby)(struct bladerf *dev);

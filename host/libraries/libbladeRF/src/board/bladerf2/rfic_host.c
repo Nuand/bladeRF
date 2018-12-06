@@ -54,6 +54,18 @@ static bool _rfic_host_is_initialized(struct bladerf *dev)
     return (NULL != board_data->phy);
 }
 
+static int _rfic_host_get_init_state(struct bladerf *dev,
+                                     bladerf_rfic_init_state *state)
+{
+    if (_rfic_host_is_initialized(dev)) {
+        *state = BLADERF_RFIC_INIT_STATE_ON;
+    } else {
+        *state = BLADERF_RFIC_INIT_STATE_OFF;
+    }
+
+    return 0;
+}
+
 static bool _rfic_host_is_standby(struct bladerf *dev)
 {
     return false;
@@ -944,6 +956,7 @@ struct controller_fns const rfic_host_control = {
     FIELD_INIT(.is_present, _rfic_host_is_present),
     FIELD_INIT(.is_standby, _rfic_host_is_standby),
     FIELD_INIT(.is_initialized, _rfic_host_is_initialized),
+    FIELD_INIT(.get_init_state, _rfic_host_get_init_state),
 
     FIELD_INIT(.initialize, _rfic_host_initialize),
     FIELD_INIT(.standby, _rfic_host_standby),
