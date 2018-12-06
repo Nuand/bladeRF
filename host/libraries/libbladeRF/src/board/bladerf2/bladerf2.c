@@ -2204,95 +2204,99 @@ static int bladerf2_device_reset(struct bladerf *dev)
 /* Tuning mode */
 /******************************************************************************/
 
-extern struct controller_fns const rfic_host_control;
-extern struct controller_fns const rfic_fpga_control;
+static inline bool _supports_fpga_tuning(struct bladerf *dev)
+{
+    extern struct controller_fns const rfic_fpga_control;
 
-struct controller_fns const *rfic_control_fns[] = {
-    &rfic_host_control,
-    &rfic_fpga_control,
-};
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    return (have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING) &&
+            rfic_fpga_control.is_present(dev));
+}
 
 static int bladerf2_set_tuning_mode(struct bladerf *dev,
                                     bladerf_tuning_mode mode)
 {
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    struct bladerf2_board_data *board_data = dev->board_data;
-    bool has_cap = have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING);
-    int status   = 0;
+    extern struct controller_fns const rfic_host_control;
+    extern struct controller_fns const rfic_fpga_control;
 
-    if (!has_cap && BLADERF_TUNING_MODE_FPGA == mode) {
-        log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
-                  "provided tuning mode (%d)\n",
-                  board_data->fpga_version.major,
-                  board_data->fpga_version.minor,
-                  board_data->fpga_version.patch, mode);
-        return BLADERF_ERR_UNSUPPORTED;
-    }
+    struct bladerf2_board_data *board_data  = dev->board_data;
+    struct controller_fns const *rfic_new   = NULL;
+    struct controller_fns const *rfic_other = NULL;
 
-    /* Test to make sure this FPGA actually will do FPGA-based tuning */
-    if (BLADERF_TUNING_MODE_FPGA == mode) {
-        if (!rfic_fpga_control.is_present(dev)) {
-            log_debug("FPGA does not have RFIC control target, bailing out.\n");
-            return BLADERF_ERR_UNSUPPORTED;
-        }
-    }
+    bladerf_tuning_mode mode_other;
+    bladerf_rfic_init_state init_state;
 
-    log_debug("%s: Tuning mode: %s\n", __FUNCTION__, tuningmode2str(mode));
+    log_debug("%s: New tuning mode: %s\n", __FUNCTION__, tuningmode2str(mode));
 
-    /* Do the tuning mode change */
     switch (mode) {
         case BLADERF_TUNING_MODE_HOST:
-            board_data->rfic = &rfic_host_control;
+            rfic_new   = &rfic_host_control;
+            rfic_other = _supports_fpga_tuning(dev) ? &rfic_fpga_control : NULL;
+            mode_other = BLADERF_TUNING_MODE_FPGA;
             break;
 
         case BLADERF_TUNING_MODE_FPGA:
-            board_data->rfic = &rfic_fpga_control;
+            /* Test capability */
+            if (!_supports_fpga_tuning(dev)) {
+                log_debug("%s: The loaded FPGA version (%u.%u.%u) does not "
+                          "support FPGA RFIC control\n",
+                          __FUNCTION__, board_data->fpga_version.major,
+                          board_data->fpga_version.minor,
+                          board_data->fpga_version.patch);
+                return BLADERF_ERR_UNSUPPORTED;
+            }
+
+            rfic_new   = &rfic_fpga_control;
+            rfic_other = &rfic_host_control;
+            mode_other = BLADERF_TUNING_MODE_HOST;
             break;
 
         default:
-            assert(!"Invalid tuning mode.");
+            log_error("%s: invalid tuning mode (%d)\n", mode);
             return BLADERF_ERR_INVAL;
     }
-
-    board_data->tuning_mode = mode;
 
     /* De-initialize RFIC if it's initialized by another tuning mode */
-    switch (board_data->rfic->command_mode) {
-        case RFIC_COMMAND_HOST:
-            if (has_cap && (rfic_fpga_control.is_initialized(dev) ||
-                            rfic_fpga_control.is_standby(dev))) {
-                log_info("%s: Releasing FPGA RFIC control\n", __FUNCTION__);
-                status = rfic_fpga_control.deinitialize(dev);
-            }
-            break;
+    if (NULL != rfic_other) {
+        CHECK_STATUS(rfic_other->get_init_state(dev, &init_state));
 
-        case RFIC_COMMAND_FPGA:
-            if (rfic_host_control.is_initialized(dev) ||
-                rfic_host_control.is_standby(dev)) {
-                log_info("%s: Releasing Host RFIC control\n", __FUNCTION__);
-                status = rfic_host_control.deinitialize(dev);
-            }
-            break;
+        if (init_state != BLADERF_RFIC_INIT_STATE_OFF) {
+            log_debug("%s: %s %s RFIC control\n", __FUNCTION__, "Releasing",
+                      tuningmode2str(mode_other));
+            CHECK_STATUS(rfic_other->deinitialize(dev));
+        }
+    }
+
+    /* Set board data */
+    board_data->rfic        = rfic_new;
+    board_data->tuning_mode = mode;
+
+    /* Bring RFIC to initialized state */
+    CHECK_STATUS(rfic_new->get_init_state(dev, &init_state));
+
+    switch (init_state) {
+        case BLADERF_RFIC_INIT_STATE_OFF:
+            log_debug("%s: %s %s RFIC control\n", __FUNCTION__, "Initializing",
+                      tuningmode2str(mode));
+            return rfic_new->initialize(dev);
+
+        case BLADERF_RFIC_INIT_STATE_STANDBY:
+            log_debug("%s: %s %s RFIC control\n", __FUNCTION__, "Restoring",
+                      tuningmode2str(mode));
+            return rfic_new->initialize(dev);
+
+        case BLADERF_RFIC_INIT_STATE_ON:
+            log_debug("%s: %s %s RFIC control\n", __FUNCTION__, "Maintaining",
+                      tuningmode2str(mode));
+            return 0;
 
         default:
-            assert(!"Invalid RFIC control mode.");
-            return BLADERF_ERR_INVAL;
-    }
-
-    if (status < 0) {
-        RETURN_ERROR_STATUS("failed to release RFIC control", status);
-    }
-
-    /* Initialize RFIC, if it hasn't yet been initialized */
-    if (!board_data->rfic->is_initialized(dev)) {
-        log_info("%s: Initializing %s RFIC control\n", __FUNCTION__,
-                 tuningmode2str(mode));
-        return board_data->rfic->initialize(dev);
-    } else {
-        log_debug("%s: Maintaining %s RFIC control\n", __FUNCTION__,
-                  tuningmode2str(mode));
-        return 0;
+            log_error("%s: invalid RFIC initialization state (%d)\n",
+                      init_state);
+            return BLADERF_ERR_UNEXPECTED;
     }
 }
 
