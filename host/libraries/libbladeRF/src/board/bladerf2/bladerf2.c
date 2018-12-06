@@ -67,14 +67,6 @@
 /******************************************************************************/
 
 static int bladerf2_read_flash_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
-static int bladerf2_get_rfic_rx_fir(struct bladerf *dev,
-                                    bladerf_rfic_rxfir *rxfir);
-static int bladerf2_set_rfic_rx_fir(struct bladerf *dev,
-                                    bladerf_rfic_rxfir rxfir);
-static int bladerf2_get_rfic_tx_fir(struct bladerf *dev,
-                                    bladerf_rfic_txfir *txfir);
-static int bladerf2_set_rfic_tx_fir(struct bladerf *dev,
-                                    bladerf_rfic_txfir txfir);
 
 
 /******************************************************************************/
@@ -2997,96 +2989,19 @@ int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
     return 0;
 }
 
-static int bladerf2_get_rfic_rx_fir(struct bladerf *dev,
-                                    bladerf_rfic_rxfir *rxfir)
+int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
 {
+    CHECK_BOARD_IS_BLADERF2(dev);
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
     NULL_CHECK(rxfir);
 
     struct bladerf2_board_data *board_data = dev->board_data;
     struct controller_fns const *rfic      = board_data->rfic;
+    bladerf_channel const ch               = BLADERF_CHANNEL_RX(0);
 
-    CHECK_STATUS(rfic->get_filter(dev, BLADERF_CHANNEL_RX(0), rxfir, NULL));
-
-    return 0;
-}
-
-static int bladerf2_set_rfic_rx_fir(struct bladerf *dev,
-                                    bladerf_rfic_rxfir rxfir)
-{
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
-
-    struct bladerf2_board_data *board_data = dev->board_data;
-    struct controller_fns const *rfic      = board_data->rfic;
-
-    /* Verify that sample rate is not too low */
-    if (rxfir != BLADERF_RFIC_RXFIR_DEC4) {
-        bladerf_sample_rate sr;
-
-        CHECK_STATUS(
-            dev->board->get_sample_rate(dev, BLADERF_CHANNEL_RX(0), &sr));
-
-        if (is_within_range(&bladerf2_sample_rate_range_4x, sr)) {
-            log_error("%s: invalid FIR filter: sample rate too low (%d < %d)\n",
-                      __FUNCTION__, sr, bladerf2_sample_rate_range_4x.min);
-            return BLADERF_ERR_INVAL;
-        }
-    }
-
-    CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0), rxfir, 0));
-
-    return 0;
-}
-
-static int bladerf2_get_rfic_tx_fir(struct bladerf *dev,
-                                    bladerf_rfic_txfir *txfir)
-{
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
-    NULL_CHECK(txfir);
-
-    struct bladerf2_board_data *board_data = dev->board_data;
-    struct controller_fns const *rfic      = board_data->rfic;
-
-    CHECK_STATUS(rfic->get_filter(dev, BLADERF_CHANNEL_TX(0), NULL, txfir));
-
-    return 0;
-}
-
-static int bladerf2_set_rfic_tx_fir(struct bladerf *dev,
-                                    bladerf_rfic_txfir txfir)
-{
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
-
-    struct bladerf2_board_data *board_data = dev->board_data;
-    struct controller_fns const *rfic      = board_data->rfic;
-
-    /* Verify that sample rate is not too low */
-    if (txfir != BLADERF_RFIC_TXFIR_INT4) {
-        bladerf_sample_rate sr;
-
-        CHECK_STATUS(
-            dev->board->get_sample_rate(dev, BLADERF_CHANNEL_TX(0), &sr));
-
-        if (is_within_range(&bladerf2_sample_rate_range_4x, sr)) {
-            log_error("%s: invalid FIR filter: sample rate too low (%d < %d)\n",
-                      __FUNCTION__, sr, bladerf2_sample_rate_range_4x.min);
-            return BLADERF_ERR_INVAL;
-        }
-    }
-
-    CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0, txfir));
-
-    return 0;
-}
-
-/* mutex'd wrappers for above */
-
-int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
-{
-    CHECK_BOARD_IS_BLADERF2(dev);
-
-    WITH_MUTEX(&dev->lock,
-               CHECK_STATUS_LOCKED(bladerf2_get_rfic_rx_fir(dev, rxfir)));
+    WITH_MUTEX(&dev->lock, {
+        CHECK_STATUS_LOCKED(rfic->get_filter(dev, ch, rxfir, NULL));
+    });
 
     return 0;
 }
@@ -3094,9 +3009,30 @@ int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
 int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    WITH_MUTEX(&dev->lock,
-               CHECK_STATUS_LOCKED(bladerf2_set_rfic_rx_fir(dev, rxfir)));
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct controller_fns const *rfic      = board_data->rfic;
+    struct bladerf_range const sr_range    = bladerf2_sample_rate_range_4x;
+    bladerf_channel const ch               = BLADERF_CHANNEL_RX(0);
+
+    WITH_MUTEX(&dev->lock, {
+        /* Verify that sample rate is not too low */
+        if (rxfir != BLADERF_RFIC_RXFIR_DEC4) {
+            bladerf_sample_rate sr;
+
+            CHECK_STATUS_LOCKED(dev->board->get_sample_rate(dev, ch, &sr));
+
+            if (is_within_range(&sr_range, sr)) {
+                log_error("%s: sample rate too low for filter (%d < %d)\n",
+                          __FUNCTION__, sr, sr_range.min);
+                MUTEX_UNLOCK(&dev->lock);
+                return BLADERF_ERR_INVAL;
+            }
+        }
+
+        CHECK_STATUS_LOCKED(rfic->set_filter(dev, ch, rxfir, 0));
+    });
 
     return 0;
 }
@@ -3104,9 +3040,16 @@ int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
 int bladerf_get_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir *txfir)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    NULL_CHECK(txfir);
 
-    WITH_MUTEX(&dev->lock,
-               CHECK_STATUS_LOCKED(bladerf2_get_rfic_tx_fir(dev, txfir)));
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct controller_fns const *rfic      = board_data->rfic;
+    bladerf_channel const ch               = BLADERF_CHANNEL_TX(0);
+
+    WITH_MUTEX(&dev->lock, {
+        CHECK_STATUS_LOCKED(rfic->get_filter(dev, ch, NULL, txfir));
+    });
 
     return 0;
 }
@@ -3114,9 +3057,30 @@ int bladerf_get_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir *txfir)
 int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir txfir)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    WITH_MUTEX(&dev->lock,
-               CHECK_STATUS_LOCKED(bladerf2_set_rfic_tx_fir(dev, txfir)));
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct controller_fns const *rfic      = board_data->rfic;
+    struct bladerf_range const sr_range    = bladerf2_sample_rate_range_4x;
+    bladerf_channel const ch               = BLADERF_CHANNEL_TX(0);
+
+    WITH_MUTEX(&dev->lock, {
+        /* Verify that sample rate is not too low */
+        if (txfir != BLADERF_RFIC_TXFIR_INT4) {
+            bladerf_sample_rate sr;
+
+            CHECK_STATUS_LOCKED(dev->board->get_sample_rate(dev, ch, &sr));
+
+            if (is_within_range(&sr_range, sr)) {
+                log_error("%s: sample rate too low for filter (%d < %d)\n",
+                          __FUNCTION__, sr, sr_range.min);
+                MUTEX_UNLOCK(&dev->lock);
+                return BLADERF_ERR_INVAL;
+            }
+        }
+
+        CHECK_STATUS_LOCKED(rfic->set_filter(dev, ch, 0, txfir));
+    });
 
     return 0;
 }
