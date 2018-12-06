@@ -67,6 +67,14 @@
 /******************************************************************************/
 
 static int bladerf2_read_flash_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
+static int bladerf2_get_rfic_rx_fir(struct bladerf *dev,
+                                    bladerf_rfic_rxfir *rxfir);
+static int bladerf2_set_rfic_rx_fir(struct bladerf *dev,
+                                    bladerf_rfic_rxfir rxfir);
+static int bladerf2_get_rfic_tx_fir(struct bladerf *dev,
+                                    bladerf_rfic_txfir *txfir);
+static int bladerf2_set_rfic_tx_fir(struct bladerf *dev,
+                                    bladerf_rfic_txfir txfir);
 
 
 /******************************************************************************/
@@ -1366,9 +1374,9 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         bladerf_rfic_rxfir rxfir;
         bladerf_rfic_txfir txfir;
 
-        CHECK_STATUS(bladerf_get_rfic_rx_fir(dev, &rxfir));
+        CHECK_STATUS(bladerf2_get_rfic_rx_fir(dev, &rxfir));
 
-        CHECK_STATUS(bladerf_get_rfic_tx_fir(dev, &txfir));
+        CHECK_STATUS(bladerf2_get_rfic_tx_fir(dev, &txfir));
 
         if (rxfir != BLADERF_RFIC_RXFIR_DEC4 ||
             txfir != BLADERF_RFIC_TXFIR_INT4 ||
@@ -1376,10 +1384,12 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
             log_debug("enabling 4x decimation/interpolation filters\n");
 
             board_data->rxfir_orig = rxfir;
-            CHECK_STATUS(bladerf_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEC4));
+            CHECK_STATUS(
+                bladerf2_set_rfic_rx_fir(dev, BLADERF_RFIC_RXFIR_DEC4));
 
             board_data->txfir_orig = txfir;
-            CHECK_STATUS(bladerf_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_INT4));
+            CHECK_STATUS(
+                bladerf2_set_rfic_tx_fir(dev, BLADERF_RFIC_TXFIR_INT4));
 
             board_data->low_samplerate_mode = true;
         }
@@ -1395,9 +1405,9 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         !is_within_range(&bladerf2_sample_rate_range_4x, rate)) {
         log_debug("disabling 4x decimation/interpolation filters\n");
 
-        CHECK_STATUS(bladerf_set_rfic_rx_fir(dev, board_data->rxfir_orig));
+        CHECK_STATUS(bladerf2_set_rfic_rx_fir(dev, board_data->rxfir_orig));
 
-        CHECK_STATUS(bladerf_set_rfic_tx_fir(dev, board_data->txfir_orig));
+        CHECK_STATUS(bladerf2_set_rfic_tx_fir(dev, board_data->txfir_orig));
 
         board_data->low_samplerate_mode = false;
     }
@@ -3327,17 +3337,132 @@ int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
     return 0;
 }
 
-int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
+static int bladerf2_get_rfic_rx_fir(struct bladerf *dev,
+                                    bladerf_rfic_rxfir *rxfir)
 {
-    CHECK_BOARD_IS_BLADERF2(dev);
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
     NULL_CHECK(rxfir);
 
-    WITH_MUTEX(&dev->lock, {
-        struct bladerf2_board_data *board_data = dev->board_data;
+    struct bladerf2_board_data *board_data = dev->board_data;
 
-        *rxfir = board_data->rxfir;
-    });
+    *rxfir = board_data->rxfir;
+
+    return 0;
+}
+
+static int bladerf2_set_rfic_rx_fir(struct bladerf *dev,
+                                    bladerf_rfic_rxfir rxfir)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct ad9361_rf_phy *phy              = board_data->phy;
+    AD9361_RXFIRConfig *fir_config         = NULL;
+    uint8_t enable;
+
+    if (BLADERF_RFIC_RXFIR_CUSTOM == rxfir) {
+        log_warning("custom FIR not implemented, assuming default\n");
+        rxfir = BLADERF_RFIC_RXFIR_DEFAULT;
+    }
+
+    switch (rxfir) {
+        case BLADERF_RFIC_RXFIR_BYPASS:
+            fir_config = &bladerf2_rfic_rx_fir_config;
+            enable     = 0;
+            break;
+        case BLADERF_RFIC_RXFIR_DEC1:
+            fir_config = &bladerf2_rfic_rx_fir_config;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_RXFIR_DEC2:
+            fir_config = &bladerf2_rfic_rx_fir_config_dec2;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_RXFIR_DEC4:
+            fir_config = &bladerf2_rfic_rx_fir_config_dec4;
+            enable     = 1;
+            break;
+        default:
+            assert(!"Bug: unhandled rxfir selection");
+            return BLADERF_ERR_UNEXPECTED;
+    }
+
+    CHECK_AD936X(ad9361_set_rx_fir_config(phy, *fir_config));
+
+    CHECK_AD936X(ad9361_set_rx_fir_en_dis(phy, enable));
+
+    board_data->rxfir = rxfir;
+
+    return 0;
+}
+
+static int bladerf2_get_rfic_tx_fir(struct bladerf *dev,
+                                    bladerf_rfic_txfir *txfir)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    NULL_CHECK(txfir);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    *txfir = board_data->txfir;
+
+    return 0;
+}
+
+static int bladerf2_set_rfic_tx_fir(struct bladerf *dev,
+                                    bladerf_rfic_txfir txfir)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct ad9361_rf_phy *phy              = board_data->phy;
+    AD9361_TXFIRConfig *fir_config         = NULL;
+    uint8_t enable;
+
+    if (BLADERF_RFIC_TXFIR_CUSTOM == txfir) {
+        log_warning("custom FIR not implemented, assuming default\n");
+        txfir = BLADERF_RFIC_TXFIR_DEFAULT;
+    }
+
+    switch (txfir) {
+        case BLADERF_RFIC_TXFIR_BYPASS:
+            fir_config = &bladerf2_rfic_tx_fir_config;
+            enable     = 0;
+            break;
+        case BLADERF_RFIC_TXFIR_INT1:
+            fir_config = &bladerf2_rfic_tx_fir_config;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_TXFIR_INT2:
+            fir_config = &bladerf2_rfic_tx_fir_config_int2;
+            enable     = 1;
+            break;
+        case BLADERF_RFIC_TXFIR_INT4:
+            fir_config = &bladerf2_rfic_tx_fir_config_int4;
+            enable     = 1;
+            break;
+        default:
+            assert(!"Bug: unhandled txfir selection");
+            return BLADERF_ERR_UNEXPECTED;
+    }
+
+    CHECK_AD936X(ad9361_set_tx_fir_config(phy, *fir_config));
+
+    CHECK_AD936X(ad9361_set_tx_fir_en_dis(phy, enable));
+
+    board_data->txfir = txfir;
+
+    return 0;
+}
+
+/* mutex'd wrappers for above */
+
+int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
+{
+    CHECK_BOARD_IS_BLADERF2(dev);
+
+    WITH_MUTEX(&dev->lock,
+               CHECK_STATUS_LOCKED(bladerf2_get_rfic_rx_fir(dev, rxfir)));
 
     return 0;
 }
@@ -3345,48 +3470,9 @@ int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
 int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    WITH_MUTEX(&dev->lock, {
-        struct bladerf2_board_data *board_data = dev->board_data;
-        struct ad9361_rf_phy *phy              = board_data->phy;
-        AD9361_RXFIRConfig *fir_config         = NULL;
-        uint8_t enable;
-
-        if (BLADERF_RFIC_RXFIR_CUSTOM == rxfir) {
-            log_warning("custom FIR not implemented, assuming default\n");
-            rxfir = BLADERF_RFIC_RXFIR_DEFAULT;
-        }
-
-        switch (rxfir) {
-            case BLADERF_RFIC_RXFIR_BYPASS:
-                fir_config = &bladerf2_rfic_rx_fir_config;
-                enable     = 0;
-                break;
-            case BLADERF_RFIC_RXFIR_DEC1:
-                fir_config = &bladerf2_rfic_rx_fir_config;
-                enable     = 1;
-                break;
-            case BLADERF_RFIC_RXFIR_DEC2:
-                fir_config = &bladerf2_rfic_rx_fir_config_dec2;
-                enable     = 1;
-                break;
-            case BLADERF_RFIC_RXFIR_DEC4:
-                fir_config = &bladerf2_rfic_rx_fir_config_dec4;
-                enable     = 1;
-                break;
-            default:
-                assert(!"Bug: unhandled rxfir selection");
-                MUTEX_UNLOCK(&dev->lock);
-                return BLADERF_ERR_UNEXPECTED;
-        }
-
-        CHECK_AD936X_LOCKED(ad9361_set_rx_fir_config(phy, *fir_config));
-
-        CHECK_AD936X_LOCKED(ad9361_set_rx_fir_en_dis(phy, enable));
-
-        board_data->rxfir = rxfir;
-    });
+    WITH_MUTEX(&dev->lock,
+               CHECK_STATUS_LOCKED(bladerf2_set_rfic_rx_fir(dev, rxfir)));
 
     return 0;
 }
@@ -3394,14 +3480,9 @@ int bladerf_set_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir rxfir)
 int bladerf_get_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir *txfir)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
-    NULL_CHECK(txfir);
 
-    WITH_MUTEX(&dev->lock, {
-        struct bladerf2_board_data *board_data = dev->board_data;
-
-        *txfir = board_data->txfir;
-    });
+    WITH_MUTEX(&dev->lock,
+               CHECK_STATUS_LOCKED(bladerf2_get_rfic_tx_fir(dev, txfir)));
 
     return 0;
 }
@@ -3409,48 +3490,9 @@ int bladerf_get_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir *txfir)
 int bladerf_set_rfic_tx_fir(struct bladerf *dev, bladerf_rfic_txfir txfir)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    WITH_MUTEX(&dev->lock, {
-        struct bladerf2_board_data *board_data = dev->board_data;
-        struct ad9361_rf_phy *phy              = board_data->phy;
-        AD9361_TXFIRConfig *fir_config         = NULL;
-        uint8_t enable;
-
-        if (BLADERF_RFIC_TXFIR_CUSTOM == txfir) {
-            log_warning("custom FIR not implemented, assuming default\n");
-            txfir = BLADERF_RFIC_TXFIR_DEFAULT;
-        }
-
-        switch (txfir) {
-            case BLADERF_RFIC_TXFIR_BYPASS:
-                fir_config = &bladerf2_rfic_tx_fir_config;
-                enable     = 0;
-                break;
-            case BLADERF_RFIC_TXFIR_INT1:
-                fir_config = &bladerf2_rfic_tx_fir_config;
-                enable     = 1;
-                break;
-            case BLADERF_RFIC_TXFIR_INT2:
-                fir_config = &bladerf2_rfic_tx_fir_config_int2;
-                enable     = 1;
-                break;
-            case BLADERF_RFIC_TXFIR_INT4:
-                fir_config = &bladerf2_rfic_tx_fir_config_int4;
-                enable     = 1;
-                break;
-            default:
-                assert(!"Bug: unhandled txfir selection");
-                MUTEX_UNLOCK(&dev->lock);
-                return BLADERF_ERR_UNEXPECTED;
-        }
-
-        CHECK_AD936X(ad9361_set_tx_fir_config(phy, *fir_config));
-
-        CHECK_AD936X(ad9361_set_tx_fir_en_dis(phy, enable));
-
-        board_data->txfir = txfir;
-    });
+    WITH_MUTEX(&dev->lock,
+               CHECK_STATUS_LOCKED(bladerf2_set_rfic_tx_fir(dev, txfir)));
 
     return 0;
 }
