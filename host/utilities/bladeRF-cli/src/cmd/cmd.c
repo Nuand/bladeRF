@@ -44,7 +44,6 @@ DECLARE_CMD(help);
 DECLARE_CMD(info);
 DECLARE_CMD(jump_to_bootloader);
 DECLARE_CMD(load);
-DECLARE_CMD(xb);
 DECLARE_CMD(mimo);
 DECLARE_CMD(open);
 DECLARE_CMD(peek);
@@ -53,11 +52,12 @@ DECLARE_CMD(print);
 DECLARE_CMD(probe);
 DECLARE_CMD(recover);
 DECLARE_CMD(run);
-DECLARE_CMD(set);
 DECLARE_CMD(rx);
+DECLARE_CMD(set);
 DECLARE_CMD(trigger);
 DECLARE_CMD(tx);
 DECLARE_CMD(version);
+DECLARE_CMD(xb);
 
 #define MAX_ARGS    10
 #define COMMENT_CHAR '#'
@@ -85,7 +85,6 @@ static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_info[] = { "info", "i", NULL };
 static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
-static const char *cmd_names_xb[] = { "xb", NULL };
 static const char *cmd_names_mimo[] = { "mimo", NULL };
 static const char *cmd_names_open[] = { "open", "op", "o", NULL };
 static const char *cmd_names_peek[] = { "peek", "pe", NULL };
@@ -96,10 +95,11 @@ static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
 static const char *cmd_names_rec[] = { "recover", "r", NULL };
 static const char *cmd_names_run[] = { "run", NULL };
 static const char *cmd_names_rx[] = { "rx", "receive", NULL };
+static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_trigger[] = { "trigger", "tr", NULL};
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
-static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
+static const char *cmd_names_xb[] = { "xb", NULL };
 
 static const struct cmd cmd_table[] = {
     {
@@ -157,15 +157,6 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.allow_while_streaming, false),
     },
     {
-        FIELD_INIT(.names, cmd_names_fw_log),
-        FIELD_INIT(.exec, cmd_fw_log),
-        FIELD_INIT(.desc, "Read firmware log contents"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_fw_log),
-        FIELD_INIT(.requires_device, true),
-        FIELD_INIT(.requires_fpga, false),
-        FIELD_INIT(.allow_while_streaming, true),
-    },
-    {
         FIELD_INIT(.names, cmd_names_flash_init_cal),
         FIELD_INIT(.exec, cmd_flash_init_cal),
         FIELD_INIT(.desc, "Write new calibration data to a device or to a file"),
@@ -182,6 +173,15 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
         FIELD_INIT(.allow_while_streaming, false),
+    },
+    {
+        FIELD_INIT(.names, cmd_names_fw_log),
+        FIELD_INIT(.exec, cmd_fw_log),
+        FIELD_INIT(.desc, "Read firmware log contents"),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_fw_log),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_help),
@@ -217,15 +217,6 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_load),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
-        FIELD_INIT(.allow_while_streaming, false),
-    },
-    {
-        FIELD_INIT(.names, cmd_names_xb),
-        FIELD_INIT(.exec, cmd_xb),
-        FIELD_INIT(.desc, "Enable and configure expansion boards"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_xb),
-        FIELD_INIT(.requires_device, true),
-        FIELD_INIT(.requires_fpga, true),
         FIELD_INIT(.allow_while_streaming, false),
     },
     {
@@ -319,6 +310,15 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.allow_while_streaming, true),   /* Can rx while tx'ing */
     },
     {
+        FIELD_INIT(.names, cmd_names_set),
+        FIELD_INIT(.exec, cmd_set),
+        FIELD_INIT(.desc, "Set device settings"),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_set),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),
+    },
+    {
         FIELD_INIT(.names, cmd_names_trigger),
         FIELD_INIT(.exec, cmd_trigger),
         FIELD_INIT(.desc, "Control triggering"),
@@ -337,15 +337,6 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.allow_while_streaming, true),   /* Can tx while rx'ing */
     },
     {
-        FIELD_INIT(.names, cmd_names_set),
-        FIELD_INIT(.exec, cmd_set),
-        FIELD_INIT(.desc, "Set device settings"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_set),
-        FIELD_INIT(.requires_device, true),
-        FIELD_INIT(.requires_fpga, true),
-        FIELD_INIT(.allow_while_streaming, true),
-    },
-    {
         FIELD_INIT(.names, cmd_names_ver),
         FIELD_INIT(.exec, cmd_version),
         FIELD_INIT(.desc, "Host software and device version information"),
@@ -353,6 +344,15 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
         FIELD_INIT(.allow_while_streaming, true),
+    },
+    {
+        FIELD_INIT(.names, cmd_names_xb),
+        FIELD_INIT(.exec, cmd_xb),
+        FIELD_INIT(.desc, "Enable and configure expansion boards"),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_xb),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     /* Always terminate the command entry with a completely NULL entry */
     {

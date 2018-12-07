@@ -188,8 +188,8 @@ set(BLADERF_CLI_SOURCE
         src/main.c
         src/common.c
         src/cmd/calibrate.c
-        src/cmd/doc/cmd_help.h
         src/cmd/cmd.c
+        src/cmd/doc/cmd_help.h
         src/cmd/erase.c
         src/cmd/flash_backup.c
         src/cmd/flash_image.c
@@ -197,10 +197,12 @@ set(BLADERF_CLI_SOURCE
         src/cmd/flash_restore.c
         src/cmd/fw_log.c
         src/cmd/info.c
+        src/cmd/jump_boot.c
+        src/cmd/lms_reg_info.c
         src/cmd/load.c
+        src/cmd/mimo.c
         src/cmd/open.c
         src/cmd/peek.c
-        src/cmd/lms_reg_info.c
         src/cmd/peekpoke.c
         src/cmd/poke.c
         src/cmd/printset.c
@@ -208,18 +210,16 @@ set(BLADERF_CLI_SOURCE
         src/cmd/printset_impl.c
         src/cmd/printset_xb.c
         src/cmd/probe.c
+        src/cmd/recover.c
+        src/cmd/rx.c
+        src/cmd/rxtx.c
+        src/cmd/trigger.c
+        src/cmd/tx.c
+        src/cmd/version.c
         src/cmd/xb.c
         src/cmd/xb100.c
         src/cmd/xb200.c
         src/cmd/xb300.c
-        src/cmd/recover.c
-        src/cmd/rx.c
-        src/cmd/rxtx.c
-        src/cmd/tx.c
-        src/cmd/version.c
-        src/cmd/jump_boot.c
-        src/cmd/mimo.c
-        src/cmd/trigger.c
         src/input/input.c
         src/input/script.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
