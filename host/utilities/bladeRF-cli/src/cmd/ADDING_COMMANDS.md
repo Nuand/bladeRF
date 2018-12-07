@@ -72,16 +72,14 @@ two spaces. Below is an example:
 When adding a command to `cmd.c`, please be sure to maintain the alphabetical
 ordering of commands. This includes lists of declarations.
 
-First, add an appropriate `DECLARE_CMD()`. For the *mycmd* example above, this
-would be:
+First, add an appropriate `DECLARE_CMD()`. The first argument is the command
+you're defining. In our *mycmd* sample, this would simply be `mycmd`. The
+subsequent arguments set the actual command name (and optional shortcuts and
+aliases) that will invoke your command.
 
-    DECLARE_CMD(mycmd);
+If we wanted *mycmd* to be invoked with either `mycmd` or `m`, we would use:
 
-Next, add the command name (and optional shortcuts/aliases) that will invoke
-your command to list of `cmd_names_*` declarations. For example, to invoke the
-*mycmd* command with `mycmd` and `m`:
-
-    static const char *cmd_names_mycmd[] = { "mycmd", "m", NULL };
+    DECLARE_CMD(mycmd, "mycmd", "m");
 
 Next, add help text for your command in `doc/interactive-help.md`. For the
 *mycmd* example, this might look like:
