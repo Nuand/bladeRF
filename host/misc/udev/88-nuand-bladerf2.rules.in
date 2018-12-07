@@ -1,0 +1,2 @@
+# Nuand bladeRF 2.0 micro
+ATTR{idVendor}=="2cf0", ATTR{idProduct}=="5250", MODE="660", GROUP="@BLADERF_GROUP@"

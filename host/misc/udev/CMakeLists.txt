@@ -21,17 +21,25 @@ set(UDEV_RULES_PATH
 
 set(BLADERF_GROUP "plugdev" CACHE STRING "Group to associate bladeRF devices with in udev rules")
 
+set(BLADERF_UDEV_FILES
+    88-nuand-bladerf1.rules
+    88-nuand-bladerf2.rules
+    88-nuand-bootloader.rules
+)
+
 if(SYSTEM_IS_LINUX)
     if(INSTALL_UDEV_RULES)
-        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/88-nuand.rules.in
-                       ${CMAKE_CURRENT_BINARY_DIR}/88-nuand.rules
-                       @ONLY
-                      )
-
         message(STATUS  "nuand bladeRF udev rules will be installed to '${UDEV_RULES_PATH}' upon running 'make install'")
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/88-nuand.rules
-                DESTINATION ${UDEV_RULES_PATH}
-                COMPONENT "udev_rules")
+        foreach(udevfile IN ITEMS ${BLADERF_UDEV_FILES})
+            configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${udevfile}.in
+                           ${CMAKE_CURRENT_BINARY_DIR}/${udevfile}
+                           @ONLY
+                          )
+
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${udevfile}
+                    DESTINATION ${UDEV_RULES_PATH}
+                    COMPONENT "udev_rules")
+        endforeach(udevfile)
     else()
         message(STATUS
                 "nuand bladeRF udev rules will not be installed because INSTALL_UDEV_RULES=OFF"
@@ -39,6 +47,6 @@ if(SYSTEM_IS_LINUX)
     endif(INSTALL_UDEV_RULES)
 else()
     if(INSTALL_UDEV_RULES)
-        message(STATUS "udev rules not supported on this platform. Hide this message via -DINSTALL_UDEV_RULES=Off")
+        message(STATUS "udev rules not supported on this platform. Hide this message via -DINSTALL_UDEV_RULES=OFF")
     endif(INSTALL_UDEV_RULES)
 endif()

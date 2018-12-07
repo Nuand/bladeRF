@@ -1,0 +1,2 @@
+# Cypress FX3 Bootloader, used by bladeRF in recovery mode
+ATTR{idVendor}=="04b4", ATTR{idProduct}=="00f3", MODE="660", GROUP="@BLADERF_GROUP@"
