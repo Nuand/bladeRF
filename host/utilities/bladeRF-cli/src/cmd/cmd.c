@@ -400,7 +400,7 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
         cmd = get_cmd(argv[1]);
 
         /* If we found it, print the help */
-        if (NULL == cmd) {
+        if (NULL != cmd) {
             printf("\n%s\n", cmd->help);
         } else {
             /* Otherwise, print that we couldn't find it :( */
