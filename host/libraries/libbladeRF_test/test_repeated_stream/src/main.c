@@ -222,6 +222,8 @@ int main(int argc, char *argv[])
     struct option *options = NULL;
     struct app_params params;
     pthread_t rx_thread, tx_thread;
+    bool rx_launched = false;
+    bool tx_launched = false;
 
     params.rx = false;
     params.tx = false;
@@ -268,6 +270,8 @@ int main(int argc, char *argv[])
         if (status != 0) {
             fprintf(stderr, "Failed to launch RX thread: %s\n", strerror(status));
             params.rx = false;
+        } else {
+            rx_launched = true;
         }
     }
 
@@ -276,14 +280,16 @@ int main(int argc, char *argv[])
         if (status != 0) {
             fprintf(stderr, "Failed to launch TX thread: %s\n", strerror(status));
             params.tx = false;
+        } else {
+            tx_launched = true;
         }
     }
 
-    if (params.rx) {
+    if (rx_launched) {
         pthread_join(rx_thread, NULL);
     }
 
-    if (params.tx) {
+    if (tx_launched) {
         pthread_join(tx_thread, NULL);
     }
 
