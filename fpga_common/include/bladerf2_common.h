@@ -179,6 +179,10 @@ typedef enum {
 
 /**
  * Commands available with the FPGA-based RFIC interface.
+ *
+ * There is an 8-bit address space (0x00 to 0xFF) available. Nuand will not
+ * assign values between 0x80 and 0xFF, so they may be used for custom
+ * applications.
  */
 typedef enum {
     /** Query the status register. (Read)
@@ -198,7 +202,7 @@ typedef enum {
      *    |                | otherwise              |
      *    +----------------+------------------------+
      */
-    BLADERF_RFIC_COMMAND_STATUS = 0,
+    BLADERF_RFIC_COMMAND_STATUS = 0x00,
 
     /** Initialize the RFIC. (Read/Write)
      *
@@ -206,69 +210,76 @@ typedef enum {
      *
      * Pass/expect a ::bladerf_rfic_init_state value as the `data` parameter.
      */
-    BLADERF_RFIC_COMMAND_INIT = 1,
+    BLADERF_RFIC_COMMAND_INIT = 0x01,
 
     /** Enable/disable a channel. (Read/Write)
      *
      * Set `data` to `true` to enable the channel, or `false` to disable it.
      */
-    BLADERF_RFIC_COMMAND_ENABLE = 2,
+    BLADERF_RFIC_COMMAND_ENABLE = 0x02,
 
     /** Sample rate for a channel. (Read/Write)
      *
      * Value in samples per second.
      */
-    BLADERF_RFIC_COMMAND_SAMPLERATE = 3,
+    BLADERF_RFIC_COMMAND_SAMPLERATE = 0x03,
 
     /** Center frequency for a channel. (Read/Write)
      *
      * Value in Hz. Read or write.
      */
-    BLADERF_RFIC_COMMAND_FREQUENCY = 4,
+    BLADERF_RFIC_COMMAND_FREQUENCY = 0x04,
 
     /** Bandwidth for a channel. (Read/Write)
      *
      * Value in Hz.
      */
-    BLADERF_RFIC_COMMAND_BANDWIDTH = 5,
+    BLADERF_RFIC_COMMAND_BANDWIDTH = 0x05,
 
     /** Gain mode for a channel. (Read/Write)
      *
      * Pass a ::bladerf_gain_mode value as the `data` parameter.
      */
-    BLADERF_RFIC_COMMAND_GAINMODE = 6,
+    BLADERF_RFIC_COMMAND_GAINMODE = 0x06,
 
     /** Overall gain for a channel. (Read/Write)
      *
      * Value in dB.
      */
-    BLADERF_RFIC_COMMAND_GAIN = 7,
+    BLADERF_RFIC_COMMAND_GAIN = 0x07,
 
     /** RSSI (received signal strength indication) for a channel. (Read)
      *
      * Value in dB.
      */
-    BLADERF_RFIC_COMMAND_RSSI = 8,
+    BLADERF_RFIC_COMMAND_RSSI = 0x08,
 
     /** FIR filter setting for a channel. (Read/Write)
      *
      * RX channels should pass a ::bladerf_rfic_rxfir value, TX channels should
      * pass a ::bladerf_rfic_txfir value.
      */
-    BLADERF_RFIC_COMMAND_FILTER = 9,
+    BLADERF_RFIC_COMMAND_FILTER = 0x09,
 
     /** TX Mute setting for a channel. (Read/Write)
      *
      * 1 indicates TX mute is enabled, 0 indicates it is not.
      */
-    BLADERF_RFIC_COMMAND_TXMUTE = 10,
+    BLADERF_RFIC_COMMAND_TXMUTE = 0x0A,
 
     /** Store Fastlock profile. (Write)
      *
      * Stores the current tuning into a fastlock profile, for later recall
      */
-    BLADERF_RFIC_COMMAND_FASTLOCK = 11,
+    BLADERF_RFIC_COMMAND_FASTLOCK = 0x0B,
 
+    /** User-defined functionality (placeholder 1) */
+    BLADERF_RFIC_COMMAND_USER_001 = 0x80,
+
+    /** User-defined functionality (placeholder 128) */
+    BLADERF_RFIC_COMMAND_USER_128 = 0xFF,
+
+    /* Do not add additional commands beyond 0xFF */
 } bladerf_rfic_command;
 
 /** NIOS_PKT_16x64_RFIC_STATUS return structure
