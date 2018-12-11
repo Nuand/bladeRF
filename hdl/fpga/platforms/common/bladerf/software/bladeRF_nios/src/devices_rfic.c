@@ -612,17 +612,18 @@ static bool _rfic_cmd_rd_bandwidth(bladerf_channel channel, uint64_t *bandwidth)
 
 static bool _rfic_cmd_wr_gainmode(bladerf_channel channel, uint64_t gainmode)
 {
+    uint8_t gmode         = (uint32_t)(gainmode & 0xF);
     uint8_t const rfic_ch = channel >> 1;
     enum rf_gain_ctrl_mode gc_mode;
-    bool ok;
 
+    /* Determine default */
     switch (channel) {
         case BLADERF_CHANNEL_RX(0):
-            gc_mode = bladerf2_rfic_init_params.gc_rx1_mode;
+            gc_mode = bladerf2_rx_gain_mode_default[0];
             break;
 
         case BLADERF_CHANNEL_RX(1):
-            gc_mode = bladerf2_rfic_init_params.gc_rx2_mode;
+            gc_mode = bladerf2_rx_gain_mode_default[1];
             break;
 
         default:
@@ -630,12 +631,23 @@ static bool _rfic_cmd_wr_gainmode(bladerf_channel channel, uint64_t gainmode)
     }
 
     /* Mode conversion */
-    if (gainmode != BLADERF_GAIN_DEFAULT) {
-        gc_mode = gainmode_bladerf_to_ad9361(gainmode, &ok);
-    }
-
-    if (!ok) {
-        return false;
+    switch (gmode) {
+        case BLADERF_GAIN_DEFAULT:
+            break;
+        case BLADERF_GAIN_MGC:
+            gc_mode = RF_GAIN_MGC;
+            break;
+        case BLADERF_GAIN_FASTATTACK_AGC:
+            gc_mode = RF_GAIN_FASTATTACK_AGC;
+            break;
+        case BLADERF_GAIN_SLOWATTACK_AGC:
+            gc_mode = RF_GAIN_SLOWATTACK_AGC;
+            break;
+        case BLADERF_GAIN_HYBRID_AGC:
+            gc_mode = RF_GAIN_HYBRID_AGC;
+            break;
+        default:
+            return false;
     }
 
     /* Set the mode! */
@@ -648,22 +660,30 @@ static bool _rfic_cmd_rd_gainmode(bladerf_channel channel, uint64_t *gainmode)
 {
     uint8_t const rfic_ch = channel >> 1;
     uint8_t gc_mode;
-    bool ok;
 
     if (BLADERF_CHANNEL_IS_TX(channel)) {
         return false;
     }
 
-    /* Get the gain */
+    /* Get the gain mode */
     CHECK_BOOL(ad9361_get_rx_gain_control_mode(state.phy, rfic_ch, &gc_mode));
 
     /* Mode conversion */
-    if (gainmode != NULL) {
-        *gainmode = gainmode_ad9361_to_bladerf(gc_mode, &ok);
-    }
-
-    if (!ok) {
-        return false;
+    switch (gc_mode) {
+        case RF_GAIN_MGC:
+            *gainmode = BLADERF_GAIN_MGC;
+            break;
+        case RF_GAIN_FASTATTACK_AGC:
+            *gainmode = BLADERF_GAIN_FASTATTACK_AGC;
+            break;
+        case RF_GAIN_SLOWATTACK_AGC:
+            *gainmode = BLADERF_GAIN_SLOWATTACK_AGC;
+            break;
+        case RF_GAIN_HYBRID_AGC:
+            *gainmode = BLADERF_GAIN_HYBRID_AGC;
+            break;
+        default:
+            return false;
     }
 
     return true;

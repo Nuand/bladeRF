@@ -500,6 +500,11 @@ static struct bladerf_gain_modes const bladerf2_rx_gain_modes[] = {
     }
 };
 
+/* Default RX gain control modes */
+static enum rf_gain_ctrl_mode const bladerf2_rx_gain_mode_default[2] = {
+    RF_GAIN_SLOWATTACK_AGC, RF_GAIN_SLOWATTACK_AGC
+};
+
 /* Sample Rate Range */
 static struct bladerf_range const bladerf2_sample_rate_range = {
     FIELD_INIT(.min,    520834),
