@@ -31,30 +31,38 @@
  */
 
 /**
- * @defgroup BLADERF1_CONSTANTS Constants
+ * @defgroup BLADERF1_CONSTANTS Constants (deprecated)
+ *
+ * \deprecated These constants are deprecated, and only apply to the original
+ *             bladeRF (x40/x115). They are here for compatibility with legacy
+ *             applications. Alternatives are noted below.
  *
  * @{
  */
 
-/** Minimum sample rate, in Hz */
+/** Minimum sample rate, in Hz.
+ *
+ * \deprecated Use bladerf_get_sample_rate_range()
+ */
 #define BLADERF_SAMPLERATE_MIN 80000u
 
 /**
  * Maximum recommended sample rate, in Hz.
  *
- * The max sample rate of the LMS6002D is 40 MHz, but this API allows for larger
- * values to allow users to leverage FPGA customizations (e.g., to generate test
- * samples or mux other data into the sample stream).
- *
- * If you are not performing such customizations, treat this as the max allowed
- * values.
+ * \deprecated Use bladerf_get_sample_rate_range()
  */
 #define BLADERF_SAMPLERATE_REC_MAX 40000000u
 
-/** Minimum bandwidth, in Hz */
+/** Minimum bandwidth, in Hz
+ *
+ * \deprecated Use bladerf_get_bandwidth_range()
+ */
 #define BLADERF_BANDWIDTH_MIN 1500000u
 
-/** Maximum bandwidth, in Hz */
+/** Maximum bandwidth, in Hz
+ *
+ * \deprecated Use bladerf_get_bandwidth_range()
+ */
 #define BLADERF_BANDWIDTH_MAX 28000000u
 
 /**
@@ -63,14 +71,35 @@
  * While this value is the lowest permitted, note that the components on the
  * XB-200 are only rated down to 50 MHz. Be aware that performance will likely
  * degrade as you tune to lower frequencies.
+ *
+ * \deprecated Call bladerf_expansion_attach(), then use
+ *             bladerf_get_frequency_range() to get the frequency range.
  */
 #define BLADERF_FREQUENCY_MIN_XB200 0u
 
-/** Minimum tunable frequency (without an XB-200 attached), in Hz */
+/** Minimum tunable frequency (without an XB-200 attached), in Hz
+ *
+ * \deprecated Use bladerf_get_frequency_range()
+ */
 #define BLADERF_FREQUENCY_MIN 237500000u
 
-/** Maximum tunable frequency, in Hz */
+/** Maximum tunable frequency, in Hz
+ *
+ * \deprecated Use bladerf_get_frequency_range()
+ */
 #define BLADERF_FREQUENCY_MAX 3800000000u
+
+/** @} (End of BLADERF1_CONSTANTS) */
+
+/**
+ * @ingroup FN_IMAGE
+ * @defgroup BLADERF_FLASH_CONSTANTS Flash image format constants
+ *
+ * \note These apply to both the bladeRF1 and bladeRF2, but they are still in
+ *       bladeRF1.h for the time being.
+ *
+ * @{
+ */
 
 /** Total size of bladeRF SPI flash, in bytes */
 #define BLADERF_FLASH_TOTAL_SIZE (4 * 1024 * 1024)
@@ -163,14 +192,18 @@
 #define BLADERF_FLASH_EB_LEN_FPGA \
     (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FPGA))
 
-/** @} (End of BLADERF1_CONSTANTS) */
+/** @} (End of BLADERF_FLASH_CONSTANTS) */
 
 /**
- * @defgroup FN_BLADERF1_GAIN Gain stages
+ * @defgroup FN_BLADERF1_GAIN Gain stages (deprecated)
  *
- * These functions provide control over the device's RX and TX gain stages,
- * however, new applications should use the more generic
- * bladerf_set_gain_stage() and bladerf_get_gain_stage() instead.
+ * These functions provide control over the device's RX and TX gain stages.
+ *
+ * \deprecated Use bladerf_get_gain_range(), bladerf_set_gain(), and
+ *             bladerf_get_gain() to control total system gain. For direct
+ *             control of individual gain stages, use bladerf_get_gain_stages(),
+ *             bladerf_get_gain_stage_range(), bladerf_set_gain_stage(), and
+ *             bladerf_get_gain_stage().
  *
  * @{
  */
@@ -185,32 +218,58 @@
  *
  */
 
-/** Minimum RXVGA1 gain, in dB */
+/** Minimum RXVGA1 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_RXVGA1_GAIN_MIN 5
 
-/** Maximum RXVGA1 gain, in dB */
+/** Maximum RXVGA1 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_RXVGA1_GAIN_MAX 30
 
-/** Minimum RXVGA2 gain, in dB */
+/** Minimum RXVGA2 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_RXVGA2_GAIN_MIN 0
 
-/** Maximum RXVGA2 gain, in dB */
+/** Maximum RXVGA2 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_RXVGA2_GAIN_MAX 30
 
-/** Minimum TXVGA1 gain, in dB */
+/** Minimum TXVGA1 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_TXVGA1_GAIN_MIN (-35)
 
-/** Maximum TXVGA1 gain, in dB */
+/** Maximum TXVGA1 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_TXVGA1_GAIN_MAX (-4)
 
-/** Minimum TXVGA2 gain, in dB */
+/** Minimum TXVGA2 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_TXVGA2_GAIN_MIN 0
 
-/** Maximum TXVGA2 gain, in dB */
+/** Maximum TXVGA2 gain, in dB
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
 #define BLADERF_TXVGA2_GAIN_MAX 25
 
 /**
  * LNA gain options
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
  */
 typedef enum {
     BLADERF_LNA_GAIN_UNKNOWN, /**< Invalid LNA gain */
@@ -219,8 +278,17 @@ typedef enum {
     BLADERF_LNA_GAIN_MAX      /**< LNA Max Gain */
 } bladerf_lna_gain;
 
-#define BLADERF_LNA_GAIN_MID_DB 3 /**< Gain in dB of the LNA at mid setting */
-#define BLADERF_LNA_GAIN_MAX_DB 6 /**< Gain in db of the LNA at max setting */
+/**< Gain in dB of the LNA at mid setting
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
+#define BLADERF_LNA_GAIN_MID_DB 3
+
+/**< Gain in db of the LNA at max setting
+ *
+ * \deprecated Use bladerf_get_gain_stage_range()
+ */
+#define BLADERF_LNA_GAIN_MAX_DB 6
 
 /**
  * Set the PA gain in dB
