@@ -91,7 +91,7 @@ pushd work
 rem Fetch the desired code base revision from upstream
 echo[
 echo ========================= Cloning Respository ========================
-git clone %GIT_REPO% bladeRF || goto EXIT_FAILURE
+git clone --recursive %GIT_REPO% bladeRF || goto EXIT_FAILURE
 pushd bladeRF
 echo Checking out %GIT_REV%
 rem git checkout %GIT_REV%
