@@ -434,7 +434,7 @@ quartus_sh --64bit \
            -projname "${PROJECT_NAME}" \
            -rev      "${rev}" \
            -flow     "${flow}" \
-           -stp      "${stp_file}" \
+           -stp      "${stp}" \
            -force    "${force}" \
            -seed     "${seed}"
 
