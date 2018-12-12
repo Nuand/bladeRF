@@ -113,22 +113,23 @@ static int _rfic_fpga_get_status_wqlen(struct bladerf *dev)
     }
 #endif
 
-    return rfic_status.write_queue_length;
+    return (int)rfic_status.write_queue_length;
 }
 
 static int _rfic_fpga_spinwait(struct bladerf *dev)
 {
-    size_t const TRIES     = 30;
-    useconds_t const DELAY = 100;
-    size_t count           = 0;
+    size_t const TRIES       = 30;
+    unsigned int const DELAY = 100;
+    size_t count             = 0;
     int jobs;
 
-    /* Poll the CPU and spin until the job has been completed. The usleep is
-     * a little clever: if we're going to exit the do/while, we do not need
-     * to do the usleep, so we put it as the last thing in the conditions. */
+    /* Poll the CPU and spin until the job has been completed. */
     do {
         jobs = _rfic_fpga_get_status_wqlen(dev);
-    } while ((0 != jobs) && (++count < TRIES) && (0 == usleep(DELAY)));
+        if (0 != jobs) {
+            usleep(DELAY);
+        }
+    } while ((0 != jobs) && (++count < TRIES));
 
     /* If it's simply taking too long to dequeue the command, status will
      * have the number of items in the queue. Bonk this down to a timeout. */
@@ -491,7 +492,7 @@ static int _rfic_fpga_set_gain(struct bladerf *dev,
 
     CHECK_STATUS(get_gain_offset(dev, ch, &offset));
 
-    return rfic->set_gain_stage(dev, ch, stage, gain - offset);
+    return rfic->set_gain_stage(dev, ch, stage, __round_int(gain - offset));
 }
 
 
