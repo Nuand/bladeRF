@@ -406,7 +406,6 @@ struct ad9361_phy_platform_data {
     uint8_t rf_dc_offset_count_low;
     uint8_t dig_interface_tune_skipmode;
     uint8_t dig_interface_tune_fir_disable;
-    uint8_t lo_powerdown_managed_en;
     uint32_t dcxo_coarse;
     uint32_t dcxo_fine;
     uint32_t rf_rx_input_sel;
@@ -460,7 +459,6 @@ struct ad9361_rf_phy {
     uint8_t curr_ensm_state;
     uint8_t cached_rx_rfpll_div;
     uint8_t cached_tx_rfpll_div;
-    uint8_t cached_synth_pd[2];
     struct rx_gain_info rx_gain[RXGAIN_TBLS_END];
     enum rx_gain_table_name current_table;
     bool ensm_pin_ctl_en;
@@ -502,7 +500,6 @@ struct ad9361_rf_phy {
     struct axiadc_converter *adc_conv;
     struct axiadc_state *adc_state;
     int32_t bist_loopback_mode;
-    int32_t bist_config;
     enum ad9361_bist_mode bist_prbs_mode;
     enum ad9361_bist_mode bist_tone_mode;
     uint32_t bist_tone_freq_Hz;
@@ -850,8 +847,13 @@ int32_t ad9361_set_tx_rf_port_output(struct ad9361_rf_phy *phy, uint32_t mode);
 int32_t ad9361_get_tx_rf_port_output(struct ad9361_rf_phy *phy, uint32_t *mode);
 int32_t ad9361_get_temp(struct ad9361_rf_phy *phy);
 int32_t ad9361_rx_fastlock_store(struct ad9361_rf_phy *phy, uint32_t profile);
-int32_t ad9361_rx_fastlock_save(struct ad9361_rf_phy *phy, uint32_t profile, uint8_t *values);
+int32_t ad9361_rx_fastlock_save(struct ad9361_rf_phy *phy,
+                                uint32_t profile,
+                                uint8_t *values);
 int32_t ad9361_tx_fastlock_store(struct ad9361_rf_phy *phy, uint32_t profile);
-int32_t ad9361_tx_fastlock_save(struct ad9361_rf_phy *phy, uint32_t profile, uint8_t *values);
+int32_t ad9361_tx_fastlock_save(struct ad9361_rf_phy *phy,
+                                uint32_t profile,
+                                uint8_t *values);
+int32_t ad9361_set_no_ch_mode(struct ad9361_rf_phy *phy, uint8_t no_ch_mode);
 
 #endif  // AD936X_H_
