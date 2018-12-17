@@ -183,9 +183,11 @@ static bool _rfic_initialize()
 
         CHECK_BOOL(ad9361_init(&state.phy, init_param, NULL));
 
-        if (NULL == state.phy) {
+        if (NULL == state.phy || NULL == state.phy->pdata) {
             /* Oh no */
             DBG("%s: ad9361_init failed silently\n", __FUNCTION__);
+            ad9361_deinit(state.phy);
+            state.phy = NULL;
             return false;
         }
     }
@@ -1098,7 +1100,8 @@ struct rfic_command_fns const funcs[] = {
         FIELD_INIT(.command, BLADERF_RFIC_COMMAND_GAIN),
         FIELD_INIT(.write32, _rfic_cmd_wr_gain),
         FIELD_INIT(.read32, _rfic_cmd_rd_gain),
-        FIELD_INIT(.bitmask, RFIC_CMD_INIT_REQD | RFIC_CMD_CHAN_RX),
+        FIELD_INIT(.bitmask,
+            RFIC_CMD_INIT_REQD | RFIC_CMD_CHAN_TX | RFIC_CMD_CHAN_RX),
     },
     {
         FIELD_INIT(.command, BLADERF_RFIC_COMMAND_RSSI),
