@@ -6,6 +6,77 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.10.2 (2018-12-17)
+--------------------------------
+ This version is part of development series of changes, not an official release.
+
+ This version improves the FPGA-based tuning support on the bladeRF2, adding
+ quick tuning, a standby state (initialized but idle), and defining user space
+ for API commands.
+
+ Fixes:
+
+ * bladerf2: retune2: fix RF path selection in adi_rfspdt_select
+ * bladerf2: FPGA tuning: invalidate RFIC frequency on quick tune
+ * bladerf2: FPGA tuning: Fix GAIN command on TX channels
+ * bladerf2: FPGA tuning: Fix TX sample rate being wrong
+ * bladerf2: FPGA tuning: Fix GAINMODE command
+ * bladerf2: FPGA tuning: Fix implosion when state change OFF->STANDBY
+ * build: fix SignalTap variable name
+ * build: fix patch ordering in fpga/ip/adi
+
+ Features:
+
+ * bladerf2: FPGA tuning: add FASTLOCK command
+ * bladerf2: FPGA tuning: add standby (warm idle) state
+ * bladerf2: FPGA tuning: define user-defined command space
+
+--------------------------------
+v0.10.1 (2018-12-06)
+--------------------------------
+ This version is part of development series of changes, not an official release.
+
+ This version adds FPGA-based tuning for the bladeRF2. This tuning mode has the
+ following advantages over host-based tuning:
+
+ * Faster command processing: the Nios II processor on the FPGA handles the
+   RFIC control directly, instead of relaying SPI commands between the host
+   and RFIC. This improves turnaround time slightly.
+
+ * State preservation: the device itself maintains the RFIC state, so closing
+   and re-opening the device no longer requires reinitialization. In practice,
+   this is about a 7.5x speedup when doing a "warm" open of an
+   already-initialized device.
+
+ * Headless operation: it is now possible to use the bladeRF 2.0 micro
+   entirely standalone, without a host computer.
+
+ Features:
+
+ * bladerf2: add FPGA-based tuning
+ * bladerf2: increase Nios II RAM footprint from 32 kB to 128 kB
+
+--------------------------------
+v0.10.0 (2018-11-26)
+--------------------------------
+ This version is part of development series of changes, not an official release.
+
+ This version adds quick tuning on bladeRF2 devices.
+
+ Fixes:
+
+ * build: add -S option to specify fitter seed
+ * nios: Fix Eclipse project, update docs
+ * build: add device and device family to qsys scripts
+ * build: fix escaping on Windows
+ * fpga_common: check return val in lms_set_frequency (#691)
+
+ Features:
+
+ * bladerf2: add fastlock functions, increase Nios RAM from 16 to 32 kB
+ * bladerf2: implement pkt_retune2 packet format for quick tuning
+
+--------------------------------
 v0.9.0 (2018-10-26)
 --------------------------------
  * bladeRF: hosted: fix typo in toggle_led1
