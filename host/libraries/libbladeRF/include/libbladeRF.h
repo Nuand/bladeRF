@@ -3750,6 +3750,19 @@ int CALL_CONV bladerf_write_flash_bytes(struct bladerf *dev,
                                         uint32_t length);
 
 /**
+ * Lock the bladeRF's OTP
+ *
+ * @param       dev     Device handle
+ *
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `page` or `count` value,
+ *         or a value from \ref RETCODES list on other failures.
+ */
+
+API_EXPORT
+int CALL_CONV bladerf_lock_otp(struct bladerf *dev);
+
+/**
  * Read data from the bladeRF's SPI flash OTP
  *
  * @note This function operates solely on the first 256 byte page of the OTP

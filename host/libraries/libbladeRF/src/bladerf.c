@@ -1550,6 +1550,17 @@ int bladerf_write_otp(struct bladerf *dev,
     return status;
 }
 
+int bladerf_lock_otp(struct bladerf *dev)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->backend->lock_otp(dev);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 /******************************************************************************/
 /* Helpers & Miscellaneous */
 /******************************************************************************/

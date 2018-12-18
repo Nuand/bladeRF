@@ -132,6 +132,7 @@ struct backend_fns {
     int (*get_cal)(struct bladerf *dev, char *cal);
     int (*get_otp)(struct bladerf *dev, char *otp);
     int (*write_otp)(struct bladerf *dev, char *otp);
+    int (*lock_otp)(struct bladerf *dev);
     int (*get_device_speed)(struct bladerf *dev, bladerf_dev_speed *speed);
 
     /* Configuration GPIO (NIOS II <-> logic) accessors */
