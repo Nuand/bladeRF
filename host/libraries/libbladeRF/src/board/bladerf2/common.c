@@ -257,6 +257,20 @@ bladerf_tuning_mode default_tuning_mode(struct bladerf *dev)
         mode = BLADERF_TUNING_MODE_HOST;
     }
 
+    /* Detect TX FPGA bug and report warning */
+    if (BLADERF_TUNING_MODE_FPGA == mode &&
+        have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING) &&
+        version_fields_less_than(&board_data->fpga_version, 0, 10, 2)) {
+        log_warning("FPGA v%u.%u.%u has errata related to FPGA tuning mode. "
+                    "Forcing host-based tuning mode. "
+                    "Please update to FPGA v%u.%u.%u or newer to use "
+                    "FPGA tuning mode.\n",
+                    board_data->fpga_version.major,
+                    board_data->fpga_version.minor,
+                    board_data->fpga_version.patch, 0, 10, 2);
+        mode = BLADERF_TUNING_MODE_HOST;
+    }
+
     switch (mode) {
         case BLADERF_TUNING_MODE_HOST:
             log_debug("Default tuning mode: Host\n");
