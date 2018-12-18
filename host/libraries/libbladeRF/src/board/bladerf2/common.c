@@ -228,8 +228,7 @@ bladerf_tuning_mode default_tuning_mode(struct bladerf *dev)
     }
 
     /* Detect TX FPGA bug and report warning */
-    if (BLADERF_TUNING_MODE_FPGA == mode &&
-        rfic_fpga_control.is_present(dev) &&
+    if (BLADERF_TUNING_MODE_FPGA == mode && rfic_fpga_control.is_present(dev) &&
         version_fields_less_than(&board_data->fpga_version, 0, 10, 2)) {
         log_warning("FPGA v%u.%u.%u has errata related to FPGA-based tuning; "
                     "defaulting to host-based tuning. To use FPGA-based "
