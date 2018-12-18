@@ -25,6 +25,7 @@
 #include "bladeRF.h"
 #include "spi_flash_lib.h"
 #include "flash.h"
+#include "misc.h"
 
 #define THIS_FILE LOGGER_ID_FLASH_C
 
@@ -247,6 +248,7 @@ int NuandExtractField(char *ptr, int len, char *field,
             break;
 
         a1 = *(unsigned short *)(&ub[c+1]);  // read checksum
+        a2 = zcrc(ub, c+1);  // calculate checksum
 
         if (a1 == a2 || 1) {
             if (!strncmp((char *)ub + 1, field, flen)) {
