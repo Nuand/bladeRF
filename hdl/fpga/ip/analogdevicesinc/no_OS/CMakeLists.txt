@@ -84,6 +84,11 @@ if(NOT MSVC)
     )
 endif(NOT MSVC)
 
+# Main Nios app build uses -fshort-enums, so we need to use it here too
+target_compile_options(ad936x PRIVATE
+    -fshort-enums
+)
+
 if(BUILD_AD936X_PRINTF OR BUILD_AD936X_PRINTF_DEBUG)
     message(STATUS "libad936x: Enabling console output")
     target_compile_options(ad936x PRIVATE -DHAVE_VERBOSE_MESSAGES)
