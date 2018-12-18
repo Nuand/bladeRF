@@ -629,7 +629,8 @@ error:
     return status;
 }
 
-static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
+static int write_page(struct bladerf *dev, uint8_t write_operation,
+                      uint16_t page, const uint8_t *buf)
 {
     int status;
     int32_t commit_status;
@@ -676,8 +677,7 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
     }
 
     /* Commit the page to flash */
-    status = vendor_cmd_int_windex(dev, BLADE_USB_CMD_FLASH_WRITE,
-                                   page, &commit_status);
+    status = vendor_cmd_int_windex(dev, write_operation, page, &commit_status);
 
     if (status != 0) {
         log_error("Failed to commit page %u: %s\n", page,
@@ -726,7 +726,7 @@ static int usb_write_flash_pages(struct bladerf *dev,
                  (i + 1) == count ? 100 : 100 * i / count,
                  (i + 1) == count ? '\n' : '\r');
 
-        status = write_page(dev, page + i, buf + n_written);
+        status = write_page(dev, BLADE_USB_CMD_FLASH_WRITE, page + i, buf + n_written);
         if (status) {
             goto error;
         }
