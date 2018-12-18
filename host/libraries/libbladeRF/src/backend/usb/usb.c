@@ -803,6 +803,21 @@ static int usb_get_otp(struct bladerf *dev, char *otp)
     return status == 0 ? restore_status : status;
 }
 
+static int usb_write_otp(struct bladerf *dev, char *otp)
+{
+    int status, restore_status;
+    const uint16_t dummy_page = 0;
+
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+    if (status) {
+        return status;
+    }
+
+    status = write_page(dev, BLADE_USB_CMD_WRITE_OTP, dummy_page, (uint8_t*)otp);
+    restore_status = restore_post_flash_setting(dev);
+    return status == 0 ? restore_status : status;
+}
+
 static int usb_get_device_speed(struct bladerf *dev, bladerf_dev_speed *speed)
 {
     struct bladerf_usb *usb = dev->backend_data;
@@ -1182,6 +1197,7 @@ const struct backend_fns backend_fns_usb_legacy = {
 
     FIELD_INIT(.get_cal, usb_get_cal),
     FIELD_INIT(.get_otp, usb_get_otp),
+    FIELD_INIT(.write_otp, usb_write_otp),
     FIELD_INIT(.get_device_speed, usb_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, legacy_config_gpio_write),
@@ -1291,6 +1307,7 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.get_cal, usb_get_cal),
     FIELD_INIT(.get_otp, usb_get_otp),
+    FIELD_INIT(.write_otp, usb_write_otp),
     FIELD_INIT(.get_device_speed, usb_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, config_gpio_write),

@@ -137,6 +137,11 @@ static int dummy_get_otp(struct bladerf *dev, char *otp)
     return 0;
 }
 
+static int dummy_write_otp(struct bladerf *dev, char *otp)
+{
+    return 0;
+}
+
 static int dummy_get_device_speed(struct bladerf *dev,
                                   bladerf_dev_speed *device_speed)
 {
@@ -460,6 +465,7 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.get_cal, dummy_get_cal),
     FIELD_INIT(.get_otp, dummy_get_otp),
+    FIELD_INIT(.write_otp, dummy_write_otp),
     FIELD_INIT(.get_device_speed, dummy_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, dummy_config_gpio_write),

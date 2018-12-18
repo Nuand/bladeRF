@@ -3749,6 +3749,38 @@ int CALL_CONV bladerf_write_flash_bytes(struct bladerf *dev,
                                         uint32_t address,
                                         uint32_t length);
 
+/**
+ * Read data from the bladeRF's SPI flash OTP
+ *
+ * @note This function operates solely on the first 256 byte page of the OTP
+ *
+ * @param       dev     Device handle
+ * @param[in]   buf     Buffer to read OTP data into
+ *
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `page` or `count` value,
+ *         or a value from \ref RETCODES list on other failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_read_otp(struct bladerf *dev,
+                                 uint8_t *buf);
+
+/**
+ * Write data to the bladeRF's SPI flash OTP device
+ *
+ * @note This function operates solely on the first 256 byte page of the OTP
+ *
+ * @param       dev     Device handle
+ * @param[in]   buf     Data to write to OTP
+ *
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `page` or `count` value,
+ *         or a value from \ref RETCODES list on other failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_write_otp(struct bladerf *dev,
+                                  uint8_t *buf);
+
 /** @} (End of FN_SPI_FLASH) */
 
 /**
