@@ -389,29 +389,6 @@ int spi_flash_decode_flash_architecture(struct bladerf *dev,
 }
 
 
-/******
- * CRC16 implementation from http://softwaremonkey.org/Code/CRC16
- */
-typedef  unsigned char                   byte;    /*     8 bit unsigned       */
-typedef  unsigned short int              word;    /*    16 bit unsigned       */
-
-static word crc16mp(word crcval, void *data_p, word count) {
-    /* CRC-16 Routine for processing multiple part data blocks.
-     * Pass 0 into 'crcval' for first call for any given block; for
-     * subsequent calls pass the CRC returned by the previous call. */
-    word            xx;
-    byte            *ptr= (byte *)data_p;
-
-    while (count-- > 0) {
-        crcval=(word)(crcval^(word)(((word)*ptr++)<<8));
-        for (xx=0;xx<8;xx++) {
-            if(crcval&0x8000) { crcval=(word)((word)(crcval<<1)^0x1021); }
-            else              { crcval=(word)(crcval<<1);                }
-        }
-    }
-    return(crcval);
-}
-
 int binkv_decode_field(char *ptr, int len, char *field,
                        char *val, size_t  maxlen)
 {
@@ -431,7 +408,6 @@ int binkv_decode_field(char *ptr, int len, char *field,
             break;
 
         a1 = LE16_TO_HOST(*(unsigned short *)(&ub[c+1]));  // read checksum
-        a2 = crc16mp(0, ub, c+1);  // calculated checksum
 
         if (a1 == a2) {
             if (!strncmp((char *)ub + 1, field, flen)) {
@@ -463,7 +439,6 @@ int binkv_encode_field(char *ptr, int len, int *idx,
     ptr[*idx] = flen + vlen;
     strcpy(&ptr[*idx + 1], field);
     strcpy(&ptr[*idx + 1 + flen], val);
-    *(unsigned short *)(&ptr[*idx + tlen ]) = HOST_TO_LE16(crc16mp(0, &ptr[*idx ], tlen));
     *idx += tlen + 2;
     return 0;
 }
