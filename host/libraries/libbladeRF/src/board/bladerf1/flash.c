@@ -3,6 +3,7 @@
 
 #include "log.h"
 #include "minmax.h"
+#include "misc.h"
 #include "conversions.h"
 
 #include "bladeRF.h"
@@ -408,6 +409,7 @@ int binkv_decode_field(char *ptr, int len, char *field,
             break;
 
         a1 = LE16_TO_HOST(*(unsigned short *)(&ub[c+1]));  // read checksum
+        a2 = zcrc(ub, c+1);  // calculate checksum
 
         if (a1 == a2) {
             if (!strncmp((char *)ub + 1, field, flen)) {
@@ -439,6 +441,7 @@ int binkv_encode_field(char *ptr, int len, int *idx,
     ptr[*idx] = flen + vlen;
     strcpy(&ptr[*idx + 1], field);
     strcpy(&ptr[*idx + 1 + flen], val);
+    *(unsigned short *)(&ptr[*idx + tlen ]) = HOST_TO_LE16(zcrc((uint8_t *)&ptr[*idx ], tlen));
     *idx += tlen + 2;
     return 0;
 }
