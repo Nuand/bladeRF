@@ -275,7 +275,7 @@ struct character get_letter(char letter)
     };
 
     /* Couldn't find it, error pattern */
-    DBG("%s: Letter not found: '%c'\n", __FUNCTION__, letter);
+    // DBG("%s: Letter not found: '%c'\n", __FUNCTION__, letter);
     return MORSE_MAP[0];
 };
 
@@ -325,7 +325,7 @@ size_t to_tones(element const *elements,
         switch (elements[i]) {
             case T_INVALID:
                 /* Error case: just ditch out */
-                DBG("%s: T_INVALID encountered at i=%x\n", __FUNCTION__, i);
+                // DBG("%s: T_INVALID encountered at i=%x\n", __FUNCTION__, i);
                 return 0;
             case T_DOT:
                 /* Dot */

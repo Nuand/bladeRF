@@ -25,10 +25,11 @@ C_SRCS              += ./src/morse.c
 C_SRCS              += $(FPGA_COMMON_DIR)/src/ad936x_helpers.c
 C_SRCS              += $(FPGA_COMMON_DIR)/src/bladerf2_common.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic.c
+C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_cmds.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_queue.c
 C_SRCS              += $(HOST_COMMON_DIR)/src/range.c
 
-CFLAGS              += -DBOARD_BLADERF_MICRO
+CFLAGS              += -DBOARD_BLADERF_MICRO -DBLADERF_NIOS_DEBUG
 
 # libad936x build configuration and lib inclusion
 # These variables need to be set before including the common Makefile.

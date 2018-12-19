@@ -45,14 +45,10 @@ struct character {
     element const sequence[MAX_SEQ_LEN]; /**< A sequence of elements */
 };
 
-struct character get_letter(char letter);
+struct character get_letter(char);
 
-size_t to_morse(char const *str, element *out, size_t maxlen);
+size_t to_morse(char const *, element *, size_t);
 
-size_t to_tones(element const *elements,
-                struct tone *tones,
-                unsigned int frequency,
-                float dot_length,
-                size_t maxlen);
+size_t to_tones(element const *, struct tone *, unsigned int, float, size_t);
 
 #endif  // MORSE_H_
