@@ -22,28 +22,15 @@
  * THE SOFTWARE.
  */
 
-#ifndef BLADERF_NIOS_PC_SIMULATION
-
 #include "devices.h"
+
+#if defined(BOARD_BLADERF_MICRO) && defined(BLADERF_NIOS_LIBAD936X)
+
+#include <string.h>
+
 #include "devices_rfic.h"
 
-#ifdef BLADERF_NIOS_LIBAD936X
 
-/******************************************************************************/
-/* Queue Management */
-/******************************************************************************/
-
-/**
- * @brief       Enqueue a command
- *
- * @param       q       Queue
- * @param[in]   ch      Channel
- * @param[in]   cmd     Command
- * @param[in]   value   Value to pass to command
- *
- * @return  queue size after the enqueue operation, or COMMAND_QUEUE_FULL if
- *          the queue was full.
- */
 uint8_t rfic_enqueue(struct rfic_queue *q,
                      uint8_t ch,
                      uint8_t cmd,
@@ -64,15 +51,6 @@ uint8_t rfic_enqueue(struct rfic_queue *q,
     return ++q->count;
 }
 
-/**
- * @brief       Dequeue a command
- *
- * @param       q   Queue
- * @param[out]  e   Pointer to a queue entry struct
- *
- * @return  queue size after the dequeue operation, or COMMAND_QUEUE_EMPTY if
- *          the queue was empty.
- */
 uint8_t rfic_dequeue(struct rfic_queue *q, struct rfic_queue_entry *e)
 {
     if (0 == q->count) {
@@ -88,14 +66,6 @@ uint8_t rfic_dequeue(struct rfic_queue *q, struct rfic_queue_entry *e)
     return --q->count;
 }
 
-/**
- * @brief       Get the state of the next item in the queue
- *
- * @param[in]   q   Queue
- *
- * @return      pointer to the next item in the queue, or NULL if the
- *              queue is empty
- */
 struct rfic_queue_entry *rfic_queue_peek(struct rfic_queue *q)
 {
     if (0 == q->count) {
@@ -105,11 +75,6 @@ struct rfic_queue_entry *rfic_queue_peek(struct rfic_queue *q)
     }
 }
 
-/**
- * @brief      Reset/initialize the queue
- *
- * @param      q    Queue
- */
 void rfic_queue_reset(struct rfic_queue *q)
 {
     q->count = 0;
@@ -123,6 +88,4 @@ void rfic_queue_reset(struct rfic_queue *q)
     q->ins_idx = 0;
 }
 
-#endif  // BLADERF_NIOS_LIBAD936X
-
-#endif  // !BLADERF_NIOS_PC_SIMULATION
+#endif  // defined(BOARD_BLADERF_MICRO) && defined(BLADERF_NIOS_LIBAD936X)
