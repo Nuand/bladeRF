@@ -31,10 +31,8 @@
 #include <stdint.h>
 
 #include "bladerf2_common.h"
+#include "devices_rfic_queue.h"
 
-#define COMMAND_QUEUE_MAX 16
-#define COMMAND_QUEUE_FULL 0xff
-#define COMMAND_QUEUE_EMPTY 0xfe
 
 /**
  * @brief      Translate a bladerf_direction and channel number to a
@@ -70,7 +68,6 @@
     for (_index = 0, _channel = CHANNEL_IDX(_dir, _index); _index < _count; \
          ++_index, _channel   = CHANNEL_IDX(_dir, _index))
 
-
 /* Packet decoding debugging output */
 static char const RFIC_DBG_FMT[] = "%s: cmd=%s ch=%s state=%s [%x]=%x(-%x)\n";
 #define RFIC_DBG(prefix, cmd, ch, state, addr, data) \
@@ -81,33 +78,9 @@ static char const RFIC_ERR_FMT[] = "%s: error: %s returned %x (-%x)\n";
 #define RFIC_ERR(thing, retval) \
     DBG(RFIC_ERR_FMT, __FUNCTION__, thing, retval, -retval)
 
-/* State of items in the command queue */
-enum rfic_entry_state {
-    ENTRY_STATE_INVALID = 0, /* Marks entry invalid and not in use */
-    ENTRY_STATE_NEW,         /* We have a new command request to satisfy */
-    ENTRY_STATE_RUNNING,     /* Currently executing a job */
-    ENTRY_STATE_COMPLETE,    /* The job is complete */
-};
-
-/* An entry in the command queue */
-struct rfic_queue_entry {
-    volatile enum rfic_entry_state state; /* State of this queue entry */
-    uint8_t rv;                           /* Return value */
-    uint8_t ch;                           /* Channel */
-    uint8_t cmd;                          /* Command */
-    uint64_t value;                       /* Value to pass to command */
-};
-
-/* A queue itself */
-struct rfic_queue {
-    uint8_t count;   /* Total number of items in the queue */
-    uint8_t ins_idx; /* Insertion index */
-    uint8_t rem_idx; /* Removal index */
-    uint8_t last_rv; /* Returned value from executing last command */
-
-    struct rfic_queue_entry entries[COMMAND_QUEUE_MAX];
-};
-
+/**
+ * RFIC command handler state structure
+ */
 struct rfic_state {
     /* Initialization state */
     bladerf_rfic_init_state init_state;
@@ -129,16 +102,7 @@ struct rfic_state {
     bool tx_mute_state[2];
 };
 
-uint8_t rfic_enqueue(struct rfic_queue *q,
-                     uint8_t ch,
-                     uint8_t cmd,
-                     uint64_t value);
 
-uint8_t rfic_dequeue(struct rfic_queue *q, struct rfic_queue_entry *e);
-
-struct rfic_queue_entry *rfic_queue_peek(struct rfic_queue *q);
-
-void rfic_queue_reset(struct rfic_queue *q);
 
 /**
  * RFIC command read (immediate)
