@@ -102,8 +102,43 @@ struct rfic_state {
     bool tx_mute_state[2];
 };
 
+/**
+ * RFIC command read (immediate)
+ *
+ * @param   command     Command to execute
+ * @param   channel     Channel to apply command to
+ * @param   data        Response from command
+ *
+ * @return bool (true = success)
+ */
+bool rfic_command_read_immed(bladerf_rfic_command command,
+                             bladerf_channel channel,
+                             uint64_t *data);
 
+/**
+ * RFIC command write (immediate)
+ *
+ * @param   command     Command to execute
+ * @param   channel     Channel to apply command to
+ * @param   data        Argument for command
+ *
+ * @return bool (true = success)
+ */
+bool rfic_command_write_immed(bladerf_rfic_command command,
+                              bladerf_channel channel,
+                              uint64_t data);
 
+/**
+ * Invalidate the LO frequency state for a given module
+ *
+ * If anything affecting the tuning frequency of the RFIC is performed
+ * without using the ad9361_* functions, call this function to indicate
+ * that the state is invalid. Attempts to get the LO frequency will fail,
+ * until the LO frequency is set with a BLADERF_RFIC_COMMAND_FREQUENCY
+ * command.
+ *
+ * @param[in]  module  The module
+ */
 void rfic_invalidate_frequency(bladerf_module module);
 
 static inline bool _rfic_chan_is_system(uint8_t ch)

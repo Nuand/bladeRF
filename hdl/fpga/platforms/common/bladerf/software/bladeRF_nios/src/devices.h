@@ -592,10 +592,12 @@ void rfic_command_init(void);
 void rfic_command_work(void);
 
 /**
- * RFIC command write
+ * RFIC command write (queuing)
  *
- * @param   addr    Address
- * @param   data    Value
+ * @param[in]  addr  The address value from the packet
+ * @param[in]  data  The data value from the packet
+ *
+ * @see rfic_command_write_immed()
  *
  * @return bool (true = success)
  */
@@ -604,8 +606,10 @@ bool rfic_command_write(uint16_t addr, uint64_t data);
 /**
  * RFIC command read
  *
- * @param   addr    Address
- * @param   data    Value (out)
+ * @param[in]  addr  The address value from the packet
+ * @param[out] data  Return payload
+ *
+ * @see rfic_command_read_immed()
  *
  * @return bool (true = success)
  */

@@ -1261,14 +1261,6 @@ static void rfic_command_work_wq(struct rfic_queue *q)
     }
 }
 
-/**
- * @brief      Write command dispatcher
- *
- * @param[in]  addr  The address value from the packet
- * @param[in]  data  The data value from the packet
- *
- * @return     True if successfully enqueued, False otherwise.
- */
 bool rfic_command_write(uint16_t addr, uint64_t data)
 {
     uint8_t cmd                      = _rfic_unpack_cmd(addr);
@@ -1288,18 +1280,38 @@ bool rfic_command_write(uint16_t addr, uint64_t data)
     return rv;
 }
 
-/**
- * @brief      Read command dispatcher
- *
- * @param[in]  addr  The address value from the packet
- * @param[out] data  Return payload
- *
- * @return     True if read was successful and data is valid, False otherwise.
- */
+bool rfic_command_write_immed(bladerf_rfic_command cmd,
+                              bladerf_channel ch,
+                              uint64_t data)
+{
+    struct rfic_command_fns const *f = _get_cmd_ptr(cmd);
+
+    bool rv = false;
+
+    if (NULL == f || !_check_validity(f, ch)) {
+        rv = false;
+    } else if (NULL != f->write64) {
+        rv = f->write64(ch, data);
+    } else if (NULL != f->write32) {
+        rv = f->write32(ch, (uint32_t)data);
+    }
+
+    RFIC_DBG("WR!", _rfic_cmdstr(cmd), _rfic_chanstr(ch), rv ? "OK " : "BAD",
+             addr, data);
+
+    return rv;
+}
+
 bool rfic_command_read(uint16_t addr, uint64_t *data)
 {
-    uint8_t cmd                      = _rfic_unpack_cmd(addr);
-    uint8_t ch                       = _rfic_unpack_chan(addr);
+    return rfic_command_read_immed(_rfic_unpack_cmd(addr),
+                                   _rfic_unpack_chan(addr), data);
+}
+
+bool rfic_command_read_immed(bladerf_rfic_command cmd,
+                             bladerf_channel ch,
+                             uint64_t *data)
+{
     struct rfic_command_fns const *f = _get_cmd_ptr(cmd);
     bool rv                          = false;
 
@@ -1320,7 +1332,7 @@ bool rfic_command_read(uint16_t addr, uint64_t *data)
         }
     }
 
-    RFIC_DBG("RD ", _rfic_cmdstr(cmd), _rfic_chanstr(ch), rv ? "OK " : "BAD",
+    RFIC_DBG("RD!", _rfic_cmdstr(cmd), _rfic_chanstr(ch), rv ? "OK " : "BAD",
              addr, *data);
 
     return rv;
