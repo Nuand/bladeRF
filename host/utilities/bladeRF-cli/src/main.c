@@ -309,24 +309,20 @@ static int open_device(struct rc_config *rc,
 
     if (!status) {
         if (rc->reopen_device) {
-            printf("Now performing deferred device initialization...\n");
             rc->reopen_device = false;
         } else if (rc->fpga_file || rc->flash_fpga_file || rc->fw_file) {
             /* These operations do not require having the FPGA loaded and
              * the device initialized, so set BLADERF_FORCE_NO_FPGA_PRESENT
              * to communicate our intent to bladerf_open. */
             if (!getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
-                printf("Deferring device initialization due to requested FPGA "
-                       "or firmware actions.\n");
-                status = setenv("BLADERF_FORCE_NO_FPGA_PRESENT", "true", 0);
-
                 unset_env         = true; /* Unset when done */
                 rc->reopen_device = true; /* Remember to re-open later */
-            }
-        }
 
-        if (status) {
-            fprintf(stderr, "Failed to setenv: %s\n", strerror(errno));
+                status = setenv("BLADERF_FORCE_NO_FPGA_PRESENT", "true", 0);
+                if (status) {
+                    fprintf(stderr, "Failed to setenv: %s\n", strerror(errno));
+                }
+            }
         }
     }
 
