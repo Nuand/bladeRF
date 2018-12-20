@@ -25,14 +25,100 @@
 #ifndef BLADERF_NIOS_DEVICES_RFIC_H_
 #define BLADERF_NIOS_DEVICES_RFIC_H_
 
-#ifdef BOARD_BLADERF_MICRO
-
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "bladerf2_common.h"
+#include "debug.h"
+#include "devices.h"
+
+#include "devices_rfic_cmds.h"
 #include "devices_rfic_queue.h"
 
+
+/******************************************************************************/
+/* Types */
+/******************************************************************************/
+
+typedef uint8_t command_bitmask;
+
+#define RFIC_CMD_INIT_REQD 1   /**< Command requires initialized state */
+#define RFIC_CMD_CHAN_SYSTEM 2 /**< Command valid for wildcard channels */
+#define RFIC_CMD_CHAN_TX 4     /**< Command valid for TX channels */
+#define RFIC_CMD_CHAN_RX 8     /**< Command valid for RX channels */
+
+/**
+ * RFIC command handler state structure
+ */
+struct rfic_state {
+    /* Initialization state */
+    bladerf_rfic_init_state init_state;
+
+    /* AD9361 state structure */
+    struct ad9361_rf_phy *phy;
+
+    /* Queue for handling long-running write operations */
+    struct rfic_queue write_queue;
+
+    /* RX and TX FIR filter memory */
+    bladerf_rfic_rxfir rxfir;
+    bladerf_rfic_txfir txfir;
+
+    /* Frequency retrieval is invalid due to fastlock shenanigans */
+    bool frequency_invalid[NUM_MODULES];
+
+    /* TX mute state at standby */
+    bool tx_mute_state[2];
+};
+
+
+/******************************************************************************/
+/* Function declarations */
+/******************************************************************************/
+
+/**
+ * RFIC command read (immediate)
+ *
+ * @param   command     Command to execute
+ * @param   channel     Channel to apply command to
+ * @param   data        Response from command
+ *
+ * @return bool (true = success)
+ */
+bool rfic_command_read_immed(bladerf_rfic_command command,
+                             bladerf_channel channel,
+                             uint64_t *data);
+
+/**
+ * RFIC command write (immediate)
+ *
+ * @param   command     Command to execute
+ * @param   channel     Channel to apply command to
+ * @param   data        Argument for command
+ *
+ * @return bool (true = success)
+ */
+bool rfic_command_write_immed(bladerf_rfic_command command,
+                              bladerf_channel channel,
+                              uint64_t data);
+
+/**
+ * Invalidate the LO frequency state for a given module
+ *
+ * If anything affecting the tuning frequency of the RFIC is performed
+ * without using the ad9361_* functions, call this function to indicate
+ * that the state is invalid. Attempts to get the LO frequency will fail,
+ * until the LO frequency is set with a BLADERF_RFIC_COMMAND_FREQUENCY
+ * command.
+ *
+ * @param[in]  module  The module
+ */
+void rfic_invalidate_frequency(bladerf_module module);
+
+
+/******************************************************************************/
+/* Helpers */
+/******************************************************************************/
 
 /**
  * @brief      Translate a bladerf_direction and channel number to a
@@ -79,71 +165,31 @@ static char const RFIC_ERR_FMT[] = "%s: error: %s returned %x (-%x)\n";
     DBG(RFIC_ERR_FMT, __FUNCTION__, thing, retval, -retval)
 
 /**
- * RFIC command handler state structure
+ * @brief      Error-catching wrapper
+ *
+ * @param      _fn   The function to wrap
+ *
+ * @return     false on error (_fn() < 0), continues otherwise
  */
-struct rfic_state {
-    /* Initialization state */
-    bladerf_rfic_init_state init_state;
+#define CHECK_BOOL(_fn)         \
+    do {                        \
+        int _s = _fn;           \
+        if (_s < 0) {           \
+            RFIC_ERR(#_fn, _s); \
+            return false;       \
+        }                       \
+    } while (0)
 
-    /* AD9361 state structure */
-    struct ad9361_rf_phy *phy;
+#define RFIC_SYSTEM_CHANNEL 0xF
 
-    /* Queue for handling long-running write operations */
-    struct rfic_queue write_queue;
-
-    /* RX and TX FIR filter memory */
-    bladerf_rfic_rxfir rxfir;
-    bladerf_rfic_txfir txfir;
-
-    /* Frequency retrieval is invalid due to fastlock shenanigans */
-    bool frequency_invalid[NUM_MODULES];
-
-    /* TX mute state at standby */
-    bool tx_mute_state[2];
-};
-
-/**
- * RFIC command read (immediate)
- *
- * @param   command     Command to execute
- * @param   channel     Channel to apply command to
- * @param   data        Response from command
- *
- * @return bool (true = success)
- */
-bool rfic_command_read_immed(bladerf_rfic_command command,
-                             bladerf_channel channel,
-                             uint64_t *data);
-
-/**
- * RFIC command write (immediate)
- *
- * @param   command     Command to execute
- * @param   channel     Channel to apply command to
- * @param   data        Argument for command
- *
- * @return bool (true = success)
- */
-bool rfic_command_write_immed(bladerf_rfic_command command,
-                              bladerf_channel channel,
-                              uint64_t data);
-
-/**
- * Invalidate the LO frequency state for a given module
- *
- * If anything affecting the tuning frequency of the RFIC is performed
- * without using the ad9361_* functions, call this function to indicate
- * that the state is invalid. Attempts to get the LO frequency will fail,
- * until the LO frequency is set with a BLADERF_RFIC_COMMAND_FREQUENCY
- * command.
- *
- * @param[in]  module  The module
- */
-void rfic_invalidate_frequency(bladerf_module module);
+static inline bool _rfic_is_initialized(struct rfic_state *state)
+{
+    return BLADERF_RFIC_INIT_STATE_ON == state->init_state;
+}
 
 static inline bool _rfic_chan_is_system(uint8_t ch)
 {
-    return 0xF == ch;
+    return RFIC_SYSTEM_CHANNEL == ch;
 }
 
 static inline uint8_t _rfic_unpack_chan(uint16_t addr)
@@ -211,7 +257,7 @@ static inline char const *_rfic_chanstr(uint8_t ch)
             return "RX1";
         case BLADERF_CHANNEL_RX(1):
             return "RX2";
-        case 0xF:
+        case RFIC_SYSTEM_CHANNEL:
             return "SYS";
         default:
             return "   ";
@@ -234,5 +280,4 @@ static inline char const *_rfic_statestr(enum rfic_entry_state state)
     }
 }
 
-#endif  // BOARD_BLADERF_MICRO
 #endif  // BLADERF_NIOS_DEVICES_RFIC_H_

@@ -22,6 +22,7 @@ C_SRCS              += ./src/bladeRF_nios.c
 C_SRCS              += $(FPGA_COMMON_DIR)/src/ad936x_helpers.c
 C_SRCS              += $(FPGA_COMMON_DIR)/src/bladerf2_common.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic.c
+C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_cmds.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_queue.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/pkt_retune2.c
 C_SRCS              += $(HOST_COMMON_DIR)/src/range.c
