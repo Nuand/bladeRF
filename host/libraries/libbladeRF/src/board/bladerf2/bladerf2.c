@@ -522,7 +522,7 @@ static void bladerf2_close(struct bladerf *dev)
                 }
             }
 
-            if (rfic != NULL) {
+            if (board_data->state >= STATE_INITIALIZED && rfic != NULL) {
                 if (board_data->rfic_reset_on_close) {
                     /* We need to fully de-initialize the RFIC, so it can be
                      * reset on the next open. This seems to be necessary after
