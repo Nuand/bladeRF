@@ -1218,6 +1218,29 @@ static int bladerf1_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
     return 0;
 }
 
+static int bladerf1_get_fpga_bytes(struct bladerf *dev, size_t *size)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    switch (board_data->fpga_size) {
+        case BLADERF_FPGA_40KLE:
+            *size = 1191788;
+            break;
+
+        case BLADERF_FPGA_115KLE:
+            *size = 3571462;
+            break;
+
+        default:
+            log_debug("%s: unknown fpga_size: %x\n", board_data->fpga_size);
+            return BLADERF_ERR_INVAL;
+    }
+
+    return 0;
+}
+
 static int bladerf1_get_flash_size(struct bladerf *dev, uint32_t *size, bool *is_guess)
 {
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
@@ -2837,30 +2860,18 @@ static int bladerf1_get_timestamp(struct bladerf *dev,
 /* FPGA/Firmware Loading/Flashing */
 /******************************************************************************/
 
-/* We do not build FPGAs with compression enabled. Therfore, they
- * will always have a fixed file size.
- */
-#define FPGA_SIZE_X40   (1191788)
-#define FPGA_SIZE_X115  (3571462)
-
-static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
+static bool is_valid_fpga_size(struct bladerf *dev,
+                               bladerf_fpga_size fpga,
+                               size_t len)
 {
     static const char env_override[] = "BLADERF_SKIP_FPGA_SIZE_CHECK";
     bool valid;
     size_t expected;
+    int status;
 
-    switch (fpga) {
-        case BLADERF_FPGA_40KLE:
-            expected = FPGA_SIZE_X40;
-            break;
-
-        case BLADERF_FPGA_115KLE:
-            expected = FPGA_SIZE_X115;
-            break;
-
-        default:
-            expected = 0;
-            break;
+    status = dev->board->get_fpga_bytes(dev, &expected);
+    if (status < 0) {
+        return status;
     }
 
     /* Provide a means to override this check. This is intended to allow
@@ -2878,7 +2889,8 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 
         if (len < (1 * 1024 * 1024)) {
             valid = false;
-        } else if (len > BLADERF_FLASH_BYTE_LEN_FPGA) {
+        } else if (len >
+                   (dev->flash_arch->tsize_bytes - BLADERF_FLASH_ADDR_FPGA)) {
             valid = false;
         } else {
             valid = true;
@@ -2887,7 +2899,8 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 
     if (!valid) {
         log_warning("Detected potentially incorrect FPGA file (length was %d, "
-                    "expected %d).\n", len, expected);
+                    "expected %d).\n",
+                    len, expected);
 
         log_debug("If you are certain this file is valid, you may define\n"
                   "BLADERF_SKIP_FPGA_SIZE_CHECK in your environment to skip "
@@ -2904,7 +2917,7 @@ static int bladerf1_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
 
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
-    if (!is_valid_fpga_size(board_data->fpga_size, length)) {
+    if (!is_valid_fpga_size(dev, board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
     }
 
@@ -2935,7 +2948,7 @@ static int bladerf1_flash_fpga(struct bladerf *dev, const uint8_t *buf, size_t l
 
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
-    if (!is_valid_fpga_size(board_data->fpga_size, length)) {
+    if (!is_valid_fpga_size(dev, board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
     }
 
@@ -3483,6 +3496,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.device_speed, bladerf1_device_speed),
     FIELD_INIT(.get_serial, bladerf1_get_serial),
     FIELD_INIT(.get_fpga_size, bladerf1_get_fpga_size),
+    FIELD_INIT(.get_fpga_bytes, bladerf1_get_fpga_bytes),
     FIELD_INIT(.get_flash_size, bladerf1_get_flash_size),
     FIELD_INIT(.is_fpga_configured, bladerf1_is_fpga_configured),
     FIELD_INIT(.get_fpga_source, bladerf1_get_fpga_source),

@@ -593,6 +593,30 @@ static int bladerf2_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
     return 0;
 }
 
+static int bladerf2_get_fpga_bytes(struct bladerf *dev, size_t *size)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+    NULL_CHECK(size);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    switch (board_data->fpga_size) {
+        case BLADERF_FPGA_A4:
+            *size = 2632660;
+            break;
+
+        case BLADERF_FPGA_A9:
+            *size = 12858972;
+            break;
+
+        default:
+            log_debug("%s: unknown fpga_size: %x\n", board_data->fpga_size);
+            return BLADERF_ERR_INVAL;
+    }
+
+    return 0;
+}
+
 static int bladerf2_get_flash_size(struct bladerf *dev,
                                    uint32_t *size,
                                    bool *is_guess)
@@ -2124,7 +2148,7 @@ static int bladerf2_load_fpga(struct bladerf *dev,
 
     struct bladerf2_board_data *board_data = dev->board_data;
 
-    if (!is_valid_fpga_size(board_data->fpga_size, length)) {
+    if (!is_valid_fpga_size(dev, board_data->fpga_size, length)) {
         RETURN_INVAL("fpga file", "incorrect file size");
     }
 
@@ -2147,7 +2171,7 @@ static int bladerf2_flash_fpga(struct bladerf *dev,
 
     struct bladerf2_board_data *board_data = dev->board_data;
 
-    if (!is_valid_fpga_size(board_data->fpga_size, length)) {
+    if (!is_valid_fpga_size(dev, board_data->fpga_size, length)) {
         RETURN_INVAL("fpga file", "incorrect file size");
     }
 
@@ -2744,6 +2768,7 @@ struct board_fns const bladerf2_board_fns = {
     FIELD_INIT(.device_speed, bladerf2_device_speed),
     FIELD_INIT(.get_serial, bladerf2_get_serial),
     FIELD_INIT(.get_fpga_size, bladerf2_get_fpga_size),
+    FIELD_INIT(.get_fpga_bytes, bladerf2_get_fpga_bytes),
     FIELD_INIT(.get_flash_size, bladerf2_get_flash_size),
     FIELD_INIT(.is_fpga_configured, bladerf2_is_fpga_configured),
     FIELD_INIT(.get_fpga_source, bladerf2_get_fpga_source),
