@@ -479,7 +479,8 @@ static inline int perform_erase(struct bladerf *dev, uint16_t block)
 }
 
 static int usb_erase_flash_blocks(struct bladerf *dev,
-                                  uint32_t eb, uint16_t count)
+                                  uint32_t eb,
+                                  uint16_t count)
 {
     int status, restore_status;
     uint16_t i;
@@ -489,20 +490,23 @@ static int usb_erase_flash_blocks(struct bladerf *dev,
         return status;
     }
 
-    log_info("Erasing %u blocks starting at block %u\n", count, eb);
+    log_info("Erasing %u block%s starting at block %u\n", count,
+             1 == count ? "" : "s", eb);
 
     for (i = 0; i < count; i++) {
+        log_info("Erasing block %u (%u%%)...%c", eb + i,
+                 (i + 1) == count ? 100 : 100 * i / count,
+                 (i + 1) == count ? '\n' : '\r');
+
         status = perform_erase(dev, eb + i);
-        if (status == 0) {
-            log_info("Erased block %u%c", eb + i, (i+1) == count ? '\n':'\r' );
-        } else {
-            log_debug("Failed to erase block %u: %s\n",
-                    eb + i, bladerf_strerror(status));
+        if (status != 0) {
+            log_debug("Failed to erase block %u: %s\n", eb + i,
+                      bladerf_strerror(status));
             goto error;
         }
     }
 
-    log_info("Done erasing %u blocks\n", count);
+    log_info("Done erasing %u block%s\n", count, 1 == count ? "" : "s");
 
 error:
     restore_status = restore_post_flash_setting(dev);
@@ -579,8 +583,10 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
     return 0;
 }
 
-static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
-                                uint32_t page_u32, uint32_t count_u32)
+static int usb_read_flash_pages(struct bladerf *dev,
+                                uint8_t *buf,
+                                uint32_t page_u32,
+                                uint32_t count_u32)
 {
     int status;
     size_t n_read;
@@ -588,8 +594,8 @@ static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
 
     /* 16-bit control transfer fields are used for these.
      * The current bladeRF build only has a 4MiB flash, anyway. */
-    const uint16_t page = (uint16_t) page_u32;
-    const uint16_t count = (uint16_t) count_u32;
+    const uint16_t page  = (uint16_t)page_u32;
+    const uint16_t count = (uint16_t)count_u32;
 
     assert(page == page_u32);
     assert(count == count_u32);
@@ -599,13 +605,16 @@ static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
         return status;
     }
 
-    log_info("Reading %u pages starting at page %u\n", count, page);
+    log_info("Reading %u page%s starting at page %u\n", count,
+             1 == count ? "" : "s", page);
 
     for (n_read = i = 0; i < count; i++) {
-        log_info("Reading page %u%c", page + i, (i+1) == count ? '\n':'\r' );
+        log_info("Reading page %u (%u%%)...%c", page + i,
+                 (i + 1) == count ? 100 : 100 * i / count,
+                 (i + 1) == count ? '\n' : '\r');
 
-        status = read_page(dev, BLADE_USB_CMD_FLASH_READ,
-                           page + i, buf + n_read);
+        status =
+            read_page(dev, BLADE_USB_CMD_FLASH_READ, page + i, buf + n_read);
         if (status != 0) {
             goto error;
         }
@@ -613,7 +622,7 @@ static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
         n_read += BLADERF_FLASH_PAGE_SIZE;
     }
 
-    log_info("Done reading %u pages\n", count);
+    log_info("Done reading %u page%s\n", count, 1 == count ? "" : "s");
 
 error:
     status = restore_post_flash_setting(dev);
@@ -685,8 +694,10 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
     return 0;
 }
 
-static int usb_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
-                                 uint32_t page_u32, uint32_t count_u32)
+static int usb_write_flash_pages(struct bladerf *dev,
+                                 const uint8_t *buf,
+                                 uint32_t page_u32,
+                                 uint32_t count_u32)
 
 {
     int status, restore_status;
@@ -695,8 +706,8 @@ static int usb_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
 
     /* 16-bit control transfer fields are used for these.
      * The current bladeRF build only has a 4MiB flash, anyway. */
-    const uint16_t page = (uint16_t) page_u32;
-    const uint16_t count = (uint16_t) count_u32;
+    const uint16_t page  = (uint16_t)page_u32;
+    const uint16_t count = (uint16_t)count_u32;
 
     assert(page == page_u32);
     assert(count == count_u32);
@@ -706,11 +717,14 @@ static int usb_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
         return status;
     }
 
-    log_info("Writing %u pages starting at page %u\n", count, page);
+    log_info("Writing %u page%s starting at page %u\n", count,
+             1 == count ? "" : "s", page);
 
     n_written = 0;
     for (i = 0; i < count; i++) {
-        log_info("Writing page %u%c", page + i, (i+1) == count ? '\n':'\r');
+        log_info("Writing page %u (%u%%)...%c", page + i,
+                 (i + 1) == count ? 100 : 100 * i / count,
+                 (i + 1) == count ? '\n' : '\r');
 
         status = write_page(dev, page + i, buf + n_written);
         if (status) {
@@ -719,7 +733,7 @@ static int usb_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
 
         n_written += BLADERF_FLASH_PAGE_SIZE;
     }
-    log_info("Done writing %u pages\n", count );
+    log_info("Done writing %u page%s\n", count, 1 == count ? "" : "s");
 
 error:
     restore_status = restore_post_flash_setting(dev);
