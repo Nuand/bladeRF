@@ -34,6 +34,9 @@
 #include "rel_assert.h"
 #include "input.h"
 
+/* Previously BLADERF_FLASH_BYTE_LEN_FPGA. TODO: don't hardcode this */
+static size_t const LEGACY_FLASH_BYTE_LEN_FPGA = 0x00370000;
+
 struct params
 {
     char *img_file;
@@ -104,7 +107,7 @@ static int handle_param(const char *param, char *val,
                 p->address = BLADERF_FLASH_ADDR_FPGA;
             }
 
-            p->max_length = BLADERF_FLASH_BYTE_LEN_FPGA;
+            p->max_length = LEGACY_FLASH_BYTE_LEN_FPGA;
 
             if (!strcasecmp("fpga40", val)) {
                 p->type = BLADERF_IMAGE_TYPE_FPGA_40KLE;

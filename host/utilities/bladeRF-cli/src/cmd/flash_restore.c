@@ -31,6 +31,9 @@
 #include "minmax.h"
 #include "conversions.h"
 
+/* Previously BLADERF_FLASH_BYTE_LEN_FPGA. TODO: don't hardcode this */
+static size_t const LEGACY_FLASH_BYTE_LEN_FPGA = 0x00370000;
+
 struct options {
     char *file;
     uint32_t address, len;
@@ -77,7 +80,7 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
 }
 
 static inline int erase_region(struct bladerf *dev, struct bladerf_image *img,
-                                uint32_t addr, uint32_t len)
+                               uint32_t addr, uint32_t len)
 {
     switch (img->type) {
         case BLADERF_IMAGE_TYPE_FIRMWARE:
@@ -87,7 +90,7 @@ static inline int erase_region(struct bladerf *dev, struct bladerf_image *img,
         case BLADERF_IMAGE_TYPE_FPGA_40KLE:
         case BLADERF_IMAGE_TYPE_FPGA_115KLE:
             return bladerf_erase_flash_bytes(dev, BLADERF_FLASH_ADDR_FPGA,
-                                             BLADERF_FLASH_BYTE_LEN_FPGA);
+                                             LEGACY_FLASH_BYTE_LEN_FPGA);
 
         case BLADERF_IMAGE_TYPE_CALIBRATION:
             return bladerf_erase_flash_bytes(dev, BLADERF_FLASH_ADDR_CAL,

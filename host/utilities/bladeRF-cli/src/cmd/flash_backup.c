@@ -31,6 +31,9 @@
 #include "conversions.h"
 #include "rel_assert.h"
 
+/* Previously BLADERF_FLASH_BYTE_LEN_FPGA. TODO: don't hardcode this */
+static size_t const LEGACY_FLASH_BYTE_LEN_FPGA = 0x00370000;
+
 #define lib_error(status, ...) do { \
     state->last_lib_error = (status); \
     cli_err(state, argv[0], __VA_ARGS__); \
@@ -68,11 +71,11 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
         } else if (!strcasecmp(argv[2], "fpga40")) {
             image_type = BLADERF_IMAGE_TYPE_FPGA_40KLE;
             address = BLADERF_FLASH_ADDR_FPGA;
-            length = BLADERF_FLASH_BYTE_LEN_FPGA;
+            length = LEGACY_FLASH_BYTE_LEN_FPGA;
         } else if (!strcasecmp(argv[2], "fpga115")) {
             image_type = BLADERF_IMAGE_TYPE_FPGA_115KLE;
             address = BLADERF_FLASH_ADDR_FPGA;
-            length = BLADERF_FLASH_BYTE_LEN_FPGA;
+            length = LEGACY_FLASH_BYTE_LEN_FPGA;
         } else {
             cli_err(state, argv[0], "Invalid image type provided.\n");
             status = CLI_RET_INVPARAM;
