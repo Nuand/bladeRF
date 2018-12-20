@@ -522,17 +522,19 @@ static void bladerf2_close(struct bladerf *dev)
                 }
             }
 
-            if (board_data->rfic_reset_on_close) {
-                /* We need to fully de-initialize the RFIC, so it can be reset
-                 * on the next open. This seems to be necessary after doing
-                 * direct SPI control of the RFIC.
-                 */
-                rfic->deinitialize(dev);
-            } else {
-                /* Put the RFIC into standby mode. This will shut down any
-                 * current RF activity, but it will not lose the RF state.
-                 */
-                rfic->standby(dev);
+            if (rfic != NULL) {
+                if (board_data->rfic_reset_on_close) {
+                    /* We need to fully de-initialize the RFIC, so it can be
+                     * reset on the next open. This seems to be necessary after
+                     * doing direct SPI control of the RFIC.
+                     */
+                    rfic->deinitialize(dev);
+                } else {
+                    /* Put the RFIC into standby mode. This will shut down any
+                     * current RF activity, but it will not lose the RF state.
+                     */
+                    rfic->standby(dev);
+                }
             }
 
             free(board_data);
