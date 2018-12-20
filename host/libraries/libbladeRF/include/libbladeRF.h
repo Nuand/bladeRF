@@ -483,6 +483,18 @@ int CALL_CONV bladerf_get_fpga_size(struct bladerf *dev,
                                     bladerf_fpga_size *size);
 
 /**
+ * Query a device's expected FPGA bitstream length, in bytes
+ *
+ * @param       dev     Device handle
+ * @param[out]  size    Will be updated with expected bitstream length. If an
+ *                      error occurs, no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_fpga_bytes(struct bladerf *dev, size_t *size);
+
+/**
  * Query a device's Flash size
  *
  * @param       dev      Device handle
@@ -2241,19 +2253,19 @@ typedef enum {
  * This flag is asserted in bladerf_metadata.status by the hardware when an
  * underflow is detected in the sample buffering system on the device.
  */
-#define BLADERF_META_FLAG_RX_HW_UNDERFLOW       (1 << 0)
+#define BLADERF_META_FLAG_RX_HW_UNDERFLOW (1 << 0)
 
 /**
  * This flag is asserted in bladerf_metadata.status by the hardware if mini
  * expansion IO pin 1 is asserted.
  */
-#define BLADERF_META_FLAG_RX_HW_MINIEXP1        (1 << 16)
+#define BLADERF_META_FLAG_RX_HW_MINIEXP1 (1 << 16)
 
 /**
  * This flag is asserted in bladerf_metadata.status by the hardware if mini
  * expansion IO pin 2 is asserted.
  */
-#define BLADERF_META_FLAG_RX_HW_MINIEXP2        (1 << 17)
+#define BLADERF_META_FLAG_RX_HW_MINIEXP2 (1 << 17)
 
 /**
  * Sample metadata
@@ -3207,9 +3219,8 @@ struct bladerf_image *CALL_CONV bladerf_alloc_image(struct bladerf *dev,
  *         `NULL` on memory allocation failure
  */
 API_EXPORT
-struct bladerf_image *CALL_CONV
-    bladerf_alloc_cal_image(struct bladerf *dev,
-                            bladerf_fpga_size fpga_size, uint16_t vctcxo_trim);
+struct bladerf_image *CALL_CONV bladerf_alloc_cal_image(
+    struct bladerf *dev, bladerf_fpga_size fpga_size, uint16_t vctcxo_trim);
 
 /**
  * Free a bladerf_image previously obtained via bladerf_alloc_image.

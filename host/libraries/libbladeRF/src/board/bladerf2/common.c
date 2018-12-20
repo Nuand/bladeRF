@@ -140,30 +140,20 @@ int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir)
 /* Size checks */
 /******************************************************************************/
 
-bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
+bool is_valid_fpga_size(struct bladerf *dev, bladerf_fpga_size fpga, size_t len)
 {
     /* We do not build FPGAs with compression enabled. Therfore, they
      * will always have a fixed file size.
      */
-    size_t const FPGA_SIZE_XA4 = (2632660);
-    size_t const FPGA_SIZE_XA9 = (12858972);
-    char const env_override[]  = "BLADERF_SKIP_FPGA_SIZE_CHECK";
+    char const env_override[] = "BLADERF_SKIP_FPGA_SIZE_CHECK";
 
     bool valid;
     size_t expected;
+    int status;
 
-    switch (fpga) {
-        case BLADERF_FPGA_A4:
-            expected = FPGA_SIZE_XA4;
-            break;
-
-        case BLADERF_FPGA_A9:
-            expected = FPGA_SIZE_XA9;
-            break;
-
-        default:
-            expected = 0;
-            break;
+    status = dev->board->get_fpga_bytes(dev, &expected);
+    if (status < 0) {
+        return status;
     }
 
     /* Provide a means to override this check. This is intended to allow
@@ -181,7 +171,8 @@ bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 
         if (len < (1 * 1024 * 1024)) {
             valid = false;
-        } else if (len > BLADERF_FLASH_BYTE_LEN_FPGA) {
+        } else if (len >
+                   (dev->flash_arch->tsize_bytes - BLADERF_FLASH_ADDR_FPGA)) {
             valid = false;
         } else {
             valid = true;

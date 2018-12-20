@@ -451,7 +451,9 @@ int perform_format_config(struct bladerf *dev,
  */
 int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir);
 
-bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len);
+bool is_valid_fpga_size(struct bladerf *dev,
+                        bladerf_fpga_size fpga,
+                        size_t len);
 
 bool is_valid_fw_size(size_t len);
 
