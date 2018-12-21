@@ -48,9 +48,10 @@ def _print_channel_details(ch, verbose):
 
     print("    Gain         ", ch.gain)
 
-    print("    Gain Mode    ", ch.gain_mode)
-    if verbose:
-        print("        Modes    ", _strify_list(ch.gain_modes))
+    if not ch.is_tx:
+        print("    Gain Mode    ", ch.gain_mode)
+        if verbose:
+            print("        Modes    ", _strify_list(ch.gain_modes))
 
     if not ch.is_tx:
         print("    Symbol RSSI  ", ch.symbol_rssi)
