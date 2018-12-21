@@ -252,6 +252,8 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
 
     bladerf_direction dir;
 
+    bladerf_frequency const TEST_FREQ = 420000000;
+
     FOR_EACH_DIRECTION(dir)
     {
         size_t i;
@@ -262,31 +264,45 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
             bladerf_gain_mode old_mode;
             int status;
 
-            /* Switch to manual gain control */
-            status = bladerf_get_gain_mode(dev, ch, &old_mode);
-            if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
-                PR_ERROR("Failed to get current gain mode on channel %s: %s\n",
-                         channel2str(ch), bladerf_strerror(status));
-                failures += 1;
-                continue;
+            /* NOTE: This is a workaround for a bug in fpga v0.10.2 on bladerf2,
+             * where the frequency post-initialization is not valid. */
+            status = bladerf_set_frequency(dev, ch, TEST_FREQ);
+            if (status != 0) {
+                PR_ERROR("Failed to set frequency %" BLADERF_PRIuFREQ
+                         " Hz: %s\n",
+                         TEST_FREQ, bladerf_strerror(status));
+                return status;
             }
 
-            status = bladerf_set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
-            if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
-                PR_ERROR("Failed to set gain mode on channel %s: %s\n",
-                         channel2str(ch), bladerf_strerror(status));
-                failures += 1;
-                continue;
-            }
+            if (!BLADERF_CHANNEL_IS_TX(ch)) {
+                /* Switch to manual gain control */
+                status = bladerf_get_gain_mode(dev, ch, &old_mode);
+                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                    PR_ERROR(
+                        "Failed to get current gain mode on channel %s: %s\n",
+                        channel2str(ch), bladerf_strerror(status));
+                    failures += 1;
+                    continue;
+                }
 
-            if (!p->module_enabled) {
-                /* Enable the channel */
-                status = bladerf_enable_module(dev, ch, true);
-                if (status < 0) {
-                    PR_ERROR("Failed to enable channel %s: %s\n",
+                status = bladerf_set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
+                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                    PR_ERROR("Failed to set gain mode on channel %s: %s\n",
                              channel2str(ch), bladerf_strerror(status));
                     failures += 1;
                     continue;
+                }
+
+                if (!p->module_enabled) {
+                    /* Enable channel (necessary for RX gain changes to register
+                     * on bladerf2) */
+                    status = bladerf_enable_module(dev, ch, true);
+                    if (status < 0) {
+                        PR_ERROR("Failed to enable channel %s: %s\n",
+                                 channel2str(ch), bladerf_strerror(status));
+                        failures += 1;
+                        continue;
+                    }
                 }
             }
 
@@ -298,24 +314,26 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
                   channel2str(ch));
             failures += random_gains(dev, p, ch, quiet);
 
-            if (!p->module_enabled) {
-                /* Deactivate the channel */
-                status = bladerf_enable_module(dev, ch, false);
-                if (status < 0) {
-                    PR_ERROR("Failed to deactivate channel %s: %s\n",
+            if (!BLADERF_CHANNEL_IS_TX(ch)) {
+                if (!p->module_enabled) {
+                    /* Deactivate the channel */
+                    status = bladerf_enable_module(dev, ch, false);
+                    if (status < 0) {
+                        PR_ERROR("Failed to deactivate channel %s: %s\n",
+                                 channel2str(ch), bladerf_strerror(status));
+                        failures += 1;
+                        continue;
+                    }
+                }
+
+                /* Return to previous gain control mode */
+                status = bladerf_set_gain_mode(dev, ch, old_mode);
+                if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
+                    PR_ERROR("Failed to set gain mode on channel %s: %s\n",
                              channel2str(ch), bladerf_strerror(status));
                     failures += 1;
                     continue;
                 }
-            }
-
-            /* Return to previous gain control mode */
-            status = bladerf_set_gain_mode(dev, ch, old_mode);
-            if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
-                PR_ERROR("Failed to set gain mode on channel %s: %s\n",
-                         channel2str(ch), bladerf_strerror(status));
-                failures += 1;
-                continue;
             }
         }
     }
