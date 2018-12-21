@@ -32,7 +32,7 @@
 #include "conversions.h"
 
 /* Previously BLADERF_FLASH_BYTE_LEN_FPGA. TODO: don't hardcode this */
-static size_t const LEGACY_FLASH_BYTE_LEN_FPGA = 0x00370000;
+static uint32_t const LEGACY_FLASH_BYTE_LEN_FPGA = 0x00370000;
 
 struct options {
     char *file;

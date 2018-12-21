@@ -32,7 +32,7 @@
 #include "rel_assert.h"
 
 /* Previously BLADERF_FLASH_BYTE_LEN_FPGA. TODO: don't hardcode this */
-static size_t const LEGACY_FLASH_BYTE_LEN_FPGA = 0x00370000;
+static uint32_t const LEGACY_FLASH_BYTE_LEN_FPGA = 0x00370000;
 
 #define lib_error(status, ...) do { \
     state->last_lib_error = (status); \
