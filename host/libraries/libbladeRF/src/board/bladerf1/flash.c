@@ -134,6 +134,8 @@ static inline size_t get_flash_eb_len_fpga(struct bladerf *dev)
     return eb_count;
 }
 
+#define METADATA_LEN 256
+
 int spi_flash_write_fpga_bitstream(struct bladerf *dev,
                                    const uint8_t *bitstream,
                                    size_t len)
@@ -152,12 +154,14 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
         BLADERF_FLASH_ADDR_FPGA / dev->flash_arch->ebsize_bytes;
 
     /** Length of entire FPGA region, in units of erase blocks */
-    const uint32_t flash_eb_len_fpga = get_flash_eb_len_fpga(dev);
+    const uint32_t flash_eb_len_fpga = (uint32_t)get_flash_eb_len_fpga(dev);
+
+    assert(METADATA_LEN <= page_size);
 
     int status;
     uint8_t *readback_buf;
     uint8_t *padded_bitstream;
-    uint8_t metadata[page_size];
+    uint8_t metadata[METADATA_LEN];
     uint32_t padded_bitstream_len;
 
     if (len >= (UINT32_MAX - padding_len)) {
@@ -250,7 +254,7 @@ int spi_flash_erase_fpga(struct bladerf *dev)
         BLADERF_FLASH_ADDR_FPGA / dev->flash_arch->ebsize_bytes;
 
     /** Length of entire FPGA region, in units of erase blocks */
-    const uint32_t flash_eb_len_fpga = get_flash_eb_len_fpga(dev);
+    const uint32_t flash_eb_len_fpga = (uint32_t)get_flash_eb_len_fpga(dev);
 
     /* Erase the entire FPGA region, including both autoload metadata and the
      * actual bitstream data */
