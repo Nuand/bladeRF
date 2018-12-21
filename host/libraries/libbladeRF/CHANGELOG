@@ -5,6 +5,68 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
+v2.2.0 (2018-12-21)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.3.1
+FPGA         v0.10.2
+
+New features include:
+
+ * FPGA-based RFIC Control on the bladerf2 family:
+   This version adds FPGA-based tuning for the bladeRF 2.0 micro family. This
+   tuning mode has a number of advantages over host-based tuning:
+
+    * Faster command processing: the Nios II processor on the FPGA handles the
+      RFIC control directly, instead of relaying SPI commands between the host
+      and RFIC. This improves turnaround time slightly.
+
+    * State preservation: the device itself maintains the RFIC state, so
+      closing and re-opening the device no longer requires reinitialization. In
+      practice, this is about a 7.5x speedup when doing a "warm" open of an
+      already-initialized device.
+
+    * Headless operation: the Nios II processor on the FPGA is now able to
+      control the RFIC (and the rest of the system) autonomously.
+
+   The previous mode is still available by calling bladerf_set_tuning_mode()
+   with `BLADERF_TUNING_MODE_HOST`, or by setting
+   `BLADERF_DEFAULT_TUNING_MODE=host` in the environment.
+
+ * Quick Tune is now supported on the bladerf2 family:
+   The quick tune functionality permits rapid hopping between frequencies, by
+   saving the state of the RFIC's tuning parameters to memory and then rapidly
+   switching to them at a given time.
+
+   Please refer to the documentation for bladerf_get_quick_tune(),
+   bladerf_schedule_retune(), and bladerf_cancel_scheduled_retunes() for more
+   information.
+
+ * Configuration file: `biastee_rx` and `biastee_tx` options added
+
+API changes since v2.1.0:
+ * Quick Tuning on bladerf2:
+    - `struct bladerf_quick_tune` updated with parameters for bladeRF2
+ * Flash access:
+    - These functions require a `struct bladerf *` as the first parameter:
+      bladerf_alloc_image(), bladerf_alloc_cal_image(), bladerf_image_write()
+    - Added: bladerf_read_flash_bytes(), bladerf_erase_flash_bytes(),
+      bladerf_write_flash_bytes(), bladerf_get_fpga_bytes()
+    - Deprecated: bladerf_read_flash(), bladerf_erase_flash(),
+      bladerf_write_flash()
+
+Bug fixes:
+ * libusb.c: fix unread status variable warning (#693)
+ * bladerf2.c: fix typo in _check_total_sample_rate (#692)
+ * bladerf1.c: fix null ptr dereference (#696)
+ * bladerf1.c: improve AGC-unavailable messaging (#686)
+ * bladerf{1,2}.c: bladerf_load_fpga: release mutex on error (#680)
+ * bladerf1.c: fix apportioning of overall gain via bladerf_set_gain()
+ * bladerf2.c: fix overeager FIR filter management in bladerf_set_sample_rate()
+ * flash.c: FPGA images are now flashable on xA9 boards (#571)
+
 v2.1.0 (2018-10-30)
 --------------------------------
 
