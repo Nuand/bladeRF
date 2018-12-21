@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.0.3 (2018-12-21)
+--------------------------------
+ * Update bladerf_alloc_image, bladerf_alloc_cal_image, bladerf_image_write
+   function definitions for libbladeRF v2.2.0
+
 v1.0.2 (2018-10-30)
 --------------------------------
  * Add missing BB_TXVGA1_RXLPF loopback option (#478)
