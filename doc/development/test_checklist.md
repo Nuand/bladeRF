@@ -55,8 +55,8 @@ Build Tests
         builds should have no commit hash; other builds should)
   * [ ] Correct VID/PID and product descriptors are present on `lsusb -v` or
         `dmesg`
-    * bladeRF: "Nuand bladeRF" 2cf0:5246
-    * bladeRF Micro: "Nuand bladeRF 2.0" 2cf0:5250
+    * bladeRF: "Nuand bladeRF" `2cf0:5246`
+    * bladeRF Micro: "Nuand bladeRF 2.0" `2cf0:5250`
 
 ## Host software ##
 
@@ -79,6 +79,8 @@ build and run.
 Perform the above builds with the following:
 
 * Linux (various distributions; see host/misc/docker)
+  * This can be performed automatically, using Docker:
+    ```bash host/misc/docker/parallel.bash | tee /tmp/output.txt```
   * [ ] GCC
   * [ ] Clang
 
@@ -93,10 +95,15 @@ Perform the above builds with the following:
 
 * Misc
   * [ ] Build with documentation (from a clean CMake directory):
-        ```-DENABLE_DOCUMENTATION=ON```
+        ```-DBUILD_DOCUMENTATION=ON```
     * Any Doxygen warnings should be regarded as defects.
-  * [ ] Clang `ccc-analyzer` & `scan-build` (with `-maxloop 100` or greater)
+  * [ ] Clang `ccc-analyzer` & `scan-build` (with `-maxloop 100` or greater):
+    * CMake incantation:
+      ```cmake -DBUILD_DOCUMENTATION=ON -DCMAKE_C_COMPILER=/usr/share/clang/scan-build-6.0/libexec/ccc-analyzer ..```
+    * Build and generate report:
+      ```/usr/share/clang/scan-build-6.0/bin/scan-build -analyze-headers -maxloop 100 -o ./report make```
     * Any items in the static analysis report should be regarded as defects.
+      * Exception: `thirdparty/`
 
 
 Functional Tests
@@ -157,7 +164,7 @@ messages other than the information about flash page read operations.
       subsection).
 
 * [ ] Restore the original calibration data via:
-      ```bladeRF-cli -e 'flash_restore cal.bin cal' -v debug```
+      ```bladeRF-cli -e 'flash_restore cal.bin' -v debug```
 
 * [ ] Power cycle the device and verify the new values.
 
@@ -486,12 +493,13 @@ of programs.
 
 This test ensures that various device control calls complete without error.
 
-Run all of its tests **without** an XB-200 attached.
+Run all of its tests on bladeRF1 **without** an XB-200 attached.
 
 * [ ] ```sampling```
 * [ ] ```lpf_mode```
 * [ ] ```enable_module```
 * [ ] ```loopback```
+* [ ] ```rx_mux```
 * [ ] ```correction```
 * [ ] ```samplerate```
 * [ ] ```bandwidth```
@@ -499,12 +507,43 @@ Run all of its tests **without** an XB-200 attached.
 * [ ] ```frequency```
 * [ ] ```threads```
 
-Run all of its tests **with** an XB-200 attached.
+Run all of its tests on bladeRF1 **with** an XB-200 attached.
 
 * [ ] ```sampling```
 * [ ] ```lpf_mode```
 * [ ] ```enable_module```
 * [ ] ```loopback```
+* [ ] ```rx_mux```
+* [ ] ```xb200```
+* [ ] ```correction```
+* [ ] ```samplerate```
+* [ ] ```bandwidth```
+* [ ] ```gain```
+* [ ] ```frequency```
+* [ ] ```threads```
+
+Run all of its tests on bladeRF2 with FPGA-based tuning (default).
+
+* [ ] ```sampling```
+* [ ] ```lpf_mode```
+* [ ] ```enable_module```
+* [ ] ```loopback```
+* [ ] ```rx_mux```
+* [ ] ```correction```
+* [ ] ```samplerate```
+* [ ] ```bandwidth```
+* [ ] ```gain```
+* [ ] ```frequency```
+* [ ] ```threads```
+
+Run all of its tests on bladeRF2 with host-based tuning
+(`BLADERF_DEFAULT_TUNING_MODE='host'`).
+
+* [ ] ```sampling```
+* [ ] ```lpf_mode```
+* [ ] ```enable_module```
+* [ ] ```loopback```
+* [ ] ```rx_mux```
 * [ ] ```correction```
 * [ ] ```samplerate```
 * [ ] ```bandwidth```

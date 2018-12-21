@@ -107,7 +107,9 @@ MATLAB Bindings
 Python Bindings
 ================================================================================
 
-* [ ] Regenerate ```_cdef.py``` if required (TODO: how?)
+* [ ] Regenerate ```_cdef.py``` if required:
+    * ```cd host/libraries/libbladeRF_bindings/python```
+    * ```python3 scripts/import_header.py ../../libbladeRF/include/libbladeRF.h > bladerf/_cdef.py```
 
 * [ ] Update the version number in the ```setup.py``` file
 
