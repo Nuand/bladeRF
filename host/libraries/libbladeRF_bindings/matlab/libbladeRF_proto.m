@@ -416,17 +416,17 @@ fcns.thunkname{fcnNum}='int32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_bootlo
 % int bladerf_load_fw_from_bootloader ( const char * device_identifier , bladerf_backend backend , uint8_t bus , uint8_t addr , const char * file );
 fcns.thunkname{fcnNum}='int32cstringbladerf_backenduint8uint8cstringThunk';fcns.name{fcnNum}='bladerf_load_fw_from_bootloader'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'cstring', 'bladerf_backend', 'uint8', 'uint8', 'cstring'};fcnNum=fcnNum+1;
 
-% struct bladerf_image * bladerf_alloc_image ( bladerf_image_type type , uint32_t address , uint32_t length );
-fcns.thunkname{fcnNum}='voidPtrbladerf_image_typeuint32uint32Thunk';fcns.name{fcnNum}='bladerf_alloc_image'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='bladerf_imagePtr'; fcns.RHS{fcnNum}={'bladerf_image_type', 'uint32', 'uint32'};fcnNum=fcnNum+1;
+% struct bladerf_image * bladerf_alloc_image ( struct bladerf * dev , bladerf_image_type type , uint32_t address , uint32_t length );
+fcns.thunkname{fcnNum}='voidPtrbladerf_image_typeuint32uint32Thunk';fcns.name{fcnNum}='bladerf_alloc_image'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='bladerf_imagePtr'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_image_type', 'uint32', 'uint32'};fcnNum=fcnNum+1;
 
-% struct bladerf_image * bladerf_alloc_cal_image ( bladerf_fpga_size fpga_size , uint16_t vctcxo_trim );
-fcns.thunkname{fcnNum}='voidPtrbladerf_fpga_sizeuint16Thunk';fcns.name{fcnNum}='bladerf_alloc_cal_image'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='bladerf_imagePtr'; fcns.RHS{fcnNum}={'bladerf_fpga_size', 'uint16'};fcnNum=fcnNum+1;
+% struct bladerf_image * bladerf_alloc_cal_image ( struct bladerf * dev , bladerf_fpga_size fpga_size , uint16_t vctcxo_trim );
+fcns.thunkname{fcnNum}='voidPtrbladerf_fpga_sizeuint16Thunk';fcns.name{fcnNum}='bladerf_alloc_cal_image'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='bladerf_imagePtr'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_fpga_size', 'uint16'};fcnNum=fcnNum+1;
 
 % void bladerf_free_image ( struct bladerf_image * image );
 fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_free_image'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerf_imagePtr'};fcnNum=fcnNum+1;
 
-% int bladerf_image_write ( struct bladerf_image * image , const char * file );
-fcns.thunkname{fcnNum}='int32voidPtrcstringThunk';fcns.name{fcnNum}='bladerf_image_write'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_imagePtr', 'cstring'};fcnNum=fcnNum+1;
+% int bladerf_image_write ( struct bladerf * dev , struct bladerf_image * image , const char * file );
+fcns.thunkname{fcnNum}='int32voidPtrcstringThunk';fcns.name{fcnNum}='bladerf_image_write'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_imagePtr', 'cstring'};fcnNum=fcnNum+1;
 
 % int bladerf_image_read ( struct bladerf_image * image , const char * file );
 fcns.thunkname{fcnNum}='int32voidPtrcstringThunk';fcns.name{fcnNum}='bladerf_image_read'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_imagePtr', 'cstring'};fcnNum=fcnNum+1;
