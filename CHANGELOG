@@ -6,6 +6,42 @@ hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2018.12-rc2 (2018-12-21)
+--------------------------------------------------------------------------------
+
+This release candidate consists of the following versions:
+
+    * FPGA bitstream                v0.10.2
+    * FX3 firmware                  v2.3.1
+    * libbladeRF                    v2.2.0
+    * bladeRF-cli                   v1.7.1
+    * MATLAB & Simulink bindings    v1.0.3
+    * Python bindings               v1.1.1
+
+The major new features in this release candidate are:
+* FPGA-based RFIC control for the bladeRF 2.0 micro family
+* Quick-tuning support for the bladeRF 2.0 micro family
+
+Summary of changes since 2018.10-rc1:
+
+* FPGA
+    - Add quick tuning for bladerf2 devices
+    - Add FPGA-based RFIC control for bladerf2 devices
+* libbladeRF
+    - Fix FPGA image flashing on bladerf2 xA9 devices (#571)
+    - Fix bladerf_set_gain() being off by a few dB on bladerf1 devices
+    - Add `biastee_rx` and `biastee_tx` config file options
+    - Add support for quick tuning and FPGA-based RFIC control
+* bladeRF-cli
+    - Fix memory leak in CSV-to-SC16Q11 conversion (#694)
+    - Update for libbladeRF v2.2.0
+* MATLAB & Simulink bindings
+    - Update for libbladeRF v2.2.0
+* Python
+    - Fix warning on `bladerf-tool info`
+    - Update for libbladeRF v2.2.0
+
+--------------------------------------------------------------------------------
  2018.10-rc1 (2018-10-30)
 --------------------------------------------------------------------------------
 

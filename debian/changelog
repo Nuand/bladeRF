@@ -1,3 +1,13 @@
+bladerf (2018.12-rc2) unstable; urgency=low
+
+  * Release candidate 2 for 2018.12. Please see the top-level CHANGELOG file,
+    as well as the sub-project CHANGELOG files, for more details.
+  * AD936x RFIC vendor library code moved to thirdparty/
+  * FPGA bitstream v0.10.2, FX3 FW v2.3.1, libbladeRF v2.2.0, bladeRF-cli
+    v1.7.1
+
+ -- Rey Sabrina Tucker (Nuand LLC) <rey.tucker@nuand.com>  Fri, 21 Dec 2018 16:52:49 -0500
+
 bladerf (2018.10-rc1) unstable; urgency=low
 
   * Release candidate 1 for 2018.10. Please see the top-level CHANGELOG file,
