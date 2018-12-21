@@ -5,6 +5,14 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
+v1.7.1 (2018-10-30)
+--------------------------------
+ * tx.c: fix memory leak in CSV-to-SC16Q11 conversion (fixes #694)
+ * cmd.c: cleanup command definitions, code formatting
+ * main.c: remove vestigial printfs in open_device()
+ * Updated documentation for adding new commands
+ * calibrate.c, flash_*.c: updates for libbladeRF v2.2.0
+
 v1.7.0 (2018-10-30)
 --------------------------------
  * Add libedit support (#591)
