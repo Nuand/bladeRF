@@ -207,13 +207,15 @@ typedef enum {
     BLADERF_LNA_GAIN_MAX      /**< LNA Max Gain */
 } bladerf_lna_gain;
 
-/**< Gain in dB of the LNA at mid setting
+/**
+ * Gain in dB of the LNA at mid setting
  *
  * \deprecated Use bladerf_get_gain_stage_range()
  */
 #define BLADERF_LNA_GAIN_MID_DB 3
 
-/**< Gain in db of the LNA at max setting
+/**
+ * Gain in db of the LNA at max setting
  *
  * \deprecated Use bladerf_get_gain_stage_range()
  */

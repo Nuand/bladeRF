@@ -3212,6 +3212,7 @@ struct bladerf_image *CALL_CONV bladerf_alloc_image(struct bladerf *dev,
  * This is intended to be used in conjunction with bladerf_image_write(), or a
  * write of the image's `data` field to flash.
  *
+ * @param[in]   dev          Device handle
  * @param[in]   fpga_size    Target FPGA size
  * @param[in]   vctcxo_trim  VCTCXO oscillator trim value.
  *
@@ -3686,13 +3687,13 @@ int CALL_CONV bladerf_read_flash(struct bladerf *dev,
  * @note This function operates in units of bytes.
  *
  * @param       dev     Device handle
- * @param[in]   buf     Buffer to read data into. Must be `length`
+ * @param[in]   buf     Buffer to read data into. Must be `bytes`
  *                      bytes or larger.
  * @param[in]   address Address to begin reading from
- * @param[in]   length  Number of bytes to read
+ * @param[in]   bytes   Number of bytes to read
  *
  * @return 0 on success,
- *         or ::BLADERF_ERR_INVAL on an invalid `address` or `length` value,
+ *         or ::BLADERF_ERR_INVAL on an invalid `address` or `bytes` value,
  *         or a value from \ref RETCODES list on other failures.
  */
 API_EXPORT
