@@ -81,6 +81,7 @@ header = """
     bladerf_serial *serial);
   int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size
     *size);
+  int bladerf_get_fpga_bytes(struct bladerf *dev, size_t *size);
   int bladerf_get_flash_size(struct bladerf *dev, uint32_t *size, bool
     *is_guess);
   int bladerf_fw_version(struct bladerf *dev, struct bladerf_version
@@ -263,7 +264,10 @@ header = """
       };
       struct
       {
-        void *tbd;
+        uint16_t nios_profile;
+        uint8_t rffe_profile;
+        uint8_t port;
+        uint8_t spdt;
       };
     };
   };
@@ -371,13 +375,13 @@ header = """
     uint32_t length;
     uint8_t *data;
   };
-  struct bladerf_image *bladerf_alloc_image(bladerf_image_type type,
-    uint32_t address, uint32_t length);
-  struct bladerf_image *bladerf_alloc_cal_image(bladerf_fpga_size
-    fpga_size, uint16_t vctcxo_trim);
+  struct bladerf_image *bladerf_alloc_image(struct bladerf *dev,
+    bladerf_image_type type, uint32_t address, uint32_t length);
+  struct bladerf_image *bladerf_alloc_cal_image(struct bladerf *dev,
+    bladerf_fpga_size fpga_size, uint16_t vctcxo_trim);
   void bladerf_free_image(struct bladerf_image *image);
-  int bladerf_image_write(struct bladerf_image *image, const char
-    *file);
+  int bladerf_image_write(struct bladerf *dev, struct bladerf_image
+    *image, const char *file);
   int bladerf_image_read(struct bladerf_image *image, const char *file);
   typedef enum
   {
@@ -411,10 +415,16 @@ header = """
   int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
   int bladerf_erase_flash(struct bladerf *dev, uint32_t erase_block,
     uint32_t count);
+  int bladerf_erase_flash_bytes(struct bladerf *dev, uint32_t address,
+    uint32_t length);
   int bladerf_read_flash(struct bladerf *dev, uint8_t *buf, uint32_t
     page, uint32_t count);
+  int bladerf_read_flash_bytes(struct bladerf *dev, uint8_t *buf,
+    uint32_t address, uint32_t bytes);
   int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
     uint32_t page, uint32_t count);
+  int bladerf_write_flash_bytes(struct bladerf *dev, const uint8_t *buf,
+    uint32_t address, uint32_t length);
   int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch, const
     char *port);
   int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch, const
@@ -605,7 +615,7 @@ header = """
   int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
   typedef enum
   {
-    BLADERF_RFIC_RXFIR_BYPASS,
+    BLADERF_RFIC_RXFIR_BYPASS = 0,
     BLADERF_RFIC_RXFIR_CUSTOM,
     BLADERF_RFIC_RXFIR_DEC1,
     BLADERF_RFIC_RXFIR_DEC2,
@@ -613,7 +623,7 @@ header = """
   } bladerf_rfic_rxfir;
   typedef enum
   {
-    BLADERF_RFIC_TXFIR_BYPASS,
+    BLADERF_RFIC_TXFIR_BYPASS = 0,
     BLADERF_RFIC_TXFIR_CUSTOM,
     BLADERF_RFIC_TXFIR_INT1,
     BLADERF_RFIC_TXFIR_INT2,
