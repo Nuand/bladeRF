@@ -567,7 +567,6 @@ typedef struct {
     uint8_t qec_tracking_slow_mode_enable;
     uint8_t ensm_enable_pin_pulse_mode_enable;
     uint8_t ensm_enable_txnrx_control_enable;
-    uint8_t tx_lo_powerdown_managed_enable;
     uint64_t rx_synthesizer_frequency_hz;
     uint64_t tx_synthesizer_frequency_hz;
     uint32_t rx_path_clock_frequencies[6];
