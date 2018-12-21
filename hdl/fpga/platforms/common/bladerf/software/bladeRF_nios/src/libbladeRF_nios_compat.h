@@ -54,6 +54,14 @@
 #define log_fatal(...)   DBG(__VA_ARGS__)
 
 /* Output formats... "x" is what alt_printf supports */
+#ifdef PRIi64
+#undef PRIi64
+#endif
+
+#ifdef PRIu64
+#undef PRIu64
+#endif
+
 #define PRIi64 "x"
 #define PRIu64 "x"
 
