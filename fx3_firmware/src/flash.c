@@ -216,6 +216,10 @@ CyU3PReturnStatus_t NuandFlashInit() {
 
     status = CyFxSpiInit();
 
+    if (NuandGetSPIManufacturer() == 0xEF) {
+        CyU3PSpiSetClock(30000000);
+    }
+
     glAppMode = MODE_FW_CONFIG;
 
     return status;
