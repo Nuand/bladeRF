@@ -232,7 +232,7 @@ char const *bladerf2_state_to_string[4];
 /* Macro for logging and returning ::BLADERF_ERR_INVAL */
 #define RETURN_INVAL_ARG(_what, _arg, _why)                               \
     do {                                                                  \
-        log_error("%s: %s '%s' invalid: %s\n", __FUNCTION__, _what, _arg, \
+        log_error("%s: %s '%s' invalid: %s\n", __FUNCTION__, _what, #_arg, \
                   _why);                                                  \
         return BLADERF_ERR_INVAL;                                         \
     } while (0)
