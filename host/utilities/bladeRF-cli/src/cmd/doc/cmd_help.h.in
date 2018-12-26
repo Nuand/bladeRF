@@ -142,6 +142,8 @@
   "                 fw Firmware\n" \
   "             fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
   "            fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
+  "             fpgaA4 Metadata and bitstream for 49 kLE (A4) FPGA\n" \
+  "             fpgaA9 Metadata and bitstream for 301 kLE (A9) FPGA\n" \
   "\n" \
   "-   <address> - Address of data to back up. Must be erase\n" \
   "    block-aligned.\n" \
@@ -195,6 +197,10 @@
   "             fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
   "\n" \
   "            fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
+  "\n" \
+  "             fpgaA4 Metadata and bitstream for 49 kLE (A4) FPGA\n" \
+  "\n" \
+  "             fpgaA9 Metadata and bitstream for 301 kLE (A9) FPGA\n" \
   "\n" \
   "                raw Raw data. The address and length parameters must be\n" \
   "                    provided if this type is selected.\n" \
