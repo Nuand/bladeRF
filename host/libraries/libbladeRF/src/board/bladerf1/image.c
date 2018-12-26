@@ -132,6 +132,8 @@ static bool image_type_is_valid(bladerf_image_type type) {
         case BLADERF_IMAGE_TYPE_FIRMWARE:
         case BLADERF_IMAGE_TYPE_FPGA_40KLE:
         case BLADERF_IMAGE_TYPE_FPGA_115KLE:
+        case BLADERF_IMAGE_TYPE_FPGA_A4:
+        case BLADERF_IMAGE_TYPE_FPGA_A9:
         case BLADERF_IMAGE_TYPE_CALIBRATION:
         case BLADERF_IMAGE_TYPE_RX_DC_CAL:
         case BLADERF_IMAGE_TYPE_TX_DC_CAL:
@@ -459,6 +461,8 @@ static int make_cal_region(bladerf_fpga_size size, uint16_t vctcxo_trim,
     int rv;
     static const char fpga_size_40[] = "40";
     static const char fpga_size_115[] = "115";
+    static const char fpga_size_A4[] = "A4";
+    static const char fpga_size_A9[] = "A9";
     const char *fpga_size;
     char dac[7] = {0};
 
@@ -466,6 +470,10 @@ static int make_cal_region(bladerf_fpga_size size, uint16_t vctcxo_trim,
         fpga_size = fpga_size_40;
     } else if (size == BLADERF_FPGA_115KLE) {
         fpga_size = fpga_size_115;
+    } else if (size == BLADERF_FPGA_A4) {
+        fpga_size = fpga_size_A4;
+    } else if (size == BLADERF_FPGA_A9) {
+        fpga_size = fpga_size_A9;
     } else {
         assert(0); /* Bug catcher */
         return BLADERF_ERR_INVAL;

@@ -3092,6 +3092,8 @@ typedef enum {
     BLADERF_IMAGE_TYPE_FIRMWARE,     /**< Firmware data */
     BLADERF_IMAGE_TYPE_FPGA_40KLE,   /**< FPGA bitstream for 40 KLE device */
     BLADERF_IMAGE_TYPE_FPGA_115KLE,  /**< FPGA bitstream for 115  KLE device */
+    BLADERF_IMAGE_TYPE_FPGA_A4,      /**< FPGA bitstream for A4 device */
+    BLADERF_IMAGE_TYPE_FPGA_A9,      /**< FPGA bitstream for A9 device */
     BLADERF_IMAGE_TYPE_CALIBRATION,  /**< Board calibration */
     BLADERF_IMAGE_TYPE_RX_DC_CAL,    /**< RX DC offset calibration table */
     BLADERF_IMAGE_TYPE_TX_DC_CAL,    /**< TX DC offset calibration table */
