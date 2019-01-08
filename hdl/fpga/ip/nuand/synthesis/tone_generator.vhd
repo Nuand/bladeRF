@@ -21,39 +21,45 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+
+package tone_generator_p is
+    type tone_generator_input_t is record
+        period      : natural;
+        duration    : natural;
+        valid       : std_logic;
+    end record;
+
+    type tone_generator_output_t is record
+        re      : signed(15 downto 0);
+        im      : signed(15 downto 0);
+        valid   : std_logic;
+        idle    : std_logic;
+    end record;
+end package; -- tone_generator_p
+
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
     use ieee.math_real.all;
 
 library work;
+    use work.tone_generator_p.all;
     use work.nco_p.all;
 
 entity tone_generator is
   port (
-    clock           :   in  std_logic;
-    reset           :   in  std_logic;
-
-    -- period of output wave, in clocks
-    period          :   in  unsigned(15 downto 0);
-    -- duration of output wave, in clocks
-    duration        :   in  unsigned(31 downto 0);
-    -- hold high until in_ack is asserted, then deassert
-    in_valid        :   in  std_logic;
-
-    -- deassert in_valid after in_ack
-    in_ack          :   out std_logic;
-
-    out_real        :   out signed(15 downto 0);
-    out_imag        :   out signed(15 downto 0);
-    out_valid       :   out std_logic
+    clock   : in  std_logic;
+    reset   : in  std_logic;
+    inputs  : in  tone_generator_input_t;
+    outputs : out tone_generator_output_t
   );
 end entity; -- tone_generator
 
 architecture arch of tone_generator is
-
+    signal countdown    : natural;
     signal nco_input    : nco_input_t;
     signal nco_output   : nco_output_t;
-
 begin
-
     U_nco : entity work.nco
       port map (
         clock   => clock,
@@ -62,8 +68,42 @@ begin
         outputs => nco_output
       );
 
-    out_real <= nco_output.re;
-    out_imag <= nco_output.im;
-    out_valid <= nco_output.valid;
+    handle_input : process(clock, reset) is
+        variable dphase : integer;
+    begin
+        if (reset = '1') then
+            dphase := 0;
+
+            nco_input.dphase <= to_signed(dphase, nco_input.dphase'length);
+            nco_input.valid <= '0';
+
+            outputs.re <= (others => '0');
+            outputs.im <= (others => '0');
+            outputs.valid <= '0';
+            outputs.idle <= '0';
+        elsif (rising_edge(clock)) then
+            nco_input.valid <= '0';
+            outputs.idle <= '1';
+
+            if (inputs.valid = '1') then
+                countdown <= inputs.duration;
+                -- -4096 to 4096 is one rotation, and it should take <period>
+                -- clocks to do this
+                dphase := integer(round(8192.0 / real(inputs.period)));
+            end if;
+
+            -- TODO: gently glide down to zero-crossing
+            if (countdown > 0) then
+                nco_input.dphase <= to_signed(dphase, nco_input.dphase'length);
+                nco_input.valid <= '1';
+                countdown <= countdown - 1;
+                outputs.idle <= '0';
+            end if;
+
+            outputs.re      <= nco_output.re;
+            outputs.im      <= nco_output.im;
+            outputs.valid   <= nco_output.valid;
+        end if;
+    end process handle_input;
 
 end architecture; -- arch
