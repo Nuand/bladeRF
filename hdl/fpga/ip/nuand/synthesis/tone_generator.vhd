@@ -92,6 +92,8 @@ begin
                 if (inputs.period > 0) then
                     -- -4096 to 4096 is one rotation, and it should take
                     -- <period> clocks to do this
+                    -- 
+                    -- CAUTION: THIS MAY NOT SYNTHESIZE WELL
                     dphase := integer(round(8192.0 / real(inputs.period)));
                 else
                     dphase := 0;

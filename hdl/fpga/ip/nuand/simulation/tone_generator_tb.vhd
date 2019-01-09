@@ -150,7 +150,7 @@ begin
 
         for i in MESSAGE'range loop
             if MESSAGE(i).is_on then
-                inputs.period <= 1 sec / TONE_FREQUENCY/ CLOCK_PERIOD;
+                inputs.period <= 1 sec / TONE_FREQUENCY / CLOCK_PERIOD;
             else
                 inputs.period <= 0;
             end if;
