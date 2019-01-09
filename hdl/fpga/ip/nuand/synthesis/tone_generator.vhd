@@ -82,8 +82,6 @@ begin
             outputs.valid <= '0';
             outputs.idle  <= '0';
 
-            rising := false;
-
         elsif (rising_edge(clock)) then
             nco_input.valid <= '0';
             outputs.idle    <= '1';
