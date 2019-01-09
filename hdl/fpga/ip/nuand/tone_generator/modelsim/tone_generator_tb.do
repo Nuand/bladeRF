@@ -2,14 +2,13 @@
 
 proc compile_tone_generator { root } {
     vlib work
-    vlib nuand
 
-    vcom -2008 -work nuand [file join $root ./synthesis/cordic.vhd]
-    vcom -2008 -work nuand [file join $root ./synthesis/nco.vhd]
-    vcom -2008 -work nuand [file join $root ./simulation/util.vhd]
+    vcom -2008 -work work [file join $root . synthesis cordic.vhd]
+    vcom -2008 -work work [file join $root . synthesis nco.vhd]
+    vcom -2008 -work work [file join $root . simulation util.vhd]
 
-    vcom -2008 -work work [file join $root ./synthesis/tone_generator.vhd]
-    vcom -2008 -work work [file join $root ./simulation/tone_generator_tb.vhd]
+    vcom -2008 -work work [file join $root tone_generator vhdl tone_generator.vhd]
+    vcom -2008 -work work [file join $root tone_generator vhdl tb tone_generator_tb.vhd]
 }
 
 proc simulate_tone_generator { } {
@@ -28,7 +27,8 @@ proc waves_tone_generator { } {
 if [info exists root] {
     compile_tone_generator $root
 } else {
-    compile_tone_generator [pwd]
+    # we assume we're in hdl/fpga/ip/nuand/tone_generator/modelsim
+    compile_tone_generator [file join [pwd] .. ..]
 }
 
 simulate_tone_generator

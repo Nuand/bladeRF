@@ -23,14 +23,12 @@ library ieee;
     use ieee.numeric_std.all;
     use ieee.math_real.all;
 
-library nuand;
-    use nuand.util.all;
-
 library std;
     use std.env.all;
     use std.textio.all;
 
 library work;
+    use work.util.all;
     use work.tone_generator_p.all;
 
 entity tone_generator_tb is

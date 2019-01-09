@@ -43,8 +43,8 @@ library ieee;
     use ieee.math_real.all;
 
 library work;
-    use work.tone_generator_p.all;
     use work.nco_p.all;
+    use work.tone_generator_p.all;
 
 entity tone_generator is
   port (
