@@ -1,4 +1,4 @@
--- Copyright (c) 2018 Nuand LLC
+-- Copyright (c) 2019 Nuand LLC
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
@@ -70,26 +70,34 @@ begin
 
     handle_input : process(clock, reset) is
         variable dphase : integer;
+        --variable i_rise, q_rise, i_last_rise, q_last_rise : boolean;
     begin
         if (reset = '1') then
             dphase := 0;
 
             nco_input.dphase <= to_signed(dphase, nco_input.dphase'length);
-            nco_input.valid <= '0';
+            nco_input.valid  <= '0';
 
-            outputs.re <= (others => '0');
-            outputs.im <= (others => '0');
+            outputs.re    <= (others => '0');
+            outputs.im    <= (others => '0');
             outputs.valid <= '0';
-            outputs.idle <= '0';
+            outputs.idle  <= '0';
+
+            rising := false;
+
         elsif (rising_edge(clock)) then
             nco_input.valid <= '0';
             outputs.idle <= '1';
 
             if (inputs.valid = '1') then
                 countdown <= inputs.duration;
-                -- -4096 to 4096 is one rotation, and it should take <period>
-                -- clocks to do this
-                dphase := integer(round(8192.0 / real(inputs.period)));
+                if (inputs.period > 0) then
+                    -- -4096 to 4096 is one rotation, and it should take <period>
+                    -- clocks to do this
+                    dphase := integer(round(8192.0 / real(inputs.period)));
+                else
+                    dphase := 0;
+                end if;
             end if;
 
             -- TODO: gently glide down to zero-crossing
