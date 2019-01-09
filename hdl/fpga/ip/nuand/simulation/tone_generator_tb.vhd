@@ -45,7 +45,7 @@ architecture arch of tone_generator_tb is
     signal clock    : std_logic     := '1';
     signal reset    : std_logic     := '1';
 
-    signal inputs   : tone_generator_input_t    := (period      => 0,
+    signal inputs   : tone_generator_input_t    := (dphase      => 0,
                                                     duration    => 0,
                                                     valid       => '0');
     signal outputs  : tone_generator_output_t;
@@ -56,6 +56,10 @@ architecture arch of tone_generator_tb is
     constant PAUSE          : time := DOT * 3;
     constant SPACE          : time := DOT * 7;
 
+    constant TONE_PERIOD        : time      := 1 sec / TONE_FREQUENCY;
+    constant TONE_PERIOD_CLKS   : natural   := TONE_PERIOD / CLOCK_PERIOD;
+    constant TONE_DPHASE        : natural   := integer(round(8192.0 / real(TONE_PERIOD_CLKS)));
+
     type tone_t is record
         is_on   : boolean;
         duration: time;
@@ -64,8 +68,6 @@ architecture arch of tone_generator_tb is
     type tones_t is array(natural range <>) of tone_t;
 
     constant MESSAGE : tones_t := (
-        (is_on => false, duration => PAUSE),
-
         -- H
         (is_on => true, duration => DOT),
         (is_on => false, duration => DOT),
@@ -127,32 +129,12 @@ begin
         reset <= '0';
         nop(clock, 10);
 
-        ---- start tone
-        --inputs.period   => 1 sec / (TONE_FREQUENCY + OFFSET_FREQUENCY) / CLOCK_PERIOD;
-        --inputs.duration => TONE_DURATION / CLOCK_PERIOD;
-        --inputs.valid => '1';
-        --wait until rising_edge(clock);
-        --inputs.valid => '0';
-        --wait until rising_edge(clock);
-
-        ---- wait a bit
-        --for i in 0 to (1.1 * TONE_DURATION) / CLOCK_PERIOD loop
-        --    wait until rising_edge(clock);
-        --end loop;
-
-        ---- send new tone, at twice the frequency
-        --inputs.period   => 1 sec / (TONE_FREQUENCY*2 + OFFSET_FREQUENCY) / CLOCK_PERIOD;
-        --inputs.duration => TONE_DURATION / CLOCK_PERIOD;
-        --inputs.valid => '1';
-        --wait until rising_edge(clock);
-        --inputs.valid => '0';
-        --wait until rising_edge(clock);
-
+        -- send message
         for i in MESSAGE'range loop
             if MESSAGE(i).is_on then
-                inputs.period <= 1 sec / TONE_FREQUENCY / CLOCK_PERIOD;
+                inputs.dphase <= TONE_DPHASE;
             else
-                inputs.period <= 0;
+                inputs.dphase <= 0;
             end if;
 
             inputs.duration <= MESSAGE(i).duration / CLOCK_PERIOD;
@@ -165,6 +147,7 @@ begin
             wait until (outputs.idle = '1');
         end loop;
 
+        -- done
         report "-- End of Simulation --" severity failure ;
     end process;
 

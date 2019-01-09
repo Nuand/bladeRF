@@ -24,7 +24,7 @@ library ieee;
 
 package tone_generator_p is
     type tone_generator_input_t is record
-        period      : natural;
+        dphase      : natural;
         duration    : natural;
         valid       : std_logic;
     end record;
@@ -88,16 +88,7 @@ begin
 
             if (inputs.valid = '1') then
                 countdown <= inputs.duration;
-
-                if (inputs.period > 0) then
-                    -- -4096 to 4096 is one rotation, and it should take
-                    -- <period> clocks to do this
-                    -- 
-                    -- CAUTION: THIS MAY NOT SYNTHESIZE WELL
-                    dphase := integer(round(8192.0 / real(inputs.period)));
-                else
-                    dphase := 0;
-                end if;
+                dphase    := inputs.dphase;
             end if;
 
             -- TODO: gently glide down to zero-crossing?
