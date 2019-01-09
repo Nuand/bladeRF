@@ -66,6 +66,8 @@ architecture arch of tone_generator_tb is
     type tones_t is array(natural range <>) of tone_t;
 
     constant MESSAGE : tones_t := (
+        (is_on => false, duration => PAUSE),
+
         -- H
         (is_on => true, duration => DOT),
         (is_on => false, duration => DOT),
@@ -102,9 +104,9 @@ architecture arch of tone_generator_tb is
 
         -- O
         (is_on => true, duration => DASH),
-
-        -- (space)
-        (is_on => false, duration => SPACE)
+        (is_on => true, duration => DASH),
+        (is_on => true, duration => DASH),
+        (is_on => false, duration => PAUSE)
     );
 begin
 
