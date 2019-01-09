@@ -1,4 +1,4 @@
--- Copyright (c) 2018 Nuand LLC
+-- Copyright (c) 2019 Nuand LLC
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
@@ -36,9 +36,8 @@ library work;
 entity tone_generator_tb is
     generic (
         CLOCK_FREQUENCY             : natural   := 1_920_000;
-        OFFSET_FREQUENCY            : natural   := 10_000;
         TONE_FREQUENCY              : natural   := 1_000;
-        TONE_DURATION               : time      := 300 us
+        WORDS_PER_MINUTE            : real      := 10.0
     );
 end entity;
 
@@ -51,7 +50,62 @@ architecture arch of tone_generator_tb is
                                                     valid       => '0');
     signal outputs  : tone_generator_output_t;
 
-    constant CLOCK_PERIOD : time := 1 sec / CLOCK_FREQUENCY;
+    constant CLOCK_PERIOD   : time := 1 sec / CLOCK_FREQUENCY;
+    constant DOT            : time := (60.0 sec/50.0) / WORDS_PER_MINUTE;
+    constant DASH           : time := DOT * 3;
+    constant PAUSE          : time := DOT * 3;
+    constant SPACE          : time := DOT * 7;
+
+    type tone_t is record
+        is_on   : boolean;
+        duration: time;
+    end record;
+
+    type tones_t is array(natural range <>) of tone_t;
+
+    constant MESSAGE : tones_t := (
+        (is_on => false, duration => PAUSE),
+
+        -- H
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => PAUSE),
+
+        -- E
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => PAUSE),
+
+        -- L
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DASH),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => PAUSE),
+
+        -- L
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DASH),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => DOT),
+        (is_on => true, duration => DOT),
+        (is_on => false, duration => PAUSE),
+
+        -- O
+        (is_on => true, duration => DASH),
+
+        -- (space)
+        (is_on => false, duration => SPACE)
+    );
 begin
 
     clock <= not clock after CLOCK_PERIOD/2;
@@ -73,28 +127,45 @@ begin
         reset <= '0';
         nop(clock, 10);
 
-        -- start tone
-        inputs.period   <= 1 sec / (TONE_FREQUENCY + OFFSET_FREQUENCY) / CLOCK_PERIOD;
-        inputs.duration <= TONE_DURATION / CLOCK_PERIOD;
-        inputs.valid <= '1';
-        wait until rising_edge(clock);
-        inputs.valid <= '0';
-        wait until rising_edge(clock);
+        ---- start tone
+        --inputs.period   => 1 sec / (TONE_FREQUENCY + OFFSET_FREQUENCY) / CLOCK_PERIOD;
+        --inputs.duration => TONE_DURATION / CLOCK_PERIOD;
+        --inputs.valid => '1';
+        --wait until rising_edge(clock);
+        --inputs.valid => '0';
+        --wait until rising_edge(clock);
 
-        -- wait a bit
-        for i in 0 to (1.1 * TONE_DURATION) / CLOCK_PERIOD loop
+        ---- wait a bit
+        --for i in 0 to (1.1 * TONE_DURATION) / CLOCK_PERIOD loop
+        --    wait until rising_edge(clock);
+        --end loop;
+
+        ---- send new tone, at twice the frequency
+        --inputs.period   => 1 sec / (TONE_FREQUENCY*2 + OFFSET_FREQUENCY) / CLOCK_PERIOD;
+        --inputs.duration => TONE_DURATION / CLOCK_PERIOD;
+        --inputs.valid => '1';
+        --wait until rising_edge(clock);
+        --inputs.valid => '0';
+        --wait until rising_edge(clock);
+
+        for i in MESSAGE'range loop
+            if MESSAGE(i).is_on then
+                inputs.period <= 1 sec / TONE_FREQUENCY/ CLOCK_PERIOD;
+            else
+                inputs.period <= 0;
+            end if;
+
+            inputs.duration <= MESSAGE(i).duration / CLOCK_PERIOD;
+
+            inputs.valid <= '1';
             wait until rising_edge(clock);
+            inputs.valid <= '0';
+            wait until rising_edge(clock);
+            wait until (outputs.idle = '0');
+            wait until (outputs.idle = '1');
         end loop;
 
-        -- send new tone, at twice the frequency
-        inputs.period   <= 1 sec / (TONE_FREQUENCY*2 + OFFSET_FREQUENCY) / CLOCK_PERIOD;
-        inputs.duration <= TONE_DURATION / CLOCK_PERIOD;
-        inputs.valid <= '1';
-        wait until rising_edge(clock);
-        inputs.valid <= '0';
-        wait until rising_edge(clock);
-
-        wait;
-    end process ;
+        report "-- End of Simulation --" severity failure ;
+    end process;
 
 end architecture;

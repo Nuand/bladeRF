@@ -13,7 +13,7 @@ proc compile_tone_generator { root } {
 }
 
 proc simulate_tone_generator { } {
-    vsim -L altera_lnsim tone_generator_tb
+    vsim -t 100ns -L altera_lnsim tone_generator_tb
 }
 
 proc waves_tone_generator { } {
@@ -33,4 +33,4 @@ if [info exists root] {
 
 simulate_tone_generator
 waves_tone_generator
-run 1 ms; # May run longer if needed
+run -all
