@@ -29,12 +29,25 @@ package tone_generator_p is
         valid       : std_logic;
     end record;
 
+    constant NULL_TONE_GENERATOR_INPUT : tone_generator_input_t := (
+        dphase      => 0,
+        duration    => 0,
+        valid       => '0'
+    );
+
     type tone_generator_output_t is record
         re      : signed(15 downto 0);
         im      : signed(15 downto 0);
         valid   : std_logic;
         idle    : std_logic;
     end record;
+
+    constant NULL_TONE_GENERATOR_OUTPUT : tone_generator_output_t := (
+        re      => (others => '0'),
+        im      => (others => '0'),
+        valid   => '0',
+        idle    => '0'
+    );
 end package; -- tone_generator_p
 
 library ieee;
