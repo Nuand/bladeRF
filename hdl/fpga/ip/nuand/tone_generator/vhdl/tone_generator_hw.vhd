@@ -69,8 +69,8 @@ architecture arch of tone_generator_hw is
         overflow : boolean;
     end record tone_queue_t;
 
-    type fsm_t is (INIT, IDLE, HANDLE_CONTROL_OP, CLEAR_OP_PENDING, CLEAR_QUEUE,
-                   APPEND_TO_QUEUE, GENERATE_TONE, SET_IRQ);
+    type fsm_t is (INIT, IDLE, HANDLE_CONTROL_OP, CLEAR_OP_PENDING, QUEUE_CLEAR,
+                   QUEUE_PUSH, QUEUE_POP, GENERATE_TONE, SET_IRQ);
 
     type state_t is record
         state           : fsm_t;
@@ -330,7 +330,7 @@ begin
                     if (not current.tone_active) then
                         -- let's do it!
                         future.irq_done <= false;
-                        future.state <= GENERATE_TONE;
+                        future.state <= QUEUE_POP;
                     end if;
                 else
                     -- there is no work to do
@@ -356,24 +356,24 @@ begin
                 end if;
 
                 if (ctrl_reg.enqueue) then
-                    future.state <= APPEND_TO_QUEUE;
+                    future.state <= QUEUE_PUSH;
                 end if;
 
                 -- clear overrides enqueue
                 if (ctrl_reg.clear) then
-                    future.state <= CLEAR_QUEUE;
+                    future.state <= QUEUE_CLEAR;
                 end if;
 
             when CLEAR_OP_PENDING =>
                 future.state      <= IDLE;
                 future.op_pending <= false;
 
-            when CLEAR_QUEUE =>
+            when QUEUE_CLEAR =>
                 future.state     <= CLEAR_OP_PENDING;
                 future.queue     <= NULL_TONE_QUEUE;
                 future.op_failed <= false;
 
-            when APPEND_TO_QUEUE =>
+            when QUEUE_PUSH =>
                 future.state <= CLEAR_OP_PENDING;
 
                 tone_val.dphase   := to_integer(signed(current_regs(1)));
@@ -384,8 +384,20 @@ begin
 
                 future.op_failed <= not success;                    
 
+            when QUEUE_POP =>
+                future.state <= GENERATE_TONE;
+
+                queue_dequeue(current.queue, future.queue, future.tone, success);
+
+                if (not success) then
+                    -- oh no
+                    future.op_failed <= true;
+                    future.state     <= IDLE;
+                end if;
+
             when GENERATE_TONE =>
-                null;
+                future.state <= IDLE;
+                tgen_out     <= current.tone;
 
             when SET_IRQ =>
                 if (current.irq_en) then
