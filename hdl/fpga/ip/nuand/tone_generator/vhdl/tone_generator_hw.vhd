@@ -11,9 +11,12 @@ library work;
 
 -- Register map:
 --  0   status/control
---      bit 0: irq_en
---      bit 1: write=append, read=empty
---      bit 2: write=clear, read=full
+--              write           read
+--      bit 0:  irq_en          irq_en
+--      bit 1:  append          queue_empty
+--      bit 2:  clear           queue_full
+--      bit 3:                  tone active
+--      bit 4:                  control operation pending
 --      others: reserved/undef
 --  1   dphase - phase rotation per clock cycle
 --      one full rotation is 8192, so:
@@ -67,14 +70,22 @@ architecture arch of tone_generator_hw is
                    GENERATE_TONE, SET_IRQ);
 
     type state_t is record
-        state   : fsm_t;
-        queue   : tone_queue_t;
-        tone    : tone_generator_input_t;
-        irq_en  : boolean;
+        state           : fsm_t;
+        queue           : tone_queue_t;
+        tone            : tone_generator_input_t;
+        irq_en          : boolean;
+        tone_active     : boolean;
+        op_pending      : boolean;
     end record state_t;
 
     type register_t  is array(natural range din'range) of std_logic;
     type registers_t is array(natural range 0 to NUM_REGS-1) of register_t;
+
+    type control_reg_t is record
+        irq_enable  : boolean;
+        enqueue     : boolean;
+        clear       : boolean;
+    end record control_reg_t;
 
 --------------------------------------------------------------------------------
 -- Signals
@@ -85,6 +96,8 @@ architecture arch of tone_generator_hw is
     signal current_regs : registers_t;
     signal future_regs  : registers_t;
 
+    signal pending_ctrl : boolean;
+
     signal uaddr        : natural range 0 to 2**addr'high;
 
 --------------------------------------------------------------------------------
@@ -94,6 +107,11 @@ architecture arch of tone_generator_hw is
     begin
         return std_logic_vector(unsigned(val));
     end function to_slv;
+
+    function to_reg (val : std_logic_vector) return register_t is
+    begin
+        return register_t(val);
+    end function to_reg;
 
     function get_queue_len (queue : tone_queue_t) return natural is
     begin
@@ -168,8 +186,19 @@ architecture arch of tone_generator_hw is
         rv(0) := '1' when state.irq_en else '0';
         rv(1) := '1' when (get_queue_len(queue) = 0) else '0';
         rv(2) := '1' when (get_queue_len(queue) = QUEUE_LENGTH) else '0';
+        rv(3) := '1' when state.tone_active else '0';
+        rv(4) := '1' when state.op_pending else '0';
         return rv;
     end function get_status_reg;
+
+    function get_control_reg (reg : std_logic_vector) return control_reg_t is
+        variable rv : control_reg_t;
+    begin
+        rv.irq_enable   := (reg(0) = '1');
+        rv.enqueue      := (reg(1) = '1');
+        rv.clear        := (reg(2) = '1');
+        return rv;
+    end function get_control_reg;
 
     function NULL_REGISTERS return registers_t is
         variable rv : registers_t;
@@ -191,16 +220,18 @@ architecture arch of tone_generator_hw is
     function NULL_STATE return state_t is
         variable rv : state_t;
     begin
-        rv.state    := INIT;
-        rv.queue    := NULL_TONE_QUEUE;
-        rv.tone     := NULL_TONE_GENERATOR_INPUT;
-        rv.irq_en   := DEFAULT_IRQ_EN;
+        rv.state        := INIT;
+        rv.queue        := NULL_TONE_QUEUE;
+        rv.tone         := NULL_TONE_GENERATOR_INPUT;
+        rv.irq_en       := DEFAULT_IRQ_EN;
+        rv.tone_active  := false;
+        rv.op_pending   := false;
         return rv;
     end function NULL_STATE;
 
 begin
 
-    waitreq <= '0';
+    waitreq <= '1' when current.op_pending else '0';
     uaddr   <= to_integer(unsigned(addr));
 
     mm_read : process(clock)
@@ -215,13 +246,12 @@ begin
                 readack <= '0';
             end if;
 
-            case uaddr is
-                when 0 =>
-                    dout <= to_slv(get_status_reg(current));
-                when others =>
-                    dout <= to_slv(current_regs(uaddr)) when (uaddr < NUM_REGS)
-                                                        else (others => 'X');
-            end case;
+            if (uaddr = 0) then
+                dout <= to_slv(get_status_reg(current));
+            else
+                dout <= to_slv(current_regs(uaddr)) when (uaddr < NUM_REGS)
+                                                    else (others => 'X');
+            end if;
         end if;
     end process mm_read;
 
@@ -230,10 +260,16 @@ begin
         if (reset = '1') then
             -- write me
         elsif (rising_edge(clock)) then
-            if (write = '1') then
-                case uaddr is
-                    when others => null;
-                end case;
+            if (write = '1' and uaddr < NUM_REGS) then
+                future_regs(uaddr) <= to_reg(din);
+
+                if (uaddr = 0) then
+                    pending_ctrl <= true;
+                end if;
+            end if;
+
+            if (current.op_pending = true) then
+                pending_ctrl <= false;
             end if;
         end if;
     end process mm_write;
@@ -253,8 +289,31 @@ begin
     begin
         future <= current;
 
-        --case (current.state) is
-        --end case;
+        future.op_pending   <= current.op_pending or pending_ctrl;
+        future.tone_active  <= (tgen_in.active = '1');
+
+        case (current.state) is
+            when INIT =>
+                future.state <= IDLE;
+
+            when IDLE =>
+                null;
+
+            when CLEAR_QUEUE =>
+                null;
+
+            when APPEND_TO_QUEUE =>
+                null;
+
+            when CHECK_QUEUE =>
+                null;
+
+            when GENERATE_TONE =>
+                null;
+
+            when SET_IRQ =>
+                null;
+        end case;
     end process comb_proc;
 
 end architecture arch;
