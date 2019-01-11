@@ -22,7 +22,9 @@ library work;
 
 entity tone_generator_hw is
     generic (
-        QUEUE_LENGTH : positive := 16
+        QUEUE_LENGTH    : positive := 16;
+        NUM_REGS        : positive := 3;
+        DEFAULT_IRQ_EN  : boolean := false
     );
     port (
         -- Control signals
@@ -46,6 +48,9 @@ entity tone_generator_hw is
 end entity;
 
 architecture arch of tone_generator_hw is
+    ----------------------------------------------------------------------------
+    -- Types
+    ----------------------------------------------------------------------------
     type fsm_t is (INIT, IDLE, CLEAR_QUEUE, APPEND_TO_QUEUE, CHECK_QUEUE,
                    GENERATE_TONE, SET_IRQ);
 
@@ -61,21 +66,33 @@ architecture arch of tone_generator_hw is
         overflow : boolean;
     end record;
 
-    constant NULL_TONE_QUEUE : tone_queue_t := (
-        entries  => (others => NULL_TONE_GENERATOR_INPUT),
-        ins_idx  => 0,
-        rem_idx  => 0,
-        overflow => false
-    );
-
     type state_t is record
-        state   : fsm_t;
-        queue   : tone_queue_t;
-        tone    : tone_generator_input_t;
+        state       : fsm_t;
+        queue       : tone_queue_t;
+        tone        : tone_generator_input_t;
+        irq_enable  : boolean;
     end record;
 
-    type register_t is std_logic_vector(din'range);
-    type registers_t is array(natural range <>) of register_t;
+    type register_t  is array(natural range din'range) of std_logic;
+    type registers_t is array(natural range 0 to NUM_REGS-1) of register_t;
+
+    ----------------------------------------------------------------------------
+    -- Signals
+    ----------------------------------------------------------------------------
+    signal current      : state_t;
+    signal future       : state_t;
+
+    signal reg_space    : registers_t := (others => (others => '0'));
+    signal uaddr        : natural range 0 to 2**addr'high;
+    signal readack_i    : std_logic;
+
+    ----------------------------------------------------------------------------
+    -- Subprograms
+    ----------------------------------------------------------------------------
+    function to_slv (val : register_t) return std_logic_vector is
+    begin
+        return std_logic_vector(unsigned(val));
+    end function to_slv;
 
     function get_queue_len (queue : tone_queue_t) return natural is
     begin
@@ -103,8 +120,8 @@ architecture arch of tone_generator_hw is
         end if;
     end function get_queue_len;
 
-    procedure queue_append (signal queue : inout    tone_queue_t,
-                            tone         : in       tone_generator_input_t,
+    procedure queue_append (signal queue : inout    tone_queue_t;
+                            tone         : in       tone_generator_input_t;
                             success      : out      boolean) is
         variable ql : natural;
     begin
@@ -122,8 +139,8 @@ architecture arch of tone_generator_hw is
         queue.overflow <= ((ql + 1) >= QUEUE_LENGTH);
     end procedure queue_append;
 
-    procedure queue_dequeue (signal queue : inout   tone_queue_t,
-                             tone         : out     tone_generator_input_t,
+    procedure queue_dequeue (signal queue : inout   tone_queue_t;
+                             signal tone  : out     tone_generator_input_t;
                              success      : out     boolean) is
         variable ql : natural;
     begin
@@ -140,37 +157,43 @@ architecture arch of tone_generator_hw is
         end if;
     end procedure queue_dequeue;
 
-    function get_status_reg return register_t is
+    function get_status_reg (state : state_t) return register_t is
+        constant queue : tone_queue_t := state.queue;
         variable rv : register_t;
     begin
-        rv    := reg_space(0);
-        rv(1) := (get_queue_len(queue) = 0);
-        rv(2) := (get_queue_len(queue) = QUEUE_LENGTH);
-
+        rv    := (others => '0');
+        rv(0) := '1' when state.irq_enable else '0';
+        rv(1) := '1' when (get_queue_len(queue) = 0) else '0';
+        rv(2) := '1' when (get_queue_len(queue) = QUEUE_LENGTH) else '0';
         return rv;
     end function get_status_reg;
+
+    function NULL_TONE_QUEUE return tone_queue_t is
+        variable rv : tone_queue_t;
+    begin
+        rv.entries  := (others => NULL_TONE_GENERATOR_INPUT);
+        rv.ins_idx  := 0;
+        rv.rem_idx  := 0;
+        rv.overflow := false;
+        return rv;
+    end function NULL_TONE_QUEUE;
 
     function NULL_STATE return state_t is
         variable rv : state_t;
     begin
-        rv.state := INIT;
-        rv.queue := NULL_TONE_QUEUE;
-        rv.tone  := NULL_TONE_GENERATOR_INPUT;
+        rv.state        := INIT;
+        rv.queue        := NULL_TONE_QUEUE;
+        rv.tone         := NULL_TONE_GENERATOR_INPUT;
+        rv.irq_enable   := DEFAULT_IRQ_EN;
         return rv;
     end function;
 
-    signal current : state_t;
-    signal future  : state_t;
-
-    signal reg_space : registers_t(0 to 2) := (others => (others => '0'));
-    signal uaddr     : unsigned(addr'range);
-    signal readack_i : std_logic;
 begin
 
     waitreq <= '0';
     readack <= readack_i;
 
-    uaddr <= unsigned(addr);
+    uaddr <= to_integer(unsigned(addr));
 
     generate_ack : process(clock, reset)
     begin
@@ -188,9 +211,9 @@ begin
     mm_read : process(clock)
     begin
         if (rising_edge(clock)) then
-            case to_integer(uaddr) is
-                when 0  => dout <= get_status_reg();
-                when others  => dout <= reg_space(uaddr);
+            case uaddr is
+                when 0      => dout <= to_slv(get_status_reg(current));
+                when others => dout <= to_slv(reg_space(uaddr));
             end case;
         end if;
     end process mm_read;
@@ -201,7 +224,7 @@ begin
             -- write me
         elsif (rising_edge(clock)) then
             if (write = '1') then
-                case to_integer(uaddr) is
+                case uaddr is
                     when others => null;
                 end case;
             end if;
@@ -221,8 +244,8 @@ begin
     begin
         future <= current;
 
-        case (current.state) is
-        end case;
+        --case (current.state) is
+        --end case;
     end process comb_proc;
 
 end architecture;

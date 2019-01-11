@@ -8,6 +8,7 @@ proc compile_tone_generator { root } {
     vcom -2008 -work work [file join $root . simulation util.vhd]
 
     vcom -2008 -work work [file join $root tone_generator vhdl tone_generator.vhd]
+    vcom -2008 -work work [file join $root tone_generator vhdl tone_generator_hw.vhd]
     vcom -2008 -work work [file join $root tone_generator vhdl tb tone_generator_tb.vhd]
 }
 
@@ -31,6 +32,6 @@ if [info exists root] {
     compile_tone_generator [file join [pwd] .. ..]
 }
 
-simulate_tone_generator
-waves_tone_generator
-run -all
+# simulate_tone_generator
+# waves_tone_generator
+# run -all
