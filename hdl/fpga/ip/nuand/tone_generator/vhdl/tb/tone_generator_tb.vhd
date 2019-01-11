@@ -104,7 +104,9 @@ architecture arch of tone_generator_tb is
 
         -- O
         (is_on => true, duration => DASH),
+        (is_on => false, duration => DOT),
         (is_on => true, duration => DASH),
+        (is_on => false, duration => DOT),
         (is_on => true, duration => DASH),
         (is_on => false, duration => PAUSE)
     );
