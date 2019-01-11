@@ -25,13 +25,15 @@ proc waves_tone_generator { } {
     add wave -expand -group tone_generator sim:/tone_generator_tb/U_tone_generator/*
 }
 
+proc run_sim { } {
+    simulate_tone_generator
+    waves_tone_generator
+    run -all
+}
+
 if [info exists root] {
     compile_tone_generator $root
 } else {
     # we assume we're in hdl/fpga/ip/nuand/tone_generator/modelsim
     compile_tone_generator [file join [pwd] .. ..]
 }
-
-# simulate_tone_generator
-# waves_tone_generator
-# run -all
