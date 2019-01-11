@@ -122,9 +122,9 @@ architecture arch of tone_generator_hw is
         return (idx + 1) mod QUEUE_LENGTH;
     end function next_index;
 
-    procedure queue_append (signal q : inout tone_queue_t;
-                            tone     : in    tone_generator_input_t;
-                            success  : out   boolean) is
+    procedure queue_append (signal q      : inout tone_queue_t;
+                            constant tone : in    tone_generator_input_t;
+                            success       : out   boolean) is
         variable ql : natural;
     begin
         ql      := get_queue_len(q);
