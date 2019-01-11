@@ -126,7 +126,7 @@ begin
                 nco_in.dphase   <= to_signed(dphase, nco_in.dphase'length);
                 nco_in.valid    <= '1';
                 outputs.active  <= '1';
-                tail        <= HOLDOVER_CLOCKS;
+                tail            <= HOLDOVER_CLOCKS;
             elsif (tail > 0) then
                 -- Keep nco_in.valid high for a bit after countdown is done,
                 -- to avoid a gap in outputs.valid between sequential tones.
