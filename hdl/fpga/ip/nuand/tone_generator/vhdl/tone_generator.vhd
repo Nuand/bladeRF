@@ -33,7 +33,7 @@ package tone_generator_p is
         re          : signed(15 downto 0);
         im          : signed(15 downto 0);
         valid       : std_logic;
-        idle        : std_logic;
+        active      : std_logic;
     end record;
 
     function NULL_TONE_GENERATOR_INPUT return tone_generator_input_t;
@@ -56,7 +56,7 @@ package body tone_generator_p is
         rv.re       := (others => '0');
         rv.im       := (others => '0');
         rv.valid    := '0';
-        rv.idle     := '0';
+        rv.active   := '0';
         return rv;
     end function NULL_TONE_GENERATOR_OUTPUT;
 end package body tone_generator_p;
@@ -101,14 +101,14 @@ begin
             nco_input.dphase <= to_signed(dphase, nco_input.dphase'length);
             nco_input.valid  <= '0';
 
-            outputs.re    <= (others => '0');
-            outputs.im    <= (others => '0');
-            outputs.valid <= '0';
-            outputs.idle  <= '0';
+            outputs.re      <= (others => '0');
+            outputs.im      <= (others => '0');
+            outputs.valid   <= '0';
+            outputs.active  <= '0';
 
         elsif (rising_edge(clock)) then
             nco_input.valid <= '0';
-            outputs.idle    <= '1';
+            outputs.active  <= '0';
 
             if (inputs.valid = '1') then
                 countdown <= inputs.duration;
@@ -120,7 +120,7 @@ begin
                 nco_input.dphase <= to_signed(dphase, nco_input.dphase'length);
                 nco_input.valid  <= '1';
                 countdown        <= countdown - 1;
-                outputs.idle     <= '0';
+                outputs.active   <= '1';
             end if;
 
             outputs.re    <= nco_output.re;

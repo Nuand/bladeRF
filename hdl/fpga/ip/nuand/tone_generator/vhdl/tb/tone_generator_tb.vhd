@@ -145,11 +145,12 @@ begin
             wait until rising_edge(clock);
             inputs.valid <= '0';
             wait until rising_edge(clock);
-            wait until (outputs.idle = '0');
-            wait until (outputs.idle = '1');
+            wait until (outputs.active = '1');
+            wait until (outputs.active = '0');
         end loop;
 
         -- done
+        nop(clock, 100);
         report "-- End of Simulation --" severity failure ;
     end process;
 
