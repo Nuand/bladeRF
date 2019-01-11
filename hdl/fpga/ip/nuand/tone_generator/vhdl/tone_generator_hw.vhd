@@ -48,9 +48,9 @@ entity tone_generator_hw is
 end entity;
 
 architecture arch of tone_generator_hw is
-    ----------------------------------------------------------------------------
-    -- Types
-    ----------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Types
+--------------------------------------------------------------------------------
     type fsm_t is (INIT, IDLE, CLEAR_QUEUE, APPEND_TO_QUEUE, CHECK_QUEUE,
                    GENERATE_TONE, SET_IRQ);
 
@@ -76,9 +76,9 @@ architecture arch of tone_generator_hw is
     type register_t  is array(natural range din'range) of std_logic;
     type registers_t is array(natural range 0 to NUM_REGS-1) of register_t;
 
-    ----------------------------------------------------------------------------
-    -- Signals
-    ----------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Signals
+--------------------------------------------------------------------------------
     signal current      : state_t;
     signal future       : state_t;
 
@@ -86,9 +86,9 @@ architecture arch of tone_generator_hw is
     signal uaddr        : natural range 0 to 2**addr'high;
     signal readack_i    : std_logic;
 
-    ----------------------------------------------------------------------------
-    -- Subprograms
-    ----------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Subprograms
+--------------------------------------------------------------------------------
     function to_slv (val : register_t) return std_logic_vector is
     begin
         return std_logic_vector(unsigned(val));
