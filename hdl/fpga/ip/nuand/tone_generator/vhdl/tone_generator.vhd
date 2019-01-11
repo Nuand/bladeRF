@@ -71,35 +71,41 @@ library work;
     use work.tone_generator_p.all;
 
 entity tone_generator is
-  port (
-    clock       : in  std_logic;
-    reset       : in  std_logic;
-    inputs      : in  tone_generator_input_t;
-    outputs     : out tone_generator_output_t
-  );
+    generic (
+        HOLDOVER_CLOCKS : natural := 16
+    );
+    port (
+        clock       : in  std_logic;
+        reset       : in  std_logic;
+        inputs      : in  tone_generator_input_t;
+        outputs     : out tone_generator_output_t
+    );
 end entity tone_generator;
 
 architecture arch of tone_generator is
     signal countdown    : natural;
-    signal nco_input    : nco_input_t;
-    signal nco_output   : nco_output_t;
+    signal nco_in       : nco_input_t;
+    signal nco_out      : nco_output_t;
+    signal tail         : natural;
 begin
     U_nco : entity work.nco
       port map (
         clock   => clock,
         reset   => reset,
-        inputs  => nco_input,
-        outputs => nco_output
+        inputs  => nco_in,
+        outputs => nco_out
       );
 
     handle_input : process(clock, reset) is
-        variable dphase : integer;
+        variable dphase     : integer;
     begin
         if (reset = '1') then
-            dphase := 0;
+            dphase          := 0;
+            countdown       <= 0;
+            tail            <= 0;
 
-            nco_input.dphase <= to_signed(dphase, nco_input.dphase'length);
-            nco_input.valid  <= '0';
+            nco_in.dphase   <= to_signed(dphase, nco_in.dphase'length);
+            nco_in.valid    <= '0';
 
             outputs.re      <= (others => '0');
             outputs.im      <= (others => '0');
@@ -107,25 +113,31 @@ begin
             outputs.active  <= '0';
 
         elsif (rising_edge(clock)) then
-            nco_input.valid <= '0';
+            nco_in.valid    <= '0';
             outputs.active  <= '0';
 
             if (inputs.valid = '1') then
-                countdown <= inputs.duration;
-                dphase    := inputs.dphase;
+                countdown   <= inputs.duration;
+                dphase      := inputs.dphase;
             end if;
 
-            -- TODO: gently glide down to zero-crossing?
             if (countdown > 0) then
-                nco_input.dphase <= to_signed(dphase, nco_input.dphase'length);
-                nco_input.valid  <= '1';
-                countdown        <= countdown - 1;
-                outputs.active   <= '1';
+                countdown       <= countdown - 1;
+                nco_in.dphase   <= to_signed(dphase, nco_in.dphase'length);
+                nco_in.valid    <= '1';
+                outputs.active  <= '1';
+                tail        <= HOLDOVER_CLOCKS;
+            elsif (tail > 0) then
+                -- Keep nco_in.valid high for a bit after countdown is done,
+                -- to avoid a gap in outputs.valid between sequential tones.
+                tail            <= tail - 1;
+                nco_in.dphase   <= (others => '0');
+                nco_in.valid    <= '1';
             end if;
 
-            outputs.re    <= nco_output.re;
-            outputs.im    <= nco_output.im;
-            outputs.valid <= nco_output.valid;
+            outputs.re      <= nco_out.re;
+            outputs.im      <= nco_out.im;
+            outputs.valid   <= nco_out.valid;
         end if;
     end process handle_input;
 
