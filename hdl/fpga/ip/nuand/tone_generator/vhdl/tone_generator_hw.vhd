@@ -108,6 +108,7 @@ architecture arch of tone_generator_hw is
     signal uaddr        : natural range 0 to 2**addr'high;
 
     signal irq_clr      : boolean;
+    signal intr_i       : std_logic;
 
 --------------------------------------------------------------------------------
 -- Subprograms
@@ -252,21 +253,25 @@ begin
 
     waitreq <= '1' when current.op_pending else '0';
     uaddr   <= to_integer(unsigned(addr));
+    intr    <= intr_i;
 
     mm_read : process(clock)
     begin
         if (reset = '1') then
             dout    <= (others => '0');
             readack <= '0';
+            irq_clr <= false;
         elsif (rising_edge(clock)) then
+            readack <= '0';
+            irq_clr <= false;
+
             if (read = '1') then
                 readack <= '1';
-            else
-                readack <= '0';
             end if;
 
             if (uaddr = 0) then
-                dout <= to_slv(get_status_reg(current));
+                dout    <= to_slv(get_status_reg(current));
+                irq_clr <= true;
             else
                 dout <= to_slv(current_regs(uaddr)) when (uaddr < NUM_REGS)
                                                     else (others => 'X');
@@ -277,7 +282,8 @@ begin
     mm_write : process(clock, reset)
     begin
         if (reset = '1') then
-            -- write me
+            future_regs <= (others => (others => '0'));
+            pending_ctrl <= false;
         elsif (rising_edge(clock)) then
             if (write = '1' and uaddr < NUM_REGS) then
                 future_regs(uaddr) <= to_reg(din);
@@ -292,6 +298,21 @@ begin
             end if;
         end if;
     end process mm_write;
+
+    mm_intr : process(clock, reset)
+    begin
+        if (reset = '1') then
+            intr_i <= '0';
+        elsif (rising_edge(clock)) then
+            if (irq_clr) then
+                intr_i <= '0';
+            end if;
+
+            if (current.irq_set) then
+                intr_i <= '1';
+            end if;
+        end if;
+    end process mm_intr;
 
     sync_proc : process(clock, reset)
     begin
@@ -313,6 +334,7 @@ begin
 
         future.op_pending   <= current.op_pending or pending_ctrl;
         future.tone_active  <= (tgen_in.active = '1');
+        future.irq_set      <= false;
 
         case (current.state) is
             when INIT =>
