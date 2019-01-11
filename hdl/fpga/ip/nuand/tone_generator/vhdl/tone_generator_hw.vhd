@@ -27,7 +27,7 @@ library work;
 
 entity tone_generator_hw is
     generic (
-        QUEUE_LENGTH    : positive  := 16;
+        QUEUE_LENGTH    : positive  := 8;
         DEFAULT_IRQ_EN  : boolean   := false;
         ADDR_WIDTH      : positive  := 4;
         DATA_WIDTH      : positive  := 32
@@ -250,7 +250,7 @@ architecture arch of tone_generator_hw is
         rv.irq_done     := false;
         rv.tone_active  := false;
         rv.op_pending   := false;
-        rv.op_failed    := true;
+        rv.op_failed    := false;
         return rv;
     end function NULL_STATE;
 
