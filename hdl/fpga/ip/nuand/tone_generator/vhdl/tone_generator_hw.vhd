@@ -86,7 +86,6 @@ architecture arch of tone_generator_hw is
     signal future_regs  : registers_t;
 
     signal uaddr        : natural range 0 to 2**addr'high;
-    signal readack_i    : std_logic;
 
 --------------------------------------------------------------------------------
 -- Subprograms
@@ -202,28 +201,26 @@ architecture arch of tone_generator_hw is
 begin
 
     waitreq <= '0';
-    readack <= readack_i;
     uaddr   <= to_integer(unsigned(addr));
-
-    generate_ack : process(clock, reset)
-    begin
-        if (reset = '1') then
-            readack_i <= '0';
-        elsif (rising_edge(clock)) then
-            if (read = '1') then
-                readack_i <= '1';
-            else
-                readack_i <= '0';
-            end if;
-        end if;
-    end process generate_ack;
 
     mm_read : process(clock)
     begin
-        if (rising_edge(clock)) then
+        if (reset = '1') then
+            dout    <= (others => '0');
+            readack <= '0';
+        elsif (rising_edge(clock)) then
+            if (read = '1') then
+                readack <= '1';
+            else
+                readack <= '0';
+            end if;
+
             case uaddr is
-                when 0      => dout <= to_slv(get_status_reg(current));
-                when others => dout <= to_slv(current_regs(uaddr));
+                when 0 =>
+                    dout <= to_slv(get_status_reg(current));
+                when others =>
+                    dout <= to_slv(current_regs(uaddr)) when (uaddr < NUM_REGS)
+                                                        else (others => 'X');
             end case;
         end if;
     end process mm_read;
