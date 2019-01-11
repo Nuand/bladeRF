@@ -45,7 +45,7 @@ entity tone_generator_hw is
         readack     : out   std_logic;
         intr        : out   std_logic
     );
-end entity;
+end entity tone_generator_hw;
 
 architecture arch of tone_generator_hw is
 --------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ architecture arch of tone_generator_hw is
         -- the queue is empty, or the queue is full
         -- so we track this case here...
         overflow : boolean;
-    end record;
+    end record tone_queue_t;
 
     type fsm_t is (INIT, IDLE, CLEAR_QUEUE, APPEND_TO_QUEUE, CHECK_QUEUE,
                    GENERATE_TONE, SET_IRQ);
@@ -71,7 +71,7 @@ architecture arch of tone_generator_hw is
         queue   : tone_queue_t;
         tone    : tone_generator_input_t;
         irq_en  : boolean;
-    end record;
+    end record state_t;
 
     type register_t  is array(natural range din'range) of std_logic;
     type registers_t is array(natural range 0 to NUM_REGS-1) of register_t;
@@ -109,13 +109,9 @@ architecture arch of tone_generator_hw is
         --      _          2           4           6
         --      _          7           0           7
 
-        if (queue.ins_idx = queue.rem_idx) then
-            if (queue.overflow) then
-                return QUEUE_LENGTH;
-            else
-                return queue.ins_idx - queue.rem_idx;
-            end if;
-        elsif (queue.ins_idx > queue.rem_idx) then
+        if (queue.overflow) then
+            return QUEUE_LENGTH;
+        elsif (queue.ins_idx >= queue.rem_idx) then
             return queue.ins_idx - queue.rem_idx;
         else -- queue.ins_idx < queue.rem_idx
             return QUEUE_LENGTH - queue.rem_idx + queue.ins_idx;
@@ -201,7 +197,7 @@ architecture arch of tone_generator_hw is
         rv.tone     := NULL_TONE_GENERATOR_INPUT;
         rv.irq_en   := DEFAULT_IRQ_EN;
         return rv;
-    end function;
+    end function NULL_STATE;
 
 begin
 
@@ -264,4 +260,4 @@ begin
         --end case;
     end process comb_proc;
 
-end architecture;
+end architecture arch;
