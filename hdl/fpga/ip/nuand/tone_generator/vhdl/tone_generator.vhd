@@ -29,26 +29,37 @@ package tone_generator_p is
         valid       : std_logic;
     end record;
 
-    constant NULL_TONE_GENERATOR_INPUT : tone_generator_input_t := (
-        dphase      => 0,
-        duration    => 0,
-        valid       => '0'
-    );
-
     type tone_generator_output_t is record
-        re      : signed(15 downto 0);
-        im      : signed(15 downto 0);
-        valid   : std_logic;
-        idle    : std_logic;
+        re          : signed(15 downto 0);
+        im          : signed(15 downto 0);
+        valid       : std_logic;
+        idle        : std_logic;
     end record;
 
-    constant NULL_TONE_GENERATOR_OUTPUT : tone_generator_output_t := (
-        re      => (others => '0'),
-        im      => (others => '0'),
-        valid   => '0',
-        idle    => '0'
-    );
-end package; -- tone_generator_p
+    function NULL_TONE_GENERATOR_INPUT return tone_generator_input_t;
+    function NULL_TONE_GENERATOR_OUTPUT return tone_generator_output_t;
+end package tone_generator_p;
+
+package body tone_generator_p is
+    function NULL_TONE_GENERATOR_INPUT return tone_generator_input_t is
+        variable rv : tone_generator_input_t;
+    begin
+        rv.dphase   := 0;
+        rv.duration := 0;
+        rv.valid    := '0';
+        return rv;
+    end function NULL_TONE_GENERATOR_INPUT;
+
+    function NULL_TONE_GENERATOR_OUTPUT return tone_generator_output_t is
+        variable rv : tone_generator_output_t;
+    begin
+        rv.re       := (others => '0');
+        rv.im       := (others => '0');
+        rv.valid    := '0';
+        rv.idle     := '0';
+        return rv;
+    end function NULL_TONE_GENERATOR_OUTPUT;
+end package body tone_generator_p;
 
 library ieee;
     use ieee.std_logic_1164.all;
@@ -61,12 +72,12 @@ library work;
 
 entity tone_generator is
   port (
-    clock   : in  std_logic;
-    reset   : in  std_logic;
-    inputs  : in  tone_generator_input_t;
-    outputs : out tone_generator_output_t
+    clock       : in  std_logic;
+    reset       : in  std_logic;
+    inputs      : in  tone_generator_input_t;
+    outputs     : out tone_generator_output_t
   );
-end entity; -- tone_generator
+end entity tone_generator;
 
 architecture arch of tone_generator is
     signal countdown    : natural;
@@ -118,4 +129,4 @@ begin
         end if;
     end process handle_input;
 
-end architecture; -- arch
+end architecture arch;
