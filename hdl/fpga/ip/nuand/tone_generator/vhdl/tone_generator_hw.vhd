@@ -11,7 +11,7 @@ library work;
 
 -- Register map:
 --  0   status/control
---      bit 0: irq_enable
+--      bit 0: irq_en
 --      bit 1: write=append, read=empty
 --      bit 2: write=clear, read=full
 --      others: reserved/undef
@@ -51,9 +51,6 @@ architecture arch of tone_generator_hw is
 --------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
-    type fsm_t is (INIT, IDLE, CLEAR_QUEUE, APPEND_TO_QUEUE, CHECK_QUEUE,
-                   GENERATE_TONE, SET_IRQ);
-
     type tone_entries_t is array(natural range <>) of tone_generator_input_t;
 
     type tone_queue_t is record
@@ -66,11 +63,14 @@ architecture arch of tone_generator_hw is
         overflow : boolean;
     end record;
 
+    type fsm_t is (INIT, IDLE, CLEAR_QUEUE, APPEND_TO_QUEUE, CHECK_QUEUE,
+                   GENERATE_TONE, SET_IRQ);
+
     type state_t is record
-        state       : fsm_t;
-        queue       : tone_queue_t;
-        tone        : tone_generator_input_t;
-        irq_enable  : boolean;
+        state   : fsm_t;
+        queue   : tone_queue_t;
+        tone    : tone_generator_input_t;
+        irq_en  : boolean;
     end record;
 
     type register_t  is array(natural range din'range) of std_logic;
@@ -82,7 +82,9 @@ architecture arch of tone_generator_hw is
     signal current      : state_t;
     signal future       : state_t;
 
-    signal reg_space    : registers_t := (others => (others => '0'));
+    signal current_regs : registers_t;
+    signal future_regs  : registers_t;
+
     signal uaddr        : natural range 0 to 2**addr'high;
     signal readack_i    : std_logic;
 
@@ -120,53 +122,66 @@ architecture arch of tone_generator_hw is
         end if;
     end function get_queue_len;
 
-    procedure queue_append (signal queue : inout    tone_queue_t;
-                            tone         : in       tone_generator_input_t;
-                            success      : out      boolean) is
+    function next_index (idx : natural) return natural is
+    begin
+        return (idx + 1) mod QUEUE_LENGTH;
+    end function next_index;
+
+    procedure queue_append (signal q : inout tone_queue_t;
+                            tone     : in    tone_generator_input_t;
+                            success  : out   boolean) is
         variable ql : natural;
     begin
-        ql := get_queue_len(queue);
+        ql      := get_queue_len(q);
+        success := true;
 
         if (ql >= QUEUE_LENGTH) then
-            -- oh no
+            -- queue is full
             success := false;
         else
-            queue.entries(queue.ins_idx) <= tone;
-            queue.ins_idx <= (queue.ins_idx + 1) mod QUEUE_LENGTH;
-            success := true;
+            q.entries(q.ins_idx)    <= tone;
+            q.ins_idx               <= next_index(q.ins_idx);
         end if;
 
-        queue.overflow <= ((ql + 1) >= QUEUE_LENGTH);
+        q.overflow <= ((ql + 1) >= QUEUE_LENGTH);
     end procedure queue_append;
 
-    procedure queue_dequeue (signal queue : inout   tone_queue_t;
-                             signal tone  : out     tone_generator_input_t;
-                             success      : out     boolean) is
+    procedure queue_dequeue (signal q    : inout tone_queue_t;
+                             signal tone : out   tone_generator_input_t;
+                             success     : out   boolean) is
         variable ql : natural;
     begin
-        ql := get_queue_len(queue);
+        ql      := get_queue_len(q);
+        success := true;
 
         if (ql = 0) then
-            -- queue's empty
+            -- queue is empty
             success := false;
         else
-            tone <= queue.entries(queue.rem_idx);
-            queue.rem_idx <= (queue.rem_idx + 1) mod QUEUE_LENGTH;
-            queue.overflow <= false;
-            success := true;
+            tone        <= q.entries(q.rem_idx);
+            q.rem_idx   <= next_index(q.rem_idx);
         end if;
+
+        q.overflow  <= false;
     end procedure queue_dequeue;
 
     function get_status_reg (state : state_t) return register_t is
-        constant queue : tone_queue_t := state.queue;
-        variable rv : register_t;
+        constant queue  : tone_queue_t := state.queue;
+        variable rv     : register_t;
     begin
         rv    := (others => '0');
-        rv(0) := '1' when state.irq_enable else '0';
+        rv(0) := '1' when state.irq_en else '0';
         rv(1) := '1' when (get_queue_len(queue) = 0) else '0';
         rv(2) := '1' when (get_queue_len(queue) = QUEUE_LENGTH) else '0';
         return rv;
     end function get_status_reg;
+
+    function NULL_REGISTERS return registers_t is
+        variable rv : registers_t;
+    begin
+        rv := (others => (others => '0'));
+        return rv;
+    end function NULL_REGISTERS;
 
     function NULL_TONE_QUEUE return tone_queue_t is
         variable rv : tone_queue_t;
@@ -181,10 +196,10 @@ architecture arch of tone_generator_hw is
     function NULL_STATE return state_t is
         variable rv : state_t;
     begin
-        rv.state        := INIT;
-        rv.queue        := NULL_TONE_QUEUE;
-        rv.tone         := NULL_TONE_GENERATOR_INPUT;
-        rv.irq_enable   := DEFAULT_IRQ_EN;
+        rv.state    := INIT;
+        rv.queue    := NULL_TONE_QUEUE;
+        rv.tone     := NULL_TONE_GENERATOR_INPUT;
+        rv.irq_en   := DEFAULT_IRQ_EN;
         return rv;
     end function;
 
@@ -192,8 +207,7 @@ begin
 
     waitreq <= '0';
     readack <= readack_i;
-
-    uaddr <= to_integer(unsigned(addr));
+    uaddr   <= to_integer(unsigned(addr));
 
     generate_ack : process(clock, reset)
     begin
@@ -213,7 +227,7 @@ begin
         if (rising_edge(clock)) then
             case uaddr is
                 when 0      => dout <= to_slv(get_status_reg(current));
-                when others => dout <= to_slv(reg_space(uaddr));
+                when others => dout <= to_slv(current_regs(uaddr));
             end case;
         end if;
     end process mm_read;
@@ -234,9 +248,11 @@ begin
     sync_proc : process(clock, reset)
     begin
         if (reset = '1') then
-            current <= NULL_STATE;
+            current         <= NULL_STATE;
+            current_regs    <= NULL_REGISTERS;
         elsif (rising_edge(clock)) then
-            current <= future;
+            current         <= future;
+            current_regs    <= future_regs;
         end if;
     end process sync_proc;
 
@@ -249,4 +265,3 @@ begin
     end process comb_proc;
 
 end architecture;
-
