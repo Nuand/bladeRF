@@ -13,7 +13,11 @@ proc compile_tone_generator { root } {
 }
 
 proc simulate_tone_generator { } {
-    vsim -t 100ns -L altera_lnsim tone_generator_tb
+    vsim -t 100ns -L altera_lnsim tone_generator_tb(tb_tgen)
+}
+
+proc simulate_tone_generator_hw { } {
+    vsim -t 100ns -L altera_lnsim tone_generator_tb(tb_hw)
 }
 
 proc waves_tone_generator { } {
@@ -25,9 +29,21 @@ proc waves_tone_generator { } {
     add wave -expand -group tone_generator sim:/tone_generator_tb/U_tone_generator/*
 }
 
+proc waves_tone_generator_hw { } {
+    add wave -expand -group mmap sim:/tone_generator_tb/mm_*
+    add wave -expand -group tgen_hw sim:/tone_generator_tb/U_tone_generator_hw/*
+}
+
 proc run_sim { } {
     simulate_tone_generator
     waves_tone_generator
+    run -all
+}
+
+proc run_sim_hw { } {
+    simulate_tone_generator_hw
+    waves_tone_generator
+    waves_tone_generator_hw
     run -all
 }
 
