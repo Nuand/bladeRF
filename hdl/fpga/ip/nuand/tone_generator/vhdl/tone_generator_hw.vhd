@@ -2,6 +2,9 @@
 --
 -- LICENSE TBD
 
+-- From Altera Solution ID rd05312011_49, need the following for Qsys to use VHDL 2008:
+-- altera vhdl_input_version vhdl_2008
+
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
@@ -117,6 +120,15 @@ architecture arch of tone_generator_hw is
         return std_logic_vector(unsigned(val));
     end function to_slv;
 
+    function to_sl (val : boolean) return std_logic is
+    begin
+        if (val) then
+            return '1';
+        else
+            return '0';
+        end if;
+    end function to_sl;
+
     function to_reg (val : std_logic_vector) return register_t is
     begin
         return register_t(val);
@@ -163,11 +175,11 @@ architecture arch of tone_generator_hw is
             q_out.ins_idx               <= next_index(q_in.ins_idx);
         end if;
 
-        report "queue_push:"    &
-            " ins_idx="         & to_string(q_in.ins_idx) &
-            " next_ins_idx="    & to_string(next_index(q_in.ins_idx)) &
-            " orig_ql="         & to_string(ql) &
-            " success="         & to_string(success);
+        --report "queue_push:"    &
+        --       " ins_idx="      & to_string(q_in.ins_idx) &
+        --       " next_ins_idx=" & to_string(next_index(q_in.ins_idx)) &
+        --       " orig_ql="      & to_string(ql) &
+        --       " success="      & to_string(success);
     end procedure queue_push;
 
     procedure queue_pop (signal q_in  : in  tone_queue_t;
@@ -188,11 +200,11 @@ architecture arch of tone_generator_hw is
             q_out.rem_idx <= next_index(q_in.rem_idx);
         end if;
 
-        report "queue_pop:"     &
-            " rem_idx="         & to_string(q_in.rem_idx) &
-            " next_rem_idx="    & to_string(next_index(q_in.rem_idx)) &
-            " orig_ql="         & to_string(ql) &
-            " success="         & to_string(success);
+        --report "queue_pop:"     &
+        --       " rem_idx="      & to_string(q_in.rem_idx) &
+        --       " next_rem_idx=" & to_string(next_index(q_in.rem_idx)) &
+        --       " orig_ql="      & to_string(ql) &
+        --       " success="      & to_string(success);
     end procedure queue_pop;
 
     function get_status_reg (state : state_t) return register_t is
@@ -200,13 +212,13 @@ architecture arch of tone_generator_hw is
         variable rv     : register_t;
     begin
         rv    := (others => '0');
-        rv(0) := '1' when state.irq_en                              else '0';
-        rv(1) := '1' when state.irq_set                             else '0';
-        rv(2) := '1' when (queue_len(queue) = 0)                    else '0';
-        rv(3) := '1' when (queue_len(queue) >= (QUEUE_LENGTH - 1))  else '0';
-        rv(4) := '1' when state.tone_active                         else '0';
-        rv(5) := '1' when state.op_pending                          else '0';
-        rv(6) := '1' when state.op_failed                           else '0';
+        rv(0) := to_sl(state.irq_en);
+        rv(1) := to_sl(state.irq_set);
+        rv(2) := to_sl((queue_len(queue) = 0));
+        rv(3) := to_sl((queue_len(queue) >= (QUEUE_LENGTH - 1)));
+        rv(4) := to_sl(state.tone_active);
+        rv(5) := to_sl(state.op_pending);
+        rv(6) := to_sl(state.op_failed);
         return rv;
     end function get_status_reg;
 
@@ -266,12 +278,15 @@ begin
             readack <= '0';
             dout    <= (others => '0');
         elsif (rising_edge(clock)) then
-            readack <= '1' when (read = '1' and not current.op_pending) else
-                       '0';
+            readack <= to_sl(read = '1' and not current.op_pending);
 
-            dout <= to_slv(get_status_reg(current)) when (uaddr = 0) else
-                    to_slv(current_regs(uaddr))     when (uaddr < NUM_REGS) else
-                    (others => 'X');
+            if (uaddr = 0) then
+                dout <= to_slv(get_status_reg(current));
+            elsif (uaddr < NUM_REGS) then
+                dout <= to_slv(current_regs(uaddr));
+            else
+                dout <= (others => 'X');
+            end if;
         end if;
     end process mm_read;
 
@@ -400,7 +415,7 @@ begin
 
                 queue_push(current.queue, future.queue, tone_val, success);
 
-                future.op_failed <= not success;                    
+                future.op_failed <= not success;
 
                 assert success report "QUEUE_PUSH failed" severity failure;
 
@@ -426,7 +441,7 @@ begin
 
             when WAIT_FOR_ACTIVE =>
                 tgen_out.valid <= '0';
-                
+
                 if (current.tone_active) then
                     future.state <= IDLE;
                 end if;
