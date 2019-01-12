@@ -171,9 +171,6 @@ static bool _rfic_initialize(struct rfic_state *state)
                 init_samprate = init_param->rx_path_clock_frequencies[5];
             }
 
-            /* Why this shift? I don't know. */
-            init_freq >>= 32;
-
             /* Switching the frequency twice seems essential for calibration
              * to be successful. */
             CHECK_BOOL(_rfic_cmd_wr_frequency(state, ch, RESET_FREQUENCY));
