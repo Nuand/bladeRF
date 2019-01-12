@@ -18,6 +18,9 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+-- From Altera Solution ID rd05312011_49, need the following for Qsys to use VHDL 2008:
+-- altera vhdl_input_version vhdl_2008
+
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
