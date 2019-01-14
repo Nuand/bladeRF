@@ -13,15 +13,12 @@ library work;
     use work.tone_generator_p.all;
 
 -- Register map:
---  0   status/control
---              write           read
---      bit 0:  irq ena/clr     irq_en
---      bit 1:  irq_disable     irq_pending
---      bit 2:  append          queue_empty
---      bit 3:  clear           queue_full
---      bit 4:                  tone active
---      bit 5:                  control operation pending
---      bit 6:                  last control op failed
+--  0   control/status
+--          control (write):
+--              bit 0:  append
+--              bit 1:  clear
+--          status (read):
+--              number of items in the queue (unsigned)
 --      others: reserved/undef
 --  1   dphase - phase rotation per clock cycle (signed)
 --      one full rotation is 8192, so:
@@ -31,7 +28,6 @@ library work;
 entity tone_generator_hw is
     generic (
         QUEUE_LENGTH    : positive  := 8;
-        DEFAULT_IRQ_EN  : boolean   := false;
         ADDR_WIDTH      : positive  := 4;
         DATA_WIDTH      : positive  := 32
     );
@@ -52,7 +48,11 @@ entity tone_generator_hw is
         read            : in    std_logic;
         waitreq         : out   std_logic;
         readack         : out   std_logic;
-        intr            : out   std_logic
+
+        -- Status indicators
+        queue_empty     : out   std_logic;
+        queue_full      : out   std_logic;
+        running         : out   std_logic
     );
 end entity tone_generator_hw;
 
@@ -65,34 +65,27 @@ architecture arch of tone_generator_hw is
     type tone_entries_t is array(natural range <>) of tone_generator_input_t;
 
     type tone_queue_t is record
-        entries     : tone_entries_t(0 to QUEUE_LENGTH);
-        ins_idx     : natural range 0 to QUEUE_LENGTH;
-        rem_idx     : natural range 0 to QUEUE_LENGTH;
+        entries     : tone_entries_t(0 to QUEUE_LENGTH-1);
+        front       : natural range  0 to QUEUE_LENGTH-1; -- next pop
+        rear        : natural range  0 to QUEUE_LENGTH-1; -- last push
+        count       : natural range  0 to QUEUE_LENGTH;   -- items in queue
     end record tone_queue_t;
 
-    type fsm_t is (INIT, IDLE, HANDLE_CONTROL_OP, CLEAR_OP_PENDING,
-                   QUEUE_CLEAR, QUEUE_PUSH, QUEUE_POP, GENERATE_TONE,
-                   WAIT_FOR_ACTIVE, SET_IRQ);
+    type fsm_t is (IDLE, CTRL_DISPATCH, CTRL_CLEAR, QUEUE_CLEAR, QUEUE_PUSH,
+                   QUEUE_POP, TONE_GENERATE, WAIT_FOR_ACTIVE);
 
     type state_t is record
         state       : fsm_t;
         queue       : tone_queue_t;
         tone        : tone_generator_input_t;
-        irq_en      : boolean;
-        irq_set     : boolean;
-        irq_done    : boolean;
-        tone_active : boolean;
         op_pending  : boolean;
-        op_failed   : boolean;
     end record state_t;
 
     type register_t  is array(natural range din'range) of std_logic;
     type registers_t is array(natural range 0 to NUM_REGS-1) of register_t;
 
     type control_reg_t is record
-        irq_enable  : boolean;
-        irq_disable : boolean;
-        enqueue     : boolean;
+        append      : boolean;
         clear       : boolean;
     end record control_reg_t;
 
@@ -108,9 +101,6 @@ architecture arch of tone_generator_hw is
     signal pend_ctrl    : boolean;
 
     signal uaddr        : natural range 0 to 2**addr'high;
-
-    signal irq_clr      : boolean;
-    signal intr_i       : std_logic;
 
 --------------------------------------------------------------------------------
 -- Subprograms
@@ -134,24 +124,6 @@ architecture arch of tone_generator_hw is
         return register_t(val);
     end function to_reg;
 
-    function queue_len (queue : tone_queue_t) return natural is
-    begin
-        -- sanity check:
-        -- given QUEUE_LENGTH is 8,
-        --  ins_idx     rem_idx     return
-        --     0           0           0
-        --     7           7           0
-        --     5           3           2
-        --     2           4           6
-        --     7           0           7
-
-        if (queue.ins_idx >= queue.rem_idx) then
-            return queue.ins_idx - queue.rem_idx;
-        else -- queue.ins_idx < queue.rem_idx
-            return QUEUE_LENGTH - queue.rem_idx + queue.ins_idx;
-        end if;
-    end function queue_len;
-
     function next_index (idx : natural) return natural is
     begin
         return (idx + 1) mod QUEUE_LENGTH;
@@ -161,24 +133,32 @@ architecture arch of tone_generator_hw is
                           signal q_out  : out tone_queue_t;
                           constant tone : in  tone_generator_input_t;
                           success       : out boolean) is
-        variable ql : natural;
+        variable next_i : natural;
+        variable ql     : natural;
     begin
         q_out   <= q_in;
-        ql      := queue_len(q_in);
-        success := true;
+        next_i  := next_index(q_in.rear);
+        ql      := q_in.count;
 
-        if (ql >= QUEUE_LENGTH) then
+        if (q_in.count >= QUEUE_LENGTH) then
             -- queue is full
             success := false;
         else
-            q_out.entries(q_in.ins_idx) <= tone;
-            q_out.ins_idx               <= next_index(q_in.ins_idx);
+            -- add the entry at the NEXT rear index
+            q_out.entries(next_i) <= tone;
+
+            -- update indexes and counts
+            ql          := q_in.count + 1;
+            q_out.count <= ql;
+            q_out.rear  <= next_i;
+            success     := true;
         end if;
 
         --report "queue_push:"    &
-        --       " ins_idx="      & to_string(q_in.ins_idx) &
-        --       " next_ins_idx=" & to_string(next_index(q_in.ins_idx)) &
-        --       " orig_ql="      & to_string(ql) &
+        --       " prev_rear="    & to_string(q_in.rear) &
+        --       " this_rear="    & to_string(next_i) &
+        --       " prev_count="   & to_string(q_in.count) &
+        --       " this_count="   & to_string(ql) &
         --       " success="      & to_string(success);
     end procedure queue_push;
 
@@ -186,56 +166,47 @@ architecture arch of tone_generator_hw is
                          signal q_out : out tone_queue_t;
                          signal tone  : out tone_generator_input_t;
                          success      : out boolean) is
-        variable ql : natural;
+        variable next_i : natural;
+        variable ql     : natural;
     begin
         q_out   <= q_in;
-        ql      := queue_len(q_in);
-        success := true;
+        next_i  := next_index(q_in.front);
+        ql      := q_in.count;
 
-        if (ql = 0) then
+        if (q_in.count = 0) then
             -- queue is empty
             success := false;
         else
-            tone          <= q_in.entries(q_in.rem_idx);
-            q_out.rem_idx <= next_index(q_in.rem_idx);
+            -- pop the entry at the CURRENT front index
+            tone <= q_in.entries(q_in.front);
+
+            -- update indexes and counts
+            ql          := q_in.count - 1;
+            q_out.count <= ql;
+            q_out.front <= next_i;
+            success     := true;
         end if;
 
         --report "queue_pop:"     &
-        --       " rem_idx="      & to_string(q_in.rem_idx) &
-        --       " next_rem_idx=" & to_string(next_index(q_in.rem_idx)) &
-        --       " orig_ql="      & to_string(ql) &
+        --       " prev_front="   & to_string(q_in.front) &
+        --       " this_front="   & to_string(next_i) &
+        --       " prev_count="   & to_string(q_in.count) &
+        --       " this_count="   & to_string(ql) &
         --       " success="      & to_string(success);
     end procedure queue_pop;
 
-    function get_status_reg (state : state_t) return register_t is
-        constant queue  : tone_queue_t := state.queue;
-        variable rv     : register_t;
-    begin
-        rv    := (others => '0');
-        rv(0) := to_sl(state.irq_en);
-        rv(1) := to_sl(state.irq_set);
-        rv(2) := to_sl((queue_len(queue) = 0));
-        rv(3) := to_sl((queue_len(queue) >= (QUEUE_LENGTH - 1)));
-        rv(4) := to_sl(state.tone_active);
-        rv(5) := to_sl(state.op_pending);
-        rv(6) := to_sl(state.op_failed);
-        return rv;
-    end function get_status_reg;
-
-    function get_control_reg (reg : register_t) return control_reg_t is
+    function unpack_control (reg : register_t) return control_reg_t is
         variable rv : control_reg_t;
     begin
-        rv.irq_enable   := (reg(0) = '1');
-        rv.irq_disable  := (reg(1) = '1');
-        rv.enqueue      := (reg(2) = '1');
-        rv.clear        := (reg(3) = '1');
+        rv.append   := (reg(0) = '1');
+        rv.clear    := (reg(1) = '1');
         return rv;
-    end function get_control_reg;
+    end function unpack_control;
 
-    function get_control_reg (reg : std_logic_vector) return control_reg_t is
+    function unpack_control (reg : std_logic_vector) return control_reg_t is
     begin
-        return get_control_reg(to_reg(reg));
-    end function get_control_reg;
+        return unpack_control(to_reg(reg));
+    end function unpack_control;
 
     function NULL_REGISTERS return registers_t is
     begin
@@ -246,46 +217,46 @@ architecture arch of tone_generator_hw is
         variable rv : tone_queue_t;
     begin
         rv.entries  := (others => NULL_TONE_GENERATOR_INPUT);
-        rv.ins_idx  := 0;
-        rv.rem_idx  := 0;
+        rv.front    := 0;
+        rv.rear     := QUEUE_LENGTH-1;
         return rv;
     end function NULL_TONE_QUEUE;
 
     function NULL_STATE return state_t is
         variable rv : state_t;
     begin
-        rv.state        := INIT;
+        rv.state        := IDLE;
         rv.queue        := NULL_TONE_QUEUE;
         rv.tone         := NULL_TONE_GENERATOR_INPUT;
-        rv.irq_en       := DEFAULT_IRQ_EN;
-        rv.irq_set      := false;
-        rv.irq_done     := false;
-        rv.tone_active  := false;
         rv.op_pending   := false;
-        rv.op_failed    := false;
         return rv;
     end function NULL_STATE;
 
 begin
+    uaddr       <= to_integer(unsigned(addr));
 
-    waitreq <= '1' when (current.op_pending or pend_ctrl) else '0';
-    uaddr   <= to_integer(unsigned(addr));
-    intr    <= intr_i;
+    queue_empty <= '1' when (current.queue.count = 0) else '0';
+    queue_full  <= '1' when (current.queue.count >= QUEUE_LENGTH) else '0';
+    running     <= '1' when (tgen_in.active = '1' or tgen_in.valid = '1')
+                       else '0';
+    waitreq     <= '1' when (current.op_pending or pend_ctrl) else '0';
 
-    mm_read : process(clock)
+    mm_read : process(clock, reset)
     begin
         if (reset = '1') then
             readack <= '0';
             dout    <= (others => '0');
+
         elsif (rising_edge(clock)) then
+            -- hold off ack until there's no ops pending (race condition)
             readack <= to_sl(read = '1' and not current.op_pending);
 
             if (uaddr = 0) then
-                dout <= to_slv(get_status_reg(current));
-            elsif (uaddr < NUM_REGS) then
-                dout <= to_slv(current_regs(uaddr));
+                -- count of items in queue
+                dout <= std_logic_vector(
+                            to_unsigned(current.queue.count, dout'length));
             else
-                dout <= (others => 'X');
+                dout <= to_slv(current_regs(uaddr));
             end if;
         end if;
     end process mm_read;
@@ -295,11 +266,10 @@ begin
         if (reset = '1') then
             future_regs <= (others => (others => '0'));
             pend_ctrl   <= false;
-            irq_clr     <= false;
-        elsif (rising_edge(clock)) then
-            irq_clr <= false;
 
-            if (current.op_pending = true) then
+        elsif (rising_edge(clock)) then
+            if (current.op_pending) then
+                -- our previous pend_ctrl has been acknowledged
                 pend_ctrl <= false;
             end if;
 
@@ -307,34 +277,19 @@ begin
                 future_regs(uaddr) <= to_reg(din);
 
                 if (uaddr = 0) then
+                    -- send a pend_ctrl signal for the state machine to pick up
                     pend_ctrl <= true;
-                    irq_clr   <= (get_control_reg(din).irq_enable and
-                                  intr_i = '1');
                 end if;
             end if;
         end if;
     end process mm_write;
-
-    mm_intr : process(clock, reset)
-    begin
-        if (reset = '1') then
-            intr_i <= '0';
-        elsif (rising_edge(clock)) then
-            if (irq_clr) then
-                intr_i <= '0';
-            end if;
-
-            if (current.irq_set) then
-                intr_i <= '1';
-            end if;
-        end if;
-    end process mm_intr;
 
     sync_proc : process(clock, reset)
     begin
         if (reset = '1') then
             current      <= NULL_STATE;
             current_regs <= NULL_REGISTERS;
+
         elsif (rising_edge(clock)) then
             current      <= future;
             current_regs <= future_regs;
@@ -348,66 +303,46 @@ begin
     begin
         future <= current;
 
-        future.op_pending  <= current.op_pending or pend_ctrl;
-        future.tone_active <= (tgen_in.active = '1');
-        future.irq_set     <= false;
+        future.op_pending <= current.op_pending or pend_ctrl;
 
         case (current.state) is
-            when INIT =>
-                future.state <= IDLE;
-
             when IDLE =>
                 if (current.op_pending) then
-                    future.state <= HANDLE_CONTROL_OP;
+                    -- we have a control message to deal with
+                    future.state <= CTRL_DISPATCH;
                 end if;
 
-                if (queue_len(current.queue) > 0) then
+                if (current.queue.count > 0) then
                     -- there is work to do
-                    if (not current.tone_active) then
+                    if (tgen_in.active = '0') then
                         -- let's do it!
-                        future.irq_done <= false;
-                        future.state    <= QUEUE_POP;
-                    end if;
-                else
-                    -- there is no work to do
-                    if (not current.irq_done and not current.tone_active) then
-                        -- let's report such!
-                        future.state <= SET_IRQ;
+                        future.state <= QUEUE_POP;
                     end if;
                 end if;
 
-            when HANDLE_CONTROL_OP =>
-                future.state <= CLEAR_OP_PENDING;
+            when CTRL_DISPATCH =>
+                ctrl_reg := unpack_control(current_regs(0));
 
-                ctrl_reg := get_control_reg(current_regs(0));
+                -- default
+                future.state <= CTRL_CLEAR;
 
-                -- irq_enable  irq_disable  irq_en
-                --     0            0        N/C
-                --     0            1         0
-                --     1            0         1
-                --     1            1        N/C
-                if (ctrl_reg.irq_enable /= ctrl_reg.irq_disable) then
-                    future.irq_en <= ctrl_reg.irq_enable or
-                                     not ctrl_reg.irq_disable;
-                end if;
-
-                if (ctrl_reg.enqueue) then
+                -- append
+                if (ctrl_reg.append) then
                     future.state <= QUEUE_PUSH;
                 end if;
 
-                -- clear overrides enqueue
+                -- clear (overrides append)
                 if (ctrl_reg.clear) then
                     future.state <= QUEUE_CLEAR;
                 end if;
 
-            when CLEAR_OP_PENDING =>
+            when CTRL_CLEAR =>
                 future.op_pending <= false;
                 future.state      <= IDLE;
 
             when QUEUE_CLEAR =>
-                future.queue     <= NULL_TONE_QUEUE;
-                future.op_failed <= false;
-                future.state     <= CLEAR_OP_PENDING;
+                future.queue <= NULL_TONE_QUEUE;
+                future.state <= CTRL_CLEAR;
 
             when QUEUE_PUSH =>
                 tone_val.dphase   := to_integer(signed(current_regs(1)));
@@ -415,26 +350,22 @@ begin
 
                 queue_push(current.queue, future.queue, tone_val, success);
 
-                future.op_failed <= not success;
-
                 assert success report "QUEUE_PUSH failed" severity failure;
 
-                future.state <= CLEAR_OP_PENDING;
+                future.state <= CTRL_CLEAR;
 
             when QUEUE_POP =>
                 queue_pop(current.queue, future.queue, future.tone, success);
 
-                future.state <= GENERATE_TONE;
-
-                if (not success) then
-                    -- oh no
-                    future.op_failed <= true;
-                    future.state     <= IDLE;
-                end if;
-
                 assert success report "QUEUE_POP failed" severity failure;
 
-            when GENERATE_TONE =>
+                future.state <= TONE_GENERATE;
+
+                if (not success) then
+                    future.state <= IDLE;
+                end if;
+
+            when TONE_GENERATE =>
                 tgen_out       <= current.tone;
                 tgen_out.valid <= '1';
                 future.state   <= WAIT_FOR_ACTIVE;
@@ -442,17 +373,9 @@ begin
             when WAIT_FOR_ACTIVE =>
                 tgen_out.valid <= '0';
 
-                if (current.tone_active) then
+                if (tgen_in.active = '1') then
                     future.state <= IDLE;
                 end if;
-
-            when SET_IRQ =>
-                if (current.irq_en) then
-                    future.irq_set <= true;
-                end if;
-
-                future.irq_done <= true;
-                future.state    <= IDLE;
 
         end case;
     end process comb_proc;
