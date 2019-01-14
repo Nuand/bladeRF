@@ -48,15 +48,15 @@ architecture tb_tgen of tone_generator_tb is
                                                     valid       => '0');
     signal outputs  : tone_generator_output_t;
 
-    constant CLOCK_PERIOD   : time := 1 sec / CLOCK_FREQUENCY;
-    constant DOT            : time := (60.0 sec/50.0) / WORDS_PER_MINUTE;
-    constant DASH           : time := DOT * 3;
-    constant PAUSE          : time := DOT * 3;
-    constant SPACE          : time := DOT * 7;
+    constant CLOCK_PERIOD   : time      := 1 sec / CLOCK_FREQUENCY;
+    constant DOT            : time      := (60.0 sec/50.0) / WORDS_PER_MINUTE;
+    constant DASH           : time      := DOT * 3;
+    constant PAUSE          : time      := DOT * 3;
+    constant SPACE          : time      := DOT * 7;
 
-    constant TONE_PERIOD        : time      := 1 sec / TONE_FREQUENCY;
-    constant TONE_PERIOD_CLKS   : natural   := TONE_PERIOD / CLOCK_PERIOD;
-    constant TONE_DPHASE        : natural   := integer(round(8192.0 / real(TONE_PERIOD_CLKS)));
+    constant TONE_PERIOD    : time      := 1 sec / TONE_FREQUENCY;
+    constant TONE_PER_CLKS  : natural   := TONE_PERIOD / CLOCK_PERIOD;
+    constant TONE_DPHASE    : natural   := integer(round(8192.0 / real(TONE_PER_CLKS)));
 
     type tone_t is record
         is_on   : boolean;
@@ -66,49 +66,49 @@ architecture tb_tgen of tone_generator_tb is
     type tones_t is array(natural range <>) of tone_t;
 
     constant MESSAGE : tones_t := (
-        (is_on => false, duration => PAUSE),
+        (is_on => false,    duration => PAUSE),
 
         -- H
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- E
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- L
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- L
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- O
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => PAUSE)
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => PAUSE)
     );
 begin
 
@@ -165,24 +165,26 @@ architecture tb_hw of tone_generator_tb is
                                                     valid       => '0');
     signal outputs  : tone_generator_output_t;
 
-    signal mm_addr        : std_logic_vector(3 downto 0);
-    signal mm_din         : std_logic_vector(31 downto 0);
-    signal mm_dout        : std_logic_vector(31 downto 0);
-    signal mm_write       : std_logic;
-    signal mm_read        : std_logic;
-    signal mm_waitreq     : std_logic;
-    signal mm_readack     : std_logic;
-    signal mm_intr        : std_logic;
+    signal mm_addr          : std_logic_vector(3 downto 0);
+    signal mm_din           : std_logic_vector(31 downto 0);
+    signal mm_dout          : std_logic_vector(31 downto 0);
+    signal mm_write         : std_logic;
+    signal mm_read          : std_logic;
+    signal mm_waitreq       : std_logic;
+    signal mm_readack       : std_logic;
+    signal mm_queue_empty   : std_logic;
+    signal mm_queue_full    : std_logic;
+    signal mm_running       : std_logic;
 
-    constant CLOCK_PERIOD   : time := 1 sec / CLOCK_FREQUENCY;
-    constant DOT            : time := (60.0 sec/50.0) / WORDS_PER_MINUTE;
-    constant DASH           : time := DOT * 3;
-    constant PAUSE          : time := DOT * 3;
-    constant SPACE          : time := DOT * 7;
+    constant CLOCK_PERIOD   : time      := 1 sec / CLOCK_FREQUENCY;
+    constant DOT            : time      := (60.0 sec/50.0) / WORDS_PER_MINUTE;
+    constant DASH           : time      := DOT * 3;
+    constant PAUSE          : time      := DOT * 3;
+    constant SPACE          : time      := DOT * 7;
 
-    constant TONE_PERIOD        : time      := 1 sec / TONE_FREQUENCY;
-    constant TONE_PERIOD_CLKS   : natural   := TONE_PERIOD / CLOCK_PERIOD;
-    constant TONE_DPHASE        : natural   := integer(round(8192.0 / real(TONE_PERIOD_CLKS)));
+    constant TONE_PERIOD    : time      := 1 sec / TONE_FREQUENCY;
+    constant TONE_PER_CLKS  : natural   := TONE_PERIOD / CLOCK_PERIOD;
+    constant TONE_DPHASE    : natural   := integer(round(8192.0 / real(TONE_PER_CLKS)));
 
     type tone_t is record
         is_on   : boolean;
@@ -192,49 +194,49 @@ architecture tb_hw of tone_generator_tb is
     type tones_t is array(natural range <>) of tone_t;
 
     constant MESSAGE : tones_t := (
-        (is_on => false, duration => PAUSE),
+        (is_on => false,    duration => PAUSE),
 
         -- H
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- E
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- L
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- L
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DOT),
-        (is_on => false, duration => PAUSE),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DOT),
+        (is_on => false,    duration => PAUSE),
 
         -- O
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => DOT),
-        (is_on => true, duration => DASH),
-        (is_on => false, duration => PAUSE)
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => DOT),
+        (is_on => true,     duration => DASH),
+        (is_on => false,    duration => PAUSE)
     );
 begin
 
@@ -261,15 +263,14 @@ begin
             read        => mm_read,
             waitreq     => mm_waitreq,
             readack     => mm_readack,
-            intr        => mm_intr
+            queue_empty => mm_queue_empty,
+            queue_full  => mm_queue_full,
+            running     => mm_running
         );
 
     tb : process
-        variable dphase : natural;
-        variable duration : natural;
-        variable control : std_logic_vector(mm_din'range);
-        variable status : std_logic_vector(mm_dout'range);
-        variable done : boolean;
+        variable dphase     : natural;
+        variable duration   : natural;
     begin
         -- reset
         reset <= '1';
@@ -283,36 +284,18 @@ begin
             report "loading message " & to_string(i);
 
             -- check to make sure there's room...
-            done := false;
-
-            wait_for_queue_space : while not done loop
-                wait until rising_edge(clock);
-                mm_addr <= std_logic_vector(to_unsigned(0, mm_addr'length));
-                mm_read <= '1';
-                wait until rising_edge(clock);
-                wait until (mm_readack = '1');
-                status  := mm_dout;
-                mm_read <= '0';
-                wait until rising_edge(clock);
-
-                done := (status(3) = '0');
-            end loop wait_for_queue_space;
+            if (mm_queue_full = '1') then
+                report "mm_queue_full blocking message load";
+                wait until (mm_queue_full = '0');
+            end if;
 
             wait until rising_edge(clock);
-            mm_addr <= std_logic_vector(to_unsigned(0, mm_addr'length));
-            mm_din  <= control;
-            mm_read <= '1';
-            wait until rising_edge(clock);
-            wait until (mm_readack = '1');
-            status  := mm_dout;
-            mm_read <= '0';
-            wait until rising_edge(clock);
 
+            -- write dphase
             dphase   := TONE_DPHASE when MESSAGE(i).is_on else 0;
-            duration := MESSAGE(i).duration / CLOCK_PERIOD;
-            control  := (0 => '1', 2 => '1', others => '0');
 
             if (mm_waitreq = '1') then
+                report "mm_waitreq blocking addr 1 write";
                 wait until (mm_waitreq = '0');
             end if;
 
@@ -323,7 +306,11 @@ begin
             mm_write <= '0';
             wait until rising_edge(clock);
 
+            -- write duration
+            duration := MESSAGE(i).duration / CLOCK_PERIOD;
+
             if (mm_waitreq = '1') then
+                report "mm_waitreq blocking addr 2 write";
                 wait until (mm_waitreq = '0');
             end if;
 
@@ -334,25 +321,12 @@ begin
             mm_write <= '0';
             wait until rising_edge(clock);
 
+            -- send append command
             if (mm_waitreq = '1') then
+                report "mm_waitreq blocking addr 0 write";
                 wait until (mm_waitreq = '0');
             end if;
 
-            mm_addr  <= std_logic_vector(to_unsigned(0, mm_addr'length));
-            mm_din   <= control;
-            mm_write <= '1';
-            wait until rising_edge(clock);
-            mm_write <= '0';
-            wait until rising_edge(clock);
-        end loop send_message;
-
-        done := false;
-
-        wait_for_done : while not done loop
-            report "waiting for irq";
-
-            wait until (mm_intr = '1');
-            wait until rising_edge(clock);
             mm_addr  <= std_logic_vector(to_unsigned(0, mm_addr'length));
             mm_din   <= (0 => '1', others => '0');
             mm_write <= '1';
@@ -360,16 +334,30 @@ begin
             mm_write <= '0';
             wait until rising_edge(clock);
 
-            mm_addr <= std_logic_vector(to_unsigned(0, mm_addr'length));
-            mm_read <= '1';
+            -- read status reg for length
+            mm_addr  <= std_logic_vector(to_unsigned(0, mm_addr'length));
+            mm_read  <= '1';
+            wait until rising_edge(clock) and (mm_readack = '1');
+            mm_read  <= '0';
+            report "message " & to_string(i) & " loaded. queue len = " &
+                   to_string(to_integer(unsigned(mm_dout)));
             wait until rising_edge(clock);
-            wait until (mm_readack = '1');
-            status  := mm_dout;
-            mm_read <= '0';
-            wait until rising_edge(clock);
+        end loop send_message;
 
-            done := (status(2) = '1');
-        end loop wait_for_done;
+        if (mm_queue_full = '1') then
+            report "waiting for not queue_full";
+            wait until (mm_queue_full = '0');
+        end if;
+
+        if (mm_queue_empty = '0') then
+            report "waiting for queue_empty";
+            wait until (mm_queue_empty = '1');
+        end if;
+
+        if (mm_running = '1') then
+            report "waiting for not running";
+            wait until (mm_running = '0');
+        end if;
 
         -- done
         nop(clock, 100);
