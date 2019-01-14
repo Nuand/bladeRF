@@ -5,6 +5,8 @@ proc compile_tone_generator { root } {
 
     vcom -2008 -work work [file join $root . synthesis cordic.vhd]
     vcom -2008 -work work [file join $root . synthesis nco.vhd]
+    vcom -2008 -work work [file join $root . synthesis reset_synchronizer.vhd]
+    vcom -2008 -work work [file join $root . synthesis synchronizer.vhd]
     vcom -2008 -work work [file join $root . simulation util.vhd]
 
     vcom -2008 -work work [file join $root tone_generator vhdl tone_generator.vhd]
@@ -30,6 +32,13 @@ proc waves_tone_generator { } {
 }
 
 proc waves_tone_generator_hw { } {
+    add wave sim:/tone_generator_tb/clock
+    add wave sim:/tone_generator_tb/sample_clk
+    add wave -format analog -max 2048 -min -2047 -height 100 sim:/tone_generator_tb/sample_i
+    add wave -format analog -max 2048 -min -2047 -height 100 sim:/tone_generator_tb/sample_q
+    add wave sim:/tone_generator_tb/sample_valid
+    add wave -expand -group tb *
+    add wave -expand -group tone_generator sim:/tone_generator_tb/U_tone_generator_hw/U_tone_generator/*
     add wave -expand -group mmap sim:/tone_generator_tb/mm_*
     add wave -expand -group tgen_hw sim:/tone_generator_tb/U_tone_generator_hw/*
 }
@@ -42,7 +51,6 @@ proc run_sim { } {
 
 proc run_sim_hw { } {
     simulate_tone_generator_hw
-    waves_tone_generator
     waves_tone_generator_hw
     run -all
 }

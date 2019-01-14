@@ -28,7 +28,7 @@ library work;
 entity tone_generator_hw is
     generic (
         QUEUE_LENGTH    : positive  := 8;
-        ADDR_WIDTH      : positive  := 4;
+        ADDR_WIDTH      : positive  := 2;
         DATA_WIDTH      : positive  := 32
     );
     port (
@@ -36,9 +36,11 @@ entity tone_generator_hw is
         clock           : in    std_logic;
         reset           : in    std_logic;
 
-        -- Tone generator interface
-        tgen_out        : out   tone_generator_input_t;
-        tgen_in         : in    tone_generator_output_t;
+        -- Samples
+        sample_clk      : in    std_logic;
+        sample_i        : out   signed(15 downto 0);
+        sample_q        : out   signed(15 downto 0);
+        sample_valid    : out   std_logic;
 
         -- Memory mapped interface
         addr            : in    std_logic_vector(ADDR_WIDTH-1 downto 0);
@@ -101,6 +103,15 @@ architecture arch of tone_generator_hw is
     signal pend_ctrl    : boolean;
 
     signal uaddr        : natural range 0 to 2**addr'high;
+
+    signal tgen_in      : tone_generator_input_t;
+    signal tgen_in_i    : tone_generator_input_t;
+    signal tgen_out     : tone_generator_output_t;
+    signal tgen_reset   : std_logic;
+
+    signal tgen_in_v    : std_logic;
+    signal tgen_out_a   : std_logic;
+    signal tgen_out_v   : std_logic;
 
 --------------------------------------------------------------------------------
 -- Subprograms
@@ -233,13 +244,71 @@ architecture arch of tone_generator_hw is
     end function NULL_STATE;
 
 begin
-    uaddr       <= to_integer(unsigned(addr));
+    -- For convenience
+    uaddr <= to_integer(unsigned(addr));
 
+    -- Status indicators
     queue_empty <= '1' when (current.queue.count = 0) else '0';
     queue_full  <= '1' when (current.queue.count >= QUEUE_LENGTH) else '0';
-    running     <= '1' when (tgen_in.active = '1' or tgen_in.valid = '1')
-                       else '0';
-    waitreq     <= '1' when (current.op_pending or pend_ctrl) else '0';
+    running     <= '1' when (tgen_out_a = '1' or tgen_out_v = '1') else '0';
+
+    -- Tone generator interface (with clock domain crossing assist)
+    sample_i     <= tgen_out.re;
+    sample_q     <= tgen_out.im;
+    sample_valid <= tgen_out.valid;
+
+    tgen_in.dphase   <= tgen_in_i.dphase;
+    tgen_in.duration <= tgen_in_i.duration;
+
+    U_reset_sync : entity work.reset_synchronizer
+        -- from system clock to sample clock
+        generic map (
+            INPUT_LEVEL  =>  '1',
+            OUTPUT_LEVEL =>  '1'
+        )
+        port map (
+            clock   => sample_clk,
+            async   => reset,
+            sync    => tgen_reset
+        );
+
+    U_tgen_in_valid_sync : entity work.synchronizer
+        -- from system clock to sample clock
+        port map (
+            reset   => tgen_reset,
+            clock   => sample_clk,
+            async   => tgen_in_v,
+            sync    => tgen_in.valid
+        );
+
+    U_tgen_out_active_sync : entity work.synchronizer
+        -- from sample clock to system clock
+        port map (
+            reset   => reset,
+            clock   => clock,
+            async   => tgen_out.active,
+            sync    => tgen_out_a
+        );
+
+    U_tgen_out_valid_sync : entity work.synchronizer
+        -- from sample clock to system clock
+        port map (
+            reset   => reset,
+            clock   => clock,
+            async   => tgen_out.valid,
+            sync    => tgen_out_v
+        );
+
+    U_tone_generator : entity work.tone_generator
+        port map (
+            clock   => sample_clk,
+            reset   => tgen_reset,
+            inputs  => tgen_in,
+            outputs => tgen_out
+        );
+
+    -- Avalon-MM interface
+    waitreq <= '1' when (current.op_pending or pend_ctrl) else '0';
 
     mm_read : process(clock, reset)
     begin
@@ -284,6 +353,7 @@ begin
         end if;
     end process mm_write;
 
+    -- State machinery
     sync_proc : process(clock, reset)
     begin
         if (reset = '1') then
@@ -314,7 +384,7 @@ begin
 
                 if (current.queue.count > 0) then
                     -- there is work to do
-                    if (tgen_in.active = '0') then
+                    if (tgen_out_a = '0') then
                         -- let's do it!
                         future.state <= QUEUE_POP;
                     end if;
@@ -366,15 +436,15 @@ begin
                 end if;
 
             when TONE_GENERATE =>
-                tgen_out       <= current.tone;
-                tgen_out.valid <= '1';
-                future.state   <= WAIT_FOR_ACTIVE;
+                tgen_in_i       <= current.tone;
+                tgen_in_v       <= '1';
+                future.state    <= WAIT_FOR_ACTIVE;
 
             when WAIT_FOR_ACTIVE =>
-                tgen_out.valid <= '0';
 
-                if (tgen_in.active = '1') then
-                    future.state <= IDLE;
+                if (tgen_out_a = '1') then
+                    tgen_in_v       <= '0';
+                    future.state    <= IDLE;
                 end if;
 
         end case;

@@ -157,15 +157,10 @@ begin
 end architecture tb_tgen;
 
 architecture tb_hw of tone_generator_tb is
-    signal clock    : std_logic     := '1';
-    signal reset    : std_logic     := '1';
+    signal clock            : std_logic := '1';
+    signal reset            : std_logic := '1';
 
-    signal inputs   : tone_generator_input_t    := (dphase      => 0,
-                                                    duration    => 0,
-                                                    valid       => '0');
-    signal outputs  : tone_generator_output_t;
-
-    signal mm_addr          : std_logic_vector(3 downto 0);
+    signal mm_addr          : std_logic_vector(1 downto 0);
     signal mm_din           : std_logic_vector(31 downto 0);
     signal mm_dout          : std_logic_vector(31 downto 0);
     signal mm_write         : std_logic;
@@ -175,6 +170,11 @@ architecture tb_hw of tone_generator_tb is
     signal mm_queue_empty   : std_logic;
     signal mm_queue_full    : std_logic;
     signal mm_running       : std_logic;
+
+    signal sample_clk       : std_logic := '1';
+    signal sample_i         : signed(15 downto 0);
+    signal sample_q         : signed(15 downto 0);
+    signal sample_valid     : std_logic;
 
     constant CLOCK_PERIOD   : time      := 1 sec / CLOCK_FREQUENCY;
     constant DOT            : time      := (60.0 sec/50.0) / WORDS_PER_MINUTE;
@@ -240,32 +240,30 @@ architecture tb_hw of tone_generator_tb is
     );
 begin
 
-    clock <= not clock after CLOCK_PERIOD/2;
-
-    U_tone_generator : entity work.tone_generator
-        port map (
-            clock   => clock,
-            reset   => reset,
-            inputs  => inputs,
-            outputs => outputs
-        );
+    clock       <= not clock after (1 sec/3e6)/2;
+    sample_clk  <= not sample_clk after CLOCK_PERIOD/2;
 
     U_tone_generator_hw : entity work.tone_generator_hw
         port map (
-            clock       => clock,
-            reset       => reset,
-            tgen_out    => inputs,
-            tgen_in     => outputs,
-            addr        => mm_addr,
-            din         => mm_din,
-            dout        => mm_dout,
-            write       => mm_write,
-            read        => mm_read,
-            waitreq     => mm_waitreq,
-            readack     => mm_readack,
-            queue_empty => mm_queue_empty,
-            queue_full  => mm_queue_full,
-            running     => mm_running
+            clock           => clock,
+            reset           => reset,
+
+            sample_clk      => sample_clk,
+            sample_i        => sample_i,
+            sample_q        => sample_q,
+            sample_valid    => sample_valid,
+
+            addr            => mm_addr,
+            din             => mm_din,
+            dout            => mm_dout,
+            write           => mm_write,
+            read            => mm_read,
+            waitreq         => mm_waitreq,
+            readack         => mm_readack,
+
+            queue_empty     => mm_queue_empty,
+            queue_full      => mm_queue_full,
+            running         => mm_running
         );
 
     tb : process
