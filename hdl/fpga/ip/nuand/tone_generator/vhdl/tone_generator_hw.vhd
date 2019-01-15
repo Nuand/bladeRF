@@ -18,7 +18,9 @@ library work;
 --              bit 0:  append
 --              bit 1:  clear
 --          status (read):
---              number of items in the queue (unsigned)
+--              bit 0:  running
+--              bit 1:  queue full
+--              bits 8-15: number of items in the queue (unsigned)
 --      others: reserved/undef
 --  1   dphase - phase rotation per clock cycle (signed)
 --      one full rotation is 8192, so:
@@ -112,6 +114,10 @@ architecture arch of tone_generator_hw is
     signal tgen_in_v    : std_logic;
     signal tgen_out_a   : std_logic;
     signal tgen_out_v   : std_logic;
+
+    signal q_full_i     : std_logic;
+    signal q_empty_i    : std_logic;
+    signal running_i    : std_logic;
 
 --------------------------------------------------------------------------------
 -- Subprograms
@@ -244,18 +250,23 @@ architecture arch of tone_generator_hw is
     end function NULL_STATE;
 
 begin
+    -- Output mappings
+    sample_i        <= tgen_out.re;
+    sample_q        <= tgen_out.im;
+    sample_valid    <= tgen_out.valid;
+    queue_full      <= q_full_i;
+    queue_empty     <= q_empty_i;
+    running         <= running_i;
+
     -- For convenience
     uaddr <= to_integer(unsigned(addr));
 
     -- Status indicators
-    queue_empty <= '1' when (current.queue.count = 0) else '0';
-    queue_full  <= '1' when (current.queue.count >= QUEUE_LENGTH) else '0';
-    running     <= '1' when (tgen_out_a = '1' or tgen_out_v = '1') else '0';
+    q_empty_i   <= '1' when (current.queue.count = 0) else '0';
+    q_full_i    <= '1' when (current.queue.count >= QUEUE_LENGTH) else '0';
+    running_i   <= '1' when (tgen_out_a = '1' or tgen_out_v = '1') else '0';
 
     -- Tone generator interface (with clock domain crossing assist)
-    sample_i     <= tgen_out.re;
-    sample_q     <= tgen_out.im;
-    sample_valid <= tgen_out.valid;
 
     tgen_in.dphase   <= tgen_in_i.dphase;
     tgen_in.duration <= tgen_in_i.duration;
@@ -322,8 +333,11 @@ begin
 
             if (uaddr = 0) then
                 -- count of items in queue
-                dout <= std_logic_vector(
-                            to_unsigned(current.queue.count, dout'length));
+                dout <= (others => '0');
+                dout(0) <= running_i;
+                dout(1) <= q_full_i;
+                dout(15 downto 8) <=
+                        std_logic_vector(to_unsigned(current.queue.count, 8));
             else
                 dout <= to_slv(current_regs(uaddr));
             end if;

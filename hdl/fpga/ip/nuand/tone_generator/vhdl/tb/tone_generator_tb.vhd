@@ -337,8 +337,12 @@ begin
             mm_read  <= '1';
             wait until rising_edge(clock) and (mm_readack = '1');
             mm_read  <= '0';
-            report "message " & to_string(i) & " loaded. queue len = " &
-                   to_string(to_integer(unsigned(mm_dout)));
+            report "status:" &
+                   " msg=" & to_string(i) &
+                   " run=" & to_string(mm_dout(0)) &
+                   " full=" & to_string(mm_dout(1)) &
+                   " len=" & to_string(to_integer(unsigned(
+                                                    mm_dout(15 downto 8))));
             wait until rising_edge(clock);
         end loop send_message;
 
