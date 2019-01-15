@@ -341,6 +341,7 @@ else
     cmd="${cmd}; set device ${DEVICE}"
     cmd="${cmd}; set nios_impl ${nios_rev}"
     cmd="${cmd}; set ram_size $(get_qsys_ram $size)"
+    cmd="${cmd}; set platform_revision ${rev}"
     qsys-script \
         --script=${build_dir}/nios_system.tcl \
         --cmd="${cmd}"
