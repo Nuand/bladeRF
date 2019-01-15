@@ -3,5 +3,6 @@
         <path path="../../../fpga/ip/nuand/time_tamer/**/*"/>
         <path path="../../../fpga/ip/nuand/command_uart/**/*"/>
         <path path="../../../fpga/ip/nuand/vctcxo_tamer/**/*"/>
+        <path path="../../../fpga/ip/nuand/tone_generator/**/*"/>
         <path path="../../../fpga/ip/analogdevicesinc/**/*"/>
 </library>

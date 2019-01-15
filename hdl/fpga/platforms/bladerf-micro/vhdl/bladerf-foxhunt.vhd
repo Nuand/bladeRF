@@ -29,7 +29,7 @@ library work;
     use work.bladerf_p.all;
     use work.fifo_readwrite_p.all;
 
-architecture hosted_bladerf of bladerf is
+architecture foxhunt_bladerf of bladerf is
 
     attribute noprune          : boolean;
     attribute keep             : boolean;
@@ -147,6 +147,9 @@ architecture hosted_bladerf of bladerf is
     signal adc_streams            : sample_streams_t(adc_controls'range)  := (others => ZERO_SAMPLE);
 
     signal   ps_sync              : std_logic_vector(0 downto 0)          := (others => '0');
+
+    signal tonegen_streams        : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
+    signal tonegen_running        : std_logic;
 
 begin
 
@@ -392,7 +395,15 @@ begin
             rx_trigger_ctl_out_port         => rx_trigger_ctl_i,
             tx_trigger_ctl_out_port         => tx_trigger_ctl_i,
             rx_trigger_ctl_in_port          => pack(rx_trigger_ctl),
-            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl)
+            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl),
+
+            tonegen_sample_clk              => tx_clock,
+            tonegen_sample_valid            => tonegen_streams.data_v,
+            tonegen_sample_i                => tonegen_streams.data_i,
+            tonegen_sample_q                => tonegen_streams.data_q,
+            tonegen_status_empty            => open,
+            tonegen_status_full             => open,
+            tonegen_status_running          => tonegen_running
         );
 
     -- FX3 UART
@@ -522,6 +533,21 @@ begin
             dac_controls         => dac_controls,
             dac_streams          => dac_streams
         );
+
+    --dac_assignment_proc : process( all )
+    --begin
+    --    for i in dac_controls'range loop
+    --        dac_controls(i).enable   <= (ad9361.ch(i).dac.i.enable or ad9361.ch(i).dac.q.enable or tx_loopback_enabled) and
+    --                                    mimo_tx_enables(i);
+    --        dac_controls(i).data_req <= (ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled) and
+    --                                    mimo_tx_enables(i);
+
+    --        if (rising_edge(tx_clock) and dac_streams(i).data_v = '1') then
+    --            ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
+    --            ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
+    --        end if;
+    --    end loop;
+    --end process;
 
     dac_assignment_proc : process( all )
     begin
