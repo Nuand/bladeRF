@@ -107,11 +107,9 @@ architecture arch of tone_generator_hw is
     signal uaddr        : natural range 0 to 2**addr'high;
 
     signal tgen_in      : tone_generator_input_t;
-    signal tgen_in_i    : tone_generator_input_t;
     signal tgen_out     : tone_generator_output_t;
     signal tgen_reset   : std_logic;
 
-    signal tgen_in_v    : std_logic;
     signal tgen_out_a   : std_logic;
     signal tgen_out_v   : std_logic;
 
@@ -267,9 +265,8 @@ begin
     running_i   <= '1' when (tgen_out_a = '1' or tgen_out_v = '1') else '0';
 
     -- Tone generator interface (with clock domain crossing assist)
-
-    tgen_in.dphase   <= tgen_in_i.dphase;
-    tgen_in.duration <= tgen_in_i.duration;
+    tgen_in.dphase   <= current.tone.dphase;
+    tgen_in.duration <= current.tone.duration;
 
     U_reset_sync : entity work.reset_synchronizer
         -- from system clock to sample clock
@@ -288,7 +285,7 @@ begin
         port map (
             reset   => tgen_reset,
             clock   => sample_clk,
-            async   => tgen_in_v,
+            async   => current.tone.valid,
             sync    => tgen_in.valid
         );
 
@@ -382,12 +379,13 @@ begin
 
     comb_proc : process(all)
         variable ctrl_reg : control_reg_t;
-        variable tone_val : tone_generator_input_t;
-        variable success  : boolean;
+        variable tone_val : tone_generator_input_t := NULL_TONE_GENERATOR_INPUT;
+        variable success  : boolean := true;
     begin
         future <= current;
 
         future.op_pending <= current.op_pending or pend_ctrl;
+        future.tone.valid <= '0';
 
         case (current.state) is
             when IDLE =>
@@ -450,14 +448,15 @@ begin
                 end if;
 
             when TONE_GENERATE =>
-                tgen_in_i       <= current.tone;
-                tgen_in_v       <= '1';
-                future.state    <= WAIT_FOR_ACTIVE;
+                future.tone.valid <= '1';
+                future.state      <= WAIT_FOR_ACTIVE;
 
             when WAIT_FOR_ACTIVE =>
+                future.tone.valid <= '1';
+
                 if (tgen_out_a = '1') then
-                    tgen_in_v       <= '0';
-                    future.state    <= IDLE;
+                    future.tone.valid <= '0';
+                    future.state      <= IDLE;
                 end if;
 
         end case;
