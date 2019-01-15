@@ -650,8 +650,8 @@ if { $platform_revision == "foxhunt" } {
     add_interface tonegen_status conduit end
     set_interface_property tonegen_status EXPORT_OF tone_generator_0.status
 
-    add_connection clk_0.clk tone_generator_0.clock_sink
-    add_connection clk_0.clk_reset tone_generator_0.reset
+    add_connection system_clock.clk tone_generator_0.clock_sink
+    add_connection system_clock.clk_reset tone_generator_0.reset
     add_connection nios2.data_master tone_generator_0.avalon_slave_0
     set_connection_parameter_value nios2.data_master/tone_generator_0.avalon_slave_0 arbitrationPriority {1}
     set_connection_parameter_value nios2.data_master/tone_generator_0.avalon_slave_0 baseAddress {0x9220}

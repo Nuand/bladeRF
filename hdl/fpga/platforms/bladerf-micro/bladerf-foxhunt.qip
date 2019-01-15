@@ -36,7 +36,7 @@ set_global_assignment -name QIP_FILE  [file normalize [file join $nuand_ip tone_
 set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/fx3_gpif.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/tx.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/rx.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-hosted.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-foxhunt.vhd]]
 set_global_assignment -name QIP_FILE  [file normalize                  nios_system/synthesis/nios_system.qip]
 
 # Explicitly include Nios mem_init

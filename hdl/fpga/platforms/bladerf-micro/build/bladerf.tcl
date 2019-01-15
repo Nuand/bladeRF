@@ -118,6 +118,9 @@ make_revision hosted
 # Create the adsb
 make_revision adsb
 
+# Create the foxhunt
+make_revision foxhunt
+
 # Projects created!
 puts "${PROJECT_NAME} projects created!"
 puts "Please use the build.tcl script to build images.\n"
