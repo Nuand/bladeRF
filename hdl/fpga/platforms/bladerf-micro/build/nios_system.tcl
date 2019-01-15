@@ -27,6 +27,12 @@ if { [info exists nios_impl] == 0 } {
     }
 }
 
+if { [info exists platform_revision] == 0 } {
+    set platform_revision "default"
+} else {
+    puts "platform revision: ${platform_revision}"
+}
+
 # Instances and instance parameters
 # (disabled instances are intentionally culled)
 add_instance axi_ad9361_0 axi_ad9361 1.0
@@ -631,5 +637,25 @@ set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE
 set_interconnect_requirement {$system} {qsys_mm.maxAdditionalLatency} {1}
 set_interconnect_requirement {$system} {qsys_mm.enableEccProtection} {FALSE}
 set_interconnect_requirement {$system} {qsys_mm.insertDefaultSlave} {FALSE}
+
+if { $platform_revision == "foxhunt" } {
+    puts "Adding tone_generator..."
+    add_instance tone_generator_0 tone_generator 1.0
+    set_instance_parameter_value tone_generator_0 {ADDR_WIDTH} {2}
+    set_instance_parameter_value tone_generator_0 {DATA_WIDTH} {32}
+    set_instance_parameter_value tone_generator_0 {QUEUE_LENGTH} {8}
+
+    add_interface tonegen_sample conduit end
+    set_interface_property tonegen_sample EXPORT_OF tone_generator_0.samplestream
+    add_interface tonegen_status conduit end
+    set_interface_property tonegen_status EXPORT_OF tone_generator_0.status
+
+    add_connection clk_0.clk tone_generator_0.clock_sink
+    add_connection clk_0.clk_reset tone_generator_0.reset
+    add_connection nios2.data_master tone_generator_0.avalon_slave_0
+    set_connection_parameter_value nios2.data_master/tone_generator_0.avalon_slave_0 arbitrationPriority {1}
+    set_connection_parameter_value nios2.data_master/tone_generator_0.avalon_slave_0 baseAddress {0x9220}
+    set_connection_parameter_value nios2.data_master/tone_generator_0.avalon_slave_0 defaultConnection {0}
+}
 
 save_system {nios_system.qsys}
