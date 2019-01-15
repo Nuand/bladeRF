@@ -15,11 +15,11 @@ proc compile_tone_generator { root } {
 }
 
 proc simulate_tone_generator { } {
-    vsim -t 100ns -L altera_lnsim tone_generator_tb(tb_tgen)
+    vsim -t 10ns -L altera_lnsim tone_generator_tb(tb_tgen)
 }
 
 proc simulate_tone_generator_hw { } {
-    vsim -t 100ns -L altera_lnsim tone_generator_tb(tb_hw)
+    vsim -t 10ns -L altera_lnsim tone_generator_tb(tb_hw)
 }
 
 proc waves_tone_generator { } {
