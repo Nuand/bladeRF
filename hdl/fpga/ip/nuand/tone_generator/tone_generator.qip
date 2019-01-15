@@ -1,0 +1,13 @@
+# When generating a system, Qsys will copy this file into its synthesis output
+# directory. All paths below must be relative to that directory.
+set nuand_ip_dir [file join $::quartus(qip_path) ../../../../../../fpga/ip/nuand]
+
+# dependencies
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir synthesis nco.vhd]]
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir synthesis cordic.vhd]]
+
+# the generator itself
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir tone_generator vhdl tone_generator.vhd]]
+
+# the qsys wrapper
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir tone_generator vhdl tone_generator_hw.vhd]]

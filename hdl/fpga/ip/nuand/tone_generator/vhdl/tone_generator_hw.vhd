@@ -455,7 +455,6 @@ begin
                 future.state    <= WAIT_FOR_ACTIVE;
 
             when WAIT_FOR_ACTIVE =>
-
                 if (tgen_out_a = '1') then
                     tgen_in_v       <= '0';
                     future.state    <= IDLE;
