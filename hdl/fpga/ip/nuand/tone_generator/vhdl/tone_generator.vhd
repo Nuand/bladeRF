@@ -27,8 +27,8 @@ library ieee;
 
 package tone_generator_p is
     type tone_generator_input_t is record
-        dphase      : natural;
-        duration    : natural;
+        dphase      : signed(15 downto 0);
+        duration    : unsigned(31 downto 0);
         valid       : std_logic;
     end record;
 
@@ -47,8 +47,8 @@ package body tone_generator_p is
     function NULL_TONE_GENERATOR_INPUT return tone_generator_input_t is
         variable rv : tone_generator_input_t;
     begin
-        rv.dphase   := 0;
-        rv.duration := 0;
+        rv.dphase   := (others => '0');
+        rv.duration := (others => '0');
         rv.valid    := '0';
         return rv;
     end function NULL_TONE_GENERATOR_INPUT;
@@ -86,62 +86,109 @@ entity tone_generator is
 end entity tone_generator;
 
 architecture arch of tone_generator is
-    signal countdown    : natural;
-    signal nco_in       : nco_input_t;
-    signal nco_out      : nco_output_t;
-    signal tail         : natural;
+    type fsm_t is (IDLE, START_TONE, WAIT_FOR_COUNTDOWN, TAIL);
+
+    type state_t is record
+        state           : fsm_t;
+        is_active       : boolean;
+        countdown       : natural;
+        tailcount       : natural;
+        tone_in         : tone_generator_input_t;
+        nco_in          : nco_input_t;
+    end record state_t;
+
+    function NULL_STATE return state_t is
+        variable rv : state_t;
+    begin
+        rv.state        := IDLE;
+        rv.is_active    := false;
+        rv.countdown    := 0;
+        rv.tailcount    := 0;
+        rv.tone_in      := NULL_TONE_GENERATOR_INPUT;
+        rv.nco_in       := (dphase => (others => '0'), valid => '0');
+        return rv;
+    end function NULL_STATE;
+
+    signal current  : state_t;
+    signal future   : state_t;
+
+    signal nco_out  : nco_output_t;
 begin
     U_nco : entity work.nco
       port map (
         clock   => clock,
         reset   => reset,
-        inputs  => nco_in,
+        inputs  => current.nco_in,
         outputs => nco_out
       );
 
-    handle_input : process(clock, reset) is
-        variable dphase     : integer;
+    outputs.re     <= nco_out.re;
+    outputs.im     <= nco_out.im;
+    outputs.valid  <= nco_out.valid;
+    outputs.active <= '1' when current.is_active else '0';
+
+    -- State machinery
+    sync_proc : process(clock, reset)
     begin
         if (reset = '1') then
-            dphase          := 0;
-            countdown       <= 0;
-            tail            <= 0;
-
-            nco_in.dphase   <= to_signed(dphase, nco_in.dphase'length);
-            nco_in.valid    <= '0';
-
-            outputs.re      <= (others => '0');
-            outputs.im      <= (others => '0');
-            outputs.valid   <= '0';
-            outputs.active  <= '0';
-
+            current <= NULL_STATE;
         elsif (rising_edge(clock)) then
-            nco_in.valid    <= '0';
-            outputs.active  <= '0';
-
-            if (inputs.valid = '1') then
-                countdown   <= inputs.duration;
-                dphase      := inputs.dphase;
-            end if;
-
-            if (countdown > 0) then
-                countdown       <= countdown - 1;
-                nco_in.dphase   <= to_signed(dphase, nco_in.dphase'length);
-                nco_in.valid    <= '1';
-                outputs.active  <= '1';
-                tail            <= HOLDOVER_CLOCKS;
-            elsif (tail > 0) then
-                -- Keep nco_in.valid high for a bit after countdown is done,
-                -- to avoid a gap in outputs.valid between sequential tones.
-                tail            <= tail - 1;
-                nco_in.dphase   <= (others => '0');
-                nco_in.valid    <= '1';
-            end if;
-
-            outputs.re      <= nco_out.re;
-            outputs.im      <= nco_out.im;
-            outputs.valid   <= nco_out.valid;
+            current <= future;
         end if;
-    end process handle_input;
+    end process sync_proc;
 
+    comb_proc : process(all)
+    begin
+        future <= current;
+
+        future.is_active    <= false;
+        future.nco_in.valid <= '0';
+
+        case (current.state) is
+            when IDLE =>
+                if (inputs.valid = '1') then
+                    future.tone_in <= inputs;
+                    future.state   <= START_TONE;
+                end if;
+
+            when START_TONE =>
+                future.countdown     <= to_integer(current.tone_in.duration);
+                future.tailcount     <= HOLDOVER_CLOCKS;
+                future.nco_in.dphase <= current.tone_in.dphase;
+                future.nco_in.valid  <= '1';
+                future.is_active     <= true;
+                future.state         <= WAIT_FOR_COUNTDOWN;
+
+            when WAIT_FOR_COUNTDOWN =>
+                future.nco_in.valid <= '1';
+                future.is_active    <= true;
+
+                if (current.countdown > 0) then
+                    future.countdown <= current.countdown - 1;
+                end if;
+
+                if (current.countdown = 0) then
+                    future.state <= TAIL;
+                end if;
+
+            when TAIL =>
+                future.nco_in.dphase <= (others => '0');
+                future.nco_in.valid  <= '1';
+                future.is_active     <= true;
+
+                if (current.tailcount > 0) then
+                    future.tailcount <= current.tailcount - 1;
+                end if;
+
+                if (current.tailcount = 0) then
+                    future.state <= IDLE;
+                end if;
+
+                if (inputs.valid = '1') then
+                    future.tone_in <= inputs;
+                    future.state   <= START_TONE;
+                end if;
+
+        end case;
+    end process comb_proc;
 end architecture arch;

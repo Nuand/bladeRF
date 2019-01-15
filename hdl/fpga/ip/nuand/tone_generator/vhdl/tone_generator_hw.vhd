@@ -265,11 +265,9 @@ begin
     running_i   <= '1' when (tgen_out_a = '1' or tgen_out_v = '1') else '0';
 
     -- Tone generator interface (with clock domain crossing assist)
-    tgen_in.dphase   <= current.tone.dphase;
-    tgen_in.duration <= current.tone.duration;
-
+    -- reset, tgen_in: system clock -> sample clock
+    -- tgen_out: sample clock -> system clock
     U_reset_sync : entity work.reset_synchronizer
-        -- from system clock to sample clock
         generic map (
             INPUT_LEVEL  =>  '1',
             OUTPUT_LEVEL =>  '1'
@@ -281,7 +279,9 @@ begin
         );
 
     U_tgen_in_valid_sync : entity work.synchronizer
-        -- from system clock to sample clock
+        generic map (
+            RESET_LEVEL => '0'
+        )
         port map (
             reset   => tgen_reset,
             clock   => sample_clk,
@@ -289,22 +289,46 @@ begin
             sync    => tgen_in.valid
         );
 
-    U_tgen_out_active_sync : entity work.synchronizer
-        -- from sample clock to system clock
-        port map (
-            reset   => reset,
-            clock   => clock,
-            async   => tgen_out.active,
-            sync    => tgen_out_a
-        );
+    generate_sync_tgen_in_dphase : for i in tgen_in.dphase'range generate
+        U_tgen_in_dphase : entity work.synchronizer
+            generic map (
+                RESET_LEVEL => '0'
+            )
+            port map (
+                reset   =>  tgen_reset,
+                clock   =>  sample_clk,
+                async   =>  current.tone.dphase(i),
+                sync    =>  tgen_in.dphase(i)
+            );
+    end generate;
+
+    generate_sync_tgen_in_duration : for i in tgen_in.duration'range generate
+        U_tgen_in_duration : entity work.synchronizer
+            generic map (
+                RESET_LEVEL => '0'
+            )
+            port map (
+                reset   =>  tgen_reset,
+                clock   =>  sample_clk,
+                async   =>  current.tone.duration(i),
+                sync    =>  tgen_in.duration(i)
+            );
+    end generate;
 
     U_tgen_out_valid_sync : entity work.synchronizer
-        -- from sample clock to system clock
         port map (
             reset   => reset,
             clock   => clock,
             async   => tgen_out.valid,
             sync    => tgen_out_v
+        );
+
+    U_tgen_out_active_sync : entity work.synchronizer
+        port map (
+            reset   => reset,
+            clock   => clock,
+            async   => tgen_out.active,
+            sync    => tgen_out_a
         );
 
     U_tone_generator : entity work.tone_generator
@@ -427,8 +451,8 @@ begin
                 future.state <= CTRL_CLEAR;
 
             when QUEUE_PUSH =>
-                tone_val.dphase   := to_integer(signed(current_regs(1)));
-                tone_val.duration := to_integer(unsigned(current_regs(2)));
+                tone_val.dphase   := signed(current_regs(1)(tone_val.dphase'range));
+                tone_val.duration := unsigned(current_regs(2)(tone_val.duration'range));
 
                 queue_push(current.queue, future.queue, tone_val, success);
 

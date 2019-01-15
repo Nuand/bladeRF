@@ -33,7 +33,8 @@ library work;
 
 entity tone_generator_tb is
     generic (
-        CLOCK_FREQUENCY             : natural   := 1_920_000;
+        SAMPLE_CLOCK_FREQ           : natural   := 1_920_000;
+        SYSTEM_CLOCK_FREQ           : natural   := 4_000_000;
         TONE_FREQUENCY              : natural   := 1_000;
         WORDS_PER_MINUTE            : real      := 10.0
     );
@@ -43,12 +44,12 @@ architecture tb_tgen of tone_generator_tb is
     signal clock    : std_logic     := '1';
     signal reset    : std_logic     := '1';
 
-    signal inputs   : tone_generator_input_t    := (dphase      => 0,
-                                                    duration    => 0,
-                                                    valid       => '0');
+    signal inputs   : tone_generator_input_t := (dphase   => (others => '0'),
+                                                 duration => (others => '0'),
+                                                 valid    => '0');
     signal outputs  : tone_generator_output_t;
 
-    constant CLOCK_PERIOD   : time      := 1 sec / CLOCK_FREQUENCY;
+    constant CLOCK_PERIOD   : time      := 1 sec / SAMPLE_CLOCK_FREQ;
     constant DOT            : time      := (60.0 sec/50.0) / WORDS_PER_MINUTE;
     constant DASH           : time      := DOT * 3;
     constant PAUSE          : time      := DOT * 3;
@@ -134,12 +135,13 @@ begin
         -- send message
         for i in MESSAGE'range loop
             if MESSAGE(i).is_on then
-                inputs.dphase <= TONE_DPHASE;
+                inputs.dphase <= to_signed(TONE_DPHASE, inputs.dphase'length);
             else
-                inputs.dphase <= 0;
+                inputs.dphase <= (others => '0');
             end if;
 
-            inputs.duration <= MESSAGE(i).duration / CLOCK_PERIOD;
+            inputs.duration <= to_unsigned((MESSAGE(i).duration / CLOCK_PERIOD),
+                                           inputs.duration'length);
 
             inputs.valid <= '1';
             wait until rising_edge(clock);
@@ -176,7 +178,7 @@ architecture tb_hw of tone_generator_tb is
     signal sample_q         : signed(15 downto 0);
     signal sample_valid     : std_logic;
 
-    constant CLOCK_PERIOD   : time      := 1 sec / CLOCK_FREQUENCY;
+    constant CLOCK_PERIOD   : time      := 1 sec / SAMPLE_CLOCK_FREQ;
     constant DOT            : time      := (60.0 sec/50.0) / WORDS_PER_MINUTE;
     constant DASH           : time      := DOT * 3;
     constant PAUSE          : time      := DOT * 3;
@@ -240,7 +242,7 @@ architecture tb_hw of tone_generator_tb is
     );
 begin
 
-    clock       <= not clock after (1 sec/3e6)/2;
+    clock       <= not clock after (1 sec/SYSTEM_CLOCK_FREQ)/2;
     sample_clk  <= not sample_clk after CLOCK_PERIOD/2;
 
     U_tone_generator_hw : entity work.tone_generator_hw
