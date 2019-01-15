@@ -101,7 +101,6 @@ architecture foxhunt_bladerf of bladerf is
     signal fx3_ctl_out            : std_logic_vector(12 downto 0);
     signal fx3_ctl_oe             : std_logic_vector(12 downto 0);
 
-    signal tx_underflow_led       : std_logic := '1';
     signal rx_overflow_led        : std_logic := '1';
 
     signal led1_blink             : std_logic;
@@ -149,7 +148,109 @@ architecture foxhunt_bladerf of bladerf is
     signal   ps_sync              : std_logic_vector(0 downto 0)          := (others => '0');
 
     signal tonegen_streams        : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
+    signal tonegen_sample_i       : std_logic_vector(15 downto 0);
+    signal tonegen_sample_q       : std_logic_vector(15 downto 0);
+    signal tonegen_sample_v       : std_logic;
     signal tonegen_running        : std_logic;
+
+    -- override nios_system from bladerf_p
+    component nios_system is
+      port (
+        clk_clk                         :   in  std_logic := 'X';
+        reset_reset_n                   :   in  std_logic := 'X';
+        dac_MISO                        :   in  std_logic := 'X';
+        dac_MOSI                        :   out std_logic;
+        dac_SCLK                        :   out std_logic;
+        dac_SS_n                        :   out std_logic_vector(1 downto 0);
+        spi_MISO                        :   in  std_logic := 'X';
+        spi_MOSI                        :   out std_logic;
+        spi_SCLK                        :   out std_logic;
+        spi_SS_n                        :   out std_logic;
+        gpio_in_port                    :   in  std_logic_vector(31 downto 0);
+        gpio_out_port                   :   out std_logic_vector(31 downto 0);
+        gpio_rffe_0_in_port             :   in  std_logic_vector(31 downto 0);
+        gpio_rffe_0_out_port            :   out std_logic_vector(31 downto 0);
+        ad9361_dac_sync_in_sync         :   in  std_logic;
+        ad9361_dac_sync_out_sync        :   out std_logic;
+        ad9361_data_clock_clk           :   out std_logic;
+        ad9361_data_reset_reset         :   out std_logic;
+        ad9361_device_if_rx_clk_in_p    :   in  std_logic;
+        ad9361_device_if_rx_clk_in_n    :   in  std_logic;
+        ad9361_device_if_rx_frame_in_p  :   in  std_logic;
+        ad9361_device_if_rx_frame_in_n  :   in  std_logic;
+        ad9361_device_if_rx_data_in_p   :   in  std_logic_vector(5 downto 0);
+        ad9361_device_if_rx_data_in_n   :   in  std_logic_vector(5 downto 0);
+        ad9361_device_if_tx_clk_out_p   :   out std_logic;
+        ad9361_device_if_tx_clk_out_n   :   out std_logic;
+        ad9361_device_if_tx_frame_out_p :   out std_logic;
+        ad9361_device_if_tx_frame_out_n :   out std_logic;
+        ad9361_device_if_tx_data_out_p  :   out std_logic_vector(5 downto 0);
+        ad9361_device_if_tx_data_out_n  :   out std_logic_vector(5 downto 0);
+        ad9361_adc_i0_enable            :   out std_logic;
+        ad9361_adc_i0_valid             :   out std_logic;
+        ad9361_adc_i0_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_i1_enable            :   out std_logic;
+        ad9361_adc_i1_valid             :   out std_logic;
+        ad9361_adc_i1_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_overflow_ovf         :   in  std_logic;
+        ad9361_adc_q0_enable            :   out std_logic;
+        ad9361_adc_q0_valid             :   out std_logic;
+        ad9361_adc_q0_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_q1_enable            :   out std_logic;
+        ad9361_adc_q1_valid             :   out std_logic;
+        ad9361_adc_q1_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_underflow_unf        :   in  std_logic;
+        ad9361_dac_i0_enable            :   out std_logic;
+        ad9361_dac_i0_valid             :   out std_logic;
+        ad9361_dac_i0_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_i1_enable            :   out std_logic;
+        ad9361_dac_i1_valid             :   out std_logic;
+        ad9361_dac_i1_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_overflow_ovf         :   in  std_logic;
+        ad9361_dac_q0_enable            :   out std_logic;
+        ad9361_dac_q0_valid             :   out std_logic;
+        ad9361_dac_q0_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_q1_enable            :   out std_logic;
+        ad9361_dac_q1_valid             :   out std_logic;
+        ad9361_dac_q1_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_underflow_unf        :   in  std_logic;
+        oc_i2c_arst_i                   :   in  std_logic;
+        oc_i2c_scl_pad_i                :   in  std_logic;
+        oc_i2c_scl_pad_o                :   out std_logic;
+        oc_i2c_scl_padoen_o             :   out std_logic;
+        oc_i2c_sda_pad_i                :   in  std_logic;
+        oc_i2c_sda_pad_o                :   out std_logic;
+        oc_i2c_sda_padoen_o             :   out std_logic;
+        xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
+        xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
+        xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
+        command_serial_in               :   in  std_logic;
+        command_serial_out              :   out std_logic;
+        rx_tamer_ts_sync_in             :   in  std_logic;
+        rx_tamer_ts_sync_out            :   out std_logic;
+        rx_tamer_ts_pps                 :   in  std_logic;
+        rx_tamer_ts_clock               :   in  std_logic;
+        rx_tamer_ts_reset               :   in  std_logic;
+        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
+        tx_tamer_ts_sync_in             :   in  std_logic;
+        tx_tamer_ts_sync_out            :   out std_logic;
+        tx_tamer_ts_pps                 :   in  std_logic;
+        tx_tamer_ts_clock               :   in  std_logic;
+        tx_tamer_ts_reset               :   in  std_logic;
+        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
+        tx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
+        tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
+        rx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
+        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
+        tonegen_sample_valid            :   out std_logic;
+        tonegen_sample_i                :   out std_logic_vector(15 downto 0);
+        tonegen_sample_q                :   out std_logic_vector(15 downto 0);
+        tonegen_sample_clk              :   in  std_logic := 'X';
+        tonegen_status_empty            :   out std_logic;
+        tonegen_status_full             :   out std_logic;
+        tonegen_status_running          :   out std_logic
+      );
+    end component;
 
 begin
 
@@ -398,13 +499,17 @@ begin
             tx_trigger_ctl_in_port          => pack(tx_trigger_ctl),
 
             tonegen_sample_clk              => tx_clock,
-            tonegen_sample_valid            => tonegen_streams.data_v,
-            tonegen_sample_i                => tonegen_streams.data_i,
-            tonegen_sample_q                => tonegen_streams.data_q,
+            tonegen_sample_valid            => tonegen_sample_v,
+            tonegen_sample_i                => tonegen_sample_i,
+            tonegen_sample_q                => tonegen_sample_q,
             tonegen_status_empty            => open,
             tonegen_status_full             => open,
             tonegen_status_running          => tonegen_running
         );
+
+    tonegen_streams(0).data_i <= signed(tonegen_sample_i);
+    tonegen_streams(0).data_q <= signed(tonegen_sample_q);
+    tonegen_streams(0).data_v <= tonegen_sample_v;
 
     -- FX3 UART
     command_serial_in <= fx3_uart_txd       when sys_reset = '0' else '1';
@@ -440,7 +545,7 @@ begin
 
     -- LEDs
     led(1) <= led1_blink        when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(1);
-    led(2) <= tx_underflow_led  when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(2);
+    led(2) <= tonegen_running   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(2);
     led(3) <= rx_overflow_led   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(3);
 
     -- DAC SPI (data latched on falling edge)
@@ -496,7 +601,7 @@ begin
             meta_en              => meta_en_tx,
             timestamp_reset      => tx_ts_reset,
             usb_speed            => usb_speed_tx,
-            tx_underflow_led     => tx_underflow_led,
+            tx_underflow_led     => open,
             tx_timestamp         => tx_timestamp,
 
             -- Triggering
@@ -531,23 +636,10 @@ begin
 
             -- RFFE Interface
             dac_controls         => dac_controls,
-            dac_streams          => dac_streams
+            dac_streams          => open
         );
 
-    --dac_assignment_proc : process( all )
-    --begin
-    --    for i in dac_controls'range loop
-    --        dac_controls(i).enable   <= (ad9361.ch(i).dac.i.enable or ad9361.ch(i).dac.q.enable or tx_loopback_enabled) and
-    --                                    mimo_tx_enables(i);
-    --        dac_controls(i).data_req <= (ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled) and
-    --                                    mimo_tx_enables(i);
-
-    --        if (rising_edge(tx_clock) and dac_streams(i).data_v = '1') then
-    --            ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
-    --            ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
-    --        end if;
-    --    end loop;
-    --end process;
+    dac_streams(0) <= tonegen_streams(0);
 
     dac_assignment_proc : process( all )
     begin
