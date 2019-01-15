@@ -42,13 +42,6 @@
 #define MAX_MESSAGE_LENGTH 128
 #define MAX_TONE_COUNT 128
 
-// BEGIN temporary pending PR #723
-#ifdef RFIC_SYSTEM_CHANNEL
-#error remove this stuff
-#endif
-#define RFIC_SYSTEM_CHANNEL 0xF
-// END temporary pending PR #723
-
 /**
  * @brief      Error-catching wrapper
  *
