@@ -23,8 +23,8 @@ library work;
 --              bits 8-15: number of items in the queue (unsigned)
 --      others: reserved/undef
 --  1   dphase - phase rotation per clock cycle (signed)
---      one full rotation is 8192, so:
---          dphase = 8192 / (f_clock / f_tone)
+--      one full rotation is 8192, and this is signed, so:
+--          dphase = 4096 / (f_clock / f_tone)
 --  2   duration - in clocks (unsigned)
 
 entity tone_generator_hw is
