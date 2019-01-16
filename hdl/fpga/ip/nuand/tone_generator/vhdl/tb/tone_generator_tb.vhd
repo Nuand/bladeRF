@@ -196,7 +196,13 @@ architecture tb_hw of tone_generator_tb is
     type tones_t is array(natural range <>) of tone_t;
 
     constant MESSAGE : tones_t := (
-        (is_on => false,    duration => PAUSE),
+        (is_on => false,    duration => 1024*CLOCK_PERIOD),
+        (is_on => true,     duration => 1024*CLOCK_PERIOD),
+        (is_on => false,    duration => 1024*CLOCK_PERIOD),
+        (is_on => true,     duration => 1024*CLOCK_PERIOD),
+        (is_on => true,     duration => 1024*CLOCK_PERIOD),
+
+        (is_on => false,    duration => DOT),
 
         -- H
         (is_on => true,     duration => DOT),
@@ -365,7 +371,8 @@ begin
 
         -- done
         nop(clock, 100);
-        report "-- End of Simulation --" severity failure ;
+        report "-- End of Simulation --";
+        wait;
     end process tb;
 
 end architecture tb_hw;
