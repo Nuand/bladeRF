@@ -40,4 +40,4 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/blad
 set_global_assignment -name QIP_FILE  [file normalize                  nios_system/synthesis/nios_system.qip]
 
 # Explicitly include Nios mem_init
-set_global_assignment -name QIP_FILE [file normalize bladeRF_nios/mem_init/meminit.qip]
+set_global_assignment -name QIP_FILE [file normalize foxhunt/mem_init/meminit.qip]

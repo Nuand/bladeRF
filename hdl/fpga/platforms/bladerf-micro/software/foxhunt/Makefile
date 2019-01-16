@@ -12,7 +12,7 @@ FIRMWARE_COMMON_DIR := ../../../../../../firmware_common
 NIOS_MAIN_DIR       := ../bladeRF_nios
 
 QUARTUS_WORKDIR     := ../../../../../quartus/${WORKDIR}
-NIOS_BUILD_OUTDIR   := $(QUARTUS_WORKDIR)/bladeRF_nios
+NIOS_BUILD_OUTDIR   := $(QUARTUS_WORKDIR)/foxhunt
 MEM_INIT_DIR        := $(NIOS_BUILD_OUTDIR)/mem_init
 BSP_BUILD_OUTDIR    := $(QUARTUS_WORKDIR)/bladeRF_nios_bsp
 QUARTUS_OUTDIR      := $(QUARTUS_WORKDIR)/output_files
@@ -29,7 +29,7 @@ C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_cmds.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_queue.c
 C_SRCS              += $(HOST_COMMON_DIR)/src/range.c
 
-CFLAGS              += -DBOARD_BLADERF_MICRO -DBLADERF_NIOS_DEBUG
+CFLAGS              += -DBOARD_BLADERF_MICRO # -DBLADERF_NIOS_DEBUG
 
 # libad936x build configuration and lib inclusion
 # These variables need to be set before including the common Makefile.
