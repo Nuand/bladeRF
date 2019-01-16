@@ -406,6 +406,16 @@ make WORKDIR=${work_dir} \
 
 popd
 
+if [ "$rev" == "foxhunt" ]; then
+    pushd ${build_dir}/../software/foxhunt/
+
+    make WORKDIR=${work_dir} \
+         mem_init_clean \
+         mem_init_generate
+
+    popd
+fi
+
 echo ""
 echo "##########################################################################"
 echo "    Building ${board} FPGA Image: $rev, $size kLE"
