@@ -46,8 +46,10 @@ struct message {
     bladerf_gain backoff_dB;   /**< Backoff from full power, dB */
 };
 
-#define TONE_GENERATOR_OFFSET_STATUS 0x0
-#define TONE_GENERATOR_OFFSET_DPHASE 0x4
-#define TONE_GENERATOR_OFFSET_DURATION 0x8
+#define TONE_GEN_OFFSET_STATUS 0x0
+#define TONE_GEN_OFFSET_DPHASE 0x4
+#define TONE_GEN_OFFSET_DURATION 0x8
+
+#define TONE_GEN_OFFSET_CTRL_APPEND 0x1
 
 #endif  // FOXHUNT_H_

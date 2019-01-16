@@ -87,7 +87,7 @@ struct message const MESSAGES[] = {
 
 size_t queue_status()
 {
-    return IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_STATUS);
+    return IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GEN_OFFSET_STATUS);
 }
 
 size_t queue_len()
@@ -110,21 +110,27 @@ float const DPHASE_COEFF = 4096.0 / (float)SAMPLERATE;
 
 void queue_tone(unsigned int frequency, float duration)
 {
-    uint32_t dur_clks = __round_int((float)SAMPLERATE * duration);
-    int32_t dphase    = __round_int((float)frequency * DPHASE_COEFF);
+    uint32_t dur_clks;
+    int32_t dphase;
 
+    dur_clks = __round_int((float)SAMPLERATE * duration);
+    dphase   = __round_int((float)frequency * DPHASE_COEFF);
+
+    /* Spin until queue has room */
     while (queue_full()) {
         usleep(1000);
     }
 
-    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DPHASE, dphase);
-    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DURATION,
-                  dur_clks);
+    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GEN_OFFSET_DPHASE, dphase);
+    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GEN_OFFSET_DURATION, dur_clks);
+
     DBG("%s: read dphase=0x%x\n", __FUNCTION__,
-        IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DPHASE));
+        IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GEN_OFFSET_DPHASE));
     DBG("%s: read dur_clks=0x%x\n", __FUNCTION__,
-        IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DURATION));
-    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_STATUS, 0x1);
+        IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GEN_OFFSET_DURATION));
+
+    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GEN_OFFSET_STATUS,
+                  TONE_GEN_OFFSET_CTRL_APPEND);
 
     DBG("%s: running=%x dphase=0x%x dur_clks=0x%x qlen=0x%x\n", __FUNCTION__,
         queue_running(), dphase, dur_clks, queue_len());
@@ -196,6 +202,10 @@ int main(void)
     bladerf_frequency prev_freq = 0;
     bladerf_gain prev_gain      = 0;
 
+    /* Using a guestimate here... */
+    ad56x1_vctcxo_trim_dac_write(0x1ec1);
+    usleep(1000000);
+
     DBG("=== Initializing RFIC ===\n");
 
     /* Initialize RFIC.
@@ -207,7 +217,7 @@ int main(void)
                                   RFIC_SYSTEM_CHANNEL,
                                   BLADERF_RFIC_INIT_STATE_ON));
 
-    /* Setup filters */
+    /* Set up filters */
     for (size_t i = 0; i < 2; ++i) {
         CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_FILTER,
                                       BLADERF_CHANNEL_RX(i),
@@ -232,6 +242,7 @@ int main(void)
         DBG("--> Message %x ('%s')\n", msg_index, msg.text);
 
         /* BEGIN TRANSMITTING MESSAGE */
+
         /* Set Frequency */
         if (msg.carrier != prev_freq) {
             CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_FREQUENCY,
