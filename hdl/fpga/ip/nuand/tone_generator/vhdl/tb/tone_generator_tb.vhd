@@ -201,8 +201,8 @@ architecture tb_hw of tone_generator_tb is
         (is_on => false,    duration => 1024*CLOCK_PERIOD),
         (is_on => true,     duration => 1024*CLOCK_PERIOD),
         (is_on => true,     duration => 1024*CLOCK_PERIOD),
-
-        (is_on => false,    duration => DOT),
+        (is_on => false,    duration => 1024*CLOCK_PERIOD),
+        (is_on => false,    duration => 1024*CLOCK_PERIOD),
 
         -- H
         (is_on => true,     duration => DOT),
@@ -244,7 +244,9 @@ architecture tb_hw of tone_generator_tb is
         (is_on => true,     duration => DASH),
         (is_on => false,    duration => DOT),
         (is_on => true,     duration => DASH),
-        (is_on => false,    duration => PAUSE)
+        (is_on => false,    duration => PAUSE),
+
+        (is_on => false,    duration => 1024*CLOCK_PERIOD)
     );
 begin
 
@@ -371,8 +373,7 @@ begin
 
         -- done
         nop(clock, 100);
-        report "-- End of Simulation --";
-        wait;
+        report "-- End of Simulation --" severity failure;
     end process tb;
 
 end architecture tb_hw;
