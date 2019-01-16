@@ -43,7 +43,11 @@ struct message {
     float wpm;                 /**< Code speed, words per minute */
     unsigned int tone;         /**< Tone frequency, Hz */
     bladerf_frequency carrier; /**< Carrier frequency, Hz */
-    unsigned int backoff_dB;   /**< Backoff from full power, dB */
+    bladerf_gain backoff_dB;   /**< Backoff from full power, dB */
 };
+
+#define TONE_GENERATOR_OFFSET_STATUS 0x0
+#define TONE_GENERATOR_OFFSET_DPHASE 0x4
+#define TONE_GENERATOR_OFFSET_DURATION 0x8
 
 #endif  // FOXHUNT_H_

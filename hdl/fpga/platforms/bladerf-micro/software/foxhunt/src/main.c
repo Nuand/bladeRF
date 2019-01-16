@@ -37,10 +37,15 @@
 
 #define BLADERF_DEVICE_NAME "Foxhunt for the Nuand bladeRF 2.0 Micro"
 
-#define SAMPLERATE 3840000
+#define SAMPLERATE 768000
 
 #define MAX_MESSAGE_LENGTH 128
 #define MAX_TONE_COUNT 128
+
+// Check for buildability
+#ifndef TONE_GENERATOR_0_BASE
+#error tone generator not present
+#endif
 
 /**
  * @brief      Error-catching wrapper
@@ -58,23 +63,72 @@
         }                                                               \
     } while (0)
 
+bool const REPEAT_MODE = true;
+
+uint32_t const INTER_MESSAGE_GAP = 10; /* seconds */
+
 struct message const MESSAGES[] = {
-    {
-        /* This should be exactly 100 dot lengths */
-        .text       = "PARIS PARIS",
-        .wpm        = 10,
-        .tone       = 1000,
-        .carrier    = 147555000,
-        .backoff_dB = 10,
-    },
+    // {
+    //     /* This should be exactly 100 dot lengths */
+    //     .text       = "PARIS PARIS",
+    //     .wpm        = 5,
+    //     .tone       = 1000,
+    //     .carrier    = 433920000,
+    //     .backoff_dB = 10,
+    // },
     {
         .text       = "cq foxhunt de w2xh",
-        .wpm        = 12,
+        .wpm        = 5,
         .tone       = 1000,
-        .carrier    = 147555000,
+        .carrier    = 433920000,
         .backoff_dB = 10,
     },
 };
+
+size_t queue_status()
+{
+    return IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_STATUS);
+}
+
+size_t queue_len()
+{
+    return (queue_status() >> 8) & 0xFF;
+}
+
+bool queue_full()
+{
+    return (queue_status() & 0x2) > 0;
+}
+
+bool queue_running()
+{
+    return (queue_status() & 0x1) > 0;
+}
+
+/* dphase is 4096 / (f_clock / f_tone) */
+float const DPHASE_COEFF = 4096.0 / (float)SAMPLERATE;
+
+void queue_tone(unsigned int frequency, float duration)
+{
+    uint32_t dur_clks = __round_int((float)SAMPLERATE * duration);
+    int32_t dphase    = __round_int((float)frequency * DPHASE_COEFF);
+
+    while (queue_full()) {
+        usleep(1000);
+    }
+
+    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DPHASE, dphase);
+    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DURATION,
+                  dur_clks);
+    DBG("%s: read dphase=0x%x\n", __FUNCTION__,
+        IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DPHASE));
+    DBG("%s: read dur_clks=0x%x\n", __FUNCTION__,
+        IORD_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_DURATION));
+    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GENERATOR_OFFSET_STATUS, 0x1);
+
+    DBG("%s: running=%x dphase=0x%x dur_clks=0x%x qlen=0x%x\n", __FUNCTION__,
+        queue_running(), dphase, dur_clks, queue_len());
+}
 
 /* Generate morse code signal */
 void morse_tx(struct message msg)
@@ -111,6 +165,7 @@ void morse_tx(struct message msg)
     for (size_t i = 0; i < count; ++i) {
         int dots = (int)(tones[i].duration / dot_time);
         // DBG("play len=%x freq=%x\n", dots, tones[i].frequency);
+        queue_tone(tones[i].frequency, tones[i].duration);
         total_dots += dots;
     }
 
@@ -138,6 +193,9 @@ int main(void)
     bool run_nios    = true; /* Set 'false' to drop out of the loop */
     size_t msg_index = 0;    /* Counter for message index */
 
+    bladerf_frequency prev_freq = 0;
+    bladerf_gain prev_gain      = 0;
+
     DBG("=== Initializing RFIC ===\n");
 
     /* Initialize RFIC.
@@ -148,6 +206,16 @@ int main(void)
     CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_INIT,
                                   RFIC_SYSTEM_CHANNEL,
                                   BLADERF_RFIC_INIT_STATE_ON));
+
+    /* Setup filters */
+    for (size_t i = 0; i < 2; ++i) {
+        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_FILTER,
+                                      BLADERF_CHANNEL_RX(i),
+                                      BLADERF_RFIC_RXFIR_DEC4));
+        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_FILTER,
+                                      BLADERF_CHANNEL_TX(i),
+                                      BLADERF_RFIC_TXFIR_INT4));
+    }
 
     /* Set Sample Rate */
     CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_SAMPLERATE, channel,
@@ -165,32 +233,54 @@ int main(void)
 
         /* BEGIN TRANSMITTING MESSAGE */
         /* Set Frequency */
-        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_FREQUENCY, channel,
-                                      msg.carrier));
-
+        if (msg.carrier != prev_freq) {
+            CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_FREQUENCY,
+                                          channel, msg.carrier));
+            prev_freq = msg.carrier;
+        }
 
         /* Set Gain */
-        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_GAIN, channel,
-                                      msg.backoff_dB * 1000));
+        if (msg.backoff_dB != prev_gain) {
+            CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_GAIN, channel,
+                                          msg.backoff_dB * 1000));
+            prev_gain = msg.backoff_dB;
+        }
 
-        /* Begin TX on this channel */
+        /* Begin TX on this channel if required */
         CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_ENABLE, channel,
                                       true));
+
+        /* Pause 1 second */
+        queue_tone(0, 1);
 
         /* Do signal transmission */
         morse_tx(msg);
 
-        /* Stop transmitting */
-        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_ENABLE, channel,
-                                      false));
-
         /* If we have more messages, transmit them */
-        if (msg_index < ARRAY_SIZE(MESSAGES) - 1) {
+        if ((msg_index + 1) < ARRAY_SIZE(MESSAGES)) {
             ++msg_index;
         } else {
-            run_nios = false;
+            msg_index = 0;
+            run_nios  = REPEAT_MODE;
+        }
+
+        if (run_nios) {
+            /* Pause 1 second */
+            queue_tone(0, 1);
+
+            /* Wait for completion */
+            while (queue_running()) {
+                usleep(1000);
+            }
+
+            /* Stop transmitting */
+            CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_ENABLE, channel,
+                                          false));
+
+            usleep(INTER_MESSAGE_GAP * 1e6);
         }
     }
+
 
     DBG("=== RFIC standby ===\n");
 
