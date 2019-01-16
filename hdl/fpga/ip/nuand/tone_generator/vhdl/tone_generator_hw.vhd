@@ -411,6 +411,8 @@ begin
         future.op_pending <= current.op_pending or pend_ctrl;
         future.tone.valid <= '0';
 
+        tone_val := NULL_TONE_GENERATOR_INPUT;
+
         case (current.state) is
             when IDLE =>
                 if (current.op_pending) then
@@ -451,8 +453,10 @@ begin
                 future.state <= CTRL_CLEAR;
 
             when QUEUE_PUSH =>
-                tone_val.dphase   := signed(current_regs(1)(tone_val.dphase'range));
-                tone_val.duration := unsigned(current_regs(2)(tone_val.duration'range));
+                tone_val.dphase
+                    := signed(current_regs(1)(tone_val.dphase'range));
+                tone_val.duration
+                    := unsigned(current_regs(2)(tone_val.duration'range));
 
                 queue_push(current.queue, future.queue, tone_val, success);
 
