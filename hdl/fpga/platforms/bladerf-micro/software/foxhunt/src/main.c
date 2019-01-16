@@ -97,12 +97,12 @@ size_t queue_len()
 
 bool queue_full()
 {
-    return (queue_status() & 0x2) > 0;
+    return (queue_status() & 0x2);
 }
 
 bool queue_running()
 {
-    return (queue_status() & 0x1) > 0;
+    return (queue_status() & 0x1);
 }
 
 /* dphase is 4096 / (f_clock / f_tone) */
@@ -206,6 +206,9 @@ int main(void)
     ad56x1_vctcxo_trim_dac_write(0x1ec1);
     usleep(1000000);
 
+    IOWR_32DIRECT(TONE_GENERATOR_0_BASE, TONE_GEN_OFFSET_STATUS,
+                  TONE_GEN_OFFSET_CTRL_CLEAR);
+
     DBG("=== Initializing RFIC ===\n");
 
     /* Initialize RFIC.
@@ -291,7 +294,6 @@ int main(void)
             usleep(INTER_MESSAGE_GAP * 1e6);
         }
     }
-
 
     DBG("=== RFIC standby ===\n");
 

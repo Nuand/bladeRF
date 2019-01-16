@@ -51,5 +51,6 @@ struct message {
 #define TONE_GEN_OFFSET_DURATION 0x8
 
 #define TONE_GEN_OFFSET_CTRL_APPEND 0x1
+#define TONE_GEN_OFFSET_CTRL_CLEAR 0x1
 
 #endif  // FOXHUNT_H_
