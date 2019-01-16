@@ -313,7 +313,8 @@ bool rfic_command_write_immed(bladerf_rfic_command cmd,
         rv = f->write32(&state, ch, (uint32_t)data);
     }
 
-    RFIC_DBG("WR!", cmd, ch, rv ? "OK " : "BAD", 0x0, data);
+    RFIC_DBG("WR!", _rfic_cmdstr(cmd), _rfic_chanstr(ch), rv ? "OK " : "BAD",
+             0x0, data);
 
     return rv;
 }
@@ -348,7 +349,8 @@ bool rfic_command_read_immed(bladerf_rfic_command cmd,
         }
     }
 
-    RFIC_DBG("RD!", cmd, ch, rv ? "OK " : "BAD", 0x0, *data);
+    RFIC_DBG("RD!", _rfic_cmdstr(cmd), _rfic_chanstr(ch), rv ? "OK " : "BAD",
+             0x0, *data);
 
     return rv;
 }
