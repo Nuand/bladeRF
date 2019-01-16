@@ -145,7 +145,7 @@ begin
 
     outputs.re     <= (others => '0') when current.zero_hold_i else nco_out.re;
     outputs.im     <= (others => '0') when current.zero_hold_q else nco_out.im;
-    outputs.valid  <= nco_out.valid;
+    outputs.valid  <= nco_out.valid when (current.nco_reset = '0') else '0';
     outputs.active <= '1' when current.is_active else '0';
 
     -- State machinery
