@@ -42,6 +42,9 @@
 #define MAX_MESSAGE_LENGTH 128
 #define MAX_TONE_COUNT 128
 
+// uncomment to enable bias tee power (e.g. for BT-100)
+#define BIASTEE 1
+
 // Check for buildability
 #ifndef TONE_GENERATOR_0_BASE
 #error tone generator not present
@@ -264,6 +267,17 @@ int main(void)
         CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_ENABLE, channel,
                                       true));
 
+#ifdef BIASTEE
+        /* Enable bias tee on TX side */
+        uint32_t rffe_reg;
+
+        rffe_reg = rffe_csr_read();
+
+        rffe_reg |= (1 << 10);  // tx_bias_en
+
+        rffe_csr_write(rffe_reg);
+#endif // BIASTEE
+
         /* Pause 1 second */
         queue_tone(0, 1);
 
@@ -290,6 +304,15 @@ int main(void)
             /* Stop transmitting */
             CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_ENABLE, channel,
                                           false));
+
+#ifdef BIASTEE
+        /* Disable bias tee on TX side */
+        rffe_reg = rffe_csr_read();
+
+        rffe_reg &= ~(1 << 10);  // tx_bias_en
+
+        rffe_csr_write(rffe_reg);
+#endif // BIASTEE
 
             usleep(INTER_MESSAGE_GAP * 1e6);
         }
