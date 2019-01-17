@@ -343,30 +343,30 @@ begin
             ctl_out             =>  fx3_ctl_out,
             ctl_oe              =>  fx3_ctl_oe,
 
-            tx_fifo_write       =>  tx_sample_fifo.wreq,
-            tx_fifo_full        =>  tx_sample_fifo.wfull,
-            tx_fifo_empty       =>  tx_sample_fifo.wempty,
+            tx_fifo_write       =>  open,
+            tx_fifo_full        =>  '0',
+            tx_fifo_empty       =>  '0',
             tx_fifo_usedw       =>  tx_sample_fifo.wused,
-            tx_fifo_data        =>  tx_sample_fifo.wdata,
+            tx_fifo_data        =>  open,
 
             tx_timestamp        =>  fx3_timestamp,
-            tx_meta_fifo_write  =>  tx_meta_fifo.wreq,
-            tx_meta_fifo_full   =>  tx_meta_fifo.wfull,
-            tx_meta_fifo_empty  =>  tx_meta_fifo.wempty,
+            tx_meta_fifo_write  =>  open,
+            tx_meta_fifo_full   =>  '0',
+            tx_meta_fifo_empty  =>  '0',
             tx_meta_fifo_usedw  =>  tx_meta_fifo.wused,
-            tx_meta_fifo_data   =>  tx_meta_fifo.wdata,
+            tx_meta_fifo_data   =>  open,
 
-            rx_fifo_read        =>  rx_sample_fifo.rreq,
-            rx_fifo_full        =>  rx_sample_fifo.rfull,
-            rx_fifo_empty       =>  rx_sample_fifo.rempty,
+            rx_fifo_read        =>  open,
+            rx_fifo_full        =>  '0',
+            rx_fifo_empty       =>  '0',
             rx_fifo_usedw       =>  rx_sample_fifo.rused,
-            rx_fifo_data        =>  rx_sample_fifo.rdata,
+            rx_fifo_data        =>  (others => '0'),
 
-            rx_meta_fifo_read   =>  rx_meta_fifo.rreq,
-            rx_meta_fifo_full   =>  rx_meta_fifo.rfull,
-            rx_meta_fifo_empty  =>  rx_meta_fifo.rempty,
+            rx_meta_fifo_read   =>  open,
+            rx_meta_fifo_full   =>  '0',
+            rx_meta_fifo_empty  =>  '0',
             rx_meta_fifo_usedr  =>  rx_meta_fifo.rused,
-            rx_meta_fifo_data   =>  rx_meta_fifo.rdata
+            rx_meta_fifo_data   =>  (others => '0')
         );
 
     -- FX3 GPIF bidirectional signal control
@@ -612,27 +612,27 @@ begin
 
             -- Samples from host via FX3
             sample_fifo_wclock   => fx3_pclk_pll,
-            sample_fifo_wreq     => tx_sample_fifo.wreq,
-            sample_fifo_wdata    => tx_sample_fifo.wdata,
-            sample_fifo_wempty   => tx_sample_fifo.wempty,
-            sample_fifo_wfull    => tx_sample_fifo.wfull,
-            sample_fifo_wused    => tx_sample_fifo.wused,
+            sample_fifo_wreq     => '0',
+            sample_fifo_wdata    => (others => '0'),
+            sample_fifo_wempty   => open,
+            sample_fifo_wfull    => open,
+            sample_fifo_wused    => open,
 
             -- Metadata from host via FX3
             meta_fifo_wclock     => fx3_pclk_pll,
-            meta_fifo_wreq       => tx_meta_fifo.wreq,
-            meta_fifo_wdata      => tx_meta_fifo.wdata,
-            meta_fifo_wempty     => tx_meta_fifo.wempty,
-            meta_fifo_wfull      => tx_meta_fifo.wfull,
-            meta_fifo_wused      => tx_meta_fifo.wused,
+            meta_fifo_wreq       => '0',
+            meta_fifo_wdata      => (others => '0'),
+            meta_fifo_wempty     => open,
+            meta_fifo_wfull      => open,
+            meta_fifo_wused      => open,
 
             -- Digital Loopback Interface
-            loopback_enabled     => tx_loopback_enabled,
+            loopback_enabled     => '0',
             loopback_fifo_wclock => tx_loopback_fifo.wclock,
-            loopback_fifo_wdata  => tx_loopback_fifo.wdata,
-            loopback_fifo_wreq   => tx_loopback_fifo.wreq,
-            loopback_fifo_wfull  => tx_loopback_fifo.wfull,
-            loopback_fifo_wused  => tx_loopback_fifo.wused,
+            loopback_fifo_wdata  => open,
+            loopback_fifo_wreq   => open,
+            loopback_fifo_wfull  => '0',
+            loopback_fifo_wused  => (others => '0'),
 
             -- RFFE Interface
             dac_controls         => dac_controls,
@@ -682,33 +682,33 @@ begin
 
             -- Samples to host via FX3
             sample_fifo_rclock     => fx3_pclk_pll,
-            sample_fifo_raclr      => not rx_enable_pclk,
-            sample_fifo_rreq       => rx_sample_fifo.rreq,
-            sample_fifo_rdata      => rx_sample_fifo.rdata,
-            sample_fifo_rempty     => rx_sample_fifo.rempty,
-            sample_fifo_rfull      => rx_sample_fifo.rfull,
-            sample_fifo_rused      => rx_sample_fifo.rused,
+            sample_fifo_raclr      => '1',
+            sample_fifo_rreq       => '0',
+            sample_fifo_rdata      => open,
+            sample_fifo_rempty     => open,
+            sample_fifo_rfull      => open,
+            sample_fifo_rused      => open,
 
             -- Mini expansion signals
             mini_exp               => mini_exp2 & mini_exp1,
 
             -- Metadata to host via FX3
             meta_fifo_rclock       => fx3_pclk_pll,
-            meta_fifo_raclr        => not rx_enable_pclk,
-            meta_fifo_rreq         => rx_meta_fifo.rreq,
-            meta_fifo_rdata        => rx_meta_fifo.rdata,
-            meta_fifo_rempty       => rx_meta_fifo.rempty,
-            meta_fifo_rfull        => rx_meta_fifo.rfull,
-            meta_fifo_rused        => rx_meta_fifo.rused,
+            meta_fifo_raclr        => '1',
+            meta_fifo_rreq         => '0',
+            meta_fifo_rdata        => open,
+            meta_fifo_rempty       => open,
+            meta_fifo_rfull        => open,
+            meta_fifo_rused        => open,
 
             -- Digital Loopback Interface
             loopback_fifo_wenabled => tx_loopback_enabled,
             loopback_fifo_wreset   => tx_reset,
             loopback_fifo_wclock   => tx_loopback_fifo.wclock,
-            loopback_fifo_wdata    => tx_loopback_fifo.wdata,
-            loopback_fifo_wreq     => tx_loopback_fifo.wreq,
-            loopback_fifo_wfull    => tx_loopback_fifo.wfull,
-            loopback_fifo_wused    => tx_loopback_fifo.wused,
+            loopback_fifo_wdata    => (others => '0'),
+            loopback_fifo_wreq     => '0',
+            loopback_fifo_wfull    => open,
+            loopback_fifo_wused    => open,
 
             -- RFFE Interface
             adc_controls           => adc_controls,
@@ -718,11 +718,11 @@ begin
     adc_assignment_proc : process( all )
     begin
         for i in adc_controls'range loop
-            adc_controls(i).enable   <= (ad9361.ch(i).adc.i.enable or ad9361.ch(i).adc.q.enable) and mimo_rx_enables(i);
-            adc_controls(i).data_req <= '1';
-            adc_streams(i).data_i    <= signed(ad9361.ch(i).adc.i.data);
-            adc_streams(i).data_q    <= signed(ad9361.ch(i).adc.q.data);
-            adc_streams(i).data_v    <= ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid;
+            adc_controls(i).enable   <= '0';
+            adc_controls(i).data_req <= '0';
+            adc_streams(i).data_i    <= (others => '0');
+            adc_streams(i).data_q    <= (others => '0');
+            adc_streams(i).data_v    <= '0';
         end loop;
     end process;
 
@@ -859,18 +859,18 @@ begin
             );
     end generate;
 
-    generate_sync_mimo_rx_en : for i in mimo_rx_enables'range generate
-        U_sync_mimo_rx_en : entity work.synchronizer
-            generic map (
-                RESET_LEVEL         =>  '0'
-                )
-            port map (
-                reset               =>  '0',
-                clock               =>  rx_clock,
-                async               =>  unpack(rffe_gpio.o).mimo_rx_en(i),
-                sync                =>  mimo_rx_enables(i)
-            );
-    end generate;
+    --generate_sync_mimo_rx_en : for i in mimo_rx_enables'range generate
+    --    U_sync_mimo_rx_en : entity work.synchronizer
+    --        generic map (
+    --            RESET_LEVEL         =>  '0'
+    --            )
+    --        port map (
+    --            reset               =>  '0',
+    --            clock               =>  rx_clock,
+    --            async               =>  unpack(rffe_gpio.o).mimo_rx_en(i),
+    --            sync                =>  mimo_rx_enables(i)
+    --        );
+    --end generate;
 
     generate_sync_mimo_tx_en : for i in mimo_tx_enables'range generate
         U_sync_mimo_tx_en : entity work.synchronizer
