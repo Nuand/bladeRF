@@ -5,7 +5,7 @@
  *
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2014-2018 Nuand LLC
+ * Copyright (C) 2014-2019 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Tue Oct 30 16:38:52 EDT 2018 by rtucker@rho
+ * Last generated: Thu Jan 17 20:55:32 EST 2019 by rtucker@rho
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -524,36 +524,19 @@
   "\n" \
   "BladeRF1-only parameters:\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
   "            gpio FX3 <-> FPGA GPIO state\n" \
-  "\n" \
-  "         lnagain Gain setting of the RX LNA, in dB (deprecated: see\n" \
-  "                 print gain)\n" \
-  "\n" \
-  "          rxvga1 Gain setting of RXVGA1, in dB (deprecated: see\n" \
-  "                 print gain)\n" \
-  "\n" \
-  "          rxvga2 Gain setting of RXVGA2, in dB (deprecated: see\n" \
-  "                 print gain)\n" \
-  "\n" \
-  "          txvga1 Gain setting of TXVGA1, in dB (deprecated: see\n" \
-  "                 print gain)\n" \
-  "\n" \
-  "          txvga2 Gain setting of TXVGA2, in dB (deprecated: see\n" \
-  "                 print gain)\n" \
-  "\n" \
+  "         lnagain RX LNA gain, in dB (deprecated)\n" \
+  "          rxvga1 RXVGA1 gain, in dB (deprecated)\n" \
+  "          rxvga2 RXVGA2 gain, in dB (deprecated)\n" \
+  "          txvga1 TXVGA1 gain, in dB (deprecated)\n" \
+  "          txvga2 TXVGA2 gain, in dB (deprecated)\n" \
   "        sampling External or internal sampling mode\n" \
-  "\n" \
   "        smb_mode SMB clock port mode of operation\n" \
-  "\n" \
   "    vctcxo_tamer Current VCTCXO tamer mode\n" \
-  "\n" \
   "         xb_gpio Expansion board GPIO values\n" \
-  "\n" \
   "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
-  "  -----------------------------------------------------------------------\n" \
   "\n" \
   "BladeRF2-only parameters:\n" \
   "\n" \
@@ -562,9 +545,10 @@
   "       clock_sel System clock selection\n" \
   "       clock_out Clock output selection\n" \
   "            rssi Received signal strength indication\n" \
-  "       clock_ref Enables (1) or disables (0) the ADF4002 chip\n" \
+  "       clock_ref ADF4002 chip status\n" \
   "      refin_freq ADF4002 reference clock frequency\n" \
-  "         biastee Enables or disables the bias tee on a given channel\n" \
+  "         biastee Current bias-tee status\n" \
+  "          filter RFIC FIR filter selection\n" \
   "\n" \
 
 
@@ -892,65 +876,37 @@
   "Usage: set <parameter> <arguments>\n" \
   "\n" \
   "The set command takes a parameter and an arbitrary number of arguments\n" \
-  "for that particular parameter.\n" \
+  "for that particular parameter. In general, set <parameter> will\n" \
+  "display more help for that parameter.\n" \
   "\n" \
   "Common parameters:\n" \
   "\n" \
-  "  -------------------------------------------------------------------------------------------\n" \
-  "           Parameter Description\n" \
-  "  ------------------ ------------------------------------------------------------------------\n" \
-  "           bandwidth Bandwidth settings\n" \
-  "\n" \
-  "           frequency Frequency settings\n" \
-  "\n" \
-  "                 agc Automatic gain control (on, off)\n" \
-  "\n" \
-  "            loopback Loopback settings. Run 'set loopback' to list modes.\n" \
-  "\n" \
-  "              rx_mux FPGA RX FIFO input mux mode. Options are: BASEBAND, 12BIT_COUNTER,\n" \
-  "                     32BIT_COUNTER, DIGITAL_LOOPBACK\n" \
-  "\n" \
-  "                gain Gain settings\n" \
-  "\n" \
-  "          samplerate Samplerate settings\n" \
-  "\n" \
-  "             trimdac VCTCXO Trim DAC settings\n" \
-  "\n" \
-  "            hardware Low-level hardware status\n" \
-  "  -------------------------------------------------------------------------------------------\n" \
+  "       Parameter Description\n" \
+  "  -------------- --------------------------------------------------------\n" \
+  "       bandwidth Bandwidth settings\n" \
+  "       frequency Frequency settings\n" \
+  "             agc Automatic gain control\n" \
+  "        loopback Loopback settings\n" \
+  "          rx_mux FPGA RX FIFO input mux mode\n" \
+  "            gain Gain settings\n" \
+  "      samplerate Samplerate settings\n" \
+  "         trimdac VCTCXO Trim DAC settings\n" \
   "\n" \
   "BladeRF1-only parameters:\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
   "            gpio FX3 <-> FPGA GPIO state\n" \
-  "\n" \
-  "         lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
-  "                 (deprecated: see set gain)\n" \
-  "\n" \
-  "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
-  "                 (deprecated: see set gain)\n" \
-  "\n" \
-  "          rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
-  "                 (deprecated: see set gain)\n" \
-  "\n" \
-  "          txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
-  "                 (deprecated: see set gain)\n" \
-  "\n" \
-  "          txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
-  "                 (deprecated: see set gain)\n" \
-  "\n" \
+  "         lnagain RX LNA gain, in dB. Values: 0, 3, 6 (deprecated)\n" \
+  "          rxvga1 RXVGA1 gain, in dB. Range: [5, 30] (deprecated)\n" \
+  "          rxvga2 RXVGA2 gain, in dB. Range: [0, 30] (deprecated)\n" \
+  "          txvga1 TXVGA1 gain, in dB. Range: [-35, -4] (deprecated)\n" \
+  "          txvga2 TXVGA2 gain, in dB. Range: [0, 25] (deprecated)\n" \
   "        sampling External or internal sampling mode\n" \
-  "\n" \
   "        smb_mode SMB clock port mode of operation\n" \
-  "\n" \
   "    vctcxo_tamer VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz\n" \
-  "\n" \
   "         xb_gpio Expansion board GPIO values\n" \
-  "\n" \
   "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
-  "  -----------------------------------------------------------------------\n" \
   "\n" \
   "BladeRF2-only parameters:\n" \
   "\n" \
@@ -962,6 +918,7 @@
   "       clock_ref Enables (1) or disables (0) the ADF4002 chip\n" \
   "      refin_freq ADF4002 reference clock frequency\n" \
   "         biastee Enables or disables the bias tee on a given channel\n" \
+  "          filter RFIC FIR filter selection\n" \
   "\n" \
 
 
