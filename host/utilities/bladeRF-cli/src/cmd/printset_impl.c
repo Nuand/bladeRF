@@ -280,6 +280,199 @@ out:
     return rv;
 }
 
+/* filter */
+char const *_rxfir_to_str(bladerf_rfic_rxfir rxfir)
+{
+    switch (rxfir) {
+        case BLADERF_RFIC_RXFIR_BYPASS:
+            return "bypass";
+        case BLADERF_RFIC_RXFIR_CUSTOM:
+            return "custom";
+        case BLADERF_RFIC_RXFIR_DEC1:
+            return "normal";
+        case BLADERF_RFIC_RXFIR_DEC2:
+            return "2x decimation";
+        case BLADERF_RFIC_RXFIR_DEC4:
+            return "4x decimation";
+    }
+
+    return "unknown";
+}
+
+bladerf_rfic_rxfir _str_to_rxfir(char const *str, bool *ok)
+{
+    if (ok != NULL) {
+        *ok = true;
+    }
+
+    if (!strcasecmp(str, "default")) {
+        return BLADERF_RFIC_RXFIR_DEFAULT;
+    } else if (!strcasecmp(str, "bypass")) {
+        return BLADERF_RFIC_RXFIR_BYPASS;
+    } else if (!strcasecmp(str, "custom")) {
+        return BLADERF_RFIC_RXFIR_CUSTOM;
+    } else if (!strcasecmp(str, "normal")) {
+        return BLADERF_RFIC_RXFIR_DEC1;
+    } else if (!strcasecmp(str, "dec2")) {
+        return BLADERF_RFIC_RXFIR_DEC2;
+    } else if (!strcasecmp(str, "dec4")) {
+        return BLADERF_RFIC_RXFIR_DEC4;
+    } else {
+        if (ok != NULL) {
+            *ok = false;
+        }
+
+        return BLADERF_RFIC_RXFIR_DEFAULT;
+    }
+}
+
+char const *_txfir_to_str(bladerf_rfic_txfir txfir)
+{
+    switch (txfir) {
+        case BLADERF_RFIC_TXFIR_BYPASS:
+            return "bypass";
+        case BLADERF_RFIC_TXFIR_CUSTOM:
+            return "custom";
+        case BLADERF_RFIC_TXFIR_INT1:
+            return "normal";
+        case BLADERF_RFIC_TXFIR_INT2:
+            return "2x interpolation";
+        case BLADERF_RFIC_TXFIR_INT4:
+            return "4x interpolation";
+    }
+
+    return "unknown";
+}
+
+bladerf_rfic_txfir _str_to_txfir(char const *str, bool *ok)
+{
+    if (ok != NULL) {
+        *ok = true;
+    }
+
+    if (!strcasecmp(str, "default")) {
+        return BLADERF_RFIC_TXFIR_DEFAULT;
+    } else if (!strcasecmp(str, "bypass")) {
+        return BLADERF_RFIC_TXFIR_BYPASS;
+    } else if (!strcasecmp(str, "custom")) {
+        return BLADERF_RFIC_TXFIR_CUSTOM;
+    } else if (!strcasecmp(str, "normal")) {
+        return BLADERF_RFIC_TXFIR_INT1;
+    } else if (!strcasecmp(str, "int2")) {
+        return BLADERF_RFIC_TXFIR_INT2;
+    } else if (!strcasecmp(str, "int4")) {
+        return BLADERF_RFIC_TXFIR_INT4;
+    } else {
+        if (ok != NULL) {
+            *ok = false;
+        }
+
+        return BLADERF_RFIC_TXFIR_DEFAULT;
+    }
+}
+
+int print_filter(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    bladerf_rfic_rxfir rxfir;
+    bladerf_rfic_txfir txfir;
+
+    if (argc < 3 || !BLADERF_CHANNEL_IS_TX(str2channel(argv[2]))) {
+        status = bladerf_get_rfic_rx_fir(state->dev, &rxfir);
+        if (status >= 0) {
+            printf("  RX FIR Filter: %s%s\n", _rxfir_to_str(rxfir),
+                   (BLADERF_RFIC_RXFIR_DEFAULT == rxfir) ? " (default)" : "");
+        }
+    }
+
+    if (argc < 3 || BLADERF_CHANNEL_IS_TX(str2channel(argv[2]))) {
+        status = bladerf_get_rfic_tx_fir(state->dev, &txfir);
+        if (status >= 0) {
+            printf("  TX FIR Filter: %s%s\n", _txfir_to_str(txfir),
+                   (BLADERF_RFIC_TXFIR_DEFAULT == txfir) ? " (default)" : "");
+        }
+    }
+
+    return 0;
+}
+
+int set_filter(struct cli_state *state, int argc, char **argv)
+{
+    /* Usage: set filter <rx|tx> <mode> */
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+
+    bladerf_channel ch = BLADERF_CHANNEL_INVALID;
+    char *arg;
+    char *argv_tmp[3];
+    bool ok;
+
+    argv_tmp[0] = "print";
+    argv_tmp[1] = "filter";
+
+    switch (argc) {
+        case 4:
+            /* Parse channel */
+            arg = argv[3];
+            ch  = str2channel(argv[2]);
+            if (BLADERF_CHANNEL_INVALID == ch) {
+                cli_err_nnl(state, argv[0], "Invalid channel (%s)\n", argv[2]);
+                rv = CLI_RET_INVPARAM;
+                goto out;
+            }
+            break;
+
+        default:
+            /* Print usage */
+            printf("Usage: set filter <rx|tx> <mode>\n");
+            printf("\n");
+            printf("    %-15s%s\n", "channel", "Set 'rx' or 'tx' filter mode");
+            printf("    %-15s%s\n", "mode", "Filter mode (see list below)");
+            printf("\n");
+            printf("  Available filter modes:\n");
+            printf("    RX: default, normal, bypass, custom, dec2, dec4\n");
+            printf("    TX: default, normal, bypass, custom, int2, int4\n");
+            rv = CLI_RET_NARGS;
+            goto out;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        argv_tmp[2]              = "tx";
+        bladerf_rfic_txfir txfir = _str_to_txfir(arg, &ok);
+
+        if (!ok) {
+            cli_err_nnl(state, argv[0], "Invalid filter (%s)\n", arg);
+            rv = CLI_RET_INVPARAM;
+            goto out;
+        }
+
+        status = bladerf_set_rfic_tx_fir(state->dev, txfir);
+    } else {
+        argv_tmp[2]              = "rx";
+        bladerf_rfic_rxfir rxfir = _str_to_rxfir(arg, &ok);
+
+        if (!ok) {
+            cli_err_nnl(state, argv[0], "Invalid filter (%s)\n", arg);
+            rv = CLI_RET_INVPARAM;
+            goto out;
+        }
+
+        status = bladerf_set_rfic_rx_fir(state->dev, rxfir);
+    }
+
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+
+    rv = print_filter(state, 3, argv_tmp);
+
+out:
+    return rv;
+}
+
 /* frequency */
 static int _do_print_frequency(struct cli_state *state,
                                bladerf_channel ch,
@@ -932,6 +1125,9 @@ int set_rx_mux(struct cli_state *state, int argc, char **argv)
     bladerf_rx_mux mux_val;
 
     if (argc != 3) {
+        printf("Usage: set rx_mux <mode>\n");
+        printf("  Available modes: BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER, "
+               "DIGITAL_LOOPBACK\n");
         rv = CLI_RET_NARGS;
         goto out;
     }

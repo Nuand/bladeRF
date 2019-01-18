@@ -550,6 +550,8 @@ BladeRF2-only parameters:
 `refin_freq`    ADF4002 reference clock frequency
 
 `biastee`       Enables or disables the bias tee on a given channel
+
+`filter`        RFIC FIR filter selection
 ----------------------------------------------------------------------
 
 probe
@@ -971,6 +973,8 @@ BladeRF2-only parameters:
 `refin_freq`    ADF4002 reference clock frequency
 
 `biastee`       Enables or disables the bias tee on a given channel
+
+`filter`        RFIC FIR filter selection
 ----------------------------------------------------------------------
 
 version

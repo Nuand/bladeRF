@@ -89,6 +89,8 @@ int print_agc(struct cli_state *state, int argc, char **argv);
 int set_agc(struct cli_state *state, int argc, char **argv);
 int print_bandwidth(struct cli_state *state, int argc, char **argv);
 int set_bandwidth(struct cli_state *state, int argc, char **argv);
+int print_filter(struct cli_state *state, int argc, char **argv);
+int set_filter(struct cli_state *state, int argc, char **argv);
 int print_frequency(struct cli_state *state, int argc, char **argv);
 int set_frequency(struct cli_state *state, int argc, char **argv);
 int print_gain(struct cli_state *state, int argc, char **argv);
