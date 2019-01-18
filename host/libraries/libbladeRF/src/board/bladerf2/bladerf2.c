@@ -1045,15 +1045,41 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     /* If the requested sample rate is below the native range, we must implement
      * a 4x decimation/interpolation filter on the RFIC. */
     if (new_low) {
+        bool fir_set_failed = false;
+        int status;
+
         if (rxfir != BLADERF_RFIC_RXFIR_DEC4 ||
             txfir != BLADERF_RFIC_TXFIR_INT4) {
             log_debug("%s: enabling 4x decimation/interpolation filters\n",
                       __FUNCTION__);
 
+            status = rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
+                                      BLADERF_RFIC_RXFIR_DEC4, 0);
+            if (status < 0) {
+                log_error("%s: could not set RX filter mode: %s\n",
+                          __FUNCTION__, bladerf_strerror(status));
+                fir_set_failed = true;
+            }
+
+            status = rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0,
+                                      BLADERF_RFIC_TXFIR_INT4);
+            if (status < 0) {
+                log_error("%s: could not set TX filter mode: %s\n",
+                          __FUNCTION__, bladerf_strerror(status));
+                fir_set_failed = true;
+            }
+        }
+
+        /* Try to restore default operations if there was a failure */
+        if (fir_set_failed) {
+            log_debug("%s: attempting to reset filters to default...\n",
+                      __FUNCTION__);
             CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
-                                          BLADERF_RFIC_RXFIR_DEC4, 0));
+                                          BLADERF_RFIC_RXFIR_DEFAULT, 0));
             CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0,
-                                          BLADERF_RFIC_TXFIR_INT4));
+                                          BLADERF_RFIC_TXFIR_DEFAULT));
+
+            return BLADERF_ERR_UNEXPECTED;
         }
     }
 
