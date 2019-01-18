@@ -28,92 +28,51 @@
 #endif
 
 /* hardware */
-const char *_rxfir_to_str(bladerf_rfic_rxfir rxfir)
-{
-    switch (rxfir) {
-        case BLADERF_RFIC_RXFIR_BYPASS:
-            return "bypass";
-        case BLADERF_RFIC_RXFIR_CUSTOM:
-            return "custom";
-        case BLADERF_RFIC_RXFIR_DEC1:
-            return "normal";
-        case BLADERF_RFIC_RXFIR_DEC2:
-            return "2x decimation";
-        case BLADERF_RFIC_RXFIR_DEC4:
-            return "4x decimation";
-    }
-
-    return "unknown";
-}
-
-const char *_txfir_to_str(bladerf_rfic_txfir txfir)
-{
-    switch (txfir) {
-        case BLADERF_RFIC_TXFIR_BYPASS:
-            return "bypass";
-        case BLADERF_RFIC_TXFIR_CUSTOM:
-            return "custom";
-        case BLADERF_RFIC_TXFIR_INT1:
-            return "normal";
-        case BLADERF_RFIC_TXFIR_INT2:
-            return "2x interpolation";
-        case BLADERF_RFIC_TXFIR_INT4:
-            return "4x interpolation";
-    }
-
-    return "unknown";
-}
-
 static void _print_rfic(struct cli_state *state)
 {
     int status;
+    bool ctrl_out_ok = true;
 
+    bladerf_tuning_mode tunemode;
     float temperature;
     uint8_t ctrlout, reg35, reg36;
-    bladerf_rfic_rxfir rxfir;
-    bladerf_rfic_txfir txfir;
+
+    printf("    RFIC status:\n");
+
+    /* Tuning mode */
+    status = bladerf_get_tuning_mode(state->dev, &tunemode);
+    if (status >= 0) {
+        printf("      Tuning Mode:  %s\n", tuningmode2str(tunemode));
+    }
 
     /* Temperature */
     status = bladerf_get_rfic_temperature(state->dev, &temperature);
-    if (status < 0) {
-        return;
+    if (status >= 0) {
+        printf("      Temperature:  %4.1f degrees C\n", temperature);
     }
 
     /* CTRL_OUT pins */
     status = bladerf_get_rfic_ctrl_out(state->dev, &ctrlout);
     if (status < 0) {
-        return;
+        ctrl_out_ok = false;
     }
 
     /* Control Output Pointer */
     status = bladerf_get_rfic_register(state->dev, 0x35, &reg35);
     if (status < 0) {
-        return;
+        ctrl_out_ok = false;
     }
 
     /* Control Output Enable */
     status = bladerf_get_rfic_register(state->dev, 0x36, &reg36);
     if (status < 0) {
-        return;
+        ctrl_out_ok = false;
     }
 
-    /* FIR filters */
-    status = bladerf_get_rfic_rx_fir(state->dev, &rxfir);
-    if (status < 0) {
-        return;
+    if (ctrl_out_ok) {
+        printf("      CTRL_OUT:     0x%02x (0x035=0x%02x, 0x036=0x%02x)\n",
+               ctrlout, reg35, reg36);
     }
-
-    status = bladerf_get_rfic_tx_fir(state->dev, &txfir);
-    if (status < 0) {
-        return;
-    }
-
-    printf("    RFIC status:\n");
-    printf("      Temperature:  %4.1f degrees C\n", temperature);
-    printf("      CTRL_OUT:     0x%02x (0x035=0x%02x, 0x036=0x%02x)\n", ctrlout,
-           reg35, reg36);
-    printf("      RX FIR:       %s\n", _rxfir_to_str(rxfir));
-    printf("      TX FIR:       %s\n", _txfir_to_str(txfir));
 }
 
 static void _print_power_source_bladerf2(struct cli_state *state)
@@ -183,8 +142,8 @@ static void _print_rfconfig_bladerf1(struct cli_state *state)
     }
 
     printf("    RF routing:\n");
-    printf("      TX: %s\n", tx_config);
     printf("      RX: %s\n", rx_config);
+    printf("      TX: %s\n", tx_config);
 }
 
 static char const *_rfic_rx_portstr(uint32_t port)
@@ -194,7 +153,7 @@ static char const *_rfic_rx_portstr(uint32_t port)
                             "TXMON2", "TXMON12", NULL };
 
     if (port > ARRAY_SIZE(pstrs)) {
-        return NULL;
+        return "N/A";
     }
 
     return pstrs[port];
@@ -205,7 +164,7 @@ static char const *_rfic_tx_portstr(uint32_t port)
     const char *pstrs[] = { "TXA", "TXB", NULL };
 
     if (port > ARRAY_SIZE(pstrs)) {
-        return NULL;
+        return "N/A";
     }
 
     return pstrs[port];
@@ -216,7 +175,7 @@ static char const *_rfswitch_portstr(uint32_t port)
     const char *pstrs[] = { "OPEN", "RF2(A)", "RF3(B)", NULL };
 
     if (port > ARRAY_SIZE(pstrs)) {
-        return NULL;
+        return "N/A";
     }
 
     return pstrs[port];
@@ -234,18 +193,18 @@ static void _print_rfconfig_bladerf2(struct cli_state *state)
     }
 
     printf("    RF routing:\n");
-    printf("      TX1: RFIC 0x%x (%-7s) => SW 0x%x (%-7s)\n",
-           config.tx1_rfic_port, _rfic_tx_portstr(config.tx1_rfic_port),
-           config.tx1_spdt_port, _rfswitch_portstr(config.tx1_spdt_port));
-    printf("      TX2: RFIC 0x%x (%-7s) => SW 0x%x (%-7s)\n",
-           config.tx2_rfic_port, _rfic_tx_portstr(config.tx2_rfic_port),
-           config.tx2_spdt_port, _rfswitch_portstr(config.tx2_spdt_port));
     printf("      RX1: RFIC 0x%x (%-7s) <= SW 0x%x (%-7s)\n",
            config.rx1_rfic_port, _rfic_rx_portstr(config.rx1_rfic_port),
            config.rx1_spdt_port, _rfswitch_portstr(config.rx1_spdt_port));
     printf("      RX2: RFIC 0x%x (%-7s) <= SW 0x%x (%-7s)\n",
            config.rx2_rfic_port, _rfic_rx_portstr(config.rx2_rfic_port),
            config.rx2_spdt_port, _rfswitch_portstr(config.rx2_spdt_port));
+    printf("      TX1: RFIC 0x%x (%-7s) => SW 0x%x (%-7s)\n",
+           config.tx1_rfic_port, _rfic_tx_portstr(config.tx1_rfic_port),
+           config.tx1_spdt_port, _rfswitch_portstr(config.tx1_spdt_port));
+    printf("      TX2: RFIC 0x%x (%-7s) => SW 0x%x (%-7s)\n",
+           config.tx2_rfic_port, _rfic_tx_portstr(config.tx2_rfic_port),
+           config.tx2_spdt_port, _rfswitch_portstr(config.tx2_spdt_port));
 }
 
 int print_hardware(struct cli_state *state, int argc, char **argv)
