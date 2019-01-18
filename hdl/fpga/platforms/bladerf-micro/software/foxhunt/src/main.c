@@ -83,8 +83,8 @@ struct message const MESSAGES[] = {
         .text       = "cq foxhunt de w2xh",
         .wpm        = 5,
         .tone       = 1000,
-        .carrier    = 433920000,
-        .backoff_dB = 10,
+        .carrier    = 147555000,
+        .backoff_dB = 0,
     },
 };
 
@@ -196,7 +196,7 @@ int main(void)
 #endif  // BLADERF_NIOS_LIBAD936X
 
     /* Hardcoded channel */
-    bladerf_channel channel = BLADERF_CHANNEL_TX(1);
+    bladerf_channel channel = BLADERF_CHANNEL_TX(0);
 
     /* State */
     bool run_nios    = true; /* Set 'false' to drop out of the loop */
