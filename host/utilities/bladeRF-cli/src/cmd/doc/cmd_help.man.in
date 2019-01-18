@@ -147,6 +147,16 @@ T{
 T}@T{
 Metadata and bitstream for 115 kLE FPGA
 T}
+T{
+\f[C]fpgaA4\f[]
+T}@T{
+Metadata and bitstream for 49 kLE (A4) FPGA
+T}
+T{
+\f[C]fpgaA9\f[]
+T}@T{
+Metadata and bitstream for 301 kLE (A9) FPGA
+T}
 .TE
 .RE
 .IP \[bu] 2
@@ -231,6 +241,16 @@ T{
 \f[C]fpga115\f[]
 T}@T{
 Metadata and bitstream for 115 kLE FPGA
+T}
+T{
+\f[C]fpgaA4\f[]
+T}@T{
+Metadata and bitstream for 49 kLE (A4) FPGA
+T}
+T{
+\f[C]fpgaA9\f[]
+T}@T{
+Metadata and bitstream for 301 kLE (A9) FPGA
 T}
 T{
 \f[C]raw\f[]
@@ -659,7 +679,7 @@ Example:
 .PP
 Usage: \f[C]print\ [parameter]\f[]
 .PP
-The print command takes a parameter to print.
+The \f[C]print\f[] command takes a parameter to print.
 Available parameters are listed below.
 If no parameter is specified, all parameters are printed.
 .PP
@@ -740,27 +760,27 @@ T}
 T{
 \f[C]lnagain\f[]
 T}@T{
-Gain setting of the RX LNA, in dB (deprecated: see \f[C]print\ gain\f[])
+RX LNA gain, in dB (deprecated)
 T}
 T{
 \f[C]rxvga1\f[]
 T}@T{
-Gain setting of RXVGA1, in dB (deprecated: see \f[C]print\ gain\f[])
+RXVGA1 gain, in dB (deprecated)
 T}
 T{
 \f[C]rxvga2\f[]
 T}@T{
-Gain setting of RXVGA2, in dB (deprecated: see \f[C]print\ gain\f[])
+RXVGA2 gain, in dB (deprecated)
 T}
 T{
 \f[C]txvga1\f[]
 T}@T{
-Gain setting of TXVGA1, in dB (deprecated: see \f[C]print\ gain\f[])
+TXVGA1 gain, in dB (deprecated)
 T}
 T{
 \f[C]txvga2\f[]
 T}@T{
-Gain setting of TXVGA2, in dB (deprecated: see \f[C]print\ gain\f[])
+TXVGA2 gain, in dB (deprecated)
 T}
 T{
 \f[C]sampling\f[]
@@ -818,7 +838,7 @@ T}
 T{
 \f[C]clock_ref\f[]
 T}@T{
-Enables (1) or disables (0) the ADF4002 chip
+ADF4002 chip status
 T}
 T{
 \f[C]refin_freq\f[]
@@ -828,7 +848,12 @@ T}
 T{
 \f[C]biastee\f[]
 T}@T{
-Enables or disables the bias tee on a given channel
+Current bias\-tee status
+T}
+T{
+\f[C]filter\f[]
+T}@T{
+RFIC FIR filter selection
 T}
 .TE
 .SS probe
@@ -1351,8 +1376,10 @@ checks in time\-sensitive callbacks.
 .PP
 Usage: \f[C]set\ <parameter>\ <arguments>\f[]
 .PP
-The set command takes a parameter and an arbitrary number of arguments
-for that particular parameter.
+The \f[C]set\f[] command takes a parameter and an arbitrary number of
+arguments for that particular parameter.
+In general, \f[C]set\ <parameter>\f[] will display more help for that
+parameter.
 .PP
 Common parameters:
 .PP
@@ -1378,19 +1405,17 @@ T}
 T{
 \f[C]agc\f[]
 T}@T{
-Automatic gain control (on, off)
+Automatic gain control
 T}
 T{
 \f[C]loopback\f[]
 T}@T{
-Loopback settings.
-Run \[aq]set loopback\[aq] to list modes.
+Loopback settings
 T}
 T{
 \f[C]rx_mux\f[]
 T}@T{
-FPGA RX FIFO input mux mode.
-Options are: BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK
+FPGA RX FIFO input mux mode
 T}
 T{
 \f[C]gain\f[]
@@ -1406,11 +1431,6 @@ T{
 \f[C]trimdac\f[]
 T}@T{
 VCTCXO Trim DAC settings
-T}
-T{
-\f[C]hardware\f[]
-T}@T{
-Low\-level hardware status
 T}
 .TE
 .PP
@@ -1433,32 +1453,32 @@ T}
 T{
 \f[C]lnagain\f[]
 T}@T{
-Gain setting of the RX LNA, in dB.
-Values: 0, 3, 6 (deprecated: see \f[C]set\ gain\f[])
+RX LNA gain, in dB.
+Values: 0, 3, 6 (deprecated)
 T}
 T{
 \f[C]rxvga1\f[]
 T}@T{
-Gain setting of RXVGA1, in dB.
-Range: [5, 30] (deprecated: see \f[C]set\ gain\f[])
+RXVGA1 gain, in dB.
+Range: [5, 30] (deprecated)
 T}
 T{
 \f[C]rxvga2\f[]
 T}@T{
-Gain setting of RXVGA2, in dB.
-Range: [0, 30] (deprecated: see \f[C]set\ gain\f[])
+RXVGA2 gain, in dB.
+Range: [0, 30] (deprecated)
 T}
 T{
 \f[C]txvga1\f[]
 T}@T{
-Gain setting of TXVGA1, in dB.
-Range: [\-35, \-4] (deprecated: see \f[C]set\ gain\f[])
+TXVGA1 gain, in dB.
+Range: [\-35, \-4] (deprecated)
 T}
 T{
 \f[C]txvga2\f[]
 T}@T{
-Gain setting of TXVGA2, in dB.
-Range: [0, 25] (deprecated: see \f[C]set\ gain\f[])
+TXVGA2 gain, in dB.
+Range: [0, 25] (deprecated)
 T}
 T{
 \f[C]sampling\f[]
@@ -1528,6 +1548,11 @@ T{
 \f[C]biastee\f[]
 T}@T{
 Enables or disables the bias tee on a given channel
+T}
+T{
+\f[C]filter\f[]
+T}@T{
+RFIC FIR filter selection
 T}
 .TE
 .SS version

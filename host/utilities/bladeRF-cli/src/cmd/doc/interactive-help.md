@@ -116,6 +116,10 @@ Parameters:
     `fpga40`    Metadata and bitstream for 40 kLE FPGA
 
     `fpga115`   Metadata and bitstream for 115 kLE FPGA
+
+    `fpgaA4`    Metadata and bitstream for 49 kLE (A4) FPGA
+
+    `fpgaA9`    Metadata and bitstream for 301 kLE (A9) FPGA
     ------------------------------------------------------------------
 
  * `<address>` - Address of data to back up. Must be erase block-aligned.
@@ -170,6 +174,10 @@ The following options may be used to create a new flash image.
     `fpga40`    Metadata and bitstream for 40 kLE FPGA
 
     `fpga115`   Metadata and bitstream for 115 kLE FPGA
+
+    `fpgaA4`    Metadata and bitstream for 49 kLE (A4) FPGA
+
+    `fpgaA9`    Metadata and bitstream for 301 kLE (A9) FPGA
 
     `raw`       Raw data. The address and length parameters must be
                 provided if this type is selected.
@@ -479,7 +487,7 @@ print
 
 Usage: `print [parameter]`
 
-The print command takes a parameter to print. Available parameters are listed
+The `print` command takes a parameter to print. Available parameters are listed
 below. If no parameter is specified, all parameters are printed.
 
 Common parameters:
@@ -513,15 +521,15 @@ BladeRF1-only parameters:
 ------------- --------------------------------------------------------
 `gpio`          FX3 <-> FPGA GPIO state
 
-`lnagain`       Gain setting of the RX LNA, in dB (deprecated: see `print gain`)
+`lnagain`       RX LNA gain, in dB (deprecated)
 
-`rxvga1`        Gain setting of RXVGA1, in dB (deprecated: see `print gain`)
+`rxvga1`        RXVGA1 gain, in dB (deprecated)
 
-`rxvga2`        Gain setting of RXVGA2, in dB (deprecated: see `print gain`)
+`rxvga2`        RXVGA2 gain, in dB (deprecated)
 
-`txvga1`        Gain setting of TXVGA1, in dB (deprecated: see `print gain`)
+`txvga1`        TXVGA1 gain, in dB (deprecated)
 
-`txvga2`        Gain setting of TXVGA2, in dB (deprecated: see `print gain`)
+`txvga2`        TXVGA2 gain, in dB (deprecated)
 
 `sampling`      External or internal sampling mode
 
@@ -545,11 +553,11 @@ BladeRF2-only parameters:
 
 `rssi`          Received signal strength indication
 
-`clock_ref`     Enables (1) or disables (0) the ADF4002 chip
+`clock_ref`     ADF4002 chip status
 
 `refin_freq`    ADF4002 reference clock frequency
 
-`biastee`       Enables or disables the bias tee on a given channel
+`biastee`       Current bias-tee status
 
 `filter`        RFIC FIR filter selection
 ----------------------------------------------------------------------
@@ -895,8 +903,9 @@ set
 
 Usage: `set <parameter> <arguments>`
 
-The set command takes a parameter and an arbitrary number of arguments for
-that particular parameter.
+The `set` command takes a parameter and an arbitrary number of arguments for
+that particular parameter. In general, `set <parameter>` will display
+more help for that parameter.
 
 Common parameters:
 
@@ -907,21 +916,17 @@ Common parameters:
 
 `frequency`     Frequency settings
 
-`agc`           Automatic gain control (on, off)
+`agc`           Automatic gain control
 
-`loopback`      Loopback settings. Run 'set loopback' to list modes.
+`loopback`      Loopback settings
 
-`rx_mux`        FPGA RX FIFO input mux mode. Options are:
-                BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER,
-                DIGITAL_LOOPBACK
+`rx_mux`        FPGA RX FIFO input mux mode
 
 `gain`          Gain settings
 
 `samplerate`    Samplerate settings
 
 `trimdac`       VCTCXO Trim DAC settings
-
-`hardware`      Low-level hardware status
 ----------------------------------------------------------------------
 
 BladeRF1-only parameters:
@@ -931,20 +936,20 @@ BladeRF1-only parameters:
 ------------- --------------------------------------------------------
 `gpio`          FX3 <-> FPGA GPIO state
 
-`lnagain`       Gain setting of the RX LNA, in dB. Values: 0, 3, 6
-                (deprecated: see `set gain`)
+`lnagain`       RX LNA gain, in dB. Values: 0, 3, 6
+                (deprecated)
 
-`rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
-                (deprecated: see `set gain`)
+`rxvga1`        RXVGA1 gain, in dB. Range: [5, 30]
+                (deprecated)
 
-`rxvga2`        Gain setting of RXVGA2, in dB. Range: [0, 30]
-                (deprecated: see `set gain`)
+`rxvga2`        RXVGA2 gain, in dB. Range: [0, 30]
+                (deprecated)
 
-`txvga1`        Gain setting of TXVGA1, in dB. Range: [-35, -4]
-                (deprecated: see `set gain`)
+`txvga1`        TXVGA1 gain, in dB. Range: [-35, -4]
+                (deprecated)
 
-`txvga2`        Gain setting of TXVGA2, in dB. Range: [0, 25]
-                (deprecated: see `set gain`)
+`txvga2`        TXVGA2 gain, in dB. Range: [0, 25]
+                (deprecated)
 
 `sampling`      External or internal sampling mode
 
