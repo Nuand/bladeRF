@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 ###############################################################################
 #
 # Copyright (c) 2018-present Nuand LLC
