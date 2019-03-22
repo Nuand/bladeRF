@@ -212,11 +212,7 @@ bladerf_tuning_mode default_tuning_mode(struct bladerf *dev)
     char const *env_var;
     extern struct controller_fns const rfic_fpga_control;
 
-    if (have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
-        mode = BLADERF_TUNING_MODE_FPGA;
-    } else {
-        mode = BLADERF_TUNING_MODE_HOST;
-    }
+    mode = BLADERF_TUNING_MODE_HOST;
 
     /* Detect TX FPGA bug and report warning */
     if (BLADERF_TUNING_MODE_FPGA == mode && rfic_fpga_control.is_present(dev) &&
