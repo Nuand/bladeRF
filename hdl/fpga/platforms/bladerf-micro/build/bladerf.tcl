@@ -105,7 +105,9 @@ set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER               ON -to f
 # Add IP files and pin assignments
 set_global_assignment -name QIP_FILE [file normalize $opts(platdir)/${PROJECT_NAME}.qip]
 source [file normalize $opts(platdir)/constraints/pins.tcl]
-file copy -force $opts(platdir)/build/ip.ipx ./ip.ipx
+if {[file exists "./ip.ipx"] == 0} {
+   file copy -force $opts(platdir)/build/ip.ipx ./ip.ipx
+}
 export_assignments
 
 # At this point, we can add custom revisions

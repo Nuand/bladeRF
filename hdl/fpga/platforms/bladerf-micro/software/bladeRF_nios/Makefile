@@ -75,7 +75,7 @@ $(LIBAD936X_BUILDDIR)/Makefile: $(LIBAD936X_MAKE_DEP)
 	@$(ECHO) Info: Generating libad936x Makefile
 	@mkdir -p $(LIBAD936X_BUILDDIR)
 	@cd $(LIBAD936X_BUILDDIR) && \
-		cmake -DCMAKE_TOOLCHAIN_FILE=$(LIBAD936X_DIR)/cmake/nios-toolchain.cmake $(LIBAD936X_DIR)
+		cmake -G"Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=$(LIBAD936X_DIR)/cmake/nios-toolchain.cmake $(LIBAD936X_DIR)
 
 $(LIBAD936X_BUILDDIR)/libad936x.a: $(LIBAD936X_BUILD_DEP)
 	@$(ECHO) Info: Building libad936x

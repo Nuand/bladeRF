@@ -38,6 +38,8 @@ endif()
 
 find_program(CMAKE_C_COMPILER nios2-elf-gcc ${QUARTUS_ROOTDIR}/nios2eds/)
 find_program(CMAKE_CXX_COMPILER nios2-elf-g++ ${QUARTUS_ROOTDIR}/nios2eds/)
+set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_CXX_COMPILER_WORKS 1)
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR nios2)

@@ -316,10 +316,10 @@ pushd ${work_dir}
 common_dir=../../../fpga/platforms/common/bladerf
 build_dir=../../../fpga/platforms/${platform}/build
 
-cp -r ${build_dir}/ip.ipx .
+cp -au ${build_dir}/ip.ipx .
 
 if [ -f ${build_dir}/suppressed_messages.srf ]; then
-    cp -r ${build_dir}/suppressed_messages.srf ./${rev}.srf
+    cp -au ${build_dir}/suppressed_messages.srf ./${rev}.srf
 fi
 
 echo ""
