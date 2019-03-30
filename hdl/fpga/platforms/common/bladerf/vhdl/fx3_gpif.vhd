@@ -399,7 +399,8 @@ begin
                 future.fini_downcount   <= FINI_DOWNCOUNT_RESET;
 
                 if (current.dma_idle = '1') then
-                    if (should_rx) then
+                    if (should_rx and ( (rx_meta_fifo_empty = '0' and current.rx_meta_en = '1')
+                                        or (current.rx_meta_en = '0') ) ) then
                         -- There is an RX to perform (sending data to FX3).
                         future.ack_downcount    <= ACK_DOWNCOUNT_READ;
                         future.dma_downcount    <= gpif_buf_size-1;

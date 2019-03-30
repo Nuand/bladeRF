@@ -158,7 +158,7 @@ begin
             fifo_used_v := (others => '0');
         elsif( rising_edge(clock) ) then
             fifo_used_v := unsigned(fifo_full & fifo_usedw);
-            if( (FIFO_MAX - fifo_used_v) > dma_buf_size ) then
+            if( (FIFO_MAX - fifo_used_v) > dma_buf_size and ( ( meta_en = '1' and meta_fifo_full = '0') or (meta_en = '0') )  ) then
                 fifo_enough <= true;
             else
                 fifo_enough <= false;
