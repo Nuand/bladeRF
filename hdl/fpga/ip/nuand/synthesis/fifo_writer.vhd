@@ -158,7 +158,8 @@ begin
             fifo_used_v := (others => '0');
         elsif( rising_edge(clock) ) then
             fifo_used_v := unsigned(fifo_full & fifo_usedw);
-            if( (FIFO_MAX - fifo_used_v) > dma_buf_size ) then
+            if( fifo_full = '0' and ((FIFO_MAX - fifo_used_v) > dma_buf_size) and
+                 ( ( meta_en = '1' and meta_fifo_full = '0') or (meta_en = '0') ) ) then
                 fifo_enough <= true;
             else
                 fifo_enough <= false;
@@ -209,10 +210,16 @@ begin
         case meta_current.state is
             when IDLE =>
 
-                meta_future.dma_downcount <= dma_buf_size;
+                if ( count_enabled_channels(in_sample_controls) = 1 ) then
+                    meta_future.dma_downcount <= dma_buf_size;
+                else
+                    meta_future.dma_downcount <= dma_buf_size / 2;
+                end if;
 
                 if( fifo_enough ) then
                     meta_future.state  <= META_WRITE;
+                else
+                    meta_future.meta_written <= '0';
                 end if;
 
             when META_WRITE =>
@@ -356,7 +363,7 @@ begin
                     fifo_future.fifo_write <= '0';
                 end if;
 
-                if( fifo_full = '1' ) then
+                if( fifo_full = '1' or ( meta_current.meta_written = '0' and meta_en = '1') ) then
                     fifo_future.fifo_write <= '0';
                     fifo_future.state      <= HOLDOFF;
                 end if;
