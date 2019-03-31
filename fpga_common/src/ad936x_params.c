@@ -78,8 +78,8 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     CLKOUT_DISABLE, // disable clkout pin (see enum ad9361_clkout)                      // clk_output_mode_select *** adi,clk-output-mode-select
 
     /* Gain Control */
-    RF_GAIN_SLOWATTACK_AGC, // RX1 BLADERF_GAIN_DEFAULT = slow attack AGC               // gc_rx1_mode *** adi,gc-rx1-mode
-    RF_GAIN_SLOWATTACK_AGC, // RX2 BLADERF_GAIN_DEFAULT = slow attack AGC               // gc_rx2_mode *** adi,gc-rx2-mode
+    RF_GAIN_MGC, // RX1 BLADERF_GAIN_DEFAULT = slow attack AGC               // gc_rx1_mode *** adi,gc-rx1-mode
+    RF_GAIN_MGC, // RX2 BLADERF_GAIN_DEFAULT = slow attack AGC               // gc_rx2_mode *** adi,gc-rx2-mode
     58,             // magic AGC setting, see AD9361 docs                               // gc_adc_large_overload_thresh *** adi,gc-adc-large-overload-thresh
     4,              // magic AGC setting, see AD9361 docs                               // gc_adc_ovr_sample_size *** adi,gc-adc-ovr-sample-size
     47,             // magic AGC setting, see AD9361 docs                               // gc_adc_small_overload_thresh *** adi,gc-adc-small-overload-thresh
