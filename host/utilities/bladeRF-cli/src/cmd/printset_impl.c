@@ -1012,6 +1012,10 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
 
     status = bladerf_set_loopback(state->dev, loopback);
     if (status != 0) {
+        if (status == BLADERF_ERR_UNSUPPORTED) {
+           printf("  If tuning mode is FPGA, consider setting tuning mode"
+                     " to  host by running `set tuning_mode host`.");
+        }
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
         goto out;

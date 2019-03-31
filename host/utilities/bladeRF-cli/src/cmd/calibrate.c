@@ -71,6 +71,12 @@ static int cal_lms(struct cli_state *s, int argc, char **argv)
     struct bladerf_lms_dc_cals lms_cals =
         { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
+    if (!s->dev_info.is_bladerf_x40_x115) {
+       cli_err(s, argv[0], "Only use this calibration on"
+                           " bladeRF x40 and x115 devices.\n");
+       return 0;
+    }
+
     if (argc == 2) {
        status = dc_calibration_lms6(s->dev, "all");
        if (status == 0) {
@@ -530,6 +536,12 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
     unsigned int f_inc = 10000000;
     unsigned int f_max = BLADERF_FREQUENCY_MAX;
 
+    if (!s->dev_info.is_bladerf_x40_x115) {
+       cli_err(s, argv[0], "Only use this calibration on"
+                           " bladeRF x40 and x115 devices.\n");
+       return 0;
+    }
+
     if (argc == 4 || argc == 6 || argc == 7) {
         /* Only DC tables are currently supported.
          * IQ tables may be added in the future */
@@ -697,6 +709,12 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
         }
     } else {
         return CLI_RET_NARGS;
+    }
+
+    if (status == CLI_RET_LIBBLADERF &&
+          state->last_lib_error == BLADERF_ERR_UNSUPPORTED) {
+       printf("\n  If tuning mode is FPGA, consider setting tuning mode"
+                 " to host by running `set tuning_mode host`.\n");
     }
 
     return status;
