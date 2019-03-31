@@ -354,6 +354,20 @@ static int open_device(struct rc_config *rc,
                         bladerf_strerror(status));
                 status = -1;
             }
+        } else {
+            status = bladerf_get_fpga_size(state->dev, &state->dev_info.fpga_size);
+
+            if (status != 0) {
+                if (state->dev_info.fpga_size == BLADERF_FPGA_40KLE ||
+                        state->dev_info.fpga_size == BLADERF_FPGA_115KLE) {
+                    state->dev_info.is_bladerf_x40_x115 = true;
+                }
+
+                if (state->dev_info.fpga_size == BLADERF_FPGA_A4 ||
+                        state->dev_info.fpga_size == BLADERF_FPGA_A9) {
+                    state->dev_info.is_bladerf_micro = true;
+                }
+            }
         }
     }
 

@@ -90,10 +90,20 @@ struct cli_error {
 };
 
 /**
+ * Cached device information
+ */
+struct cli_dev_info {
+   bladerf_fpga_size fpga_size; /**< Device's FPGA size */
+   bool is_bladerf_x40_x115;    /**< Is this a bladeRF x40 or x115 */
+   bool is_bladerf_micro;       /**< Is this a bladeRF xA4 or xA9 */
+};
+
+/**
  * Application state
  */
 struct cli_state {
     struct bladerf *dev;      /**< Device currently in use */
+    struct cli_dev_info dev_info; /**< Cached device information */
     pthread_mutex_t dev_lock; /**< Should be held when performing
                                *   any "device conrol" calls */
 

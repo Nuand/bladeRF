@@ -100,6 +100,10 @@ struct cli_state *cli_state_create()
         cli_state->last_lib_error = 0;
         cli_state->scripts        = NULL;
 
+        cli_state->dev_info.fpga_size = BLADERF_FPGA_UNKNOWN;
+        cli_state->dev_info.is_bladerf_x40_x115 = false;
+        cli_state->dev_info.is_bladerf_micro    = false;
+
         pthread_mutex_init(&cli_state->dev_lock, NULL);
 
         cli_state->rx = rxtx_data_alloc(BLADERF_RX);
