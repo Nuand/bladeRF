@@ -799,6 +799,17 @@ static int perform_rx_cal(struct rx_cal *cal, struct dc_calibration_params *p)
         return status;
     }
 
+    bladerf_fpga_size fpga_size;
+    status = bladerf_get_fpga_size(cal->dev, &fpga_size);
+    if (status != 0) {
+        return status;
+    }
+
+    if (fpga_size != BLADERF_FPGA_40KLE &&
+         fpga_size != BLADERF_FPGA_115KLE) {
+        return 0;
+    }
+
     /* Measure DC correction for AGC */
     status = save_gains(cal, &saved_gains);
     if (status != 0) {
