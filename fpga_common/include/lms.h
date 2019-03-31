@@ -61,6 +61,39 @@
 #define LMS_FREQ_FLAGS_FORCE_VCOCAP   (1 << 1)
 
 /**
+ * This bit indicates whether the quicktune needs to set XB-200 parameters
+ */
+#define LMS_FREQ_XB_200_ENABLE              (1 << 7)
+
+/*
+ * This bit indicates the quicktune is for the RX module, not setting this bit
+ * indicates the quicktune is for the TX module.
+ */
+#define LMS_FREQ_XB_200_MODULE_RX           (1 << 6)
+
+/**
+ * This is the bit mask for the filter switch configuration for the XB-200.
+ */
+#define LMS_FREQ_XB_200_FILTER_SW           (3 << 4)
+
+/**
+ * Macro that indicates the number of bitshifts necessary to get to the filter
+ * switch field
+ */
+#define LMS_FREQ_XB_200_FILTER_SW_SHIFT     (4)
+
+/**
+ * This is the bit mask for the path configuration for the XB-200.
+ */
+#define LMS_FREQ_XB_200_PATH                (3 << 2)
+
+/**
+ * Macro that indicates the number of bitshifts necessary to get to the path
+ * field
+ */
+#define LMS_FREQ_XB_200_PATH_SHIFT          (2)
+
+/**
  * Information about the frequency calculation for the LMS6002D PLL
  * Calculation taken from the LMS6002D Programming and Calibration Guide
  * version 1.1r1.
@@ -72,6 +105,7 @@ struct lms_freq {
     uint32_t    nfrac;      /**< Fractional portion of f_LO given nint and f_REF */
     uint8_t     flags;      /**< Additional parameters defining the tuning
                                  configuration. See LMFS_FREQ_FLAGS_* values */
+    uint8_t     xb_gpio;    /**< Store XB-200 switch settings */
 
 #ifndef BLADERF_NIOS_BUILD
     uint8_t     x;         /**< VCO division ratio */

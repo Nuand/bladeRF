@@ -1816,6 +1816,7 @@ struct bladerf_quick_tune {
             uint16_t nint;   /**< Integer portion of LO frequency value */
             uint32_t nfrac;  /**< Fractional portion of LO frequency value */
             uint8_t flags;   /**< Flag bits used internally by libbladeRF */
+            uint8_t xb_gpio;   /**< Flag bits used to configure XB */
         };
         /* bladeRF2 quick tune parameters */
         struct {

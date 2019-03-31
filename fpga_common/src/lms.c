@@ -1752,12 +1752,38 @@ int lms_get_quick_tune(struct bladerf *dev,
                        struct bladerf_quick_tune *quick_tune)
 {
     struct lms_freq f;
+    uint32_t val;
     int status = lms_get_frequency(dev, mod, &f);
     if (status == 0) {
         quick_tune->freqsel = f.freqsel;
         quick_tune->vcocap  = f.vcocap;
         quick_tune->nint    = f.nint;
         quick_tune->nfrac   = f.nfrac;
+        quick_tune->xb_gpio = 0;
+
+        status = dev->backend->expansion_gpio_read(dev, &val);
+        if (status != 0)
+            goto out;
+
+        if (dev->xb == BLADERF_XB_200) {
+            quick_tune->xb_gpio |= LMS_FREQ_XB_200_ENABLE;
+            if (mod == BLADERF_CHANNEL_RX(0)) {
+                quick_tune->xb_gpio |= LMS_FREQ_XB_200_MODULE_RX;
+                /* BLADERF_XB_CONFIG_RX_BYPASS_MASK */
+                quick_tune->xb_gpio |= ( (val & 0x30 ) >> 4)
+                                            << LMS_FREQ_XB_200_PATH_SHIFT;
+                /* BLADERF_XB_RX_MASK */
+                quick_tune->xb_gpio |= ( (val & 0x30000000 ) >> 28)
+                                            << LMS_FREQ_XB_200_FILTER_SW_SHIFT;
+            } else {
+                /* BLADERF_XB_CONFIG_TX_BYPASS_MASK */
+                quick_tune->xb_gpio |= ( (val & 0x0C ) >> 2)
+                                            << LMS_FREQ_XB_200_FILTER_SW_SHIFT;
+                /* BLADERF_XB_TX_MASK */
+                quick_tune->xb_gpio |= ( (val & 0x0C000000 ) >> 26)
+                                            << LMS_FREQ_XB_200_PATH_SHIFT;
+            }
+        }
 
         quick_tune->flags = LMS_FREQ_FLAGS_FORCE_VCOCAP;
 
@@ -1766,6 +1792,7 @@ int lms_get_quick_tune(struct bladerf *dev,
         }
     }
 
+out:
     return status;
 }
 #endif
@@ -2267,6 +2294,7 @@ int lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     f->nint = nint;
     f->nfrac = nfrac;
     f->freqsel = freqsel;
+    f->xb_gpio = 0;
     assert(ref_clock <= UINT32_MAX);
 
     f->flags = 0;

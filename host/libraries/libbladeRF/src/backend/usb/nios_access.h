@@ -480,6 +480,7 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev,
  * @param[in]   nfrac       Fractional portion of frequency multiplier
  * @param[in]   freqsel     VCO and divider selection
  * @param[in]   low_band    High vs low band selection
+ * @param[in]   xb_gpio     XB configuration bits
  * @param[in]   quick_tune  Denotes quick tune should be used instead of
  *                          tuning algorithm
  *
@@ -493,6 +494,7 @@ int nios_retune(struct bladerf *dev,
                 uint8_t freqsel,
                 uint8_t vcocap,
                 bool low_band,
+                uint8_t xb_gpio,
                 bool quick_tune);
 
 /**

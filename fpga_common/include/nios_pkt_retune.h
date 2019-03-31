@@ -130,6 +130,7 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
                                         uint8_t  freqsel,
                                         uint8_t  vcocap,
                                         bool     low_band,
+                                        uint8_t  xb_gpio,
                                         bool     quick_tune)
 {
     buf[NIOS_PKT_RETUNE_IDX_MAGIC] = NIOS_PKT_RETUNE_MAGIC;
@@ -177,7 +178,7 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
 
     buf[NIOS_PKT_RETUNE_IDX_BANDSEL] |= vcocap;
 
-    buf[NIOS_PKT_RETUNE_IDX_RESV]     = 0x00;
+    buf[NIOS_PKT_RETUNE_IDX_RESV]     = xb_gpio;
 }
 
 /* Unpack a retune request */
@@ -189,6 +190,7 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
                                           uint8_t  *freqsel,
                                           uint8_t  *vcocap,
                                           bool     *low_band,
+                                          uint8_t  *xb_gpio,
                                           bool     *quick_tune)
 {
     *timestamp  = ( ((uint64_t) buf[NIOS_PKT_RETUNE_IDX_TIME + 0]) <<  0);
@@ -220,6 +222,7 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
     *low_band = (buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & FLAG_LOW_BAND) != 0;
     *quick_tune = (buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & FLAG_QUICK_TUNE) != 0;
     *vcocap = buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & 0x3f;
+    *xb_gpio = buf[NIOS_PKT_RETUNE_IDX_RESV];
 }
 
 

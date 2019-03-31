@@ -257,6 +257,7 @@ struct backend_fns {
                   uint8_t freqsel,
                   uint8_t vcocap,
                   bool low_band,
+                  uint8_t xb_gpio,
                   bool quick_tune);
 
     /* Schedule a frequency retune2 operation */

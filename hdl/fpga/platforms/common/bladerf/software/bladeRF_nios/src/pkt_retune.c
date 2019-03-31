@@ -201,6 +201,55 @@ void pkt_retune_init()
 #endif
 }
 
+#ifndef BLADERF_XB_TX_ENABLE
+#define BLADERF_XB_TX_ENABLE 0x1000
+#endif
+#ifndef BLADERF_XB_RX_ENABLE
+#define BLADERF_XB_RX_ENABLE 0x2000
+#endif
+
+static void xb_config_write(uint8_t xb_gpio) {
+   uint32_t val;
+   val = expansion_port_read();
+   if (!(xb_gpio & LMS_FREQ_XB_200_ENABLE)) {
+      return;
+   }
+   if (xb_gpio & LMS_FREQ_XB_200_MODULE_RX) {
+      val &= ~(0x30000000 | 0x30);
+      val |= (((xb_gpio & LMS_FREQ_XB_200_FILTER_SW)
+                        >> LMS_FREQ_XB_200_FILTER_SW_SHIFT) & 3 ) << 28;
+      val |= (((xb_gpio & LMS_FREQ_XB_200_PATH)
+                        >> LMS_FREQ_XB_200_PATH_SHIFT) & 3 ) << 4;
+      val |= BLADERF_XB_RX_ENABLE;
+   } else {
+      val &= ~(0x0C000000 | 0x0C);
+      val |= (((xb_gpio & LMS_FREQ_XB_200_FILTER_SW)
+                        >> LMS_FREQ_XB_200_FILTER_SW_SHIFT) & 3 ) << 26;
+      val |= (((xb_gpio & LMS_FREQ_XB_200_PATH)
+                           >> LMS_FREQ_XB_200_PATH_SHIFT) & 3 ) << 2;
+      val |= BLADERF_XB_TX_ENABLE;
+   }
+   expansion_port_write(val);
+
+   uint8_t reg;
+   uint8_t lreg;
+   LMS_READ(NULL, 0x5A, &reg);
+
+#define LMS_RX_SWAP 0x40
+#define LMS_TX_SWAP 0x08
+
+   lreg = reg;
+   if (((xb_gpio & LMS_FREQ_XB_200_PATH) >> LMS_FREQ_XB_200_PATH_SHIFT) & 1) {
+      lreg |= (xb_gpio & LMS_FREQ_XB_200_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP;
+   } else {
+      lreg &= ~((xb_gpio & LMS_FREQ_XB_200_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP);
+   }
+
+   LMS_WRITE(NULL, 0x5A, lreg);
+
+
+}
+
 static inline void perform_work(struct queue *q, bladerf_module module)
 {
     struct queue_entry *e = peek_next_retune(q);
@@ -230,6 +279,8 @@ static inline void perform_work(struct queue *q, bladerf_module module)
                 if (band_select(NULL, module, low_band)) {
                     INCREMENT_ERROR_COUNT();
                 }
+
+                xb_config_write(e->freq.xb_gpio);
             }
 
             /* Drop the item from the queue */
@@ -259,13 +310,14 @@ void pkt_retune(struct pkt_buf *b)
     uint64_t end_time;
     uint64_t duration = 0;
     bool low_band;
+    uint8_t xb_gpio;
     bool quick_tune;
 
     flags = NIOS_PKT_RETUNERESP_FLAG_SUCCESS;
 
     nios_pkt_retune_unpack(b->req, &module, &timestamp,
                            &f.nint, &f.nfrac, &f.freqsel, &f.vcocap,
-                           &low_band, &quick_tune);
+                           &low_band, &xb_gpio, &quick_tune);
 
     f.vcocap_result = 0xff;
 
@@ -297,6 +349,8 @@ void pkt_retune(struct pkt_buf *b)
                 if (status != 0) {
                     goto out;
                 }
+
+                xb_config_write(xb_gpio);
 
                 status = 0;
                 break;

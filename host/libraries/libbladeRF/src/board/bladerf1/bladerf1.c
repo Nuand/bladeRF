@@ -2392,6 +2392,10 @@ static int bladerf1_schedule_retune(struct bladerf *dev,
     }
 
     if (quick_tune == NULL) {
+        if (dev->xb == BLADERF_XB_200) {
+           log_error("Consider supplying the quick_tune parameter to"
+                 " bladerf_schedule_retune() when the XB-200 is enabled.\n");
+        }
         status = lms_calculate_tuning_params((uint32_t)frequency, &f);
         if (status != 0) {
             return status;
@@ -2402,6 +2406,7 @@ static int bladerf1_schedule_retune(struct bladerf *dev,
         f.nint          = quick_tune->nint;
         f.nfrac         = quick_tune->nfrac;
         f.flags         = quick_tune->flags;
+        f.xb_gpio       = quick_tune->xb_gpio;
         f.x             = 0;
         f.vcocap_result = 0;
     }
@@ -2409,6 +2414,7 @@ static int bladerf1_schedule_retune(struct bladerf *dev,
     return dev->backend->retune(dev, ch, timestamp, f.nint, f.nfrac, f.freqsel,
                                 f.vcocap,
                                 (f.flags & LMS_FREQ_FLAGS_LOW_BAND) != 0,
+                                f.xb_gpio,
                                 (f.flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) != 0);
 }
 
@@ -2422,7 +2428,7 @@ static int bladerf1_cancel_scheduled_retunes(struct bladerf *dev,
 
     if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
         status = dev->backend->retune(dev, ch, NIOS_PKT_RETUNE_CLEAR_QUEUE, 0,
-                                      0, 0, 0, false, false);
+                                      0, 0, 0, false, 0, false);
     } else {
         log_debug("This FPGA version (%u.%u.%u) does not support "
                   "scheduled retunes.\n",

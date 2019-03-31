@@ -1078,7 +1078,7 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev,
 int nios_retune(struct bladerf *dev, bladerf_channel ch,
                 uint64_t timestamp, uint16_t nint, uint32_t nfrac,
                 uint8_t freqsel, uint8_t vcocap, bool low_band,
-                bool quick_tune)
+                uint8_t xb_gpio, bool quick_tune)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -1096,7 +1096,8 @@ int nios_retune(struct bladerf *dev, bladerf_channel ch,
     }
 
     nios_pkt_retune_pack(buf, ch, timestamp,
-                         nint, nfrac, freqsel, vcocap, low_band, quick_tune);
+                         nint, nfrac, freqsel, vcocap, low_band,
+                         xb_gpio, quick_tune);
 
     status = nios_access(dev, buf);
     if (status != 0) {
