@@ -1160,6 +1160,63 @@ out:
     return rv;
 }
 
+/* rx_mux */
+int print_tuning_mode(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+
+    bladerf_tuning_mode mode;
+
+    status = bladerf_get_tuning_mode(state->dev, &mode);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+
+    printf("  Tuning Mode: %s\n", mode == BLADERF_TUNING_MODE_HOST ? "Host" : "FPGA");
+
+out:
+    return rv;
+}
+
+int set_tuning_mode(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+
+    bladerf_tuning_mode mode;
+
+    if (argc != 3 && argc != 4) {
+        if (argc == 2) {
+            printf("Usage: %s %s <mode>\n", argv[0], argv[1]);
+            printf("\n  <mode> values:\n");
+            printf("      host, FPGA\n");
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
+    }
+
+    mode = str_to_tuning_mode(argv[2]);
+    if (mode == BLADERF_TUNING_MODE_INVALID) {
+        cli_err(state, argv[1], "Invalid tuning mode.\n");
+        return CLI_RET_INVPARAM;
+    }
+
+    status = bladerf_set_tuning_mode(state->dev, mode);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+out:
+    return rv;
+}
+
 /* rxvga1 */
 int print_rxvga1(struct cli_state *state, int argc, char **argv)
 {

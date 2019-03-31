@@ -511,6 +511,8 @@ Common parameters:
 
 `trimdac`       VCTCXO Trim DAC settings
 
+`tuning_mode`   Tuning mode settings
+
 `hardware`      Low-level hardware status
 ----------------------------------------------------------------------
 
@@ -927,6 +929,8 @@ Common parameters:
 `samplerate`    Samplerate settings
 
 `trimdac`       VCTCXO Trim DAC settings
+
+`tuning_mode`   Tuning mode settings
 ----------------------------------------------------------------------
 
 BladeRF1-only parameters:

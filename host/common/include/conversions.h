@@ -278,6 +278,16 @@ const char *smb_mode_to_str(bladerf_smb_mode mode);
 bladerf_smb_mode str_to_smb_mode(const char *str);
 
 /**
+ * Convert a string to bladerf_tuning_mode value
+ *
+ * @param[in]   str         String to convert
+ *
+ * @return      A BLADERF_TUNING_MODE_* value. BLADERF_TUNING_MODE_INVALID will
+ *              returned for an invalid string.
+ */
+bladerf_tuning_mode str_to_tuning_mode(const char *str);
+
+/**
  * Convert an ASCII char string to an unsigned integer and check its bounds
  *
  * @param[in]   str         String to convert

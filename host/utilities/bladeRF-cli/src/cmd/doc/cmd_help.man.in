@@ -735,6 +735,11 @@ T}@T{
 VCTCXO Trim DAC settings
 T}
 T{
+\f[C]tuning_mode\f[]
+T}@T{
+Tuning mode settings
+T}
+T{
 \f[C]hardware\f[]
 T}@T{
 Low\-level hardware status
@@ -1431,6 +1436,11 @@ T{
 \f[C]trimdac\f[]
 T}@T{
 VCTCXO Trim DAC settings
+T}
+T{
+\f[C]tuning_mode\f[]
+T}@T{
+Tuning mode settings
 T}
 .TE
 .PP

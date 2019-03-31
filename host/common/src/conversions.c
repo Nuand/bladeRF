@@ -476,6 +476,17 @@ bladerf_smb_mode str_to_smb_mode(const char *str)
     }
 }
 
+bladerf_tuning_mode str_to_tuning_mode(const char *str)
+{
+    if (!strcasecmp(str, "fpga")) {
+        return BLADERF_TUNING_MODE_FPGA;
+    } else if (!strcasecmp(str, "host")) {
+        return BLADERF_TUNING_MODE_HOST;
+    } else {
+        return BLADERF_TUNING_MODE_INVALID;
+    }
+}
+
 unsigned int str2uint(const char *str,
                       unsigned int min,
                       unsigned int max,

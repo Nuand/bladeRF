@@ -102,6 +102,8 @@ int set_loopback(struct cli_state *state, int argc, char **argv);
 int print_rssi(struct cli_state *state, int argc, char **argv);
 int print_rx_mux(struct cli_state *state, int argc, char **argv);
 int set_rx_mux(struct cli_state *state, int argc, char **argv);
+int print_tuning_mode(struct cli_state *state, int argc, char **argv);
+int set_tuning_mode(struct cli_state *state, int argc, char **argv);
 int print_rxvga1(struct cli_state *state, int argc, char **argv);
 int set_rxvga1(struct cli_state *state, int argc, char **argv);
 int print_rxvga2(struct cli_state *state, int argc, char **argv);

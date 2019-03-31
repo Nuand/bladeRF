@@ -520,6 +520,7 @@
   "            gain Gain settings\n" \
   "      samplerate Samplerate settings\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
+  "     tuning_mode Tuning mode settings\n" \
   "        hardware Low-level hardware status\n" \
   "\n" \
   "BladeRF1-only parameters:\n" \
@@ -891,6 +892,7 @@
   "            gain Gain settings\n" \
   "      samplerate Samplerate settings\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
+  "     tuning_mode Tuning mode settings\n" \
   "\n" \
   "BladeRF1-only parameters:\n" \
   "\n" \
