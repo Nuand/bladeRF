@@ -358,6 +358,8 @@ static int open_device(struct rc_config *rc,
             status = bladerf_get_fpga_size(state->dev, &state->dev_info.fpga_size);
 
             if (status != 0) {
+                fprintf(stderr, "Could not determine FPGA size.\n");
+            } else {
                 if (state->dev_info.fpga_size == BLADERF_FPGA_40KLE ||
                         state->dev_info.fpga_size == BLADERF_FPGA_115KLE) {
                     state->dev_info.is_bladerf_x40_x115 = true;
