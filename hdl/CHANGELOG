@@ -6,6 +6,22 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.11.0 (2019-05-05)
+--------------------------------
+
+ This version improves buffering on the FPGA, and extends quicktune's controls
+ over the XB gpio register.
+
+ Fixes:
+
+ * hdl: buffer sizes and checks
+ * hdl: misc fixes
+
+ Features:
+
+ * bladerf: quicktune controls XB gpio register
+
+--------------------------------
 v0.10.2 (2018-12-17)
 --------------------------------
 
