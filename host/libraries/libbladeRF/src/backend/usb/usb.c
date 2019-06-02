@@ -262,6 +262,17 @@ static int usb_is_fw_ready(struct bladerf *dev)
     }
 }
 
+static int usb_get_handle(struct bladerf *dev,
+                              void **handle)
+{
+    struct bladerf_usb *usb = dev->backend_data;
+    int status;
+
+    status = usb->fn->get_handle(usb->driver, handle);
+
+    return status;
+}
+
 static int usb_get_fw_version(struct bladerf *dev,
                               struct bladerf_version *version)
 {
@@ -1203,6 +1214,8 @@ const struct backend_fns backend_fns_usb_legacy = {
 
     FIELD_INIT(.is_fw_ready, usb_is_fw_ready),
 
+    FIELD_INIT(.get_handle, usb_get_handle),
+
     FIELD_INIT(.load_fpga, usb_load_fpga),
     FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),
     FIELD_INIT(.get_fpga_source, usb_get_fpga_source),
@@ -1313,6 +1326,8 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.close, usb_close),
 
     FIELD_INIT(.is_fw_ready, usb_is_fw_ready),
+
+    FIELD_INIT(.get_handle, usb_get_handle),
 
     FIELD_INIT(.load_fpga, usb_load_fpga),
     FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),

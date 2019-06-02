@@ -305,6 +305,13 @@ static int cyapi_get_flash_id(void *driver, uint8_t *mid, uint8_t *did)
     return BLADERF_ERR_UNSUPPORTED;
 }
 
+static int cyapi_get_handle(void *driver, void **handle)
+{
+    CCyUSBDevice *dev = get_device(driver);
+    *handle = dev;
+
+    return 0;
+}
 static int cyapi_get_speed(void *driver,
                           bladerf_dev_speed *device_speed)
 {
@@ -815,6 +822,7 @@ extern "C" {
         FIELD_INIT(.close, cyapi_close),
         FIELD_INIT(.get_vid_pid, cyapi_get_vid_pid),
         FIELD_INIT(.get_flash_id, cyapi_get_flash_id),
+        FIELD_INIT(.get_handle, cyapi_get_handle),
         FIELD_INIT(.get_speed, cyapi_get_speed),
         FIELD_INIT(.change_setting, cyapi_change_setting),
         FIELD_INIT(.control_transfer, cyapi_control_transfer),

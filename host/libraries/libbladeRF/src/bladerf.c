@@ -147,6 +147,22 @@ int bladerf_get_devinfo(struct bladerf *dev, struct bladerf_devinfo *info)
     }
 }
 
+int bladerf_get_backendinfo(struct bladerf *dev, struct bladerf_backendinfo *info)
+{
+    if (dev) {
+        MUTEX_LOCK(&dev->lock);
+        info->lock_count = 1;
+        info->lock = &dev->lock;
+
+        info->handle_count = 1;
+        dev->backend->get_handle(dev, &info->handle);
+        MUTEX_UNLOCK(&dev->lock);
+        return 0;
+    } else {
+        return BLADERF_ERR_INVAL;
+    }
+}
+
 void bladerf_close(struct bladerf *dev)
 {
     if (dev) {

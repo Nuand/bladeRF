@@ -838,6 +838,13 @@ static int lusb_get_vid_pid(void *driver, uint16_t *vid,
     return 0;
 }
 
+static int lusb_get_handle(void *driver, void **handle)
+{
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *) driver;
+    *handle = lusb->handle;
+
+    return 0;
+}
 static int lusb_get_speed(void *driver,
                           bladerf_dev_speed *device_speed)
 {
@@ -1459,6 +1466,7 @@ static const struct usb_fns libusb_fns = {
     FIELD_INIT(.close, lusb_close),
     FIELD_INIT(.get_vid_pid, lusb_get_vid_pid),
     FIELD_INIT(.get_flash_id, NULL),
+    FIELD_INIT(.get_handle, lusb_get_handle),
     FIELD_INIT(.get_speed, lusb_get_speed),
     FIELD_INIT(.change_setting, lusb_change_setting),
     FIELD_INIT(.control_transfer, lusb_control_transfer),
