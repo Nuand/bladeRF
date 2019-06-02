@@ -141,6 +141,16 @@ struct bladerf_devinfo {
 };
 
 /**
+ * Information about a bladeRF attached to the system
+ */
+struct bladerf_backendinfo {
+    int handle_count;                   /**< Backend handle count */
+    void *handle;                       /**< Backend handle for device */
+    int lock_count;                     /**< Backend lock count */
+    void *lock;                         /**< Backend lock for device */
+};
+
+/**
  * Open specified device using a device identifier string. See
  * bladerf_open_with_devinfo() if a device identifier string is not readily
  * available.
@@ -283,6 +293,20 @@ API_EXPORT
 int CALL_CONV bladerf_get_devinfo(struct bladerf *dev,
                                   struct bladerf_devinfo *info);
 
+
+/**
+ * Fill out a provided bladerf_backendinfo structure, given an open device handle.
+ *
+ * @pre `dev` must be a valid device handle.
+ *
+ * @param        dev     Device handle previously obtained with bladerf_open()
+ * @param[out]   info    Backend information populated by this function
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_backendinfo(struct bladerf *dev,
+                                  struct bladerf_backendinfo *info);
 /**
  * Populate a device identifier information structure using the provided
  * device identifier string.

@@ -65,6 +65,11 @@ static int dummy_is_fw_ready(struct bladerf *dev)
     return 0;
 }
 
+static int dummy_get_handle(struct bladerf *dev, void **handle)
+{
+    return 0;
+}
+
 static int dummy_get_flash_id(struct bladerf *dev, uint8_t *mid, uint8_t *did)
 {
     return BLADERF_ERR_UNSUPPORTED;
@@ -454,6 +459,8 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.close, dummy_close),
 
     FIELD_INIT(.is_fw_ready, dummy_is_fw_ready),
+
+    FIELD_INIT(.get_handle, dummy_get_handle),
 
     FIELD_INIT(.load_fpga, dummy_load_fpga),
     FIELD_INIT(.is_fpga_configured, dummy_is_fpga_configured),

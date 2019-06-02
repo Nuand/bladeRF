@@ -102,6 +102,9 @@ struct backend_fns {
     int (*is_fpga_configured)(struct bladerf *dev);
     bladerf_fpga_source (*get_fpga_source)(struct bladerf *dev);
 
+    /* Get handle */
+    int (*get_handle)(struct bladerf *dev, void **handle);
+
     /* Version checking */
     int (*get_fw_version)(struct bladerf *dev, struct bladerf_version *version);
     int (*get_fpga_version)(struct bladerf *dev,

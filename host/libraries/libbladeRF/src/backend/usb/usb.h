@@ -108,6 +108,8 @@ struct usb_fns {
 
     int (*get_speed)(void *driver, bladerf_dev_speed *speed);
 
+    int (*get_handle)(void *driver, void **handle);
+
     int (*change_setting)(void *driver, uint8_t setting);
 
     int (*control_transfer)(void *driver,
