@@ -427,6 +427,9 @@ header = """
     uint32_t page, uint32_t count);
   int bladerf_write_flash_bytes(struct bladerf *dev, const uint8_t *buf,
     uint32_t address, uint32_t length);
+  int bladerf_read_otp(struct bladerf *dev, uint8_t *buf);
+  int bladerf_write_otp(struct bladerf *dev, uint8_t *buf);
+  int bladerf_lock_otp(struct bladerf *dev);
   int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch, const
     char *port);
   int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch, const
