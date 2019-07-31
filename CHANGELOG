@@ -6,6 +6,47 @@ hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2019.07 (2019-07-31)
+--------------------------------------------------------------------------------
+
+This release candidate consists of the following versions:
+
+    * FPGA bitstream                v0.11.0
+    * FX3 firmware                  v2.3.2
+    * libbladeRF                    v2.2.1
+    * bladeRF-cli                   v1.8.0
+    * MATLAB & Simulink bindings    v1.0.3
+    * Python bindings               v1.2.0
+
+API docs: https://www.nuand.com/bladeRF-doc/libbladeRF/
+FX3 firmware: https://www.nuand.com/fx3_images/
+FPGA bitstreams: https://www.nuand.com/fpga_images/
+Ubuntu PPA: https://launchpad.net/~nuand/+archive/ubuntu/bladerf
+Windows installer: https://www.nuand.com/win_installers/
+
+Summary of changes in 2019.07
+
+* libbladeRF
+    - Gain mode setting default is now manual
+    - Tuning mode setting default is now host
+    - Add OTP command support
+    - Fix metadata related arithmetic
+
+* bladeRF-cli:
+    - Add RFIC fitler selection
+    - Add tuning_mode
+    - Display more useful warning and error messages
+
+* FPGA:
+    - Increase FIFO buffer sizes for bladeRF 2.0
+    - Fix underflow and overflow issues in metadata code
+    - Refactor RFIC code for bladeRF 2.0
+    - Allow quicktune to control XB gpio register for XB-200
+
+* Python
+    - Update for libbladeRF v2.2.1
+
+--------------------------------------------------------------------------------
  2018.12-rc2 (2018-12-21)
 --------------------------------------------------------------------------------
 
