@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.1.1 (2019-07-31)
+--------------------------------
+ * add OTP functions
+ * update definitions for libbladeRF v2.2.1
+
 v1.1.1 (2018-12-21)
 --------------------------------
  * bladerf-tool: don't print gain mode on tx channels

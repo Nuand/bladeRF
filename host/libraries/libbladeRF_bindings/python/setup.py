@@ -19,7 +19,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='bladerf',
-    version='1.1.1',
+    version='1.2.0',
     description='CFFI-based Python 3 binding to libbladeRF',
     long_description=long_description,
     url='https://github.com/Nuand/bladeRF',
@@ -28,7 +28,7 @@ setup(
     license='MIT',
     python_requires='>=3',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Telecommunications Industry',
