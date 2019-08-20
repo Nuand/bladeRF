@@ -242,7 +242,7 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     5,              // TX_DATA/TX_FRAME delay = 1.5 ns                                  // tx_data_delay *** adi,tx-data-delay
     300,            // LVDS driver bias 300 mV                                          // lvds_bias_mV *** adi,lvds-bias-mV
     1,              // Enable LVDS on-chip termination                                  // lvds_rx_onchip_termination_enable *** adi,lvds-rx-onchip-termination-enable
-    0,              // RX1 and RX2 are not phase-aligned                                // rx1rx2_phase_inversion_en *** adi,rx1-rx2-phase-inversion-enable
+    1,              // RX1 and RX2 are not phase-aligned                                // rx1rx2_phase_inversion_en *** adi,rx1-rx2-phase-inversion-enable
     0xFF,           // Default signal inversion mappings                                // lvds_invert1_control *** adi,lvds-invert1-control
     0x0F,           // Default signal inversion mappings                                // lvds_invert2_control *** adi,lvds-invert2-control
     1,              // CLK_OUT drive increased by ~20%                                  // clk_out_drive
