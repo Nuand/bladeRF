@@ -416,6 +416,18 @@ function actionbutton_Callback(hObject, ~, handles)
             handles.devicelist.Enable = 'off';
             handles.xb200_attached.Enable = 'off';
 
+            if handles.bladerf.info.gen == 2
+                if handles.channel.Value == 1
+                    handles.bladerf.rx.channel = 'RX1';
+                elseif handles.channel.Value == 2
+                    handles.bladerf.rx.channel = 'RX2';
+                end
+            else
+                handles.bladerf.rx.channel = 'RX1';
+                handles.channel.Value = 1;
+            end
+            handles.channel.Enable = 'off';
+
             handles.bladerf.rx.config.num_buffers = str2num(handles.num_buffers.String);
             handles.bladerf.rx.config.buffer_size = str2num(handles.buffer_size.String);
             handles.bladerf.rx.config.num_transfers = str2num(handles.num_transfers.String);
@@ -545,6 +557,7 @@ function actionbutton_Callback(hObject, ~, handles)
             handles.num_transfers.Enable = 'on';
             handles.devicelist.Enable = 'on';
             handles.xb200_attached.Enable = 'on';
+            handles.channel.Enable = 'on';
 
             hObject.String = 'Start';
             guidata(hObject, handles);
@@ -608,6 +621,23 @@ function bandwidth_Callback(hObject, ~, handles)
 end
 
 function bandwidth_CreateFcn(hObject, ~, ~)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        hObject.BackgroundColor = 'white';
+    end
+end
+
+function channel_Callback(hObject, ~, handles)
+    values = hObject.String;
+    index = hObject.Value;
+    if handles.bladerf.info.gen == 2 && strcmpi(values{index}, 'RX2')
+         handles.bladerf.rx.channel = 'RX2';
+    else
+         handles.bladerf.rx.channel = 'RX1';
+         hObject.Value = 1;
+    end
+end
+
+function channel_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         hObject.BackgroundColor = 'white';
     end
