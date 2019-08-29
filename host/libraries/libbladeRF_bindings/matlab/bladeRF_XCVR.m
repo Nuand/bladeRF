@@ -46,6 +46,7 @@ classdef bladeRF_XCVR < handle
         lna             % RX LNA gain. Values: { 'BYPASS', 'MID', 'MAX' }
         xb200_filter    % XB200 Filter selection. Only valid when an XB200 is attached. Options are: '50M', '144M', '222M', 'AUTO_1DB', 'AUTO_3DB', 'CUSTOM'
         mux             % FPGA sample FIFO mux mode. Only valid for RX, with options 'BASEBAND_LMS', '12BIT_COUNTER', '32BIT_COUNTER', 'DIGITAL_LOOPBACK'
+        channel         % Channel number
     end
 
     properties(SetAccess = immutable, Hidden=true)
@@ -57,6 +58,10 @@ classdef bladeRF_XCVR < handle
         min_sampling    % Lower sampling rate tuning limit
         max_sampling    % Higher sampling rate  tuning limit
         xb200_attached; % Modify behavior due to XB200 being attached
+    end
+
+    properties(SetAccess = private, Hidden=true)
+        current_channel % Current active channel
     end
 
     properties(SetAccess = private)
@@ -205,6 +210,44 @@ classdef bladeRF_XCVR < handle
                     error(strcat('Invalid AGC setting: ', val));
             end
             %fprintf('Read %s gain: %d\n', obj.direction, val);
+        end
+
+        % Configures active channel setting
+        function set.channel(obj, val)
+            if (strcmpi(val,'RX') == true || strcmpi(val, 'RX1') || strcmp(val, 'BLADERF_CHANNEL_RX1'))
+                channel = 'BLADERF_CHANNEL_RX1';
+            elseif (strcmpi(val, 'RX2') || strcmp(val, 'BLADERF_CHANNEL_RX2'))
+                channel = 'BLADERF_CHANNEL_RX2';
+            elseif (strcmpi(val,'TX') == true || strcmpi(val, 'TX1') || strcmp(val, 'BLADERF_CHANNEL_TX1'))
+                channel = 'BLADERF_CHANNEL_TX1';
+            elseif (strcmpi(val, 'TX2') || strcmp(val, 'BLADERF_CHANNEL_TX2'))
+                channel = 'BLADERF_CHANNEL_TX2';
+            end
+
+            obj.current_channel = channel;
+
+            if obj.running
+                [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
+                                      obj.bladerf.device, ...
+                                      obj.current_channel, ...
+                                      false);
+
+                bladeRF.check_status('bladerf_enable_module', status);
+
+
+                [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
+                                      obj.bladerf.device, ...
+                                      channel, ...
+                                      true);
+
+                bladeRF.check_status('bladerf_enable_module', status);
+            end
+
+        end
+
+        % Reads the current active channel setting
+        function val = get.channel(obj)
+            val = obj.current_channel
         end
 
         % Configures the universal gain
@@ -484,11 +527,9 @@ classdef bladeRF_XCVR < handle
             % Set the direction of the transceiver
             obj.direction = dir;
             obj.bladerf = dev;
-            if strcmpi(dir,'RX') == true
-                obj.module = 'BLADERF_MODULE_RX';
-            else
-                obj.module = 'BLADERF_MODULE_TX';
-            end
+
+            obj.channel = dir;
+            obj.module = obj.current_channel;
 
             if strcmpi(xb, 'XB200') == true
                 obj.min_frequency = 0;
@@ -583,7 +624,7 @@ classdef bladeRF_XCVR < handle
             % Enable the module
             [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
                                   obj.bladerf.device, ...
-                                  obj.module, ...
+                                  obj.current_channel, ...
                                   true);
 
             bladeRF.check_status('bladerf_enable_module', status);
@@ -620,7 +661,7 @@ classdef bladeRF_XCVR < handle
             % Disable the module
             [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
                                   obj.bladerf.device, ...
-                                  obj.module, ...
+                                  obj.current_channel, ...
                                   false);
 
             bladeRF.check_status('bladerf_enable_module', status);
