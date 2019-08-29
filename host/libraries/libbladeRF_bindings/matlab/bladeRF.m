@@ -175,7 +175,7 @@ classdef bladeRF < handle
             end
 
             if count > 0
-                devs = repmat(struct('backend', [], 'serial', [], 'usb_bus', [], 'usb_addr', [], 'instance', []), 1, count);
+                devs = repmat(struct('backend', [], 'serial', [], 'usb_bus', [], 'usb_addr', [], 'instance', [], 'manufacturer', [], 'product', []), 1, count);
                 for x = 0:(count-1)
                     ptr = pdevlist+x;
                     devs(x+1) = ptr.Value;
