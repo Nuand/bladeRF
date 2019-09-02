@@ -140,7 +140,7 @@ static struct cmd const cmd_table[] = {
                           "file"),
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_init_cal),
         FIELD_INIT(.requires_device, true),
-        FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.requires_fpga, false),
         FIELD_INIT(.allow_while_streaming, false),
     },
     {
