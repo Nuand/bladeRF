@@ -445,7 +445,7 @@ classdef bladeRF_XCVR < handle
         % Read the timestamp counter from the associated module
         function val = get.timestamp(obj)
             val = uint64(0);
-            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_timestamp', obj.bladerf.device, obj.module, val);
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_timestamp', obj.bladerf.device, strcat('BLADERF_', obj.direction), val);
             bladeRF.check_status('bladerf_get_timestamp', status);
         end
 
