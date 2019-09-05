@@ -250,8 +250,8 @@ classdef bladeRF < handle
         %   - libusb-1.0.dll and/or CyUSB.dll
         %   - pthreadVC2.dll
         %
-        % Linux users will need to copy libbladeRF.h to this directory
-        % and add the following to it, after "#define BLADERF_H_"
+        % Linux users will need to copy libbladeRF.h, bladeRF1.h, bladeRF2.h to this directory
+        % and add the following #define to libbladeRF.h, after "#define BLADERF_H_" or "#define LIBBLADERF_H"
         %
         % #define MATLAB_LINUX_THUNK_BUILD_
         %
@@ -262,13 +262,34 @@ classdef bladeRF < handle
             arch = computer('arch');
             this_dir = pwd;
             proto_output = 'delete_this_file';
+            if size(dir('*bladeRF*.h'), 1) < 3
+                help bladeRF.build_thunk
+                warning('Ensure libbladeRF.h, bladeRF1.h, and bladeRF2.h exist in this directory. Please review instructions.')
+                return
+            end
             switch arch
                 case 'win64'
                     [notfound, warnings] = loadlibrary('bladeRF', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
                 case 'glnxa64'
-                    [notfound, warnings] = loadlibrary('libbladeRF', 'libbladeRF.h', 'includepath', this_dir, 'notempdir', 'mfilename', proto_output);
+                    hnd = fopen('libbladeRF.h');
+                    found = false;
+                    if hnd > 0
+                        while ~ feof(hnd)
+                            if strfind(fgetl(hnd), '#define MATLAB_LINUX_THUNK_BUILD_') == 1
+                                found = true;
+                                break;
+                            end
+                        end
+                        fclose(hnd);
+                    end
+                    if ~ found
+                        help bladeRF.build_thunk
+                        warning('Could not find required #define in libbladeRF.h . Please review instructions.');
+                        return
+                    end
+                    [notfound, warnings] = loadlibrary('libbladeRF', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
                 case 'maci64'
-                    [notfound, warnings] = loadlibrary('libbladeRF.dylib', 'libbladeRF.h', 'includepath', this_dir, 'notempdir', 'mfilename', proto_output);
+                    [notfound, warnings] = loadlibrary('libbladeRF.dylib', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
                 otherwise
                     error(strcat('Unsupported architecture: ', arch))
             end
@@ -287,6 +308,8 @@ classdef bladeRF < handle
             if isempty(warnings) == false
                 warning('Encountered the following warnings while loading libbladeRF:\n%s\n', warnings);
             end
+
+            warning('Restart program after running bladeRF.build_thunk()')
         end
     end
 
