@@ -310,6 +310,11 @@ classdef bladeRF < handle
             end
 
             warning('Restart program after running bladeRF.build_thunk()')
+            if isempty(strfind([path],pwd))
+                warning('Could not find current directory in path.')
+                warning('Consider saving this directory to path by trying:')
+                warning('    addpath(pwd) ; savepath')
+            end
         end
     end
 
