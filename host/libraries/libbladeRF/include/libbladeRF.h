@@ -1868,8 +1868,7 @@ struct bladerf_quick_tune {
  *                              the retune immediately, specify
  *                              ::BLADERF_RETUNE_NOW.
  * @param[in]   frequency       Desired frequency, in Hz.
- * @param[in]   quick_tune      If NULL, the `frequency` parameter will be used.
- *                              If non-NULL, the provided "quick retune" values
+ * @param[in]   quick_tune      If non-NULL, the provided "quick retune" values
  *                              will be applied to the transceiver to tune it
  *                              according to a previous state retrieved via
  *                              bladerf_get_quick_tune().
