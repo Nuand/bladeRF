@@ -252,6 +252,7 @@ package bladerf_p is
 
     type nios_gpo_t is record
         xb_mode         : std_logic_vector(1 downto 0);
+        packet_en       : std_logic;
         agc_en          : std_logic;
         agc_band_sel    : std_logic;
         ts_div2         : std_logic;  -- Not used in FPGA versions >= 0.3.0
@@ -323,6 +324,7 @@ package body bladerf_p is
         -- AVAILABLE: x(29 downto 23);
         -- RESERVED:  rv(22 downto 21) := x.xb_mode2;  -- Why? Is this even needed?
         -- RESERVED:  rv(20 downto 19) := x.nios_ss_n; -- Why? Is this even needed?
+        rv(19)           := x.packet_en;
         rv(18)           := x.agc_en;
         rv(17)           := x.ts_div2; -- Not used in FPGA versions >= 0.3.0
         rv(16)           := x.meta_en;
@@ -362,6 +364,7 @@ package body bladerf_p is
         -- AVAILABLE: x(29 downto 23);
         --rv.xb_mode2      := x(22 downto 21); -- Why? Is this even needed?
         --rv.nios_ss_n     := x(20 downto 19); -- Why? Is this even needed?
+        rv.packet_en       := x(19);
         rv.agc_en          := x(18);
         rv.ts_div2         := x(17); -- Not used in FPGA versions >= 0.3.0
         rv.meta_en         := x(16);
