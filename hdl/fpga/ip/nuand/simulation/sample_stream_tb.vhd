@@ -27,6 +27,7 @@ library nuand ;
     use nuand.util.all ;
     use nuand.fifo_readwrite_p.all;
     use nuand.common_dcfifo_p.all;
+    use nuand.bladerf_p.all;
 
 library std ;
     use std.env.all ;
@@ -130,36 +131,31 @@ architecture arch of sample_stream_tb is
                                     wdata( 31 downto 0), -- GPIF side is always 32 bits
                                     rdata(((NUM_MIMO_STREAMS*32)-1) downto 0),
                                     rused(compute_rdusedw_high(4096,32,(NUM_MIMO_STREAMS*32),"NO") downto 0),
-                                    wused(compute_wrusedw_high(4096,"NO") downto 0)
+                                    wused(TX_FIFO_T_DEFAULT.wused'range)
                                 );
 
     signal rx_sample_fifo   :   fifo_t(
                                     wdata(((NUM_MIMO_STREAMS*32)-1) downto 0),
                                     rdata( 31 downto 0), -- GPIF side is always 32 bits
-                                    rused(compute_rdusedw_high(4096,(NUM_MIMO_STREAMS*32),32,"NO") downto 0),
+                                    rused(RX_FIFO_T_DEFAULT.rused'range),
                                     wused(compute_wrusedw_high(4096,"NO") downto 0)
                                 );
 
     signal tx_meta_fifo     :   fifo_t(
                                     wdata( 31 downto 0),
                                     rdata(127 downto 0),
-                                    rused(  2 downto 0),
-                                    wused(  4 downto 0)
+                                    rused(META_FIFO_TX_T_DEFAULT.rused'range),
+                                    wused(META_FIFO_TX_T_DEFAULT.wused'range)
                                 );
 
     signal rx_meta_fifo     :   fifo_t(
                                     wdata(127 downto 0),
                                     rdata( 31 downto 0),
-                                    rused(  6 downto 0),
-                                    wused(  4 downto 0)
+                                    rused(META_FIFO_RX_T_DEFAULT.rused'range),
+                                    wused(META_FIFO_RX_T_DEFAULT.wused'range)
                                 );
 
-    signal tx_loopback_fifo :   fifo_t(
-                                    wdata(63 downto 0),
-                                    rdata(63 downto 0),
-                                    rused(compute_rdusedw_high(2048,64,64,"OFF") downto 0),
-                                    wused(compute_wrusedw_high(2048,"OFF") downto 0)
-                                );
+    signal tx_loopback_fifo :   loopback_fifo_t;
 
     -- Loopback controls
     signal tx_loopback_enabled  : std_logic := '0';
