@@ -167,6 +167,11 @@ architecture arch of sample_stream_tb is
     alias rx_ts_reset   : std_logic is rx_reset;
     alias tx_ts_reset   : std_logic is tx_reset;
 
+    signal rx_packet_control       :   packet_control_t;
+    signal tx_packet_control       :   packet_control_t := PACKET_CONTROL_DEFAULT;
+
+    signal rx_packet_ready         :   std_logic;
+    signal tx_packet_ready         :   std_logic;
 begin
 
     usb_speed <= '0' ;
@@ -221,6 +226,11 @@ begin
             trigger_master       => '0',
             trigger_line         => open,
 
+            -- Packet FIFO
+            packet_en            => '0',
+            packet_control       => tx_packet_control,
+            packet_ready         => tx_packet_ready,
+
             -- Samples from host via FX3
             sample_fifo_wclock   => fx3_clock,
             sample_fifo_wreq     => tx_sample_fifo.wreq,
@@ -272,6 +282,11 @@ begin
             trigger_master         => '0',
             trigger_line           => open,
 
+            -- Packet FIFO
+            packet_en              => '0',
+            packet_control         => rx_packet_control,
+            packet_ready           => rx_packet_ready,
+
             -- Samples to host via FX3
             sample_fifo_rclock     => fx3_clock,
             sample_fifo_raclr      => not rx_enable,
@@ -280,6 +295,9 @@ begin
             sample_fifo_rempty     => rx_sample_fifo.rempty,
             sample_fifo_rfull      => rx_sample_fifo.rfull,
             sample_fifo_rused      => rx_sample_fifo.rused,
+
+            -- Mini expansion signals
+            mini_exp               => "00",
 
             -- Metadata to host via FX3
             meta_fifo_rclock       => fx3_clock,
