@@ -27,8 +27,8 @@ library rtl_work;
 library altera_lnsim;
     use altera_lnsim.altera_pll;
 
-library work;
-    use work.bladerf_p.all;
+library nuand;
+    use nuand.bladerf_p.all;
 
 entity fx3_gpif_tb is
 end entity;
@@ -77,9 +77,9 @@ architecture arch of fx3_gpif_tb is
     signal loopback_valid           : std_logic           := '0';
     signal loopback_enabled         : std_logic           := '0';
 
-    signal rx_sample_fifo           : fifo_t              := FIFO_T_DEFAULT;
-    signal tx_sample_fifo           : fifo_t              := FIFO_T_DEFAULT;
-    signal loopback_fifo            : fifo_t              := FIFO_T_DEFAULT;
+    signal rx_sample_fifo           : rx_fifo_t           := RX_FIFO_T_DEFAULT;
+    signal tx_sample_fifo           : tx_fifo_t           := TX_FIFO_T_DEFAULT;
+    signal loopback_fifo            : loopback_fifo_t     := LOOPBACK_FIFO_T_DEFAULT;
     signal rx_meta_fifo             : meta_fifo_rx_t      := META_FIFO_RX_T_DEFAULT;
     signal tx_meta_fifo             : meta_fifo_tx_t      := META_FIFO_TX_T_DEFAULT;
 
@@ -134,7 +134,7 @@ begin
 
     -- Unit under test
     -- Clock domain: fx3_pclk_pll
-    U_fx3_gpif : entity work.fx3_gpif
+    U_fx3_gpif : entity nuand.fx3_gpif
         port map (
             pclk                => fx3_pclk_pll,
             reset               => sys_rst,
@@ -180,7 +180,7 @@ begin
 
     -- Model of FX3's GPIF interface
     -- Clock domain: fx3_pclk (source)
-    U_fx3_model : entity work.fx3_model(dma)
+    U_fx3_model : entity nuand.fx3_model(dma)
         port map (
             fx3_pclk            => fx3_pclk,
             fx3_gpif            => fx3_gpif_i,
@@ -198,9 +198,9 @@ begin
     -- Generate phase-shifted PLL clock
     U_fx3_pll : entity rtl_work.fx3_pll
         port map (
-            refclk   =>  fx3_pclk,
-            rst      =>  pll_reset,
-            outclk_0 =>  fx3_pclk_pll,
+            inclk0   =>  fx3_pclk,
+            areset   =>  pll_reset,
+            c0       =>  fx3_pclk_pll,
             locked   =>  pll_locked
         );
 
@@ -216,7 +216,7 @@ begin
     tx_sample_fifo.aclr   <= sys_rst;
     tx_sample_fifo.wclock <= fx3_pclk_pll after FIFO_WORKAROUND; -- simulation workaround
     tx_sample_fifo.rclock <= sys_clk;
-    U_tx_sample_fifo : entity work.tx_fifo
+    U_tx_sample_fifo : entity nuand.tx_fifo
         port map (
             aclr                => tx_sample_fifo.aclr,
 
@@ -238,7 +238,7 @@ begin
     tx_meta_fifo.aclr   <= sys_rst;
     tx_meta_fifo.wclock <= fx3_pclk_pll after FIFO_WORKAROUND; -- simulation workaround
     tx_meta_fifo.rclock <= sys_clk;
-    U_tx_meta_fifo : entity work.tx_meta_fifo
+    U_tx_meta_fifo : entity nuand.tx_meta_fifo
         port map (
             aclr                => tx_meta_fifo.aclr,
 
@@ -263,7 +263,7 @@ begin
     loopback_fifo.aclr   <= sys_rst;
     loopback_fifo.wclock <= sys_clk after FIFO_WORKAROUND; -- simulation workaround
     loopback_fifo.rclock <= sys_clk;
-    U_rx_loopback_fifo : entity work.rx_fifo
+    U_rx_loopback_fifo : entity nuand.rx_fifo
         port map (
             aclr                => loopback_fifo.aclr,
 
@@ -284,7 +284,7 @@ begin
 
     -- Sample bridge
     -- Clock domain: sys_clk
-    U_fifo_writer : entity work.fifo_writer
+    U_fifo_writer : entity nuand.fifo_writer
         port map (
             clock               =>  sys_clk,
             reset               =>  sys_rst,
@@ -319,7 +319,7 @@ begin
     rx_sample_fifo.aclr   <= sys_rst;
     rx_sample_fifo.wclock <= sys_clk after FIFO_WORKAROUND; -- simulation workaround
     rx_sample_fifo.rclock <= fx3_pclk_pll;
-    U_rx_sample_fifo : entity work.rx_fifo
+    U_rx_sample_fifo : entity nuand.rx_fifo
         port map (
             aclr                => rx_sample_fifo.aclr,
 
@@ -341,7 +341,7 @@ begin
     rx_meta_fifo.aclr   <= sys_rst;
     rx_meta_fifo.wclock <= sys_clk after FIFO_WORKAROUND; -- simulation workaround
     rx_meta_fifo.rclock <= fx3_pclk_pll;
-    U_rx_meta_fifo : entity work.rx_meta_fifo
+    U_rx_meta_fifo : entity nuand.rx_meta_fifo
         port map (
             aclr                => rx_meta_fifo.aclr,
 
