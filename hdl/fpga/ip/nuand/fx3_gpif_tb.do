@@ -22,13 +22,3 @@ proc waves_fx3_gpif { } {
     add wave -radix hexadecimal -expand -group gpif sim:/fx3_gpif_tb/U_fx3_gpif/*
     add wave -radix hexadecimal -expand -group model sim:/fx3_gpif_tb/U_fx3_model/*
 }
-
-if [info exists root] {
-    compile_fx3_gpif $root
-} else {
-    # We assume we're in hdl/quartus/work/bladerf-micro/simulation/modelsim
-    compile_fx3_gpif [file join [pwd] .. .. .. .. .. fpga ip nuand]
-}
-
-simulate_fx3_gpif
-waves_fx3_gpif
