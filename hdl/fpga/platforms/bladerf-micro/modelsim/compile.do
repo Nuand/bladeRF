@@ -15,4 +15,5 @@ vcom -work nuand -2008 ../vhdl/tb/fx3_pll.vhd
 vcom -work nuand -2008 ../vhdl/tb/system_pll.vhd
 vcom -work nuand -2008 ../vhdl/tb/bladerf_tb.vhd
 
-vsim -t 1ps nuand.bladerf_tb
+compile_nuand_tb ../../../ip/nuand bladerf-micro
+

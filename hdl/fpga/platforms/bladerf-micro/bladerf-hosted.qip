@@ -27,6 +27,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synth
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_reader.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_writer.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/set_clear_ff.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/rx_packet_generator.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip trigger/trigger.vhd]]
 set_global_assignment -name QIP_FILE  [file normalize [file join $nuand_ip pll_reset/pll_reset.qip]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip ps_sync/vhdl/ps_sync.vhd]]

@@ -43,6 +43,7 @@ entity fx3_gpif is
     tx_enable           :   out std_logic;
     rx_enable           :   out std_logic;
     meta_enable         :   in  std_logic;
+    packet_enable       :   in  std_logic;
 
     -- TX FIFO
     tx_fifo_write       :   out std_logic;
@@ -139,8 +140,10 @@ architecture sample_shuffler of fx3_gpif is
         txm_fifo_wr     :   std_logic;
         underrun_set    :   std_logic;
         underrun_clr    :   std_logic;
+        finishing_rx    :   std_logic;
+        meta_dword      :   std_logic_vector(31 downto 0);
         ack_downcount   :   integer range  0 to max(ACK_DOWNCOUNT_READ, ACK_DOWNCOUNT_WRITE);
-        dma_downcount   :   integer range -1 to GPIF_BUF_SIZE_SS;
+        dma_downcount   :   integer range -1 to 65536;
         meta_downcount  :   integer range -1 to META_DOWNCOUNT_RESET;
         fini_downcount  :   integer range  0 to FINI_DOWNCOUNT_RESET;
         tx_ts_plus32    :   unsigned(63 downto 0);
@@ -162,6 +165,8 @@ architecture sample_shuffler of fx3_gpif is
         txm_fifo_wr     =>  '0',
         underrun_set    =>  '0',
         underrun_clr    =>  '1',
+        finishing_rx    =>  '0',
+        meta_dword      =>  (others => '0'),
         ack_downcount   =>  0,
         dma_downcount   =>  0,
         meta_downcount  =>  0,
@@ -267,12 +272,15 @@ begin
             rx_fifo_critical    <= false;
             tx_fifo_enough      <= false;
         elsif (rising_edge(pclk)) then
-            -- Do we have at least one block of data in RX buffer?
-            rx_fifo_enough      <= (unsigned(rx_fifo_full&rx_fifo_usedw) >= gpif_buf_size);
+            if( packet_enable = '1' ) then
+               rx_fifo_enough      <= rx_meta_fifo_empty = '0';
+            else
+               rx_fifo_enough      <= (unsigned(rx_fifo_full&rx_fifo_usedw) >= gpif_buf_size);
+            end if;
             -- Can we not fit one more block of data in RX buffer?
             rx_fifo_critical    <= (unsigned(rx_fifo_usedw) >= ((2**(rx_fifo_usedw'length-1) - gpif_buf_size)));
             -- Do we have room for one more block of data in the TX buffer?
-            tx_fifo_enough      <= (unsigned(tx_fifo_usedw) < ((2**(tx_fifo_usedw'length-1) - gpif_buf_size)));
+            tx_fifo_enough      <= (unsigned(tx_fifo_usedw) < ((2**(tx_fifo_usedw'length-1) - gpif_buf_size))) and (tx_meta_fifo_full = '0');
         end if;
     end process calculate_fifo_waterlines;
 
@@ -397,6 +405,7 @@ begin
                 future.meta_buf         <= (others => '0');
                 future.meta_downcount   <= META_DOWNCOUNT_RESET;
                 future.fini_downcount   <= FINI_DOWNCOUNT_RESET;
+                future.finishing_rx   <= '0';
 
                 if (current.dma_idle = '1') then
                     if (should_rx and ( (rx_meta_fifo_empty = '0' and current.rx_meta_en = '1')
@@ -441,6 +450,10 @@ begin
                     future.dma_acks         <= acknowledge(current.rx_current_dma);
                 end if;
 
+                if (packet_enable = '1' and current.ack_downcount = 1) then
+                    future.meta_dword   <= rx_meta_fifo_data;
+                end if;
+
                 -- Remain in this state until we're done acking
                 if (current.ack_downcount = 0) then
                     future.state        <= next_state;
@@ -460,20 +473,33 @@ begin
                 -- After the meta is done, move on to the sample FIFO.
                 if (current.meta_downcount = 1) then
                     future.state        <= SAMPLE_READ;
+                    if (packet_enable = '1') then
+                        future.dma_downcount <= to_integer(unsigned(current.meta_dword(15 downto 0))) - 1 +
+                                                to_integer(unsigned(std_logic_vector(current.meta_dword(0 downto 0))));
+                        -- dma_downcount is the length of the payload + the header, however by the time
+                        -- meta_downcount is 1, the header is partly read
+                    end if;
                 end if;
 
-                future.dma_downcount    <= max(current.dma_downcount-1, -1);
+                if (packet_enable = '0') then
+                    future.dma_downcount    <= max(current.dma_downcount-1, -1);
+                end if;
                 future.meta_downcount   <= max(current.meta_downcount-1, -1);
 
             when SAMPLE_READ =>
                 -- Service the sample FIFO.
                 future.gpif_mode        <= RX;
                 future.rx_fifo_rd       <= '1';
+                future.finishing_rx       <= '1';
 
                 -- Clear the underrun indicator.  This is set in the event
                 -- of a TX underrun condition, and is sent back to the host
                 -- as part of RX metadata.
                 future.underrun_clr     <= '1';
+
+                if (packet_enable = '1' and current.dma_downcount = 0 and current.meta_dword(0) = '1') then
+                    future.gpif_mode        <= IDLE;
+                end if;
 
                 -- Once the DMA countdown is done, conclude this transaction
                 if (current.dma_downcount = 0) then
@@ -520,8 +546,16 @@ begin
                 future.dma_downcount    <= max(current.dma_downcount-1, -1);
                 future.meta_downcount   <= max(current.meta_downcount-1, -1);
 
+                if( current.meta_downcount = 4 and packet_enable = '1' ) then
+                   future.meta_dword <= gpif_in;
+                end if;
+
                 -- Check meta_buf validity and determine next action
                 if (current.meta_downcount = 1) then
+                    if( packet_enable = '1' ) then
+                        future.dma_downcount <= to_integer(unsigned(current.meta_dword(15 downto 0))) -
+                                                 to_integer(unsigned(std_logic_vector(not(current.meta_dword(0 downto 0)))));
+                    end if;
                     if (unsigned(current.meta_buf(63 downto 0)) = 0 or
                         unsigned(current.meta_buf(31 downto 0) & current.meta_buf(63 downto 32)) > current.tx_ts_plus32)
                     then
@@ -544,7 +578,9 @@ begin
                 end if;
 
                 -- If meta_downcount is nonzero, flush meta_buf into meta FIFO
-                if (current.meta_downcount > 0) then
+                if (meta_enable = '1' and current.meta_downcount > 0 and
+                         (packet_enable = '0' or (packet_enable = '1' and current.dma_downcount < 6)) ) then
+                    future.meta_downcount   <= max(current.meta_downcount-1, -1);
                     future.txm_fifo_wr  <= current.tx_meta_en;
                     future.meta_buf(127 downto 0) <= current.meta_buf(95 downto 0) & x"00000000";
                 end if;
@@ -555,7 +591,6 @@ begin
                 end if;
 
                 future.dma_downcount    <= max(current.dma_downcount-1, -1);
-                future.meta_downcount   <= max(current.meta_downcount-1, -1);
 
             when SAMPLE_WRITE_IGNORE =>
                 -- This state is used to assert that an error situation
@@ -577,6 +612,10 @@ begin
                 -- This provides a pause between adjacent transactions.
                 future.gpif_mode        <= IDLE;
                 future.fini_downcount   <= max(current.fini_downcount-1, 0);
+
+                if (packet_enable = '1' and current.finishing_rx = '1' and current.fini_downcount = 8) then
+                    future.dma_acks         <= acknowledge(current.rx_current_dma);
+                end if;
 
                 if (current.fini_downcount = 0) then
                     future.state        <= IDLE;
