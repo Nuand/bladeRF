@@ -47,6 +47,12 @@ entity tx is
         trigger_master       : in    std_logic;
         trigger_line         : inout std_logic; -- this is not good, should be in/out/oe
 
+        -- Packet from host via FX3
+        packet_en            : in    std_logic;
+        packet_empty         : out   std_logic;
+        packet_control       : out   packet_control_t;
+        packet_ready         : in    std_logic;
+
         -- Samples from host via FX3
         sample_fifo_wclock   : in    std_logic;
         sample_fifo_wreq     : in    std_logic;
@@ -205,6 +211,7 @@ begin
 
             usb_speed           =>  usb_speed,
             meta_en             =>  meta_en,
+            packet_en           =>  packet_en,
             timestamp           =>  tx_timestamp,
 
             fifo_empty          =>  sample_fifo.rempty,
@@ -212,6 +219,10 @@ begin
             fifo_data           =>  sample_fifo.rdata,
             fifo_read           =>  sample_fifo.rreq,
             fifo_holdoff        =>  sample_fifo_holdoff,
+
+            packet_control      =>  packet_control,
+            packet_empty        =>  packet_empty,
+            packet_ready        =>  packet_ready,
 
             meta_fifo_empty     =>  meta_fifo.rempty,
             meta_fifo_usedw     =>  meta_fifo.rused,
