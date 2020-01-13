@@ -39,8 +39,21 @@ package fifo_readwrite_p is
 
     type sample_streams_t is array( natural range <> ) of sample_stream_t;
 
+    type packet_control_t is record
+        pkt_core_id  : std_logic_vector(7 downto 0);
+        pkt_flags    : std_logic_vector(7 downto 0);
+        pkt_sop      : std_logic;
+        pkt_eop      : std_logic;
+        data         : std_logic_vector(31 downto 0);
+        data_valid   : std_logic;
+    end record;
+
+    type packet_controls_t is array( natural range <> ) of packet_control_t;
+
     constant SAMPLE_CONTROL_ENABLE  : sample_control_t;
     constant SAMPLE_CONTROL_DISABLE : sample_control_t;
+
+    constant PACKET_CONTROL_DEFAULT : packet_control_t;
 
     constant ZERO_SAMPLE            : sample_stream_t;
 
@@ -59,6 +72,15 @@ package body fifo_readwrite_p is
     constant SAMPLE_CONTROL_DISABLE : sample_control_t := (
         enable   => '0',
         data_req => '0'
+    );
+
+    constant PACKET_CONTROL_DEFAULT : packet_control_t := (
+        pkt_core_id => (others => '0'),
+        pkt_flags   => (others => '0'),
+        pkt_sop     => '0',
+        pkt_eop     => '0',
+        data        => (others => '0'),
+        data_valid  => '0'
     );
 
 
