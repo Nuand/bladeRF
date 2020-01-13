@@ -41,6 +41,7 @@ entity fifo_reader is
 
         usb_speed           :   in      std_logic;
         meta_en             :   in      std_logic;
+        packet_en           :   in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
 
         fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
@@ -48,6 +49,10 @@ entity fifo_reader is
         fifo_empty          :   in      std_logic;
         fifo_data           :   in      std_logic_vector(FIFO_DATA_WIDTH-1 downto 0);
         fifo_holdoff        :   in      std_logic := '0';
+
+        packet_control      :   out     packet_control_t;
+        packet_empty        :   out     std_logic;
+        packet_ready        :   in      std_logic;
 
         meta_fifo_usedw     :   in      std_logic_vector(META_FIFO_USEDW_WIDTH-1 downto 0);
         meta_fifo_read      :   buffer  std_logic := '0';
@@ -65,8 +70,8 @@ end entity;
 
 architecture simple of fifo_reader is
 
-    constant DMA_BUF_SIZE_SS    : natural   := 1015;
-    constant DMA_BUF_SIZE_HS    : natural   := 503;
+    constant DMA_BUF_SIZE_SS    : natural   := 512;
+    constant DMA_BUF_SIZE_HS    : natural   := 256;
 
     signal   dma_buf_size       : natural range DMA_BUF_SIZE_HS to DMA_BUF_SIZE_SS := DMA_BUF_SIZE_SS;
     signal   underflow_detected : std_logic := '0';
@@ -80,7 +85,11 @@ architecture simple of fifo_reader is
     type meta_fsm_t is record
         state           : meta_state_t;
         dma_downcount   : natural range 0 to DMA_BUF_SIZE_SS;
+        meta_pkt_sop    : std_logic;
+        meta_pkt_eop    : std_logic;
+        skip_padding    : std_logic;
         meta_read       : std_logic;
+        meta_cache      : std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0);
         meta_p_time     : unsigned(63 downto 0);
         meta_time_go    : std_logic;
     end record;
@@ -88,7 +97,11 @@ architecture simple of fifo_reader is
     constant META_FSM_RESET_VALUE : meta_fsm_t := (
         state           => META_LOAD,
         dma_downcount   => 0,
+        meta_pkt_sop    => '0',
+        meta_pkt_eop    => '0',
+        skip_padding    => '0',
         meta_read       => '0',
+        meta_cache      => (others => '0'),
         meta_p_time     => (others => '-'),
         meta_time_go    => '0'
     );
@@ -99,6 +112,7 @@ architecture simple of fifo_reader is
     type fifo_state_t is (
         COMPUTE_ENABLED_CHANNELS,
         COMPUTE_OFFSETS,
+        READ_PACKET,
         READ_SAMPLES,
         READ_THROTTLE,
         READ_HOLDOFF
@@ -115,6 +129,8 @@ architecture simple of fifo_reader is
         ch_offsets          : ch_offsets_t(in_sample_controls'range);
         samples_left_init   : natural range 0 to in_sample_controls'length;
         samples_left        : natural range 0 to in_sample_controls'length;
+        packet_control      : packet_control_t;
+        packet_data_cache   : std_logic_vector(31 downto 0);
         fifo_read           : std_logic;
         out_samples         : sample_streams_t(out_samples'range);
     end record;
@@ -128,6 +144,8 @@ architecture simple of fifo_reader is
         ch_offsets          => (others => 0),
         samples_left_init   => 0,
         samples_left        => 0,
+        packet_control      => PACKET_CONTROL_DEFAULT,
+        packet_data_cache   => (others => '0'),
         fifo_read           => '0',
         out_samples         => (others => ZERO_SAMPLE)
     );
@@ -172,40 +190,59 @@ begin
         end if;
     end process;
 
+    packet_empty <= '1' when ( packet_en = '1' and meta_fifo_empty = '1' ) else '0' ;
+
     -- Meta FIFO combinatorial process
     meta_fsm_comb : process( all )
+        variable  meta_time : unsigned(63 downto 0);
     begin
 
         meta_future <= meta_current;
 
         meta_future.meta_read <= '0';
+        meta_future.meta_pkt_sop <= '0';
+        meta_future.meta_pkt_eop <= '0';
 
         case meta_current.state is
 
             when META_LOAD =>
 
-                meta_future.meta_p_time <= unsigned(meta_fifo_data(95 downto 32));
+                meta_future.skip_padding <= '0';
+                meta_time := unsigned(meta_fifo_data(95 downto 32)) - 1;
+                meta_future.meta_p_time <= meta_time;
+                meta_future.meta_cache  <= meta_fifo_data;
 
-                if( meta_current.dma_downcount = 1 ) then
-                    -- Finish up the previous meta block
-                    meta_future.meta_time_go  <= '1';
+                if( meta_current.dma_downcount = NUM_STREAMS ) then
                     meta_future.dma_downcount <= 0;
-                else
-                    meta_future.meta_time_go  <= '0';
                 end if;
 
-                if( meta_fifo_empty = '0' ) then
-                    meta_future.meta_read <= '1';
-                    meta_future.state     <= META_WAIT;
+                if( fifo_current.ch_shift = 0 ) then
+                    if( meta_fifo_empty = '0' and (packet_en = '0' or
+                               (packet_en = '1' and packet_ready = '1') ) ) then
+                       meta_future.meta_read <= '1';
+                       meta_future.state     <= META_WAIT;
+                       if( meta_time /= timestamp ) then
+                             meta_future.meta_time_go  <= '0';
+                          else
+                             meta_future.meta_time_go  <= '1';
+                       end if;
+                    else
+                       meta_future.meta_time_go  <= '0';
+                    end if;
                 end if;
 
             when META_WAIT =>
 
-                meta_future.dma_downcount <= dma_buf_size;
+                if( packet_en = '1' ) then
+                   meta_future.dma_downcount <= to_integer(unsigned(meta_current.meta_cache(15 downto 0)));
+                else
+                   meta_future.dma_downcount <= dma_buf_size - 4;
+                end if;
 
-                if( timestamp >= meta_current.meta_p_time ) then
+                if( timestamp >= meta_current.meta_p_time or meta_current.meta_p_time + 1 = 0) then
                     meta_future.meta_time_go <= '1';
                     meta_future.state        <= META_DOWNCOUNT;
+                    meta_future.meta_pkt_sop <= '1';
                 else
                     meta_future.meta_time_go <= '0';
                 end if;
@@ -213,12 +250,25 @@ begin
             when META_DOWNCOUNT =>
 
                 meta_future.meta_time_go  <= '1';
-                meta_future.dma_downcount <= meta_current.dma_downcount - 1;
+                if( packet_en = '0' ) then
+                   if( fifo_current.fifo_read = '1') then
+                      meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
+                   end if;
+                else
+                   if( fifo_current.packet_control.data_valid = '1') then
+                      meta_future.dma_downcount <= meta_current.dma_downcount - 1;
+                   end if;
+                end if;
 
-                if( meta_current.dma_downcount = 2 ) then
+                if( meta_current.meta_cache(0) = '1' ) then
+                   meta_future.skip_padding <= '1';
+                end if;
+
+                if( meta_current.dma_downcount <= NUM_STREAMS ) then
                     -- Look for 2 because of the 2 cycles passing
                     -- through META_LOAD and META_WAIT after this.
                     meta_future.state <= META_LOAD;
+                    meta_future.meta_pkt_eop <= '1';
                 end if;
 
             when others =>
@@ -334,7 +384,9 @@ begin
         fifo_future <= fifo_current;
 
         fifo_future.fifo_read <= '0';
+        fifo_future.packet_control.pkt_sop <= meta_current.meta_pkt_sop;
 
+        fifo_future.packet_control.data_valid <= '0';
         -- MIMO UNPACKER: STEP 1 of 5
         unpacked := unpack(fifo_current.sample_controls_reg, fifo_data);
         for i in fifo_future.out_samples'range loop
@@ -368,7 +420,49 @@ begin
                 fifo_future.samples_left_init <= NUM_STREAMS - fifo_current.enabled_channels;
                 fifo_future.samples_left      <= NUM_STREAMS - fifo_current.enabled_channels;
 
-                fifo_future.state <= READ_SAMPLES;
+                if( packet_en = '1' ) then
+                    fifo_future.state <= READ_PACKET;
+                    fifo_future.samples_left <= NUM_STREAMS - 1;
+                else
+                    fifo_future.state <= READ_SAMPLES;
+                end if;
+
+            when READ_PACKET =>
+                if( meta_current.meta_pkt_eop = '1' and meta_current.skip_padding = '1') then
+                    fifo_future.samples_left <= NUM_STREAMS - 1;
+                end if;
+
+                if( fifo_data'high > 31) then
+                    if( fifo_current.samples_left = 0) then
+                        fifo_future.packet_control.data <= fifo_current.packet_data_cache;
+                    elsif( fifo_current.samples_left = 1) then
+                        fifo_future.packet_control.data <= fifo_data(31 downto 0);
+                        fifo_future.packet_data_cache   <= fifo_data(63 downto 32);
+                    end if;
+                else
+                    fifo_future.packet_control.data <= fifo_data(31 downto 0);
+                end if;
+
+                if( meta_current.meta_time_go = '1' and meta_current.dma_downcount = 2 ) then
+                    fifo_future.packet_control.pkt_eop <= '1';
+                else
+                    fifo_future.packet_control.pkt_eop <= '0';
+                end if;
+
+
+                if( fifo_empty = '0' and meta_current.meta_time_go = '1' and meta_current.dma_downcount > 1) then
+                    fifo_future.packet_control.data_valid <= '1';
+
+                    if( fifo_current.samples_left = NUM_STREAMS - 1) then
+                        fifo_future.fifo_read    <= '1';
+                     end if;
+
+                    if( fifo_current.samples_left = 0 ) then
+                        fifo_future.samples_left <= NUM_STREAMS - 1;
+                    else
+                        fifo_future.samples_left <= fifo_current.samples_left - 1;
+                    end if;
+                end if;
 
             when READ_SAMPLES =>
 
@@ -448,6 +542,8 @@ begin
         -- Output assignments
         fifo_read   <= fifo_current.fifo_read;
         out_samples <= fifo_current.out_samples;
+
+        packet_control <= fifo_current.packet_control;
 
     end process;
 
