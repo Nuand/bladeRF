@@ -91,6 +91,11 @@ architecture hosted_bladerf of bladerf is
     signal meta_en_tx       : std_logic ;
     signal meta_en_rx       : std_logic ;
     signal meta_en_fx3      : std_logic ;
+
+    signal packet_en_pclk   : std_logic;
+    signal packet_en_tx     : std_logic;
+    signal packet_en_rx     : std_logic;
+
     signal tx_timestamp     : unsigned(63 downto 0) ;
     signal rx_timestamp     : unsigned(63 downto 0) ;
     signal timestamp_sync   : std_logic ;
@@ -260,6 +265,11 @@ architecture hosted_bladerf of bladerf is
     signal corr_dc_q_mid             : std_logic_vector(15 downto 0);
     signal corr_dc_q_min             : std_logic_vector(15 downto 0);
 
+    signal tx_packet_control         : packet_control_t ;
+    signal rx_packet_control         : packet_control_t := PACKET_CONTROL_DEFAULT ;
+
+    signal rx_packet_ready           : std_logic;
+
 begin
 
     correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
@@ -356,6 +366,39 @@ begin
         async               =>  nios_gpio.o.meta_en,
         sync                =>  meta_en_rx
       ) ;
+
+    U_sync_packet_en_pclk : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      )
+      port map (
+        reset               =>  '0',
+        clock               =>  fx3_pclk_pll,
+        async               =>  nios_gpio.o.packet_en,
+        sync                =>  packet_en_pclk
+      );
+
+    U_sync_packet_en_rx : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      )
+      port map (
+        reset               =>  '0',
+        clock               =>  rx_clock,
+        async               =>  nios_gpio.o.packet_en,
+        sync                =>  packet_en_rx
+      );
+
+    U_sync_packet_en_tx : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      )
+      port map (
+        reset               =>  '0',
+        clock               =>  tx_clock,
+        async               =>  nios_gpio.o.packet_en,
+        sync                =>  packet_en_tx
+      );
 
     U_sys_reset_sync : entity work.reset_synchronizer
       generic map (
@@ -670,6 +713,7 @@ begin
         usb_speed           =>  usb_speed,
 
         meta_enable         =>  meta_en_fx3,
+        packet_enable       =>  packet_en_pclk,
         rx_enable           =>  pclk_rx_enable,
         tx_enable           =>  pclk_tx_enable,
 
@@ -723,6 +767,7 @@ begin
 
         usb_speed           =>  usb_speed_rx,
         meta_en             =>  meta_en_rx,
+        packet_en           =>  packet_en_rx,
         timestamp           =>  rx_timestamp,
         mini_exp            =>  mini_exp2 & mini_exp1,
 
@@ -731,6 +776,9 @@ begin
         fifo_usedw          =>  rx_sample_fifo.wused,
         fifo_data           =>  rx_sample_fifo.wdata,
         fifo_write          =>  rx_sample_fifo.wreq,
+
+        packet_control      =>  rx_packet_control,
+        packet_ready        =>  rx_packet_ready,
 
         meta_fifo_full      =>  rx_meta_fifo.wfull,
         meta_fifo_usedw     =>  rx_meta_fifo.wused,
@@ -868,12 +916,16 @@ begin
 
         usb_speed           =>  usb_speed_tx,
         meta_en             =>  meta_en_tx,
+        packet_en           =>  packet_en_tx,
         timestamp           =>  tx_timestamp,
 
         fifo_empty          =>  tx_sample_fifo.rempty,
         fifo_usedw          =>  tx_sample_fifo.rused,
         fifo_data           =>  tx_sample_fifo.rdata,
         fifo_read           =>  tx_sample_fifo.rreq,
+
+        packet_control      =>  tx_packet_control,
+        packet_ready        =>  '1',
 
         meta_fifo_empty     =>  tx_meta_fifo.rempty,
         meta_fifo_usedw     =>  tx_meta_fifo.rused,
@@ -1328,5 +1380,18 @@ begin
         dest_req            =>  timestamp_req,
         dest_ack            =>  timestamp_ack
       ) ;
+
+    U_rx_pkt_gen : entity work.rx_packet_generator
+        port map(
+            rx_clock               => rx_clock,
+            rx_reset               => rx_reset,
+
+            rx_packet_ready        => rx_packet_ready,
+
+            rx_enable              => rx_enable,
+            rx_packet_enable       => packet_en_rx,
+
+            rx_packet_control      => rx_packet_control
+        ) ;
 
 end architecture ; -- arch
