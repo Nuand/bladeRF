@@ -295,8 +295,8 @@ begin
         elsif (rising_edge(pclk)) then
             gpif_oe             <= '0';
             gpif_out            <= (others => '1');
-            tx_fifo_data        <= (others => 'X');
-            tx_meta_fifo_data   <= (others => 'X');
+            tx_fifo_data        <= gpif_in;
+            tx_meta_fifo_data   <= gpif_in;
 
             case (current.gpif_mode) is
                 when IDLE =>
@@ -331,6 +331,7 @@ begin
 
                 when TX_IGNORE =>
                     gpif_oe         <= '0';
+                    tx_meta_fifo_data <= current.meta_buf(127 downto 96);
 
             end case;
         end if;
