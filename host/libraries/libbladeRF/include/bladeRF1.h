@@ -1367,6 +1367,11 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
 #define BLADERF_GPIO_FEATURE_SMALL_DMA_XFER (1 << 7)
 
 /**
+ * Enable Packet mode
+ */
+#define BLADERF_GPIO_PACKET (1 << 19)
+
+/**
  * AGC enable control bit
  *
  * @note This is set using bladerf_set_gain_mode().

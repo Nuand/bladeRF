@@ -108,6 +108,12 @@ int perform_format_config(struct bladerf *dev,
         gpio_val &= ~BLADERF_GPIO_TIMESTAMP;
     }
 
+    if (format == BLADERF_FORMAT_PACKET_META) {
+       gpio_val |= BLADERF_GPIO_PACKET | BLADERF_GPIO_TIMESTAMP;
+    } else {
+       gpio_val &= ~BLADERF_GPIO_PACKET;
+    }
+
     CHECK_STATUS(dev->backend->config_gpio_write(dev, gpio_val));
 
     board_data->module_format[dir] = format;
