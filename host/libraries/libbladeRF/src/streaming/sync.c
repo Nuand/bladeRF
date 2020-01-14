@@ -190,7 +190,10 @@ int sync_init(struct bladerf_sync *sync,
     sync->meta.msg_per_buf = msg_per_buf(msg_size, buffer_size, bytes_per_sample);
     sync->meta.samples_per_msg = samples_per_msg(msg_size, bytes_per_sample);
 
-    log_verbose("%s: Buffer size: %u\n",
+    log_verbose("%s: Buffer size (in bytes): %u\n",
+                __FUNCTION__, buffer_size * bytes_per_sample);
+
+    log_verbose("%s: Buffer size (in samples): %u\n",
                 __FUNCTION__, buffer_size);
 
     log_verbose("%s: Msg per buffer: %u\n",
