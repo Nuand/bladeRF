@@ -44,6 +44,7 @@ size_t _interleave_calc_bytes_per_sample(bladerf_format format)
     switch (format) {
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
+        case BLADERF_FORMAT_PACKET_META:
             return 4;
     }
 
@@ -54,6 +55,7 @@ size_t _interleave_calc_metadata_bytes(bladerf_format format)
 {
     switch (format) {
         case BLADERF_FORMAT_SC16_Q11_META:
+        case BLADERF_FORMAT_PACKET_META:
             return 0x10;
         case BLADERF_FORMAT_SC16_Q11:
             return 0;

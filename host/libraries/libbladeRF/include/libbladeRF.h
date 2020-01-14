@@ -2153,6 +2153,47 @@ typedef enum {
      * @see The `src/streaming/metadata.h` header in the libbladeRF codebase.
      */
     BLADERF_FORMAT_SC16_Q11_META,
+
+    /**
+     * This format is for exchanging packets containing digital payloads with
+     * the FPGA. A packet is generall a digital payload, that the FPGA then
+     * processes to either modulate, demodulate, filter, etc.
+     *
+     * All fields are little-endian byte order.
+     *
+     * <pre>
+     *  .-------------.------------.----------------------------------.
+     *  | Byte offset |   Type     | Description                      |
+     *  +-------------+------------+----------------------------------+
+     *  |    0x00     | uint16_t   | Packet length (in 32bit DWORDs)  |
+     *  |    0x02     |  uint8_t   | Packet flags                     |
+     *  |    0x03     |  uint8_t   | Packet core ID                   |
+     *  |    0x04     | uint64_t   | 64-bit Timestamp                 |
+     *  |    0x0c     | uint32_t   | BLADERF_META_FLAG_* flags        |
+     *  |  0x10..end  |            | Payload                          |
+     *  `-------------`------------`----------------------------------`
+     * </pre>
+     *
+     * A target core (for example a modem) must be specified when calling the
+     * bladerf_sync_rx() and bladerf_sync_tx() functions.
+     *
+     * When in packet mode, lengths for all functions and data formats are
+     * expressed in number of 32-bit DWORDs. As an example, a 12 byte packet
+     * is considered to be 3 32-bit DWORDs long.
+     *
+     * This packet format does not send or receive raw IQ samples. The digital
+     * payloads contain configurations, and digital payloads that are specific
+     * to the digital core to which they are addressed. It is the FPGA core
+     * that should generate, interpret, and process the digital payloads.
+     *
+     * With the exception of packet lenghts, no difference should exist between
+     * USB 2.0 Hi-Speed or USB 3.0 SuperSpeed for packets for this streaming
+     * format.
+     *
+     * @see STREAMING_FORMAT_METADATA
+     * @see The `src/streaming/metadata.h` header in the libbladeRF codebase.
+     */
+    BLADERF_FORMAT_PACKET_META,
 } bladerf_format;
 
 /**

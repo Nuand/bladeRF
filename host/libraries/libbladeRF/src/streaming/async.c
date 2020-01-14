@@ -92,6 +92,10 @@ int async_init_stream(struct bladerf_stream **stream,
             buffer_size_bytes = sc16q11_to_bytes(samples_per_buffer);
             break;
 
+        case BLADERF_FORMAT_PACKET_META:
+            buffer_size_bytes = samples_per_buffer;
+            break;
+
         default:
             status = BLADERF_ERR_INVAL;
             break;
