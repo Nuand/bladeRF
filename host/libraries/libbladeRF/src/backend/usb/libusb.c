@@ -1029,7 +1029,7 @@ static inline size_t transfer_idx(struct lusb_stream_data *stream_data,
     return UINT_MAX;
 }
 
-static int submit_transfer(struct bladerf_stream *stream, void *buffer);
+static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t len);
 
 static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 {
@@ -1102,20 +1102,33 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     }
 
     if (stream->state == STREAM_RUNNING) {
-        /* Sanity check for debugging purposes */
-        if (transfer->length != transfer->actual_length) {
-            log_warning("Received short transfer\n");
-        }
+        if (stream->format == BLADERF_FORMAT_PACKET_META) {
+            /* Call user callback requesting more data to transmit */
+            next_buffer = stream->cb(
+                stream->dev, stream, &metadata, transfer->buffer,
+                bytes_to_samples(stream->format, transfer->actual_length), stream->user_data);
+        } else {
+            /* Sanity check for debugging purposes */
+            if (transfer->length != transfer->actual_length) {
+                log_warning("Received short transfer\n");
+            }
 
-        /* Call user callback requesting more data to transmit */
-        next_buffer = stream->cb(
-            stream->dev, stream, &metadata, transfer->buffer,
-            bytes_to_sc16q11(transfer->actual_length), stream->user_data);
+            /* Call user callback requesting more data to transmit */
+            next_buffer = stream->cb(
+                stream->dev, stream, &metadata, transfer->buffer,
+                bytes_to_sc16q11(transfer->actual_length), stream->user_data);
+        }
 
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
             stream->state = STREAM_SHUTTING_DOWN;
         } else if (next_buffer != BLADERF_STREAM_NO_DATA) {
-            int status = submit_transfer(stream, next_buffer);
+            int status;
+            if((stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
+                  && stream->format == BLADERF_FORMAT_PACKET_META) {
+               status = submit_transfer(stream, next_buffer, metadata.actual_count);
+            } else {
+               status = submit_transfer(stream, next_buffer, async_stream_buf_bytes(stream));
+            }
             if (status != 0) {
                 /* If this fails, we probably have a serious problem...so just
                  * shut it down. */
@@ -1168,7 +1181,7 @@ get_next_available_transfer(struct lusb_stream_data *stream_data)
 }
 
 /* Precondition: A transfer is available. */
-static int submit_transfer(struct bladerf_stream *stream, void *buffer)
+static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t len)
 {
     int status;
     struct bladerf_lusb *lusb = lusb_backend(stream->dev);
@@ -1187,7 +1200,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
                               lusb->handle,
                               ep,
                               buffer,
-                              (int)bytes_per_buffer,
+                              (int)len,
                               lusb_stream_cb,
                               stream,
                               stream->transfer_timeout);
@@ -1357,7 +1370,12 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
         }
 
         if (buffer != BLADERF_STREAM_NO_DATA) {
-            status = submit_transfer(stream, buffer);
+            if((layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
+                  && stream->format == BLADERF_FORMAT_PACKET_META) {
+               status = submit_transfer(stream, buffer, metadata.actual_count);
+            } else {
+               status = submit_transfer(stream, buffer, async_stream_buf_bytes(stream));
+            }
 
             /* If we failed to submit any transfers, cancel everything in
              * flight.  We'll leave the stream in the running state so we can
@@ -1386,8 +1404,8 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
 
 /* The top-level code will have aquired the stream->lock for us */
 int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
-                              void *buffer, unsigned int timeout_ms,
-                              bool nonblock)
+                              void *buffer, size_t *length,
+                              unsigned int timeout_ms, bool nonblock)
 {
     int status = 0;
     struct lusb_stream_data *stream_data = stream->backend_data;
@@ -1437,7 +1455,7 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
     } else if (status != 0) {
         return BLADERF_ERR_UNEXPECTED;
     } else {
-        return submit_transfer(stream, buffer);
+        return submit_transfer(stream, buffer, *length);
     }
 }
 

@@ -145,6 +145,7 @@ struct usb_fns {
     int (*submit_stream_buffer)(void *driver,
                                 struct bladerf_stream *stream,
                                 void *buffer,
+                                size_t *length,
                                 unsigned int timeout_ms,
                                 bool nonblock);
 

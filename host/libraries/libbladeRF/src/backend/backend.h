@@ -247,6 +247,7 @@ struct backend_fns {
     int (*stream)(struct bladerf_stream *stream, bladerf_channel_layout layout);
     int (*submit_stream_buffer)(struct bladerf_stream *stream,
                                 void *buffer,
+                                size_t *length,
                                 unsigned int timeout_ms,
                                 bool nonblock);
     void (*deinit_stream)(struct bladerf_stream *stream);

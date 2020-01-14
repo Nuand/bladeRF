@@ -941,11 +941,11 @@ static int usb_stream(struct bladerf_stream *stream, bladerf_channel_layout layo
 }
 
 int usb_submit_stream_buffer(struct bladerf_stream *stream, void *buffer,
-                             unsigned int timeout_ms, bool nonblock)
+                             size_t *length, unsigned int timeout_ms, bool nonblock)
 {
     struct bladerf_usb *usb = stream->dev->backend_data;
     return usb->fn->submit_stream_buffer(usb->driver, stream, buffer,
-                                         timeout_ms, nonblock);
+                                 length, timeout_ms, nonblock);
 }
 
 static void usb_deinit_stream(struct bladerf_stream *stream)
