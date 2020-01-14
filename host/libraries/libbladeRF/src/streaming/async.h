@@ -99,6 +99,7 @@ int async_run_stream(struct bladerf_stream *stream,
  */
 int async_submit_stream_buffer(struct bladerf_stream *stream,
                                void *buffer,
+                               size_t *length,
                                unsigned int timeout_ms,
                                bool nonblock);
 

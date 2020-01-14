@@ -2039,7 +2039,9 @@ static int bladerf2_submit_stream_buffer(struct bladerf_stream *stream,
                                          unsigned int timeout_ms,
                                          bool nonblock)
 {
-    return async_submit_stream_buffer(stream, buffer, timeout_ms, nonblock);
+    size_t len;
+    len = async_stream_buf_bytes(stream);
+    return async_submit_stream_buffer(stream, buffer, &len, timeout_ms, nonblock);
 }
 
 static void bladerf2_deinit_stream(struct bladerf_stream *stream)

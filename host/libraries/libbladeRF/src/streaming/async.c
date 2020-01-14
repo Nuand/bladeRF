@@ -185,7 +185,8 @@ int async_run_stream(struct bladerf_stream *stream, bladerf_channel_layout layou
 }
 
 int async_submit_stream_buffer(struct bladerf_stream *stream,
-                               void *buffer, unsigned int timeout_ms,
+                               void *buffer, size_t *length,
+                               unsigned int timeout_ms,
                                bool nonblock)
 {
     int status = 0;
@@ -227,7 +228,7 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
     }
 
     status = stream->dev->backend->submit_stream_buffer(stream, buffer,
-                                                   timeout_ms, nonblock);
+                                           length, timeout_ms, nonblock);
 
 error:
     MUTEX_UNLOCK(&stream->lock);
