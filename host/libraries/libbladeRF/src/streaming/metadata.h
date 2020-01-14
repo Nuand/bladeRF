@@ -31,7 +31,11 @@
  * for the samples within the message. This header is shown below:
  *
  *       +-----------------+
- *  0x00 |    Reserved     |    4 bytes
+ *  0x00 |  Packet length  |    2 bytes, Little-endian uint16_t
+ *       +-----------------+
+ *  0x02 |   Packet flags  |    1 byte
+ *       +-----------------+
+ *  0x03 |  Packet core ID |    1 byte
  *       +-----------------+
  *  0x04 |    Timestamp    |    8 bytes, Little-endian uint64_t
  *       +-----------------+
@@ -81,8 +85,14 @@
 #define METADATA_RESV_SIZE (sizeof(uint32_t))
 #define METADATA_TIMESTAMP_SIZE (sizeof(uint64_t))
 #define METADATA_FLAGS_SIZE (sizeof(uint32_t))
+#define METADATA_PACKET_LEN_SIZE (sizeof(uint16_t))
+#define METADATA_PACKET_CORE_SIZE (sizeof(uint8_t))
+#define METADATA_PACKET_FLAGS_SIZE (sizeof(uint8_t))
 
 #define METADATA_RESV_OFFSET 0
+#define METADATA_PACKET_LEN_OFFSET 0
+#define METADATA_PACKET_FLAGS_OFFSET 2
+#define METADATA_PACKET_CORE_OFFSET 3
 #define METADATA_TIMESTAMP_OFFSET (METADATA_RESV_SIZE)
 #define METADATA_FLAGS_OFFSET \
     (METADATA_TIMESTAMP_OFFSET + METADATA_TIMESTAMP_SIZE)
@@ -108,23 +118,63 @@ static inline uint32_t metadata_get_flags(const uint8_t *header)
     return LE32_TO_HOST(ret);
 }
 
-static inline void metadata_set(uint8_t *header,
+static inline uint16_t metadata_get_packet_len(const uint8_t *header)
+{
+    uint16_t ret;
+    assert(sizeof(ret) == METADATA_PACKET_LEN_SIZE);
+    memcpy(&ret, &header[METADATA_PACKET_LEN_OFFSET], METADATA_PACKET_LEN_SIZE);
+    return LE16_TO_HOST(ret);
+}
+
+static inline uint8_t metadata_get_packet_core(const uint8_t *header)
+{
+    uint8_t ret;
+    assert(sizeof(ret) == METADATA_PACKET_CORE_SIZE);
+    memcpy(&ret, &header[METADATA_PACKET_CORE_OFFSET], METADATA_PACKET_CORE_SIZE);
+    return ret;
+}
+
+static inline uint8_t metadata_get_packet_flags(const uint8_t *header)
+{
+    uint8_t ret;
+    assert(sizeof(ret) == METADATA_PACKET_FLAGS_SIZE);
+    memcpy(&ret, &header[METADATA_PACKET_FLAGS_OFFSET], METADATA_PACKET_FLAGS_SIZE);
+    return ret;
+}
+
+static inline void metadata_set_packet(uint8_t *header,
                                 uint64_t timestamp,
-                                uint32_t flags)
+                                uint32_t flags,
+                                uint16_t length,
+                                uint8_t core,
+                                uint8_t pkt_flags)
 {
     timestamp = HOST_TO_LE64(timestamp);
 
     flags = HOST_TO_LE32(flags);
+
+    length = HOST_TO_LE16(length);
 
     assert(sizeof(timestamp) == METADATA_TIMESTAMP_SIZE);
     assert(sizeof(flags) == METADATA_FLAGS_SIZE);
 
     memset(&header[METADATA_RESV_OFFSET], 0, METADATA_RESV_SIZE);
 
+    memcpy(&header[METADATA_PACKET_LEN_OFFSET],   &length,    METADATA_PACKET_LEN_SIZE);
+    memcpy(&header[METADATA_PACKET_CORE_OFFSET],  &core,      METADATA_PACKET_CORE_SIZE);
+    memcpy(&header[METADATA_PACKET_FLAGS_OFFSET], &pkt_flags, METADATA_PACKET_FLAGS_SIZE);
+
     memcpy(&header[METADATA_TIMESTAMP_OFFSET], &timestamp,
            METADATA_TIMESTAMP_SIZE);
 
     memcpy(&header[METADATA_FLAGS_OFFSET], &flags, METADATA_FLAGS_SIZE);
+}
+
+static inline void metadata_set(uint8_t *header,
+                                uint64_t timestamp,
+                                uint32_t flags)
+{
+    metadata_set_packet(header, timestamp, flags, 0, 0, 0);
 }
 
 #endif
