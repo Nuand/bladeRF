@@ -82,6 +82,7 @@ static void *rx_callback(struct bladerf *dev,
 
             /* This buffer is now ready for the consumer */
             b->status[samples_idx] = SYNC_BUFFER_FULL;
+            b->actual_lengths[samples_idx] = num_samples;
             pthread_cond_signal(&b->buf_ready);
 
             /* Update the state of the buffer being submitted next */
@@ -166,6 +167,8 @@ static void *tx_callback(struct bladerf *dev,
                             __FUNCTION__, b->cons_i);
 
                 ret = b->buffers[b->cons_i];
+                /* This is actually # of 32bit DWORDs for PACKET_META */
+                meta->actual_count = b->actual_lengths[b->cons_i];
                 b->status[b->cons_i] = SYNC_BUFFER_IN_FLIGHT;
                 b->cons_i = (b->cons_i + 1) % b->num_buffers;
             } else {

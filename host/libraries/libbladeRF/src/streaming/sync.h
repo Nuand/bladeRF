@@ -68,6 +68,7 @@ typedef enum {
 
 struct buffer_mgmt {
     sync_buffer_status *status;
+    size_t *actual_lengths;
 
     void **buffers;
     unsigned int num_buffers;
@@ -99,6 +100,7 @@ typedef enum {
     SYNC_STATE_WAIT_FOR_BUFFER,
     SYNC_STATE_BUFFER_READY,
     SYNC_STATE_USING_BUFFER,
+    SYNC_STATE_USING_PACKET_META,
     SYNC_STATE_USING_BUFFER_META
 } sync_state;
 

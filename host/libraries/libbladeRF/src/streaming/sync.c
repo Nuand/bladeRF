@@ -93,6 +93,9 @@ static inline void dump_buf_states(struct bladerf_sync *s)
         case SYNC_STATE_USING_BUFFER_META:
             statestr = "USING_BUFFER_META";
             break;
+        case SYNC_STATE_USING_PACKET_META:
+            statestr = "USING_PACKET_META";
+            break;
         case SYNC_STATE_WAIT_FOR_BUFFER:
             statestr = "WAIT_FOR_BUFFER";
             break;
@@ -145,6 +148,7 @@ int sync_init(struct bladerf_sync *sync,
     switch (format) {
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
+        case BLADERF_FORMAT_PACKET_META:
             bytes_per_sample = 4;
             break;
 
@@ -211,6 +215,12 @@ int sync_init(struct bladerf_sync *sync,
         goto error;
     }
 
+    sync->buf_mgmt.actual_lengths = (size_t *) malloc(num_buffers * sizeof(size_t));
+    if (sync->buf_mgmt.actual_lengths == NULL) {
+        status = BLADERF_ERR_MEM;
+        goto error;
+    }
+
     switch (layout & BLADERF_DIRECTION_MASK) {
         case BLADERF_RX:
             /* When starting up an RX stream, the first 'num_transfers'
@@ -265,12 +275,15 @@ void sync_deinit(struct bladerf_sync *sync)
     if (sync->initialized) {
         if ((sync->stream_config.layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
             async_submit_stream_buffer(sync->worker->stream,
-                                       BLADERF_STREAM_SHUTDOWN, 0, false);
+                                       BLADERF_STREAM_SHUTDOWN, NULL, 0, false);
         }
 
         sync_worker_deinit(sync->worker, &sync->buf_mgmt.lock,
                            &sync->buf_mgmt.buf_ready);
 
+        if (sync->buf_mgmt.actual_lengths) {
+            free(sync->buf_mgmt.actual_lengths);
+        }
         /* De-allocate our buffer management resources */
         if (sync->buf_mgmt.status) {
             MUTEX_DESTROY(&sync->buf_mgmt.lock);
@@ -357,6 +370,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
     unsigned int samples_to_copy = 0;
     unsigned int samples_per_buffer = 0;
     uint64_t target_timestamp = UINT64_MAX;
+    unsigned int pkt_len_dwords = 0;
 
     if (s == NULL || samples == NULL) {
         log_debug("NULL pointer passed to %s\n", __FUNCTION__);
@@ -367,7 +381,8 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
     MUTEX_LOCK(&s->lock);
 
-    if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META) {
+    if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META ||
+          s->stream_config.format == BLADERF_FORMAT_PACKET_META) {
         if (user_meta == NULL) {
             log_debug("NULL metadata pointer passed to %s\n", __FUNCTION__);
             status = BLADERF_ERR_INVAL;
@@ -484,6 +499,10 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         s->state = SYNC_STATE_USING_BUFFER_META;
                         s->meta.curr_msg_off = 0;
                         s->meta.msg_num = 0;
+                        break;
+
+                    case BLADERF_FORMAT_PACKET_META:
+                        s->state = SYNC_STATE_USING_PACKET_META;
                         break;
 
                     default:
@@ -696,10 +715,30 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                 MUTEX_UNLOCK(&b->lock);
                 break;
+
+            case SYNC_STATE_USING_PACKET_META: /* Packet buffers w/ metadata */
+                MUTEX_LOCK(&b->lock);
+
+                buf_src = (uint8_t*)b->buffers[b->cons_i];
+
+                pkt_len_dwords = metadata_get_packet_len(buf_src);
+
+                if (pkt_len_dwords > 0) {
+                   samples_returned += num_samples;
+                   user_meta->actual_count = pkt_len_dwords;
+                   memcpy(samples_dest, buf_src + METADATA_HEADER_SIZE, samples2bytes(s, pkt_len_dwords));
+                }
+
+                advance_rx_buffer(b);
+                s->state = SYNC_STATE_WAIT_FOR_BUFFER;
+                MUTEX_UNLOCK(&b->lock);
+                break;
+
+
         }
     }
 
-    if (user_meta) {
+    if (user_meta && s->stream_config.format != BLADERF_FORMAT_PACKET_META) {
         user_meta->actual_count = samples_returned;
     }
 
@@ -728,8 +767,15 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
          * status for this this buffer, or the producer index.
          */
         MUTEX_UNLOCK(&b->lock);
+        size_t len;
+        if (s->stream_config.format == BLADERF_FORMAT_PACKET_META) {
+           len = b->actual_lengths[idx];
+        } else {
+           len = async_stream_buf_bytes(s->worker->stream);
+        }
         status = async_submit_stream_buffer(s->worker->stream,
                                             b->buffers[idx],
+                                            &len,
                                             s->stream_config.timeout_ms,
                                             true);
         MUTEX_LOCK(&b->lock);
@@ -972,6 +1018,12 @@ int sync_tx(struct bladerf_sync *s,
                         s->meta.msg_num      = 0;
                         break;
 
+                    case BLADERF_FORMAT_PACKET_META:
+                        s->state             = SYNC_STATE_USING_PACKET_META;
+                        s->meta.curr_msg_off = 0;
+                        s->meta.msg_num      = 0;
+                        break;
+
                     default:
                         assert(!"Invalid stream format");
                         status = BLADERF_ERR_UNEXPECTED;
@@ -1183,6 +1235,28 @@ int sync_tx(struct bladerf_sync *s,
 
                 MUTEX_UNLOCK(&b->lock);
                 break;
+
+            case SYNC_STATE_USING_PACKET_META: /* Packet buffers w/ metadata */
+                MUTEX_LOCK(&b->lock);
+
+                buf_dest = (uint8_t *)b->buffers[b->prod_i];
+
+                memcpy(buf_dest + METADATA_HEADER_SIZE, samples_src, num_samples*4);
+
+                b->actual_lengths[b->prod_i] = samples2bytes(s, num_samples) + METADATA_HEADER_SIZE;
+
+                metadata_set_packet(buf_dest, 0, 0, num_samples, 0, 0);
+
+                samples_written = num_samples;
+
+                status = advance_tx_buffer(s, b);
+
+                s->meta.msg_num = 0;
+                s->state        = SYNC_STATE_WAIT_FOR_BUFFER;
+
+                MUTEX_UNLOCK(&b->lock);
+                break;
+
         }
     }
 
