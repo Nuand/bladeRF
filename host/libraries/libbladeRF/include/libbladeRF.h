@@ -2127,12 +2127,17 @@ typedef enum {
      *  .-------------.------------.----------------------------------.
      *  | Byte offset |   Type     | Description                      |
      *  +-------------+------------+----------------------------------+
-     *  |    0x00     | uint32_t   | Reserved                         |
+     *  |    0x00     | uint16_t   | Reserved                         |
+     *  |    0x02     |  uint8_t   | Stream flags                     |
+     *  |    0x03     |  uint8_t   | Meta version ID                  |
      *  |    0x04     | uint64_t   | 64-bit Timestamp                 |
      *  |    0x0c     | uint32_t   | BLADERF_META_FLAG_* flags        |
      *  |  0x10..end  |            | Payload                          |
      *  `-------------`------------`----------------------------------`
      * </pre>
+     *
+     * For IQ sample meta mode, the Meta version ID and Stream flags should
+     * currently be set to values 0x00 and 0x00, respectively.
      *
      * <i>*</i>The number of samples in a <i>block</i> is dependent upon
      * the USB speed being used:
