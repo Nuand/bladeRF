@@ -188,7 +188,7 @@ find_package(Patcher REQUIRED)
 foreach(patchfile IN ITEMS ${LIBAD936X_PATCHES})
     message(STATUS "libad936x: Applying patch: ${patchfile}")
     execute_process(
-        COMMAND ${Patcher_EXECUTABLE} -p3
+        COMMAND ${Patcher_EXECUTABLE} -p3 --binary -l
         INPUT_FILE ${LIBAD936X_PATCH_DIR}/${patchfile}
         WORKING_DIRECTORY "${LIBAD936X_UPSTREAM_BUILD_DIR}"
         OUTPUT_QUIET
