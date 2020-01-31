@@ -124,6 +124,7 @@ struct dc_cal_state {
     int rxvga2_curr_gain;
 };
 
+#ifndef BLADERF_NIOS_BUILD
 /* LPF conversion table */
 static const unsigned int uint_bandwidths[] = {
     MHz(28),
@@ -143,6 +144,7 @@ static const unsigned int uint_bandwidths[] = {
     kHz(1750),
     kHz(1500)
 };
+#endif
 
 #define FREQ_RANGE(low_, high_, value_) \
 { \
@@ -186,6 +188,7 @@ static const unsigned int uint_bandwidths[] = {
 #define DIV8  0x6
 #define DIV16 0x7
 
+#ifndef BLADERF_NIOS_BUILD
 /* Frequency Range table. Corresponds to the LMS FREQSEL table.
  * Per feedback from the LMS google group, the last entry, listed as 3.72G
  * in the programming manual, can be applied up to 3.8G */
@@ -268,6 +271,7 @@ static const uint8_t lms_reg_dumpset[] = {
     /* RX FE Modules Configuration */
     0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C
 };
+#endif
 
 /* Register 0x08:  RF loopback config and additional BB config
  *

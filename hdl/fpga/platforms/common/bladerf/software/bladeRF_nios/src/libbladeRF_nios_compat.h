@@ -91,7 +91,6 @@ struct bladerf;
     })
 
 /* Stub out pthread type */
-typedef void *pthread_cond_t;
 
 #endif
 
