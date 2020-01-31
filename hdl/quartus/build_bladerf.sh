@@ -289,6 +289,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+if [ $(expr ${QUARTUS_VER[major]} \>= 19 ) -eq 1 ]; then
+   export PERL5LIB=$(echo ${QUARTUS_ROOTDIR}/linux64/perl/lib/*.*/)
+fi
+
 nios_system=../fpga/ip/altera/nios_system
 
 # 9a484b436: Windows-specific workaround for Quartus bug
