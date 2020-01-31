@@ -470,7 +470,7 @@ echo ""
 printf "%s %02d:%02d:%02d\n" "Total Build Time:" "$(($SECONDS / 3600))" "$((($SECONDS / 60) % 60))" "$(($SECONDS % 60))"
 echo ""
 
-if [ "x$(uname)" != "xLinux" ]; then
+if [ "x$(uname)" == "xLinux" ]; then
     # Delete empty SOPC directories in the user's home directory
     find ~ -maxdepth 1 -type d -empty -iname "sopc_altera_pll*" -delete
 fi
