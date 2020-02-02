@@ -121,6 +121,10 @@ make_revision adsb
 # Create the foxhunt
 make_revision foxhunt
 
+# Create the wlan
+make_revision wlan
+
+
 # Projects created!
 puts "${PROJECT_NAME} projects created!"
 puts "Please use the build.tcl script to build images.\n"
