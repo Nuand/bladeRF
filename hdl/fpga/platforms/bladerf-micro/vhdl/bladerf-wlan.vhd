@@ -172,6 +172,22 @@ architecture hosted_bladerf of bladerf is
     signal in_wlan_q              : signed(15 downto 0);
     signal in_wlan_valid          : std_logic;
 
+    signal gain_inc_req           : std_logic ;
+    signal gain_dec_req           : std_logic ;
+    signal gain_rst_req           : std_logic ;
+    signal gain_ack               : std_logic ;
+    signal gain_nack              : std_logic ;
+    signal gain_lock              : std_logic ;
+    signal ctrl_out_0_r           : std_logic ;
+
+    signal gain_max               : std_logic ;
+
+    signal ctrl_gain_inc          : std_logic ;
+    signal ctrl_gain_dec          : std_logic ;
+
+    signal adi_ctrl_out_mux       : std_logic_vector(adi_ctrl_out'range);
+
+    signal tx_ota_req             : std_logic ;
 begin
 
     U_wlan_top : entity wlan.wlan_top
@@ -205,14 +221,15 @@ begin
         rx_fifo_full           =>  '0',
         rx_fifo_data           =>  open,
 
-        gain_inc_req           =>  open,
-        gain_dec_req           =>  open,
-        gain_rst_req           =>  open,
+        gain_inc_req           =>  gain_inc_req,
+        gain_dec_req           =>  gain_dec_req,
+        gain_rst_req           =>  gain_rst_req,
         gain_ack               =>  '0',
-        gain_nack              =>  '0',
+        gain_nack              =>  '1',
+        gain_lock              =>  gain_lock,
         gain_max               =>  '1',
 
-        tx_ota_req             =>  open,
+        tx_ota_req             =>  tx_ota_req,
         tx_ota_ack             =>  '1',
 
         out_i                  =>  out_wlan_i,
@@ -224,6 +241,25 @@ begin
         in_valid               =>  in_wlan_valid
 
       ) ;
+
+    U_agc : entity work.bladerf_agc_adi_drv
+        port map (
+            clock          => rx_clock,
+            reset          => rx_reset,
+
+            enable         => packet_en_rx,
+
+            gain_inc_req   => gain_inc_req,
+            gain_dec_req   => gain_dec_req,
+            gain_rst_req   => gain_rst_req,
+            gain_ack       => gain_ack,
+            gain_nack      => gain_nack,
+
+            gain_max       => gain_max,
+
+            ctrl_gain_inc  => ctrl_gain_inc,
+            ctrl_gain_dec  => ctrl_gain_dec
+        );
 
     -- ========================================================================
     -- PLLs
@@ -495,7 +531,7 @@ begin
     rx_bias_en     <= unpack(rffe_gpio.o).rx_bias_en;
     --adi_sync_in    <= unpack(rffe_gpio.o).sync_in;
     adi_en_agc     <= unpack(rffe_gpio.o).en_agc;
-    adi_txnrx      <= unpack(rffe_gpio.o).txnrx;
+    adi_txnrx      <= unpack(rffe_gpio.o).txnrx; -- when nios_gpio.o.packet_en = '0' else tx_ota_req;
     adi_enable     <= unpack(rffe_gpio.o).enable;
     adi_reset_n    <= unpack(rffe_gpio.o).reset_n;
 
@@ -894,6 +930,46 @@ begin
             );
     end generate;
 
+    mux_adi_ctrl_out: process(all)
+    begin
+        for i in adi_ctrl_out'range loop
+            if( packet_en_rx = '0' ) then
+                adi_ctrl_out_mux(i) <= adi_ctrl_out(i);
+            else
+                if( i = 0 or i = 2 ) then
+                    adi_ctrl_out_mux(i) <= ctrl_gain_dec;
+                elsif( i = 1 or i = 3 ) then
+                    adi_ctrl_out_mux(i) <= ctrl_gain_inc;
+                else
+                    adi_ctrl_out_mux(i) <= adi_ctrl_out(i);
+                end if;
+            end if;
+        end loop;
+    end process;
+
+    U_ctrl_out_sync : entity work.synchronizer
+        generic map (
+            RESET_LEVEL       =>  '0'
+        )
+        port map (
+            reset      =>  '0',
+            clock      =>  rx_clock,
+            async      =>  adi_ctrl_out(0),
+            sync       =>  ctrl_out_0_r
+        );
+
+    U_agc_lock : entity work.edge_detector
+        generic map (
+            EDGE_RISE  =>  '1',
+            EDGE_FALL  =>  '0'
+        )
+        port map (
+            clock      => rx_clock,
+            reset      => '0',
+            sync_in    => ctrl_out_0_r,
+            pulse_out  => gain_lock
+        ) ;
+
     generate_sync_adi_ctrl_out : for i in adi_ctrl_out'range generate
         U_sync_adi_ctrl_out : entity work.synchronizer
             generic map (
@@ -902,7 +978,7 @@ begin
             port map (
                 reset               =>  '0',
                 clock               =>  sys_clock,
-                async               =>  adi_ctrl_out(i),
+                async               =>  adi_ctrl_out_mux(i),
                 sync                =>  rffe_gpio.i.ctrl_out(i)
             );
     end generate;
