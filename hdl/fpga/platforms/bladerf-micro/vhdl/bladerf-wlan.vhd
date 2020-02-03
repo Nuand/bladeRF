@@ -29,6 +29,9 @@ library work;
     use work.bladerf_p.all;
     use work.fifo_readwrite_p.all;
 
+library wlan;
+    use wlan.all;
+
 architecture hosted_bladerf of bladerf is
 
     attribute noprune          : boolean;
@@ -161,21 +164,66 @@ architecture hosted_bladerf of bladerf is
     signal tx_packet_ready        : std_logic;
     signal tx_packet_empty        : std_logic;
 
+    signal out_wlan_i             : signed(15 downto 0);
+    signal out_wlan_q             : signed(15 downto 0);
+    signal out_wlan_valid         : std_logic;
+
+    signal in_wlan_i              : signed(15 downto 0);
+    signal in_wlan_q              : signed(15 downto 0);
+    signal in_wlan_valid          : std_logic;
+
 begin
 
-    U_rx_pkt_gen : entity work.rx_packet_generator
-        port map(
-            rx_clock               => rx_clock,
-            rx_reset               => rx_reset,
+    U_wlan_top : entity wlan.wlan_top
+      port map (
+        rx_clock               =>  rx_clock,
+        rx_reset               =>  rx_reset,
+        rx_enable              =>  rx_enable,
 
-            rx_packet_ready        => rx_packet_ready,
+        tx_clock               =>  tx_clock,
+        tx_reset               =>  tx_reset,
+        tx_enable              =>  tx_enable,
 
-            rx_enable              => rx_enable,
-            rx_packet_enable       => packet_en_rx,
+        config_reg             =>  x"00000000",
 
-            rx_packet_control      => rx_packet_control
-        ) ;
+        packet_en              =>  packet_en_rx,
 
+        tx_packet_control      =>  tx_packet_control,
+        tx_packet_empty        =>  tx_packet_empty,
+        tx_packet_ready        =>  tx_packet_ready,
+
+        rx_packet_control      =>  rx_packet_control,
+        rx_packet_ready        =>  rx_packet_ready,
+
+        tx_fifo_usedw          =>  (others => '0' ),
+        tx_fifo_read           =>  open,
+        tx_fifo_empty          =>  '1',
+        tx_fifo_data           =>  (others => '0' ),
+
+        rx_fifo_usedw          =>  (others => '0' ),
+        rx_fifo_write          =>  open,
+        rx_fifo_full           =>  '0',
+        rx_fifo_data           =>  open,
+
+        gain_inc_req           =>  open,
+        gain_dec_req           =>  open,
+        gain_rst_req           =>  open,
+        gain_ack               =>  '0',
+        gain_nack              =>  '0',
+        gain_max               =>  '1',
+
+        tx_ota_req             =>  open,
+        tx_ota_ack             =>  '1',
+
+        out_i                  =>  out_wlan_i,
+        out_q                  =>  out_wlan_q,
+        out_valid              =>  out_wlan_valid,
+
+        in_i                   =>  in_wlan_i,
+        in_q                   =>  in_wlan_q,
+        in_valid               =>  in_wlan_valid
+
+      ) ;
 
     -- ========================================================================
     -- PLLs
@@ -499,8 +547,6 @@ begin
         exp_gpio(i) <= nios_xb_gpio_out(i) when nios_xb_gpio_oe(i) = '1' else 'Z';
     end generate;
 
-    tx_packet_ready <= '1';
-
     -- TX Submodule
     U_tx : entity work.tx
         generic map (
@@ -566,9 +612,14 @@ begin
             dac_controls(i).data_req <= (ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled) and
                                         mimo_tx_enables(i);
 
-            if (rising_edge(tx_clock) and dac_streams(i).data_v = '1') then
-                ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
-                ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
+            if( rising_edge(tx_clock) ) then
+                if( packet_en_tx = '1' and out_wlan_valid = '1' ) then
+                    ad9361.ch(i).dac.i.data  <= std_logic_vector(out_wlan_i(11 downto 0)) & "0000";
+                    ad9361.ch(i).dac.q.data  <= std_logic_vector(out_wlan_q(11 downto 0)) & "0000";
+                elsif( packet_en_tx = '0' and dac_streams(i).data_v = '1') then
+                    ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
+                    ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
+                end if;
             end if;
         end loop;
     end process;
@@ -646,6 +697,10 @@ begin
             adc_streams(i).data_v    <= ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid;
         end loop;
     end process;
+
+    in_wlan_i <= adc_streams(0).data_i(in_wlan_i'range);
+    in_wlan_q <= adc_streams(0).data_q(in_wlan_i'range);
+    in_wlan_valid <= adc_streams(0).data_v;
 
     -- ========================================================================
     -- RESET SYNCHRONIZERS
