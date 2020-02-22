@@ -153,7 +153,7 @@ bool is_valid_fpga_size(struct bladerf *dev, bladerf_fpga_size fpga, size_t len)
 
     status = dev->board->get_fpga_bytes(dev, &expected);
     if (status < 0) {
-        return status;
+        return false;
     }
 
     /* Provide a means to override this check. This is intended to allow
