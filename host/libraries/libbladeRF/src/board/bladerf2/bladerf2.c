@@ -280,7 +280,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     board_data->module_format[BLADERF_RX] = -1;
     board_data->module_format[BLADERF_TX] = -1;
 
-    dev->flash_arch->status          = STATE_UNINITIALIZED;
+    dev->flash_arch->status          = STATUS_FLASH_UNINITIALIZED;
     dev->flash_arch->manufacturer_id = 0x0;
     dev->flash_arch->device_id       = 0x0;
 

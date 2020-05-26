@@ -446,7 +446,7 @@ struct board_fns {
 
 /* Information about the (SPI) flash architecture */
 struct bladerf_flash_arch {
-    enum { STATUS_UNINITIALIZED, STATUS_SUCCESS, STATUS_ASSUMED } status;
+    enum { STATUS_FLASH_UNINITIALIZED, STATUS_SUCCESS, STATUS_ASSUMED } status;
 
     uint8_t manufacturer_id; /**< Raw manufacturer ID */
     uint8_t device_id;       /**< Raw device ID */
