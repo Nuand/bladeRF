@@ -207,7 +207,7 @@ extern const float ina219_r_shunt;
 /* Constants */
 /******************************************************************************/
 
-char const *bladerf2_state_to_string[4];
+extern char const *bladerf2_state_to_string[4];
 
 
 /******************************************************************************/
