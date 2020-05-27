@@ -1,0 +1,20 @@
+Fitter Status : Successful - Thu Jan 30 23:28:04 2020
+Quartus Prime Version : 18.1.0 Build 625 09/12/2018 SJ Standard Edition
+Revision Name : radar
+Top-level Entity Name : bladerf
+Family : Cyclone V
+Device : 5CEBA9F23C8
+Timing Models : Final
+Logic utilization (in ALMs) : 6,721 / 113,560 ( 6 % )
+Total registers : 15023
+Total pins : 173 / 224 ( 77 % )
+Total virtual pins : 0
+Total block memory bits : 1,858,816 / 12,492,800 ( 15 % )
+Total RAM Blocks : 236 / 1,220 ( 19 % )
+Total DSP Blocks : 12 / 342 ( 4 % )
+Total HSSI RX PCSs : 0
+Total HSSI PMA RX Deserializers : 0
+Total HSSI TX PCSs : 0
+Total HSSI PMA TX Serializers : 0
+Total PLLs : 3 / 8 ( 38 % )
+Total DLLs : 0 / 4 ( 0 % )

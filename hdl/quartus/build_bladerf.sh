@@ -88,7 +88,7 @@ check_quartus_version()
         sed -e 's/Version=//' \
     )
 
-    echo "Detected Quartus II ${VERSION}"
+    echo "Detected Quartus Prime ${VERSION}"
 
     QUARTUS_VER[major]=$( \
         echo "${VERSION}" | \
@@ -108,7 +108,7 @@ check_quartus_version()
     fi
 
     if [ $(expr ${QUARTUS_VER[major]}\.${QUARTUS_VER[minor]} \< ${exp_ver}) -eq 1 ]; then
-        echo "The bladeRF FPGA design requires Quartus II version ${exp_ver}" >&2
+        echo "The bladeRF FPGA design requires Quartus Prime version ${exp_ver}" >&2
         echo "The installed version is: $VERSION" >&2
         return 1
     fi
