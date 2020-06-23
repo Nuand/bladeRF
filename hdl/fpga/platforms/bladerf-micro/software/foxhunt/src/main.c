@@ -71,6 +71,14 @@ bool const REPEAT_MODE = true;
 uint32_t const INTER_MESSAGE_GAP = 10; /* seconds */
 
 struct message const MESSAGES[] = {
+    {
+        /* This should be exactly 100 dot lengths */
+        .text       = "PARIS PARIS",
+        .wpm        = 5,
+        .tone       = 1000,
+        .carrier    = 915000000,
+        .backoff_dB = 10,
+    },
     // {
     //     /* This should be exactly 100 dot lengths */
     //     .text       = "PARIS PARIS",
@@ -79,13 +87,13 @@ struct message const MESSAGES[] = {
     //     .carrier    = 433920000,
     //     .backoff_dB = 10,
     // },
-    {
-        .text       = "cq foxhunt de w2xh",
-        .wpm        = 5,
-        .tone       = 1000,
-        .carrier    = 147555000,
-        .backoff_dB = 0,
-    },
+    // {
+    //     .text       = "cq foxhunt de w2xh",
+    //     .wpm        = 5,
+    //     .tone       = 1000,
+    //     .carrier    = 147555000,
+    //     .backoff_dB = 0,
+    // },
 };
 
 size_t queue_status()
