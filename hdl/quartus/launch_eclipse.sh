@@ -3,7 +3,8 @@
 cat << EOF
 To be able to run NiOS's Eclipse the following steps must be taken:
    #1) ./build_bladerf.sh must finish successfully
-   #2) Ensure eclipse-nios2 is installed
+   #2) Ensure eclipse-nios2 is installed. Read Intel's guide at:
+           https://www.intel.com/content/altera-www/global/en_us/index/support/support-resources/knowledge-base/tools/2019/why-does-the-nios--ii-not-installed-after-full-installation-of-t.html
    #3) ./launch_eclipse.sh must be called from hdl/quartus and provided with a
          path to the build directory, see ./launch_eclipse.sh for example
    #4) Once Eclipse is launched, go to File -> Import -> General -> Existing Projects into Workspace.
