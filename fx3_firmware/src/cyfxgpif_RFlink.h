@@ -21,7 +21,7 @@
 /* Summary
    Number of states in the state machine
  */
-#define CY_RFLINK_NUMBER_OF_STATES 10
+#define CY_RFLINK_NUMBER_OF_STATES 12
 
 /* Summary
    Mapping of user defined state names to state indices
@@ -29,13 +29,15 @@
 #define RFLINK_START 0x0
 #define RFLINK_INIT 0x1
 #define RFLINK_IF_RX_0 0x3
-#define RFLINK_IF_RX_1 0x5
-#define RFLINK_IF_TX_2 0x6
+#define RFLINK_IF_RX_1 0x6
+#define RFLINK_IF_TX_2 0x8
 #define RFLINK_DONE 0x4
 #define RFLINK_WAIT_0 0x2
-#define RFLINK_IF_TX_3 0x9
-#define RFLINK_IF_TX 0x7
-#define RFLINK_IF_RX 0x8
+#define RFLINK_IF_TX_3 0x11
+#define RFLINK_IF_TX 0x9
+#define RFLINK_IF_RX 0x10
+#define RFLINK_SHORT_PKT_0 0x5
+#define RFLINK_SHORT_PKT_1 0x7
 
 
 /* Summary
@@ -60,17 +62,19 @@ uint16_t Rflink_CyFxGpifTransition[]  = {
 CyU3PGpifWaveData Rflink_CyFxGpifWavedata[]  = {
     {{0x4E739C01,0x00001000,0x80000000},{0x00000000,0x00000000,0x00000000}},
     {{0x50806202,0x0000000C,0x80000000},{0x00000000,0x00000000,0x00000000}},
-    {{0x1E706207,0x0C00C0C6,0x80000000},{0x1E702008,0x00010106,0x80000000}},
+    {{0x1E706209,0x0C00C0C6,0x80000000},{0x1E70200A,0x00010106,0x80000000}},
+    {{0x4E739C04,0x00001000,0x80000000},{0x4E739C05,0x00000000,0x80100000}},
     {{0x4E739C04,0x00001000,0x80000000},{0x00000000,0x00000000,0x00000000}},
-    {{0x2E739A06,0x08000000,0x80000000},{0x2E739A09,0x0C000000,0x80000000}},
-    {{0x2E739A03,0x20000000,0x80000000},{0x2E739A05,0x24000000,0x80000000}}
+    {{0x4E739C04,0x00001000,0x80000000},{0x4E739C07,0x04000000,0x80100000}},
+    {{0x2E739A08,0x08000000,0x80000000},{0x2E739A0B,0x0C000000,0x80000000}},
+    {{0x2E701A03,0x20000006,0x80000000},{0x2E703A06,0x24000006,0x80000000}}
 };
 
 /* Summary
    Table that maps state indices to the descriptor table indices.
  */
 uint8_t Rflink_CyFxGpifWavedataPosition[]  = {
-    0,1,2,3,1,3,3,4,5,3
+    0,1,2,3,1,4,5,4,4,6,7,4
 };
 
 /* Summary
