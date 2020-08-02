@@ -54,6 +54,10 @@ uint64_t bladerf2_get_fw_capabilities(const struct bladerf_version *fw_version)
         capabilities |= BLADERF_CAP_FW_FPGA_SOURCE;
     }
 
+    if (version_fields_greater_or_equal(fw_version, 2, 4, 0)) {
+        capabilities |= BLADERF_CAP_FW_SHORT_PACKET;
+    }
+
     return capabilities;
 }
 
@@ -88,6 +92,10 @@ uint64_t bladerf2_get_fpga_capabilities(
 
     if (version_fields_greater_or_equal(fpga_version, 0, 10, 1)) {
         capabilities |= BLADERF_CAP_FPGA_TUNING;
+    }
+
+    if (version_fields_greater_or_equal(fpga_version, 0, 12, 0)) {
+        capabilities |= BLADERF_CAP_FPGA_PACKET_META;
     }
 
     return capabilities;

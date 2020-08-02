@@ -110,6 +110,12 @@
 #define BLADERF_CAP_FPGA_TUNING (1 << 11)
 
 /**
+ * FPGA v0.12.0 introduces the packet meta format, allowing for variable length
+ * packets, with core target IDs.
+ */
+#define BLADERF_CAP_FPGA_PACKET_META (1 << 12)
+
+/**
  * Firmware 1.7.1 introduced firmware-based loopback
  */
 #define BLADERF_CAP_FW_LOOPBACK (((uint64_t)1) << 32)
@@ -144,6 +150,11 @@
  * currently-configured FPGA (e.g. flash autoload, host, etc)
  */
 #define BLADERF_CAP_FW_FPGA_SOURCE (((uint64_t)1) << 37)
+
+/**
+ * FX3 firmware v2.4.0 introduced support for short packets.
+ */
+#define BLADERF_CAP_FW_SHORT_PACKET (((uint64_t)1) << 38)
 
 struct bladerf {
     /* Handle lock - to ensure atomic access to control and configuration
