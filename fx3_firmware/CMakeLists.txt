@@ -33,8 +33,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../host/cmake/modules)
 
 # Update these definitions when updating the firmware version
 set(VERSION_INFO_MAJOR 2)
-set(VERSION_INFO_MINOR 3)
-set(VERSION_INFO_PATCH 2)
+set(VERSION_INFO_MINOR 4)
+set(VERSION_INFO_PATCH 0)
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
     set(VERSION_INFO_EXTRA "git")

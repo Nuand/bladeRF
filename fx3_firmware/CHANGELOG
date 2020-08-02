@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+
+v2.4.0 (2020-08-01)
+--------------------------------
+ * Add ability to send short packets to FX3 from FPGA
+
 v2.3.2 (2018-12-26)
 --------------------------------
  * Speed up flash operations across platforms
