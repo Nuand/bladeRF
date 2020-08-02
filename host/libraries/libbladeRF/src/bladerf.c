@@ -47,6 +47,7 @@
 #include "devinfo.h"
 #include "helpers/configfile.h"
 #include "helpers/file.h"
+#include "helpers/have_cap.h"
 #include "helpers/interleave.h"
 
 
@@ -250,9 +251,6 @@ int bladerf_load_fw_from_bootloader(const char *device_identifier,
 
     return status;
 }
-
-/* FIXME presumes bladerf1 capability bits */
-#include "board/bladerf1/capabilities.h"
 
 int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
 {

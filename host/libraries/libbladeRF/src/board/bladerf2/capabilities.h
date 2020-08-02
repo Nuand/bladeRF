@@ -28,14 +28,7 @@
 #include <stdint.h>
 
 #include "board/board.h"
-
-/**
- * Convenience wrapper for testing capabilities mask
- */
-static inline bool have_cap(uint64_t capabilities, uint64_t capability)
-{
-    return (capabilities & capability) != 0;
-}
+#include "helpers/have_cap.h"
 
 /**
  * Determine device's firmware capabilities.
