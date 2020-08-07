@@ -206,6 +206,8 @@ begin
                 if( timestamp >= meta_current.meta_p_time ) then
                     meta_future.meta_time_go <= '1';
                     meta_future.state        <= META_DOWNCOUNT;
+                else
+                    meta_future.meta_time_go <= '0';
                 end if;
 
             when META_DOWNCOUNT =>
