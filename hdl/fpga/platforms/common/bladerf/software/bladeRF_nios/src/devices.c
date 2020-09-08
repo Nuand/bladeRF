@@ -342,6 +342,7 @@ uint64_t adi_spi_read(uint16_t addr)
     uint8_t i;
     uint64_t rv;
 
+    spi_arbiter_lock();
     // The alt_avalon_spi_command expects parameters to be arrays of bytes
 
     // Convert the uint16_t address into array of 2 uint8_t
@@ -359,6 +360,7 @@ uint64_t adi_spi_read(uint16_t addr)
     for (i = 0; i < 8; i++) {
         rv |= (((uint64_t)data8[i]) << 8 * (7 - i));
     }
+    spi_arbiter_unlock();
 
     return rv;
 }
@@ -371,6 +373,7 @@ void adi_spi_write(uint16_t addr, uint64_t data)
     alt_u8 bytes;
     uint8_t i;
 
+    spi_arbiter_lock();
     // The alt_avalon_spi_command expects parameters to be arrays of bytes
 
     // Convert the uint16_t address into array of 2 uint8_t
@@ -387,6 +390,7 @@ void adi_spi_write(uint16_t addr, uint64_t data)
 
     // Send down the command and the data
     alt_avalon_spi_command(RFFE_SPI_BASE, 0, bytes, &data8[0], 0, 0, 0);
+    spi_arbiter_unlock();
 }
 #endif  // BOARD_BLADERF_MICRO
 
