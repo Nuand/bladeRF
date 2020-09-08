@@ -137,7 +137,10 @@ package bladerf_p is
         tx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
         tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
         rx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
-        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0)
+        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
+        arbiter_request                 :   in  std_logic_vector(1 downto 0)  := (others => 'X');
+        arbiter_granted                 :   out std_logic_vector(1 downto 0);
+        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X')
       );
     end component;
 

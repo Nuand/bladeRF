@@ -182,12 +182,25 @@ architecture hosted_bladerf of bladerf is
 
     signal gain_max               : std_logic ;
 
+    -- Arbiter signal
+    signal arbiter_request        : std_logic_vector(1 downto 0) := (others => '0');
+    signal arbiter_granted        : std_logic_vector(1 downto 0) := (others => '0');
+    signal arbiter_ack            : std_logic_vector(1 downto 0) := (others => '0');
+
     signal ctrl_gain_inc          : std_logic ;
     signal ctrl_gain_dec          : std_logic ;
 
     signal adi_ctrl_out_mux       : std_logic_vector(adi_ctrl_out'range);
 
     signal tx_ota_req             : std_logic ;
+    signal tx_ota_req_r           : std_logic ;
+
+    signal rfic_spi_ctrl_sdi      : std_logic ;
+    signal rfic_spi_ctrl_csn      : std_logic ;
+    signal rfic_spi_ctrl_sclk     : std_logic ;
+    signal nios_adi_spi_sdi       : std_logic ;
+    signal nios_adi_spi_csn       : std_logic ;
+    signal nios_adi_spi_sclk      : std_logic ;
 begin
 
     U_wlan_top : entity wlan.wlan_top
@@ -412,6 +425,37 @@ begin
         end if;
     end process;
 
+    U_rfic_spi: entity work.bladerf_rfic_spi_ctrl
+      port map(
+        sclk        => rfic_spi_ctrl_sclk,
+        miso        => adi_spi_sdo,
+        mosi        => rfic_spi_ctrl_sdi,
+        cs_n        => rfic_spi_ctrl_csn,
+
+        arbiter_req   => arbiter_request(1),
+        arbiter_grant => arbiter_granted(1),
+        arbiter_done  => arbiter_ack(1),
+
+        clock       => sys_clock,
+        reset       => sys_reset,
+        tx_ota_req  => tx_ota_req_r
+      );
+
+
+    U_rfic_mux: process(all)
+    begin
+      if( arbiter_granted(1) = '1' ) then
+            adi_spi_sdi   <= rfic_spi_ctrl_sdi;
+            adi_spi_csn   <= rfic_spi_ctrl_csn;
+            adi_spi_sclk  <= rfic_spi_ctrl_sclk;
+      else
+            adi_spi_sdi   <= nios_adi_spi_sdi;
+            adi_spi_csn   <= nios_adi_spi_csn;
+            adi_spi_sclk  <= nios_adi_spi_sclk;
+
+      end if;
+    end process;
+
 
     -- ========================================================================
     -- NIOS SYSTEM
@@ -426,9 +470,9 @@ begin
             dac_SCLK                        => nios_sclk,
             dac_SS_n                        => nios_ss_n,
             spi_MISO                        => adi_spi_sdo,
-            spi_MOSI                        => adi_spi_sdi,
-            spi_SCLK                        => adi_spi_sclk,
-            spi_SS_n                        => adi_spi_csn,
+            spi_MOSI                        => nios_adi_spi_sdi,
+            spi_SCLK                        => nios_adi_spi_sclk,
+            spi_SS_n                        => nios_adi_spi_csn,
             gpio_in_port                    => pack(nios_gpio.i),
             gpio_out_port                   => nios_gpo_slv,
             gpio_rffe_0_in_port             => pack(rffe_gpio),
@@ -504,7 +548,10 @@ begin
             rx_trigger_ctl_out_port         => rx_trigger_ctl_i,
             tx_trigger_ctl_out_port         => tx_trigger_ctl_i,
             rx_trigger_ctl_in_port          => pack(rx_trigger_ctl),
-            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl)
+            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl),
+            arbiter_request                 => arbiter_request,
+            arbiter_granted                 => arbiter_granted,
+            arbiter_ack                     => arbiter_ack
         );
 
     -- FX3 UART
@@ -890,6 +937,18 @@ begin
             async               =>  nios_gpio.o.packet_en,
             sync                =>  packet_en_tx
         );
+
+    U_tx_ota_sys : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  sys_clock,
+            async               =>  tx_ota_req,
+            sync                =>  tx_ota_req_r
+        );
+
 
     generate_sync_rx_mux_sel : for i in rx_mux_sel'range generate
         U_sync_rx_mux_sel : entity work.synchronizer

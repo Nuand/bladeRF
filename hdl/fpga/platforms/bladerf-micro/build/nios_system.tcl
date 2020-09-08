@@ -370,6 +370,9 @@ set_instance_parameter_value xb_gpio_dir {simDoTestBenchWiring} {0}
 set_instance_parameter_value xb_gpio_dir {simDrivenValue} {0.0}
 set_instance_parameter_value xb_gpio_dir {width} {32}
 
+add_instance arbiter_0 arbiter 1.0
+set_instance_parameter_value arbiter_0 {N} {2}
+
 # exported interfaces
 add_interface ad9361_adc_i0 conduit end
 set_interface_property ad9361_adc_i0 EXPORT_OF axi_ad9361_0.fifo_ch_0_in
@@ -433,6 +436,8 @@ add_interface xb_gpio conduit end
 set_interface_property xb_gpio EXPORT_OF xb_gpio.external_connection
 add_interface xb_gpio_dir conduit end
 set_interface_property xb_gpio_dir EXPORT_OF xb_gpio_dir.external_connection
+add_interface arbiter conduit end
+set_interface_property arbiter EXPORT_OF arbiter_0.conduit_end
 
 # connections and connection parameters
 add_connection axi_ad9361_0.if_l_clk axi_ad9361_0.device_clock
@@ -528,6 +533,11 @@ set_connection_parameter_value nios2.data_master/xb_gpio_dir.s1 arbitrationPrior
 set_connection_parameter_value nios2.data_master/xb_gpio_dir.s1 baseAddress {0x90a0}
 set_connection_parameter_value nios2.data_master/xb_gpio_dir.s1 defaultConnection {0}
 
+add_connection nios2.data_master arbiter_0.avalon_slave_0 avalon
+set_connection_parameter_value nios2.data_master/arbiter_0.avalon_slave_0 arbitrationPriority {1}
+set_connection_parameter_value nios2.data_master/arbiter_0.avalon_slave_0 baseAddress {0x9500}
+set_connection_parameter_value nios2.data_master/arbiter_0.avalon_slave_0 defaultConnection {0}
+
 add_connection nios2.instruction_master nios2.debug_mem_slave
 set_connection_parameter_value nios2.instruction_master/nios2.debug_mem_slave arbitrationPriority {1}
 set_connection_parameter_value nios2.instruction_master/nios2.debug_mem_slave baseAddress {0x8800}
@@ -540,6 +550,9 @@ set_connection_parameter_value nios2.instruction_master/ram.s1 defaultConnection
 
 add_connection nios2.irq command_uart.interrupt
 set_connection_parameter_value nios2.irq/command_uart.interrupt irqNumber {7}
+
+add_connection nios2.irq arbiter_0.interrupt_sender interrupt
+set_connection_parameter_value nios2.irq/arbiter_0.interrupt_sender irqNumber {6}
 
 add_connection nios2.irq gpio_rffe_0.irq
 set_connection_parameter_value nios2.irq/gpio_rffe_0.irq irqNumber {9}
@@ -598,6 +611,8 @@ add_connection system_clock.clk xb_gpio.clk
 
 add_connection system_clock.clk xb_gpio_dir.clk
 
+add_connection system_clock.clk arbiter_0.clock_sink clock
+
 add_connection system_clock.clk_reset axi_ad9361_0.s_axi_reset
 
 add_connection system_clock.clk_reset command_uart.reset
@@ -631,6 +646,8 @@ add_connection system_clock.clk_reset vctcxo_tamer_0.reset1
 add_connection system_clock.clk_reset xb_gpio.reset
 
 add_connection system_clock.clk_reset xb_gpio_dir.reset
+
+add_connection system_clock.clk_reset arbiter_0.reset reset
 
 # interconnect requirements
 set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE}
