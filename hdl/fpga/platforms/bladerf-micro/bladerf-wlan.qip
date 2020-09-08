@@ -32,6 +32,8 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synth
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip trigger/trigger.vhd]]
 set_global_assignment -name QIP_FILE  [file normalize [file join $nuand_ip pll_reset/pll_reset.qip]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip ps_sync/vhdl/ps_sync.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/bladerf_rfic_spi_ctrl.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip rfic_spi_controller/vhdl/rfic_spi_controller.vhd]]
 
 # Implementation Details
 set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/fx3_gpif.vhd]]

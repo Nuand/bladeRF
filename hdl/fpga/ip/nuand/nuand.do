@@ -61,8 +61,12 @@ proc compile_nuand { root platform } {
 
     vcom -work nuand -2008 [file join $root ./pll_reset/vhdl/pll_reset.vhd]
     vcom -work nuand -2008 [file join $root ./ps_sync/vhdl/ps_sync.vhd]
+
+    vcom -work nuand -2008 [file join $root ./rfic_spi_controller/vhdl/rfic_spi_controller.vhd]
+    vcom -work nuand -2008 [file join $root ./synthesis/bladerf_rfic_spi_ctrl.vhd]
 }
 
 proc compile_nuand_tb { root platform } {
     vcom -work nuand -2008 [file join $root ./simulation/sample_stream_tb.vhd]
+    vcom -work nuand -2008 [file join $root ./simulation/rfic_spi_tb.vhd]
 }
