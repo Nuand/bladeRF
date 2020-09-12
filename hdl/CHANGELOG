@@ -6,6 +6,18 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.11.1 (2020-09-12)
+--------------------------------
+
+ This version includes a few bug fixes that mostly affect meta mode.
+
+ Fixes:
+
+ * hdl: meta_time_go clear if in WAIT state for longer than a cycle
+ * hdl: avoid consecutive data_valid on adc_stream
+
+
+--------------------------------
 v0.11.0 (2019-05-05)
 --------------------------------
 
