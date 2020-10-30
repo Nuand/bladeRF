@@ -53,6 +53,7 @@ architecture arch of bladerf_rfic_spi_ctrl is
         GET_ARBITER,
         WAIT_END_TX,
         RELEASE_ARBITER,
+        WAIT_TO_WR,
         WAIT_WR_DVALID,
         WAIT_WR_DVALID_2,
         WAIT_RD_DVALID,
@@ -67,6 +68,7 @@ architecture arch of bladerf_rfic_spi_ctrl is
         mm_addr      : std_logic_vector(ADDR_WIDTH-1 downto 0);
         mm_din       : std_logic_vector(DATA_WIDTH-1 downto 0);
         mm_dout      : std_logic_vector(DATA_WIDTH-1 downto 0);
+        counter      : natural range 0 to 50000;
         arbiter_req  : std_logic;
         arbiter_done : std_logic;
     end record;
@@ -79,6 +81,7 @@ architecture arch of bladerf_rfic_spi_ctrl is
         mm_addr      => ( others => '0' ),
         mm_din       => ( others => '0' ),
         mm_dout      => ( others => '0' ),
+        counter      => 0,
         arbiter_req  => '0',
         arbiter_done => '0'
     );
@@ -154,12 +157,21 @@ begin
 
             when WAIT_END_TX =>
                 if( tx_ota_req = '0' ) then
+                    future.state   <= WAIT_TO_WR;
+                    future.counter <= 550;
+                end if;
+
+
+            when WAIT_TO_WR =>
+                if( current.counter = 0) then
                     future.state   <= WAIT_WR_DVALID;
                     future.n_state <= RELEASE_ARBITER;
 
                     future.mm_addr  <= x"0051";
                     future.mm_din   <= x"10";
                     future.mm_write <= '1';
+                else
+                    future.counter  <= current.counter - 1;
                 end if;
 
 
