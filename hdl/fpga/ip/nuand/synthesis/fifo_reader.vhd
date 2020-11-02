@@ -190,7 +190,7 @@ begin
         end if;
     end process;
 
-    packet_empty <= '1' when ( packet_en = '1' and meta_fifo_empty = '1' ) else '0' ;
+    packet_empty <= '1' when ( meta_fifo_empty = '1' and meta_current.state /= META_WAIT ) else '0' ;
 
     -- Meta FIFO combinatorial process
     meta_fsm_comb : process( all )
@@ -221,7 +221,7 @@ begin
                                (packet_en = '1' and packet_ready = '1') ) ) then
                        meta_future.meta_read <= '1';
                        meta_future.state     <= META_WAIT;
-                       if( meta_time /= timestamp ) then
+                       if( packet_en = '1' or meta_time /= timestamp ) then
                              meta_future.meta_time_go  <= '0';
                           else
                              meta_future.meta_time_go  <= '1';
@@ -239,7 +239,8 @@ begin
                    meta_future.dma_downcount <= dma_buf_size - 4;
                 end if;
 
-                if( timestamp >= meta_current.meta_p_time or meta_current.meta_p_time + 1 = 0) then
+                if( (timestamp >= meta_current.meta_p_time or meta_current.meta_p_time + 1 = 0)
+                        and ( packet_en = '0' or ( packet_en = '1' and packet_ready = '1' ) ) ) then
                     meta_future.meta_time_go <= '1';
                     meta_future.state        <= META_DOWNCOUNT;
                     meta_future.meta_pkt_sop <= '1';
@@ -254,21 +255,23 @@ begin
                    if( fifo_current.fifo_read = '1') then
                       meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
                    end if;
+                   if( meta_current.dma_downcount <= NUM_STREAMS ) then
+                       -- Look for 2 because of the 2 cycles passing
+                       -- through META_LOAD and META_WAIT after this.
+                       meta_future.state <= META_LOAD;
+                   end if;
                 else
                    if( fifo_current.packet_control.data_valid = '1') then
                       meta_future.dma_downcount <= meta_current.dma_downcount - 1;
+                   end if;
+                   if( meta_current.dma_downcount <= 1 and packet_ready = '1' ) then
+                       meta_future.state <= META_LOAD;
+                       meta_future.meta_pkt_eop <= '1';
                    end if;
                 end if;
 
                 if( meta_current.meta_cache(0) = '1' ) then
                    meta_future.skip_padding <= '1';
-                end if;
-
-                if( meta_current.dma_downcount <= NUM_STREAMS ) then
-                    -- Look for 2 because of the 2 cycles passing
-                    -- through META_LOAD and META_WAIT after this.
-                    meta_future.state <= META_LOAD;
-                    meta_future.meta_pkt_eop <= '1';
                 end if;
 
             when others =>
@@ -443,14 +446,12 @@ begin
                     fifo_future.packet_control.data <= fifo_data(31 downto 0);
                 end if;
 
-                if( meta_current.meta_time_go = '1' and meta_current.dma_downcount = 2 ) then
-                    fifo_future.packet_control.pkt_eop <= '1';
-                else
-                    fifo_future.packet_control.pkt_eop <= '0';
-                end if;
+                fifo_future.packet_control.pkt_eop <= '0';
 
-
-                if( fifo_empty = '0' and meta_current.meta_time_go = '1' and meta_current.dma_downcount > 1) then
+                if( fifo_empty = '0' and meta_current.meta_time_go = '1' and meta_current.dma_downcount > 0 and packet_ready = '1' ) then
+                    if( meta_current.dma_downcount = 1 ) then
+                        fifo_future.packet_control.pkt_eop <= '1';
+                    end if;
                     fifo_future.packet_control.data_valid <= '1';
 
                     if( fifo_current.samples_left = NUM_STREAMS - 1) then
