@@ -346,7 +346,7 @@ begin
             spi_MOSI                        => adi_spi_sdi,
             spi_SCLK                        => adi_spi_sclk,
             spi_SS_n                        => adi_spi_csn,
-            gpio_in_port                    => pack(nios_gpio.i),
+            gpio_in_port                    => pack(nios_gpio.i, '0'),
             gpio_out_port                   => nios_gpo_slv,
             gpio_rffe_0_in_port             => pack(rffe_gpio),
             gpio_rffe_0_out_port            => rffe_gpio.o,

@@ -1165,7 +1165,7 @@ begin
         spi_MOSI                        => nios_lms_sdio,
         spi_SCLK                        => nios_lms_sclk,
         spi_SS_n                        => nios_lms_sen,
-        gpio_in_port                    => pack(nios_gpio.i),
+        gpio_in_port                    => pack(nios_gpio.i, '0'),
         gpio_out_port                   => nios_gpo_slv,
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,

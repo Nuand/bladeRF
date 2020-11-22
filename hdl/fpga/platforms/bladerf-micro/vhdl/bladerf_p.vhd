@@ -390,7 +390,8 @@ package bladerf_p is
     function pack( x : rffe_gpio_t )      return std_logic_vector;
     function pack( x : trigger_t )        return std_logic_vector;
     function pack( x : nios_gpo_t )       return std_logic_vector;
-    function pack( x : nios_gpi_t )       return std_logic_vector;
+    function pack( x : nios_gpi_t;
+        core_present : std_logic)         return std_logic_vector;
 
 
     -- ========================================================================
@@ -511,13 +512,14 @@ package body bladerf_p is
         return rv;
     end function;
 
-    function pack( x : nios_gpi_t ) return std_logic_vector is
+    function pack( x : nios_gpi_t; core_present : std_logic ) return std_logic_vector is
         variable rv : std_logic_vector(31 downto 0) := (others => 'U');
     begin
         -- Readback of outputs
         rv    := pack(x.gpo_readback);
         -- Physical inputs
         rv(0) := x.pwr_status;
+        rv(28) := core_present;
         return rv;
     end function;
 

@@ -288,7 +288,8 @@ package bladerf_p is
     -- ========================================================================
 
     function pack( x : nios_gpo_t )       return std_logic_vector;
-    function pack( x : nios_gpi_t )       return std_logic_vector;
+    function pack( x : nios_gpi_t;
+        core_present : std_logic)         return std_logic_vector;
 
 
     -- ========================================================================
@@ -341,12 +342,13 @@ package body bladerf_p is
         return rv;
     end function;
 
-    function pack( x : nios_gpi_t ) return std_logic_vector is
+    function pack( x : nios_gpi_t; core_present : std_logic ) return std_logic_vector is
         variable rv : std_logic_vector(31 downto 0) := (others => '0');
     begin
         -- Readback of outputs
         rv               := pack(x.gpo_readback);
         -- Inputs
+        rv(28)           := core_present;
         rv(22 downto 21) := x.xb_mode2;  -- Why? Is this even needed?
         rv(20 downto 19) := x.nios_ss_n; -- Why? Is this even needed?
         return rv;
