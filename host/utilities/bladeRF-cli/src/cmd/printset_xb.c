@@ -528,6 +528,7 @@ static void _print_gpio_bladerf2(uint32_t val)
     int led_mode        = (val >> 15) & 0x01;  // 15
     int meta_sync       = (val >> 16) & 0x01;  // 16
     int xb_mode         = (val >> 30) & 0x03;  // 31 downto 30
+    int packet_core     = !!(val & BLADERF_GPIO_PACKET_CORE_PRESENT);
 
     printf("    %-20s%-10s\n", "USB Speed:", usb_speed ? "1" : "0");
     printf("    %-20s0x%08x ", "RX Mux:", rx_mux_sel);
@@ -560,6 +561,9 @@ static void _print_gpio_bladerf2(uint32_t val)
 
     printf("    %-20s%-10s\n", "Meta Sync:", meta_sync ? "1" : "0");
     printf("    %-20s0x%08x\n", "XB Mode:", xb_mode);
+    if (packet_core) {
+       printf("    %-20s%s\n", "Packet Core:", "Present");
+    }
 }
 
 int print_gpio(struct cli_state *state, int argc, char **argv)
