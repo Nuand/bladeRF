@@ -1401,6 +1401,14 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
 #define BLADERF_GPIO_TIMESTAMP_DIV2 (1 << 17)
 
 /**
+ * Packet capable core present bit.
+ *
+ * @note This is a read-only bit. The FPGA sets its value, and uses it to inform
+ *  host that there is a core capable of using packets in the FPGA.
+ */
+#define BLADERF_GPIO_PACKET_CORE_PRESENT (1 << 28)
+
+/**
  * Write value to VCTCXO trim DAC.
  *
  * \deprecated Use bladerf_trim_dac_write().
