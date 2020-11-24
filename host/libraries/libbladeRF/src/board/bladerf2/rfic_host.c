@@ -80,6 +80,7 @@ static int _rfic_host_initialize(struct bladerf *dev)
     bladerf_direction dir;
     bladerf_channel ch;
     size_t i;
+    uint32_t config_gpio;
 
     log_debug("%s: initializating\n", __FUNCTION__);
 
@@ -87,8 +88,15 @@ static int _rfic_host_initialize(struct bladerf *dev)
     CHECK_STATUS(dev->backend->rffe_control_write(
         dev, (1 << RFFE_CONTROL_ENABLE) | (1 << RFFE_CONTROL_TXNRX)));
 
+
+    CHECK_STATUS(dev->backend->config_gpio_read(dev, &config_gpio));
+
+    board_data->rfic_init_params = (config_gpio & BLADERF_GPIO_PACKET_CORE_PRESENT) ?
+                (void *)&bladerf2_rfic_init_params_fastagc_burst :
+                (void *)&bladerf2_rfic_init_params;
+
     /* Initialize AD9361 */
-    CHECK_AD936X(ad9361_init(&phy, &bladerf2_rfic_init_params, dev));
+    CHECK_AD936X(ad9361_init(&phy, (AD9361_InitParam *)board_data->rfic_init_params, dev));
 
     if (NULL == phy || NULL == phy->pdata) {
         RETURN_ERROR_STATUS("ad9361_init struct initialization",
@@ -550,11 +558,11 @@ static int _rfic_host_set_gain_mode(struct bladerf *dev,
     /* Channel conversion */
     switch (ch) {
         case BLADERF_CHANNEL_RX(0):
-            gc_mode = bladerf2_rfic_init_params.gc_rx1_mode;
+            gc_mode = ((AD9361_InitParam *)board_data->rfic_init_params)->gc_rx1_mode;
             break;
 
         case BLADERF_CHANNEL_RX(1):
-            gc_mode = bladerf2_rfic_init_params.gc_rx2_mode;
+            gc_mode = ((AD9361_InitParam *)board_data->rfic_init_params)->gc_rx2_mode;
             break;
 
         default:

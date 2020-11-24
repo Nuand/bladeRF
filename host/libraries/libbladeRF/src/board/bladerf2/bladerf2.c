@@ -266,6 +266,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     }
     dev->board_data = board_data;
     board_data->phy = NULL;
+    board_data->rfic_init_params = (void *)&bladerf2_rfic_init_params;
 
     /* Allocate flash architecture */
     dev->flash_arch = calloc(1, sizeof(struct bladerf_flash_arch));

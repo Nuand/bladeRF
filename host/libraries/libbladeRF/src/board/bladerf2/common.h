@@ -139,6 +139,9 @@ struct bladerf2_board_data {
     /* AD9361 PHY Handle */
     struct ad9361_rf_phy *phy;
 
+    /* RFIC configuration parameters */
+    void *rfic_init_params;
+
     /* Bitmask of capabilities determined by version numbers */
     uint64_t capabilities;
 
