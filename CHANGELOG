@@ -6,6 +6,49 @@ hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2020.12 (2020-12-23)
+--------------------------------------------------------------------------------
+
+This release candidate consists of the following versions:
+
+    * FPGA bitstream                v0.12.0
+    * FX3 firmware                  v2.4.0
+    * libbladeRF                    v2.4.0
+    * bladeRF-cli                   v1.8.0
+    * MATLAB & Simulink bindings    v1.0.3
+    * Python bindings               v1.2.0
+
+API docs: https://www.nuand.com/bladeRF-doc/libbladeRF/
+FX3 firmware: https://www.nuand.com/fx3_images/
+FPGA bitstreams: https://www.nuand.com/fpga_images/
+Ubuntu PPA: https://launchpad.net/~nuand/+archive/ubuntu/bladerf
+Windows installer: https://www.nuand.com/win_installers/
+
+Summary of changes in 2020.12
+
+* libbladeRF
+    - Added packet mode format BLADERF_FORMAT_PACKET_META. libbladeRF is able to
+      exchange variable length packets with the HDL if packet mode is enabled
+    - Added RFIC parameters for burst waveforms
+    - Ability to query backend for handle and lock
+
+* FX3
+    - Variable length packet support for PACKET_META mode
+
+* bladeRF-cli:
+    - Indicate presence of packet cores in FPGA
+
+* FPGA:
+    - Add packet mode. The HDL fabric is able to exchange variable length
+      packets with the host
+    - Added packet_generator as an example for how to send packets to the host
+    - Added bladeRF 2.0 micro headless example variant "foxhunt"
+    - Fix metadata related arithmetic and logic
+
+* Python
+    - Update for libbladeRF v2.4.0
+
+--------------------------------------------------------------------------------
  2019.07 (2019-07-31)
 --------------------------------------------------------------------------------
 
