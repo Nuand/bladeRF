@@ -146,16 +146,18 @@ int sync_init(struct bladerf_sync *sync,
         return BLADERF_ERR_INVAL;
     }
 
-    if (!have_cap_dev(dev, BLADERF_CAP_FW_SHORT_PACKET)) {
-       log_error("Firmware does not support short packets. "
-             "Upgrate to at least firmware version 2.4.0.\n");
-       return BLADERF_ERR_UNSUPPORTED;
-    }
+    if (format == BLADERF_FORMAT_PACKET_META) {
+        if (!have_cap_dev(dev, BLADERF_CAP_FW_SHORT_PACKET)) {
+            log_error("Firmware does not support short packets. "
+                    "Upgrade to at least firmware version 2.4.0.\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
 
-    if (!have_cap_dev(dev, BLADERF_CAP_FPGA_PACKET_META)) {
-       log_error("FPGA does not support packet meta format. "
-             "Upgrate to at least FPGA version 0.12.0.\n");
-       return BLADERF_ERR_UNSUPPORTED;
+        if (!have_cap_dev(dev, BLADERF_CAP_FPGA_PACKET_META)) {
+            log_error("FPGA does not support packet meta format. "
+                    "Upgrade to at least FPGA version 0.12.0.\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
     }
 
     switch (format) {

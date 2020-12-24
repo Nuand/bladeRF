@@ -87,6 +87,20 @@ int async_init_stream(struct bladerf_stream **stream,
     lstream->user_data = user_data;
     lstream->buffers = NULL;
 
+    if (format == BLADERF_FORMAT_PACKET_META) {
+        if (!have_cap_dev(dev, BLADERF_CAP_FW_SHORT_PACKET)) {
+            log_error("Firmware does not support short packets. "
+                    "Upgrade to at least firmware version 2.4.0.");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+
+        if (!have_cap_dev(dev, BLADERF_CAP_FPGA_PACKET_META)) {
+            log_error("FPGA does not support packet meta format. "
+                    "Upgrade to at least FPGA version 0.12.0 .");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    }
+
     switch(format) {
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
@@ -94,20 +108,6 @@ int async_init_stream(struct bladerf_stream **stream,
             break;
 
         case BLADERF_FORMAT_PACKET_META:
-            if (!have_cap_dev(dev, BLADERF_CAP_FW_SHORT_PACKET)) {
-               log_error("Firmware does not support short packets. "
-                         "Upgrate to at least firmware version 2.4.0.");
-               status = BLADERF_ERR_UNSUPPORTED;
-               break;
-            }
-
-            if (!have_cap_dev(dev, BLADERF_CAP_FPGA_PACKET_META)) {
-               log_error("FPGA does not support packet meta format. "
-                         "Upgrate to at least FPGA version 0.12.0 .");
-               status = BLADERF_ERR_UNSUPPORTED;
-               break;
-            }
-
             buffer_size_bytes = samples_per_buffer;
             break;
 
