@@ -293,7 +293,8 @@ header = """
   typedef enum
   {
     BLADERF_FORMAT_SC16_Q11,
-    BLADERF_FORMAT_SC16_Q11_META
+    BLADERF_FORMAT_SC16_Q11_META,
+    BLADERF_FORMAT_PACKET_META
   } bladerf_format;
   struct bladerf_metadata
   {

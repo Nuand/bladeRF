@@ -198,6 +198,7 @@ class Correction(enum.Enum):
 class Format(enum.Enum):
     SC16_Q11 = libbladeRF.BLADERF_FORMAT_SC16_Q11
     SC16_Q11_META = libbladeRF.BLADERF_FORMAT_SC16_Q11_META
+    PACKET_META = libbladeRF.BLADERF_FORMAT_PACKET_META
 
 
 class Loopback(enum.Enum):
