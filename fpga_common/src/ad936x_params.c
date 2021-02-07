@@ -93,8 +93,8 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     /* Gain MGC Control */
     2,              // N/A when mgc_rx(1,2)_ctrl_inp_enable = 0                         // mgc_dec_gain_step *** adi,mgc-dec-gain-step
     2,              // N/A when mgc_rx(1,2)_ctrl_inp_enable = 0                         // mgc_inc_gain_step *** adi,mgc-inc-gain-step
-    1,              // use CTRL_IN for RX1 MGC stepping                                 // mgc_rx1_ctrl_inp_enable *** adi,mgc-rx1-ctrl-inp-enable
-    1,              // use CTRL_IN for RX2 MGC stepping                                 // mgc_rx2_ctrl_inp_enable *** adi,mgc-rx2-ctrl-inp-enable
+    0,              // don't use CTRL_IN for RX1 MGC stepping                           // mgc_rx1_ctrl_inp_enable *** adi,mgc-rx1-ctrl-inp-enable
+    0,              // don't use CTRL_IN for RX2 MGC stepping                           // mgc_rx2_ctrl_inp_enable *** adi,mgc-rx2-ctrl-inp-enable
     0,              // N/A when mgc_rx(1,2)_ctrl_inp_enable = 0                         // mgc_split_table_ctrl_inp_gain_mode *** adi,mgc-split-table-ctrl-inp-gain-mode
 
     /* Gain AGC Control */
