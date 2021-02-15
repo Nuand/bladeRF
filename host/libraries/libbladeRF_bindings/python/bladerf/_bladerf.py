@@ -24,13 +24,18 @@ import collections
 
 import cffi
 
+from sys import platform
+
 from ._cdef import header
 
 ffi = cffi.FFI()
 
 ffi.cdef(header)
 
-libbladeRF = ffi.dlopen("libbladeRF.so")
+if platform == "darwin":
+    libbladeRF = ffi.dlopen("libbladeRF.dylib")
+else:
+    libbladeRF = ffi.dlopen("libbladeRF.so")
 
 
 ###############################################################################
