@@ -1,3 +1,21 @@
+bladerf (2021.03) unstable; urgency=low
+
+  * Release for 2021.03 tag
+  * Added packet mode format BLADERF_FORMAT_PACKET_META. libbladeRF is able to
+  * exchange variable length packets with the HDL if packet mode is enabled
+  * Added RFIC parameters for burst waveforms
+  * Ability to query backend for handle and lock
+  * Variable length packet support for PACKET_META mode
+  * Indicate presence of packet cores in FPGA
+  * Add packet mode. The HDL fabric is able to exchange variable length
+  * packets with the host
+  * Added packet_generator as an example for how to send packets to the host
+  * Added bladeRF 2.0 micro headless example variant "foxhunt"
+  * Fix metadata related arithmetic and logic
+
+
+ -- Robert Ghilduta (Nuand LLC) <robert.ghilduta@nuand.com>  Tue, 16 Feb 2021 00:50:56 -0500
+
 bladerf (2019.07) unstable; urgency=low
 
   * Release for 2019.07 tag
