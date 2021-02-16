@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-UPSTREAM='https://www.nuand.com/fx3/bladeRF_fw_v2.3.2.img'
-CHECKSUM='c823ea5aa2c25c26bbaf4ab395ac559d'
+UPSTREAM='https://www.nuand.com/fx3/bladeRF_fw_v2.4.0.img'
+CHECKSUM='337f570f2e3fdb26abde0f0765196d92'
 DATAFILE='/usr/share/Nuand/bladeRF/bladeRF_fw.img'
 DESCRIPT='firmware'
 MYNAMEIS='bladerf-firmware-fx3'
