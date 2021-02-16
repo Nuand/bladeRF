@@ -558,13 +558,13 @@ static inline size_t next_idx(struct stream_data *data, size_t i)
 }
 
 /* Assumes a transfer is available and the stream lock is being held */
-static int submit_transfer(struct bladerf_stream *stream, void *buffer)
+static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t len)
 {
     int status = 0;
     PUCHAR xfer;
     struct stream_data *data = get_stream_data(stream);
 
-    LONG buffer_size = (LONG) async_stream_buf_bytes(stream);
+    LONG buffer_size = (LONG) len;
 
     assert(data->transfers[data->avail_i].handle == NULL);
     assert(data->transfers[data->avail_i].buffer == NULL);
@@ -653,7 +653,12 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
             next_buffer = stream->buffers[i];
         }
 
-        status = submit_transfer(stream, next_buffer);
+        if ((stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
+                && stream->format == BLADERF_FORMAT_PACKET_META) {
+            status = submit_transfer(stream, next_buffer, meta.actual_count);
+        } else {
+            status = submit_transfer(stream, next_buffer, async_stream_buf_bytes(stream));
+        }
     }
 
     MUTEX_UNLOCK(&stream->lock);
@@ -682,14 +687,14 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
                     i, data->transfers[i].buffer);
 
         MUTEX_LOCK(&stream->lock);
-        success = data->ep->FinishDataXfer(data->transfers[i].buffer, len,
+        success = data->ep->FinishDataXfer(data->transfers[i].buffer, (LONG &)len,
                                            &data->transfers[i].event,
                                            xfer->handle);
 
         if (success) {
             next_buffer = stream->cb(stream->dev, stream, &meta,
                                      data->transfers[i].buffer,
-                                     bytes_to_samples(stream->format, len),
+                                     bytes_to_samples(stream->format, (LONG &)len),
                                      stream->user_data);
 
         } else {
@@ -707,7 +712,13 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
             done = true;
         } else if (next_buffer != BLADERF_STREAM_NO_DATA) {
-            status = submit_transfer(stream, next_buffer);
+            if ((layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
+                    && stream->format == BLADERF_FORMAT_PACKET_META) {
+                status = submit_transfer(stream, next_buffer, meta.actual_count);
+            } else {
+                status = submit_transfer(stream, next_buffer, async_stream_buf_bytes(stream));
+            }
+
             done = (status != 0);
         }
 
@@ -728,7 +739,7 @@ out:
     for (unsigned int i = 0; i < data->num_transfers; i++) {
         LONG len = 0;
         if (data->transfers[i].handle != NULL) {
-            data->ep->FinishDataXfer(data->transfers[i].buffer, len,
+            data->ep->FinishDataXfer(data->transfers[i].buffer, (LONG &)len,
                                      &data->transfers[i].event,
                                      data->transfers[i].handle);
 
@@ -750,8 +761,8 @@ out:
 
 /* The top-level code will have acquired the stream->lock for us */
 int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
-                               void *buffer, unsigned int timeout_ms,
-                               bool nonblock)
+                               void *buffer, size_t *length,
+                               unsigned int timeout_ms, bool nonblock)
 {
     int status = 0;
     struct timespec timeout_abs;
@@ -799,7 +810,7 @@ int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
     } else if (status != 0) {
         return BLADERF_ERR_UNEXPECTED;
     } else {
-        return submit_transfer(stream, buffer);
+        return submit_transfer(stream, buffer, *length);
     }
 }
 
