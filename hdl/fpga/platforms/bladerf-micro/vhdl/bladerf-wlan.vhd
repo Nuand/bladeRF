@@ -573,8 +573,8 @@ begin
     adi_tx_spdt2_v <= unpack(rffe_gpio.o).tx_spdt2;
     adi_tx_spdt1_v <= unpack(rffe_gpio.o).tx_spdt1;
     tx_bias_en     <= unpack(rffe_gpio.o).tx_bias_en;
-    adi_rx_spdt2_v <= unpack(rffe_gpio.o).rx_spdt2;
-    adi_rx_spdt1_v <= unpack(rffe_gpio.o).rx_spdt1;
+    adi_rx_spdt2_v <= unpack(rffe_gpio.o).rx_spdt2 and (not tx_ota_req_r & not tx_ota_req_r);
+    adi_rx_spdt1_v <= unpack(rffe_gpio.o).rx_spdt1 and (not tx_ota_req_r & not tx_ota_req_r);
     rx_bias_en     <= unpack(rffe_gpio.o).rx_bias_en;
     --adi_sync_in    <= unpack(rffe_gpio.o).sync_in;
     adi_en_agc     <= unpack(rffe_gpio.o).en_agc;
