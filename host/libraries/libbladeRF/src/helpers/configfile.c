@@ -211,7 +211,7 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         status = bladerf_dac_write(dev, val);
-    } else if (!strcasecmp(opt.value, "vctcxo_tamer")) {
+    } else if (!strcasecmp(opt.key, "vctcxo_tamer")) {
         if (!strcasecmp(opt.value, "disabled") ||
             !strcasecmp(opt.value, "off")) {
             tamer_mode = BLADERF_VCTCXO_TAMER_DISABLED;
