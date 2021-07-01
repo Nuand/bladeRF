@@ -228,6 +228,15 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         status = bladerf_set_vctcxo_tamer_mode(dev, tamer_mode);
+    } else if (!strcasecmp(opt.key, "clock_ref")) {
+        bool enable = false;
+
+        status = str2bool(opt.value, &enable);
+        if (status != 0) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_pll_enable(dev, enable);
     } else {
         log_warning("Invalid key `%s' on line %d\n", opt.key, opt.lineno);
     }
