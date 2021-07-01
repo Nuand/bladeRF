@@ -237,6 +237,19 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         status = bladerf_set_pll_enable(dev, enable);
+    } else if (!strcasecmp(opt.key, "refin_freq")) {
+        status = bladerf_get_pll_refclk_range(dev, &rx_range);
+        if (status < 0) {
+            return status;
+        }
+
+        freq = str2uint64_suffix(opt.value, rx_range->min, rx_range->max,
+                                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+        if (!ok) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_pll_refclk(dev, freq);
     } else {
         log_warning("Invalid key `%s' on line %d\n", opt.key, opt.lineno);
     }
