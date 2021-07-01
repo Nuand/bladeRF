@@ -250,6 +250,19 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         status = bladerf_set_pll_refclk(dev, freq);
+    } else if (!strcasecmp(opt.key, "clock_sel")) {
+        bladerf_clock_select clock_sel = CLOCK_SELECT_ONBOARD;
+
+        if (!strcasecmp(opt.value, "onboard") ||
+            !strcasecmp(opt.value, "internal")) {
+            clock_sel = CLOCK_SELECT_ONBOARD;
+        } else if (!strcasecmp(opt.value, "external")) {
+            clock_sel =  CLOCK_SELECT_EXTERNAL;
+        } else {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_clock_select(dev, clock_sel);
     } else {
         log_warning("Invalid key `%s' on line %d\n", opt.key, opt.lineno);
     }
