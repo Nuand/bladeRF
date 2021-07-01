@@ -263,6 +263,15 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         status = bladerf_set_clock_select(dev, clock_sel);
+    } else if (!strcasecmp(opt.key, "clock_out")) {
+        bool enable = false;
+
+        status = str2bool(opt.value, &enable);
+        if (status != 0) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_clock_output(dev, enable);
     } else {
         log_warning("Invalid key `%s' on line %d\n", opt.key, opt.lineno);
     }
