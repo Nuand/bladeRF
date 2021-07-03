@@ -179,6 +179,36 @@ will be applied more than once; e.g. specifying `frequency 2.4G` and then
         A true value (e.g. `on`) turns the DC bias on, while a false value
         (e.g. `off`) turns the DC bias off.
 
+    <li><b>`clock_ref <bool>`</b></li>
+
+        Enables or disables taming by an external clock reference for
+        BladeRF 2.0 via bladerf_set_pll_enable().
+
+        A true value (e.g. `on`) turns the taming on, while a false value
+        (e.g. `off`) turns the taming off.
+
+    <li><b>`refin_freq <Hz>`</b></li>
+
+        Sets the frequency of the external clock reference for BladeRF 2.0 in Hz
+        via bladerf_set_pll_refclk().
+        Suffixes are supported.
+
+    <li><b>`clock_sel  <onboard|external>`</b></li>
+
+        Selects the 38.4MHz clock source for BladeRF 2.0 via
+        bladerf_set_clock_select().
+
+        Possible values are `onboard` for the internal clock or `external` for
+        and external 38.4MHz clock supplied on the clk_in connector.
+
+    <li><b>`clock_out <bool>`</b></li>
+
+        Enables or disables 38.4MHz clock on the clk_out connector for
+        BladeRF 2.0 via bladerf_set_clock_output().
+
+        A true value (e.g. `on`) turns the clock out on, while a false value
+        (e.g. `off`) turns the clock out off.
+
 </ul>
 
 <h3>Suffixes</h3>
