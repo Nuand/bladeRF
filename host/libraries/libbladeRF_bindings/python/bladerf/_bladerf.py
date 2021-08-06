@@ -624,9 +624,7 @@ class BladeRF:
             return None
 
     def get_gain_modes(self, ch):
-        ret = libbladeRF.bladerf_get_gain_modes(self.dev[0], ch, ffi.NULL)
-        _check_error(ret)
-        modes_arr = ffi.new("struct bladerf_gain_modes *[]", ret)
+        modes_arr = ffi.new("struct bladerf_gain_modes **")
         ret = libbladeRF.bladerf_get_gain_modes(self.dev[0], ch, modes_arr)
         _check_error(ret)
         return [GainMode(modes_arr[0][i].mode) for i in range(ret)]
