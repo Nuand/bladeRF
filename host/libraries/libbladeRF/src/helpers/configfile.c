@@ -211,7 +211,7 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         status = bladerf_dac_write(dev, val);
-    } else if (!strcasecmp(opt.value, "vctcxo_tamer")) {
+    } else if (!strcasecmp(opt.key, "vctcxo_tamer")) {
         if (!strcasecmp(opt.value, "disabled") ||
             !strcasecmp(opt.value, "off")) {
             tamer_mode = BLADERF_VCTCXO_TAMER_DISABLED;
@@ -228,6 +228,50 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         status = bladerf_set_vctcxo_tamer_mode(dev, tamer_mode);
+    } else if (!strcasecmp(opt.key, "clock_ref")) {
+        bool enable = false;
+
+        status = str2bool(opt.value, &enable);
+        if (status != 0) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_pll_enable(dev, enable);
+    } else if (!strcasecmp(opt.key, "refin_freq")) {
+        status = bladerf_get_pll_refclk_range(dev, &rx_range);
+        if (status < 0) {
+            return status;
+        }
+
+        freq = str2uint64_suffix(opt.value, rx_range->min, rx_range->max,
+                                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+        if (!ok) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_pll_refclk(dev, freq);
+    } else if (!strcasecmp(opt.key, "clock_sel")) {
+        bladerf_clock_select clock_sel = CLOCK_SELECT_ONBOARD;
+
+        if (!strcasecmp(opt.value, "onboard") ||
+            !strcasecmp(opt.value, "internal")) {
+            clock_sel = CLOCK_SELECT_ONBOARD;
+        } else if (!strcasecmp(opt.value, "external")) {
+            clock_sel =  CLOCK_SELECT_EXTERNAL;
+        } else {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_clock_select(dev, clock_sel);
+    } else if (!strcasecmp(opt.key, "clock_out")) {
+        bool enable = false;
+
+        status = str2bool(opt.value, &enable);
+        if (status != 0) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_clock_output(dev, enable);
     } else {
         log_warning("Invalid key `%s' on line %d\n", opt.key, opt.lineno);
     }
