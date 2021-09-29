@@ -33,6 +33,8 @@ ffi.cdef(header)
 
 if platform == "win32":
     libbladeRF = ffi.dlopen("bladerf.dll")
+elif platform == "darwin":
+    libbladeRF = ffi.dlopen("libbladeRF.dylib")
 else:
     libbladeRF = ffi.dlopen("libbladeRF.so")
 
