@@ -366,6 +366,7 @@ static int open_device(struct rc_config *rc,
                 }
 
                 if (state->dev_info.fpga_size == BLADERF_FPGA_A4 ||
+                        state->dev_info.fpga_size == BLADERF_FPGA_A5 ||
                         state->dev_info.fpga_size == BLADERF_FPGA_A9) {
                     state->dev_info.is_bladerf_micro = true;
                 }

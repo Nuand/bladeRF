@@ -153,6 +153,11 @@ T}@T{
 Metadata and bitstream for 49 kLE (A4) FPGA
 T}
 T{
+\f[C]fpgaA5\f[]
+T}@T{
+Metadata and bitstream for 77 kLE (A5) FPGA
+T}
+T{
 \f[C]fpgaA9\f[]
 T}@T{
 Metadata and bitstream for 301 kLE (A9) FPGA
@@ -246,6 +251,11 @@ T{
 \f[C]fpgaA4\f[]
 T}@T{
 Metadata and bitstream for 49 kLE (A4) FPGA
+T}
+T{
+\f[C]fpgaA5\f[]
+T}@T{
+Metadata and bitstream for 77 kLE (A5) FPGA
 T}
 T{
 \f[C]fpgaA9\f[]
@@ -1088,7 +1098,7 @@ T}
 T{
 \f[C]J51\-1\f[]
 T}@T{
-Trigger signal is on \f[C]mini_exp1\f[] (bladeRF xA4/xA9, J51, pin 1).
+Trigger signal is on \f[C]mini_exp1\f[] (bladeRF xA4/xA5/xA9, J51, pin 1).
 T}
 T{
 \f[C]Miniexp\-1\f[]

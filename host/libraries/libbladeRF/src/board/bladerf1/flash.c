@@ -346,6 +346,8 @@ int spi_flash_read_fpga_size(struct bladerf *dev, bladerf_fpga_size *fpga_size)
         *fpga_size = BLADERF_FPGA_115KLE;
     } else if(!strcmp("A4", tmp)) {
         *fpga_size = BLADERF_FPGA_A4;
+    } else if(!strcmp("A5", tmp)) {
+        *fpga_size = BLADERF_FPGA_A5;
     } else if(!strcmp("A9", tmp)) {
         *fpga_size = BLADERF_FPGA_A9;
     } else {

@@ -96,6 +96,10 @@ static inline int erase_region(struct bladerf *dev, struct bladerf_image *img,
             return bladerf_erase_flash_bytes(dev, BLADERF_FLASH_ADDR_FPGA,
                                              0x290000);
 
+        case BLADERF_IMAGE_TYPE_FPGA_A5:
+            return bladerf_erase_flash_bytes(dev, BLADERF_FLASH_ADDR_FPGA,
+                                             0x410000);
+
         case BLADERF_IMAGE_TYPE_FPGA_A9:
             return bladerf_erase_flash_bytes(dev, BLADERF_FLASH_ADDR_FPGA,
                                              0xC50000);

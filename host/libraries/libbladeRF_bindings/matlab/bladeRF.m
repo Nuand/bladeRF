@@ -511,6 +511,9 @@ classdef bladeRF < handle
                 case 'BLADERF_FPGA_A4'
                     obj.info.fpga_size = 'A4 49 kLE';
                     obj.info.gen = 2;
+                case 'BLADERF_FPGA_A5'
+                    obj.info.fpga_size = 'A5 77 kLE';
+                    obj.info.gen = 2;
                 case 'BLADERF_FPGA_A9'
                     obj.info.fpga_size = 'A9 301 kLE';
                     obj.info.gen = 2;

@@ -80,6 +80,10 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
             image_type = BLADERF_IMAGE_TYPE_FPGA_A4;
             address = BLADERF_FLASH_ADDR_FPGA;
             length = 0x290000;
+        } else if (!strcasecmp(argv[2], "fpgaA5")) {
+            image_type = BLADERF_IMAGE_TYPE_FPGA_A5;
+            address = BLADERF_FLASH_ADDR_FPGA;
+            length = 0x410000;
         } else if (!strcasecmp(argv[2], "fpgaA9")) {
             image_type = BLADERF_IMAGE_TYPE_FPGA_A9;
             address = BLADERF_FLASH_ADDR_FPGA;

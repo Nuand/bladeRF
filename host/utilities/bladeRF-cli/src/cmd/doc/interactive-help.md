@@ -119,6 +119,8 @@ Parameters:
 
     `fpgaA4`    Metadata and bitstream for 49 kLE (A4) FPGA
 
+    `fpgaA5`    Metadata and bitstream for 77 kLE (A5) FPGA
+
     `fpgaA9`    Metadata and bitstream for 301 kLE (A9) FPGA
     ------------------------------------------------------------------
 
@@ -176,6 +178,8 @@ The following options may be used to create a new flash image.
     `fpga115`   Metadata and bitstream for 115 kLE FPGA
 
     `fpgaA4`    Metadata and bitstream for 49 kLE (A4) FPGA
+
+    `fpgaA5`    Metadata and bitstream for 77 kLE (A5) FPGA
 
     `fpgaA9`    Metadata and bitstream for 301 kLE (A9) FPGA
 
@@ -724,7 +728,7 @@ Below are the available options for <trigger>:
 ------------ ---------------------------------------------------------
 `J71-4`      Trigger signal is on `mini_exp1` (bladeRF x40/x115, J71, pin 4).
 
-`J51-1`      Trigger signal is on `mini_exp1` (bladeRF xA4/xA9, J51, pin 1).
+`J51-1`      Trigger signal is on `mini_exp1` (bladeRF xA4/xA5/xA9, J51, pin 1).
 
 `Miniexp-1`  Trigger signal is on `mini_exp1`, hardware-independent
 

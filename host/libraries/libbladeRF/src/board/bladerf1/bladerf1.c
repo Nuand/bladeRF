@@ -995,6 +995,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
      * the board's own knowledge. We need this to be a non-fatal condition,
      * so that the problem can be fixed easily. */
     if (board_data->fpga_size == BLADERF_FPGA_A4 ||
+        board_data->fpga_size == BLADERF_FPGA_A5 ||
         board_data->fpga_size == BLADERF_FPGA_A9) {
         uint16_t vid, pid;
 
