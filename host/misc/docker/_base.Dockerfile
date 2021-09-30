@@ -52,6 +52,9 @@ RUN test -f "${work}/bladerf-micro-A2-hosted/${rbf}" \
 RUN test -f "${work}/bladerf-micro-A4-hosted/${rbf}" \
  && cp "${work}/bladerf-micro-A4-hosted/${rbf}" ${cfgdir}/hostedxA4.rbf \
  || exit 0
+RUN test -f "${work}/bladerf-micro-A5-hosted/${rbf}" \
+ && cp "${work}/bladerf-micro-A5-hosted/${rbf}" ${cfgdir}/hostedxA5.rbf \
+ || exit 0
 RUN test -f "${work}/bladerf-micro-A9-hosted/${rbf}" \
  && cp "${work}/bladerf-micro-A9-hosted/${rbf}" ${cfgdir}/hostedxA9.rbf \
  || exit 0

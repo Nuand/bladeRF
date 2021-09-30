@@ -62,6 +62,7 @@ header = """
     BLADERF_FPGA_40KLE = 40,
     BLADERF_FPGA_115KLE = 115,
     BLADERF_FPGA_A4 = 49,
+    BLADERF_FPGA_A5 = 77,
     BLADERF_FPGA_A9 = 301
   } bladerf_fpga_size;
   typedef enum
@@ -363,7 +364,8 @@ header = """
     BLADERF_IMAGE_TYPE_RX_DC_CAL,
     BLADERF_IMAGE_TYPE_TX_DC_CAL,
     BLADERF_IMAGE_TYPE_RX_IQ_CAL,
-    BLADERF_IMAGE_TYPE_TX_IQ_CAL
+    BLADERF_IMAGE_TYPE_TX_IQ_CAL,
+    BLADERF_IMAGE_TYPE_FPGA_A5,
   } bladerf_image_type;
   struct bladerf_image
   {

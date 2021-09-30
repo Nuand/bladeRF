@@ -103,6 +103,7 @@ static int handle_param(const char *param, char *val,
         } else if (!strcasecmp("fpga40", val) ||
                    !strcasecmp("fpga115", val) ||
                    !strcasecmp("fpgaA4", val) ||
+                   !strcasecmp("fpgaA5", val) ||
                    !strcasecmp("fpgaA9", val)) {
 
             if (!p->override_address) {
@@ -117,6 +118,8 @@ static int handle_param(const char *param, char *val,
                 p->type = BLADERF_IMAGE_TYPE_FPGA_115KLE;
             } else if (!strcasecmp("fpgaA4", val)) {
                 p->type = BLADERF_IMAGE_TYPE_FPGA_A4;
+            } else if (!strcasecmp("fpgaA5", val)) {
+                p->type = BLADERF_IMAGE_TYPE_FPGA_A5;
             } else if (!strcasecmp("fpgaA9", val)) {
                 p->type = BLADERF_IMAGE_TYPE_FPGA_A9;
             }
@@ -271,6 +274,10 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
 
             case BLADERF_IMAGE_TYPE_FPGA_A4:
                 printf("  Image type: A4 FPGA metadata and bitstream\n");
+                break;
+
+            case BLADERF_IMAGE_TYPE_FPGA_A5:
+                printf("  Image type: A5 FPGA metadata and bitstream\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_FPGA_A9:

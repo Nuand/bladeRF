@@ -143,6 +143,7 @@
   "             fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
   "            fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
   "             fpgaA4 Metadata and bitstream for 49 kLE (A4) FPGA\n" \
+  "             fpgaA5 Metadata and bitstream for 77 kLE (A5) FPGA\n" \
   "             fpgaA9 Metadata and bitstream for 301 kLE (A9) FPGA\n" \
   "\n" \
   "-   <address> - Address of data to back up. Must be erase\n" \
@@ -705,7 +706,7 @@
   "                Trigger Description\n" \
   "  --------------------- ------------------------------------------------------------------------------------------------\n" \
   "                  J71-4 Trigger signal is on mini_exp1 (bladeRF x40/x115, J71, pin 4).\n" \
-  "                  J51-1 Trigger signal is on mini_exp1 (bladeRF xA4/xA9, J51, pin 1).\n" \
+  "                  J51-1 Trigger signal is on mini_exp1 (bladeRF xA4/xA5/xA9, J51, pin 1).\n" \
   "              Miniexp-1 Trigger signal is on mini_exp1, hardware-independent\n" \
   "\n" \
   "Note that all three of the above options map to the same logical port\n" \

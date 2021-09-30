@@ -43,6 +43,9 @@ int str2fpga(const char *str, bladerf_fpga_size *fpga_size)
     } else if (!strcmp(str, "49") || !strcmp(str, "A4")) {
         *fpga_size = BLADERF_FPGA_A4;
         return 0;
+    } else if (!strcmp(str, "77") || !strcmp(str, "A5")) {
+        *fpga_size = BLADERF_FPGA_A5;
+        return 0;
     } else if (!strcmp(str, "301") || !strcmp(str, "A9")) {
         *fpga_size = BLADERF_FPGA_A9;
         return 0;

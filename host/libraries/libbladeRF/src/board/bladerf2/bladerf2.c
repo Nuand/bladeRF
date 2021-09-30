@@ -426,6 +426,10 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                 full_path = file_find("hostedxA4.rbf");
                 break;
 
+            case BLADERF_FPGA_A5:
+                full_path = file_find("hostedxA5.rbf");
+                break;
+
             case BLADERF_FPGA_A9:
                 full_path = file_find("hostedxA9.rbf");
                 break;
@@ -604,6 +608,10 @@ static int bladerf2_get_fpga_bytes(struct bladerf *dev, size_t *size)
     switch (board_data->fpga_size) {
         case BLADERF_FPGA_A4:
             *size = 2632660;
+            break;
+
+        case BLADERF_FPGA_A5:
+            *size = 4244820;
             break;
 
         case BLADERF_FPGA_A9:

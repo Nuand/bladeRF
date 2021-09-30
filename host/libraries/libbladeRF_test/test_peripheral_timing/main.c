@@ -326,6 +326,7 @@ int main(int argc, char *argv[])
             break;
 
         case BLADERF_FPGA_A4:
+        case BLADERF_FPGA_A5:
         case BLADERF_FPGA_A9:
             status = test_bladeRF2(dev);
             break;

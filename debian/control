@@ -140,6 +140,25 @@ Description: Nuand bladeRF FPGA bitstream downloader (hostedxA4)
  Note that this will not upgrade the bladeRF itself.  That can be done
  with the bladeRF-cli utility.
 
+Package: bladerf-fpga-hostedxa5
+Section: comm
+Architecture: any
+Depends: wget, ${shlibs:Depends}, ${misc:Depends}
+Recommends: bladerf
+Suggests: bladerf-firmware
+Provides: bladerf-fpga
+Description: Nuand bladeRF FPGA bitstream downloader (hostedxA5)
+ This package will, at the time of installation, download an appropriate
+ FPGA bitstream for using the Nuand bladeRF in a hosted (USB-controlled)
+ configuration.  The FPGA bitstream will be downloaded from
+ https://nuand.com/fpga/ and saved to /usr/share/Nuand/bladeRF.
+ .
+ This bitstream is for the bladeRF 2.0 Micro xA5 with the Altera Cyclone V
+ 5CEBA5 FPGA.
+ .
+ Note that this will not upgrade the bladeRF itself.  That can be done
+ with the bladeRF-cli utility.
+
 Package: bladerf-fpga-hostedxa9
 Section: comm
 Architecture: any
@@ -173,7 +192,7 @@ Description: Nuand bladeRF firmware downloader (FX3)
  and saved to /usr/share/Nuand/bladeRF.
  .
  This bitstream will work for either the Nuand bladeRF x40 or the x115,
- as well as the bladeRF 2.0 Micro xA4 or xA9.
+ as well as the bladeRF 2.0 Micro xA4 or xA5 or xA9.
  .
  Note that this will not upgrade the bladeRF itself.  That can be done
  with the bladeRF-cli utility.

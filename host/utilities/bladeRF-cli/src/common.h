@@ -95,7 +95,7 @@ struct cli_error {
 struct cli_dev_info {
    bladerf_fpga_size fpga_size; /**< Device's FPGA size */
    bool is_bladerf_x40_x115;    /**< Is this a bladeRF x40 or x115 */
-   bool is_bladerf_micro;       /**< Is this a bladeRF xA4 or xA9 */
+   bool is_bladerf_micro;       /**< Is this a bladeRF xA4 or xA5 or xA9 */
 };
 
 /**
