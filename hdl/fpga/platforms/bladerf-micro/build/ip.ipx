@@ -1,6 +1,7 @@
 <library>
         <path path="../../../fpga/ip/opencores/i2c/**/*"/>
         <path path="../../../fpga/ip/nuand/time_tamer/**/*"/>
+        <path path="../../../fpga/ip/nuand/wishbone_master/**/*"/>
         <path path="../../../fpga/ip/nuand/command_uart/**/*"/>
         <path path="../../../fpga/ip/nuand/vctcxo_tamer/**/*"/>
         <path path="../../../fpga/ip/nuand/tone_generator/**/*"/>

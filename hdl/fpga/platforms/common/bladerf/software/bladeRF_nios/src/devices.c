@@ -415,6 +415,26 @@ void adi_axi_write(uint16_t addr, uint32_t data)
 #endif  // BOARD_BLADERF_MICRO
 
 #ifdef BOARD_BLADERF_MICRO
+uint32_t wishbone_master_read(uint32_t addr)
+{
+    uint32_t data = 0;
+#ifdef WISHBONE_MASTER_0_BASE  // Temporary hack for bladeRF1 compat
+    data = IORD_32DIRECT(WISHBONE_MASTER_0_BASE, addr);
+#endif
+    return data;
+}
+#endif  // BOARD_BLADERF_MICRO
+
+#ifdef BOARD_BLADERF_MICRO
+void wishbone_master_write(uint32_t addr, uint32_t data)
+{
+#ifdef WISHBONE_MASTER_0_BASE  // Temporary hack for bladeRF1 compat
+    IOWR_32DIRECT(WISHBONE_MASTER_0_BASE, addr, data);
+#endif
+}
+#endif  // BOARD_BLADERF_MICRO
+
+#ifdef BOARD_BLADERF_MICRO
 void adi_fastlock_save(bool is_tx, uint8_t rffe_profile, uint16_t nios_profile)
 {
     uint16_t fl_prog_addr_reg;
