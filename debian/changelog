@@ -1,3 +1,14 @@
+bladerf (2021.10) unstable; urgency=low
+
+  * Release for 2021.10 tag
+  * Fix up packet mode bugs
+  * Add Wishbone master core as NiOS peripheral
+  * Fix several bugs in packet mode buffering mechanism
+  * Add Wishbone master core as NiOS peripheral
+  * Add support for bladeRF 2.0 micro xA5.
+
+ -- Robert Ghilduta (Nuand LLC) <robert.ghilduta@nuand.com>  Tue, 16 Feb 2021 00:50:56 -0500
+
 bladerf (2021.03) unstable; urgency=low
 
   * Release for 2021.03 tag
