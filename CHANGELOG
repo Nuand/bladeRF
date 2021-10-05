@@ -6,6 +6,36 @@ hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2021.10 (2021-10-04)
+--------------------------------------------------------------------------------
+
+This release candidate consists of the following versions:
+
+    * FPGA bitstream                v0.14.0
+    * FX3 firmware                  v2.4.0
+    * libbladeRF                    v2.4.1
+    * bladeRF-cli                   v1.8.0
+    * MATLAB & Simulink bindings    v1.0.5
+    * Python bindings               v1.2.1
+
+API docs: https://www.nuand.com/bladeRF-doc/libbladeRF/
+FX3 firmware: https://www.nuand.com/fx3_images/
+FPGA bitstreams: https://www.nuand.com/fpga_images/
+Ubuntu PPA: https://launchpad.net/~nuandllc/+archive/ubuntu/bladerf
+Windows installer: https://www.nuand.com/win_installers/
+
+Summary of changes in 2021.10
+
+* libbladeRF
+    - Fix up packet mode bugs
+    - Add Wishbone master core as NiOS peripheral
+
+* FPGA:
+    - Fix several bugs in packet mode buffering mechanism
+    - Add Wishbone master core as NiOS peripheral
+    - Add support for bladeRF 2.0 micro xA5
+
+--------------------------------------------------------------------------------
  2020.12 (2020-12-23)
 --------------------------------------------------------------------------------
 
