@@ -72,6 +72,10 @@ set_instance_parameter_value gpio_rffe_0 {simDoTestBenchWiring} {0}
 set_instance_parameter_value gpio_rffe_0 {simDrivenValue} {0.0}
 set_instance_parameter_value gpio_rffe_0 {width} {32}
 
+add_instance wishbone_master_0 wishbone_master 1.0
+set_instance_parameter_value wishbone_master_0 {ADDR_BITS} {32}
+set_instance_parameter_value wishbone_master_0 {DATA_BITS} {32}
+
 add_instance jtag_uart altera_avalon_jtag_uart
 set_instance_parameter_value jtag_uart {allowMultipleConnections} {0}
 set_instance_parameter_value jtag_uart {hubInstanceID} {0}
@@ -438,6 +442,8 @@ add_interface xb_gpio_dir conduit end
 set_interface_property xb_gpio_dir EXPORT_OF xb_gpio_dir.external_connection
 add_interface arbiter conduit end
 set_interface_property arbiter EXPORT_OF arbiter_0.conduit_end
+add_interface wbm conduit end
+set_interface_property wbm EXPORT_OF wishbone_master_0.conduit_end
 
 # connections and connection parameters
 add_connection axi_ad9361_0.if_l_clk axi_ad9361_0.device_clock
@@ -523,6 +529,11 @@ set_connection_parameter_value nios2.data_master/vctcxo_tamer_0.s1 arbitrationPr
 set_connection_parameter_value nios2.data_master/vctcxo_tamer_0.s1 baseAddress {0x9300}
 set_connection_parameter_value nios2.data_master/vctcxo_tamer_0.s1 defaultConnection {0}
 
+add_connection nios2.data_master wishbone_master_0.avalon_slave_0 avalon
+set_connection_parameter_value nios2.data_master/wishbone_master_0.avalon_slave_0 arbitrationPriority {1}
+set_connection_parameter_value nios2.data_master/wishbone_master_0.avalon_slave_0 baseAddress {0x10000000}
+set_connection_parameter_value nios2.data_master/wishbone_master_0.avalon_slave_0 defaultConnection {0}
+
 add_connection nios2.data_master xb_gpio.s1
 set_connection_parameter_value nios2.data_master/xb_gpio.s1 arbitrationPriority {1}
 set_connection_parameter_value nios2.data_master/xb_gpio.s1 baseAddress {0x90b0}
@@ -572,6 +583,9 @@ set_connection_parameter_value nios2.irq/rffe_spi.irq irqNumber {8}
 add_connection nios2.irq rx_tamer.interrupt_sender
 set_connection_parameter_value nios2.irq/rx_tamer.interrupt_sender irqNumber {3}
 
+add_connection nios2.irq wishbone_master_0.interrupt_sender interrupt
+set_connection_parameter_value nios2.irq/wishbone_master_0.interrupt_sender irqNumber {10}
+
 add_connection nios2.irq tx_tamer.interrupt_sender
 set_connection_parameter_value nios2.irq/tx_tamer.interrupt_sender irqNumber {2}
 
@@ -613,6 +627,8 @@ add_connection system_clock.clk xb_gpio_dir.clk
 
 add_connection system_clock.clk arbiter_0.clock_sink clock
 
+add_connection system_clock.clk wishbone_master_0.clock_sink clock
+
 add_connection system_clock.clk_reset axi_ad9361_0.s_axi_reset
 
 add_connection system_clock.clk_reset command_uart.reset
@@ -648,6 +664,8 @@ add_connection system_clock.clk_reset xb_gpio.reset
 add_connection system_clock.clk_reset xb_gpio_dir.reset
 
 add_connection system_clock.clk_reset arbiter_0.reset reset
+
+add_connection system_clock.clk_reset wishbone_master_0.reset reset
 
 # interconnect requirements
 set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE}

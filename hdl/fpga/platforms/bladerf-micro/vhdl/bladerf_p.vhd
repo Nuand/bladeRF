@@ -140,7 +140,17 @@ package bladerf_p is
         rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
         arbiter_request                 :   in  std_logic_vector(1 downto 0)  := (others => 'X');
         arbiter_granted                 :   out std_logic_vector(1 downto 0);
-        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X')
+        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X');
+        wbm_wb_clk_i                    :   in  std_logic                     := 'X';
+        wbm_wb_rst_i                    :   in  std_logic                     := 'X';
+        wbm_wb_adr_o                    :   out std_logic_vector(31 downto 0);
+        wbm_wb_dat_o                    :   out std_logic_vector(31 downto 0);
+        wbm_wb_dat_i                    :   in  std_logic_vector(31 downto 0) := (others => 'X');
+        wbm_wb_we_o                     :   out std_logic;
+        wbm_wb_sel_o                    :   out std_logic;
+        wbm_wb_stb_o                    :   out std_logic;
+        wbm_wb_ack_i                    :   in  std_logic                     := 'X';
+        wbm_wb_cyc_o                    :   out std_logic
       );
     end component;
 
