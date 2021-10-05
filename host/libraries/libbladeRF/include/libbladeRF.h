@@ -3637,6 +3637,45 @@ int CALL_CONV bladerf_write_trigger(struct bladerf *dev,
 /** @} (End of FN_TRIGGER_CONTROL) */
 
 /**
+ * @defgroup FN_WISHBONE_MASTER Wishbone bus master
+ *
+ * These functions provide the ability to read and write to the wishbone peripheral bus,
+ * which is reserved for modem
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Read a specific Wishbone Master address
+ *
+ * @param       dev     Device handle
+ * @param       addr    Wishbone Master address
+ * @param[out]  data    Wishbone Master data
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_wishbone_master_read(struct bladerf *dev, uint32_t addr, uint32_t *data);
+
+/**
+ * Write value to a specific Wishbone Master address
+ *
+ *
+ * @param       dev     Device handle
+ * @param       addr    Wishbone Master address
+ * @param       data    Wishbone Master data
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_wishbone_master_write(struct bladerf *dev, uint32_t addr, uint32_t val);
+
+/** @} (End of FN_WISHBONE_MASTER) */
+
+
+/**
  * @defgroup FN_CONFIG_GPIO Configuration GPIO
  *
  * These functions provide the ability to read and write the configuration

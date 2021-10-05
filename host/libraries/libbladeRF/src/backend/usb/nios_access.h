@@ -194,6 +194,28 @@ int nios_adi_axi_read(struct bladerf *dev, uint32_t cmd, uint32_t *data);
 int nios_adi_axi_write(struct bladerf *dev, uint32_t cmd, uint32_t data);
 
 /**
+ * Read the Wishbone Master memory mapped region.
+ *
+ * @param           dev         Device handle
+ * @param[in]       addr        Address
+ * @param[out]      data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_wishbone_master_read(struct bladerf *dev, uint32_t addr, uint32_t *data);
+
+/**
+ * Write to the Wishbone Master memory mapped region.
+ *
+ * @param           dev         Device handle
+ * @param[in]       addr        Address
+ * @param[in]       data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_wishbone_master_write(struct bladerf *dev, uint32_t addr, uint32_t data);
+
+/**
  * Read RFIC command
  * 
  * @param       dev     Device handle

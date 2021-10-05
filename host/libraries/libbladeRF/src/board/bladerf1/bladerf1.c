@@ -3331,6 +3331,24 @@ static int bladerf1_write_trigger(struct bladerf *dev, bladerf_channel ch,
 }
 
 /******************************************************************************/
+/* Low-level Wishbone Master access */
+/******************************************************************************/
+
+static int bladerf1_wishbone_master_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return dev->backend->wishbone_master_read(dev, addr, data);
+}
+
+static int bladerf1_wishbone_master_write(struct bladerf *dev, uint32_t addr, uint32_t data)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return dev->backend->wishbone_master_write(dev, addr, data);
+}
+
+/******************************************************************************/
 /* Low-level Configuration GPIO access */
 /******************************************************************************/
 
@@ -3585,6 +3603,8 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.trim_dac_write, bladerf1_trim_dac_write),
     FIELD_INIT(.read_trigger, bladerf1_read_trigger),
     FIELD_INIT(.write_trigger, bladerf1_write_trigger),
+    FIELD_INIT(.wishbone_master_read, bladerf1_wishbone_master_read),
+    FIELD_INIT(.wishbone_master_write, bladerf1_wishbone_master_write),
     FIELD_INIT(.config_gpio_read, bladerf1_config_gpio_read),
     FIELD_INIT(.config_gpio_write, bladerf1_config_gpio_write),
     FIELD_INIT(.erase_flash, bladerf1_erase_flash),

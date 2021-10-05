@@ -1385,6 +1385,31 @@ int bladerf_write_trigger(struct bladerf *dev,
 }
 
 /******************************************************************************/
+/* Low-level Wishbone Master access */
+/******************************************************************************/
+int bladerf_wishbone_master_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->wishbone_master_read(dev, addr, data);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_wishbone_master_write(struct bladerf *dev, uint32_t addr, uint32_t data)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->wishbone_master_write(dev, addr, data);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+/******************************************************************************/
 /* Low-level Configuration GPIO access */
 /******************************************************************************/
 

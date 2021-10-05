@@ -430,6 +430,10 @@ struct board_fns {
                          bladerf_trigger_signal trigger,
                          uint8_t val);
 
+    /* Low-level Wishbone Master access */
+    int (*wishbone_master_read)(struct bladerf *dev, uint32_t addr, uint32_t *data);
+    int (*wishbone_master_write)(struct bladerf *dev, uint32_t addr, uint32_t data);
+
     /* Low-level Configuration GPIO access */
     int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
     int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
