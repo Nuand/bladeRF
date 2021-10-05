@@ -157,15 +157,19 @@ begin
     -- Calculate whether there's enough room in the destination FIFO
     calc_fifo_free : process( clock, reset )
         constant FIFO_MAX    : natural := 2**fifo_usedw'length;
+        constant META_MAX    : natural := 2**meta_fifo_usedw'length;
         variable fifo_used_v : unsigned(fifo_usedw'length downto 0) := (others => '0');
+        variable meta_fifo_used_v : unsigned(meta_fifo_usedw'length downto 0) := (others => '0');
     begin
         if( reset = '1' ) then
             fifo_enough <= false;
             fifo_used_v := (others => '0');
         elsif( rising_edge(clock) ) then
             fifo_used_v := unsigned(fifo_full & fifo_usedw);
-            if( fifo_full = '0' and ((FIFO_MAX - fifo_used_v) > dma_buf_size) and
-                 ( ( meta_en = '1' and meta_fifo_full = '0') or (meta_en = '0') ) ) then
+            meta_fifo_used_v := unsigned(meta_fifo_full & meta_fifo_usedw);
+            if( fifo_full = '0' and ((FIFO_MAX - fifo_used_v) > ( dma_buf_size * 4 )) and
+                 ( ( meta_en = '1' and meta_fifo_full = '0' and ( META_MAX - 4 ) > meta_fifo_used_v )
+                   or (meta_en = '0') ) ) then
                 fifo_enough <= true;
             else
                 fifo_enough <= false;

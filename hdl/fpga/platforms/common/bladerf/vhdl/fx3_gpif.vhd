@@ -280,7 +280,8 @@ begin
             -- Can we not fit one more block of data in RX buffer?
             rx_fifo_critical    <= (unsigned(rx_fifo_usedw) >= ((2**(rx_fifo_usedw'length-1) - gpif_buf_size)));
             -- Do we have room for one more block of data in the TX buffer?
-            tx_fifo_enough      <= (unsigned(tx_fifo_usedw) < ((2**(tx_fifo_usedw'length-1) - gpif_buf_size))) and (tx_meta_fifo_full = '0');
+            tx_fifo_enough      <= (unsigned(tx_fifo_usedw) < ((2**(tx_fifo_usedw'length-1) - gpif_buf_size * 4))) and
+                                    (unsigned(tx_meta_fifo_usedw) < ((2**(tx_meta_fifo_usedw'length-1) - 4)));
         end if;
     end process calculate_fifo_waterlines;
 
