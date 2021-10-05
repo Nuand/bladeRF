@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-UPSTREAM='https://www.nuand.com/fpga/v0.12.0/hostedx115.rbf'
-CHECKSUM='a31999827d609adeb9ef3511ec6f8d65'
+UPSTREAM='https://www.nuand.com/fpga/v0.14.0/hostedx115.rbf'
+CHECKSUM='94ee5c7f68abe5c3392202246789fedd'
 DATAFILE='/usr/share/Nuand/bladeRF/hostedx115.rbf'
 DESCRIPT='FPGA bitstream'
 MYNAMEIS='bladerf-fpga-hostedx115'
