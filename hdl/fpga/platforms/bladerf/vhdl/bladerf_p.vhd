@@ -350,7 +350,7 @@ package body bladerf_p is
         -- Inputs
         rv(28)           := core_present;
         rv(22 downto 21) := x.xb_mode2;  -- Why? Is this even needed?
-        rv(20 downto 19) := x.nios_ss_n; -- Why? Is this even needed?
+        -- RESERVERD:  rv(20 downto 19) := x.nios_ss_n; -- Why? Is this even needed?
         return rv;
     end function;
 
