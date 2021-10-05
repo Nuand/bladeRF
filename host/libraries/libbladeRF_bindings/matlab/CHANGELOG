@@ -5,6 +5,10 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.0.5 (2021-10-04)
+--------------------------------
+ * Update MATLAB binds to keep up with libbladeRF
+
 v1.0.4 (2020-12-23)
 --------------------------------
  * Update build_thunk() procedure and documentation for compiling MATLAB
