@@ -448,7 +448,7 @@ begin
 
                 fifo_future.packet_control.pkt_eop <= '0';
 
-                if( fifo_empty = '0' and meta_current.meta_time_go = '1' and meta_current.dma_downcount > 0 and packet_ready = '1' ) then
+                if( meta_current.meta_time_go = '1' and meta_current.dma_downcount > 0 and packet_ready = '1' ) then
                     if( meta_current.dma_downcount = 1 ) then
                         fifo_future.packet_control.pkt_eop <= '1';
                     end if;
@@ -535,7 +535,7 @@ begin
             end loop;
         end if;
 
-        if( fifo_empty = '1' ) then
+        if( fifo_empty = '1' and packet_en = '0' ) then
             -- Re-evaluate the MIMO settings
             fifo_future.state <= FIFO_FSM_RESET_VALUE.state;
         end if;
