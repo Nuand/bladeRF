@@ -200,6 +200,10 @@ struct backend_fns {
     int (*adi_axi_write)(struct bladerf *dev, uint32_t addr, uint32_t data);
     int (*adi_axi_read)(struct bladerf *dev, uint32_t addr, uint32_t *data);
 
+    /* Wishbone Master accessors */
+    int (*wishbone_master_write)(struct bladerf *dev, uint32_t addr, uint32_t data);
+    int (*wishbone_master_read)(struct bladerf *dev, uint32_t addr, uint32_t *data);
+
     /* RFIC command accessors */
     int (*rfic_command_write)(struct bladerf *dev, uint16_t cmd, uint64_t data);
     int (*rfic_command_read)(struct bladerf *dev, uint16_t cmd, uint64_t *data);

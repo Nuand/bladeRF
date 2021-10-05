@@ -1381,6 +1381,9 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.adi_axi_write, nios_adi_axi_write),
     FIELD_INIT(.adi_axi_read, nios_adi_axi_read),
 
+    FIELD_INIT(.wishbone_master_write, nios_wishbone_master_write),
+    FIELD_INIT(.wishbone_master_read, nios_wishbone_master_read),
+
     FIELD_INIT(.rfic_command_write, nios_rfic_command_write),
     FIELD_INIT(.rfic_command_read, nios_rfic_command_read),
 

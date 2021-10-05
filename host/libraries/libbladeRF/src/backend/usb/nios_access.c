@@ -683,6 +683,38 @@ int nios_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data)
     return status;
 }
 
+int nios_wishbone_master_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
+{
+    int status;
+
+    status = nios_32x32_read(dev, NIOS_PKT_32x32_TARGET_WB_MSTR, addr, data);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
+    if (status == 0) {
+        log_verbose("%s:  Read  0x%08" PRIx32 " from addr 0x%04" PRIx32 "\n",
+                    __FUNCTION__, *data, addr);
+    }
+#endif
+
+    return status;
+}
+
+int nios_wishbone_master_write(struct bladerf *dev, uint32_t addr, uint32_t data)
+{
+    int status;
+
+    status = nios_32x32_write(dev, NIOS_PKT_32x32_TARGET_WB_MSTR, addr, data);
+
+#ifdef ENABLE_LIBBLADERF_NIOS_ACCESS_LOG_VERBOSE
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%08" PRIx32 " to   addr 0x%04" PRIx32 "\n",
+                    __FUNCTION__, data, addr);
+    }
+#endif
+
+    return status;
+}
+
 int nios_rfic_command_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
 {
     int status;
