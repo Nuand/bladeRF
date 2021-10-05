@@ -6,6 +6,23 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.14.0 (2021-10-01)
+--------------------------------
+
+ Fix several bugs in packet mode buffering mechanism, and add Wishbone master
+   core as NiOS peripheral. Add support for bladeRF 2.0 micro xA5.
+
+ Fixes:
+ *  hdl: fix RX halting issue in packet mode
+ *  hdl: ensure meta_fifos never overflow
+ *  hdl: disconnect nios_ss_n bus from GPIO(20 downto 19)
+
+ Features:
+ *  hdl: add Wishbone master to bladeRF 2.0 micro's bladeRF-hosted revision
+ *  hdl: add Wishbone master IP NiOS peripheral
+
+
+--------------------------------
 v0.12.0 (2020-08-01)
 --------------------------------
 
