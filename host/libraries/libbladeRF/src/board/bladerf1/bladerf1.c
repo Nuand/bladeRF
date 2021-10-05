@@ -2684,6 +2684,13 @@ static int perform_format_config(struct bladerf *dev, bladerf_direction dir,
         return status;
     }
 
+    if (format == BLADERF_FORMAT_PACKET_META) {
+       gpio_val |= BLADERF_GPIO_PACKET;
+       use_timestamps = true;
+    } else {
+       gpio_val &= ~BLADERF_GPIO_PACKET;
+    }
+
     if (use_timestamps) {
         gpio_val |= (BLADERF_GPIO_TIMESTAMP | BLADERF_GPIO_TIMESTAMP_DIV2);
     } else {
