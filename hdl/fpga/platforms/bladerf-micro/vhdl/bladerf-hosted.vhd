@@ -162,6 +162,17 @@ architecture hosted_bladerf of bladerf is
     signal tx_packet_ready        : std_logic;
     signal tx_packet_empty        : std_logic;
 
+
+    signal wbm_wb_clk_i           : std_logic;
+    signal wbm_wb_rst_i           : std_logic;
+    signal wbm_wb_adr_o           : std_logic_vector(31 downto 0);
+    signal wbm_wb_dat_o           : std_logic_vector(31 downto 0);
+    signal wbm_wb_dat_i           : std_logic_vector(31 downto 0);
+    signal wbm_wb_we_o            : std_logic;
+    signal wbm_wb_sel_o           : std_logic;
+    signal wbm_wb_stb_o           : std_logic;
+    signal wbm_wb_ack_i           : std_logic;
+    signal wbm_wb_cyc_o           : std_logic;
 begin
 
     U_rx_pkt_gen : entity work.rx_packet_generator
@@ -421,7 +432,17 @@ begin
             rx_trigger_ctl_out_port         => rx_trigger_ctl_i,
             tx_trigger_ctl_out_port         => tx_trigger_ctl_i,
             rx_trigger_ctl_in_port          => pack(rx_trigger_ctl),
-            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl)
+            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl),
+            wbm_wb_clk_i                    => wbm_wb_clk_i,
+            wbm_wb_rst_i                    => wbm_wb_rst_i,
+            wbm_wb_adr_o                    => wbm_wb_adr_o,
+            wbm_wb_dat_o                    => wbm_wb_dat_o,
+            wbm_wb_dat_i                    => wbm_wb_dat_i,
+            wbm_wb_we_o                     => wbm_wb_we_o,
+            wbm_wb_sel_o                    => wbm_wb_sel_o,
+            wbm_wb_stb_o                    => wbm_wb_stb_o,
+            wbm_wb_ack_i                    => wbm_wb_ack_i,
+            wbm_wb_cyc_o                    => wbm_wb_cyc_o
         );
 
     -- FX3 UART
