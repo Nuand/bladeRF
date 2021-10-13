@@ -1293,9 +1293,31 @@ begin
         end if ;
     end process ;
 
-    led(1) <= led1_blink        when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(1);
-    led(2) <= tx_underflow_led  when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(2);
-    led(3) <= rx_overflow_led   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(3);
+    --led(1) <= led1_blink        when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(1);
+    --led(2) <= tx_underflow_led  when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(2);
+    --led(3) <= rx_overflow_led   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(3);
+                            blink_leds : process (c4_clock)
+    variable counter : natural range 0 to 57_600_000 := 57_600_000;
+begin
+    if (rising_edge(c4_clock)) then
+        counter := counter - 1;
+        if (counter = 0) then
+            counter := 57_600_000;
+        elsif (counter < 19_200_000) then
+            led(2) <= '0';
+            led(1) <= '1';
+            led(3) <= '1';
+        elsif (counter < 38_400_000) then
+            led(2) <= '1';
+            led(1) <= '0';
+            led(3) <= '1';
+        else
+            led(2) <= '1';
+            led(1) <= '1';
+            led(3) <= '0';
+        end if;
+    end if;
+end process;
 
     lms_reset               <= nios_gpio.o.lms_reset;
 
