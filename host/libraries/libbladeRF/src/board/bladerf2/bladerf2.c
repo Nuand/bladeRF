@@ -1718,7 +1718,7 @@ static int bladerf2_get_correction(struct bladerf *dev,
 
         CHECK_AD936X(ad9361_get_tx_rf_port_output(phy, &mode));
 
-        low_band = (mode == AD936X_TXA);
+        low_band = (mode != AD936X_TXA);
     } else {
         uint32_t mode;
 
@@ -1730,7 +1730,7 @@ static int bladerf2_get_correction(struct bladerf *dev,
             RETURN_ERROR_STATUS("mode", BLADERF_ERR_UNSUPPORTED);
         }
 
-        low_band = (mode == AD936X_A_BALANCED);
+        low_band = (mode != AD936X_A_BALANCED);
     }
 
     if ((corr == BLADERF_CORR_DCOFF_I || corr == BLADERF_CORR_DCOFF_Q) &&
@@ -1850,7 +1850,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
 
         CHECK_AD936X(ad9361_get_tx_rf_port_output(phy, &mode));
 
-        low_band = (mode == AD936X_TXA);
+        low_band = (mode != AD936X_TXA);
     } else {
         uint32_t mode;
 
@@ -1862,7 +1862,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
             RETURN_ERROR_STATUS("mode", BLADERF_ERR_UNSUPPORTED);
         }
 
-        low_band = (mode == AD936X_A_BALANCED);
+        low_band = (mode != AD936X_A_BALANCED);
     }
 
     if ((corr == BLADERF_CORR_DCOFF_I || corr == BLADERF_CORR_DCOFF_Q) &&
