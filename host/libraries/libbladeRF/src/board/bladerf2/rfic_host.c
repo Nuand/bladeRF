@@ -259,7 +259,9 @@ static int _rfic_host_enable_module(struct bladerf *dev,
 
         /* Modify MIMO channel enable bits */
         if (enable) {
-            reg |= (1 << ch_bit);
+            reg |= (1 << 15);
+            reg |= (1 << 17);
+            printf("CHBIT = %d\n", ch_bit);
         } else {
             reg &= ~(1 << ch_bit);
         }

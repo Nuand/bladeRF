@@ -231,7 +231,11 @@ begin
         case meta_current.state is
             when IDLE =>
 
-                meta_future.dma_downcount <= dma_buf_size - 4;
+                -- the FSM isn't always counting downcount, such as when the state
+                -- machine is not in META_DOWNCOUNT when MIMO is enabled, the 2
+                -- clock cycles where the FSM is in IDLE and META_WRITE need to
+                -- be accounted for
+                meta_future.dma_downcount <= dma_buf_size - 4 - 2 * (count_enabled_channels(in_sample_controls) - 1);
 
                 if( fifo_enough ) then
                     if( packet_en = '1' ) then

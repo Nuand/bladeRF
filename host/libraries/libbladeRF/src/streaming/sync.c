@@ -693,6 +693,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                             /* Account for current position in buffer */
                             left_in_buffer -= s->meta.curr_msg_off;
+                           left_in_buffer /= 2;
 
                             if (time_delta >= left_in_buffer) {
                                 /* Discard the remainder of this buffer */
@@ -706,7 +707,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             } else if (time_delta <= left_in_msg(s)) {
                                 /* Fast forward within the current message */
                                 assert(time_delta <= SIZE_MAX);
-                                s->meta.curr_msg_off += (size_t) time_delta;
+                                s->meta.curr_msg_off += (size_t) time_delta * 2;
                                 s->meta.curr_timestamp += time_delta;
 
                                 log_verbose("%s: Seeking within message (t=%llu)\n",
@@ -715,7 +716,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             } else {
                                 s->meta.state = SYNC_META_STATE_HEADER;
 
-                                s->meta.msg_num += timestamp_to_msg(s, time_delta);
+                                s->meta.msg_num += timestamp_to_msg(s, time_delta*2);
 
                                 log_verbose("%s: Seeking to message %u.\n",
                                             __FUNCTION__, s->meta.msg_num);
