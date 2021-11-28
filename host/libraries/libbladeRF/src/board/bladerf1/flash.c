@@ -405,13 +405,18 @@ int spi_flash_decode_flash_architecture(struct bladerf *dev,
                     flash_arch->tsize_bytes = 32 << 17;
                     flash_arch->status      = STATUS_SUCCESS;
                     break;
+                case 0x16:
+                    log_verbose( "Found SPI flash device: W25Q64JV (64 Mbit).\n" );
+                    flash_arch->tsize_bytes = 64 << 17;
+                    flash_arch->status      = STATUS_SUCCESS;
+                    break;
                 case 0x17:
                     log_verbose( "Found SPI flash device: W25Q128JV (128 Mbit).\n" );
                     flash_arch->tsize_bytes = 128 << 17;
                     flash_arch->status      = STATUS_SUCCESS;
                     break;
                 default:
-                    log_debug( "Unknown Winbond flash device ID.\n" );
+                    log_debug( "Unknown Winbond flash device ID [0x%02X].\n" , flash_arch->device_id );
                     status = BLADERF_ERR_UNEXPECTED;
             }
             break;
