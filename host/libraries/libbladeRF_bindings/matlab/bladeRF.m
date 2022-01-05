@@ -956,10 +956,10 @@ classdef bladeRF < handle
 
             if nargin < 2
                 module = 'ALL';
-            else
-                module = strcat('BLADERF_DC_CAL_', upper(module));
             end
 
+            module = strcat('BLADERF_DC_CAL_', upper(module));
+            
             switch module
                 case { 'BLADERF_DC_CAL_LPF_TUNING', ...
                        'BLADERF_DC_CAL_RX_LPF',     ...
@@ -990,7 +990,11 @@ classdef bladeRF < handle
                 config_backup      = obj.tx.config;
                 loopback_backup    = obj.loopback;
 
-                obj.loopback = 'BB_TXVGA1_RXVGA2';
+                if obj.info.gen==1
+                    obj.loopback = 'BB_TXVGA1_RXVGA2';
+                else
+                    obj.loopback = 'FIRMWARE'
+                end
 
                 obj.tx.config.num_buffers   = 16;
                 obj.tx.config.num_transfers = 8;
