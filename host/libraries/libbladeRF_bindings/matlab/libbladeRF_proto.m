@@ -54,9 +54,9 @@ switch arch
         libsuffix = '.dll';
         u64_type  = 'uint64';
 
-    case 'imac64'
+    case 'maci64'
         % Additional type changes for this may be required for OSX support
-        libname   = 'libbladeRF_thunk_imac64';
+        libname   = 'libbladeRF_thunk_maci64';
         libsuffix = '.dylib';
         u64_type  = 'ulong';
 
@@ -139,7 +139,7 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_fpg
 fcns.thunkname{fcnNum}='bladerf_dev_speedvoidPtrThunk';fcns.name{fcnNum}='bladerf_device_speed'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='bladerf_dev_speed'; fcns.RHS{fcnNum}={'bladerfPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_enable_module ( struct bladerf * dev , bladerf_channel ch , _Bool enable );
-fcns.thunkname{fcnNum}='int32voidPtrint32_BoolThunk';fcns.name{fcnNum}='bladerf_enable_module'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bool'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtr_BoolThunk';fcns.name{fcnNum}='bladerf_enable_module'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bool'};fcnNum=fcnNum+1;
 
 % int bladerf_set_txvga2 ( struct bladerf * dev , int gain );
 fcns.thunkname{fcnNum}='int32voidPtrint32Thunk';fcns.name{fcnNum}='bladerf_set_txvga2'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'int32'};fcnNum=fcnNum+1;
@@ -172,25 +172,25 @@ fcns.thunkname{fcnNum}='int32voidPtrint32Thunk';fcns.name{fcnNum}='bladerf_set_r
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rxvga2'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'int32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_gain ( struct bladerf * dev , bladerf_channel ch , bladerf_gain gain );
-fcns.thunkname{fcnNum}='int32voidPtrint32int32Thunk';fcns.name{fcnNum}='bladerf_set_gain'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'int32'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrint32Thunk';fcns.name{fcnNum}='bladerf_set_gain'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'int32'};fcnNum=fcnNum+1;
 
 % int bladerf_set_gain_mode ( struct bladerf * dev , bladerf_channel ch , bladerf_gain_mode mode );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_gain_modeThunk';fcns.name{fcnNum}='bladerf_set_gain_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_gain_mode'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_gain_modeThunk';fcns.name{fcnNum}='bladerf_set_gain_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_gain_mode'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain_mode ( struct bladerf * dev , bladerf_channel ch , bladerf_gain_mode * mode );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_gain_modePtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_gain_modePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_sample_rate ( struct bladerf * dev , bladerf_channel ch , bladerf_sample_rate rate , bladerf_sample_rate * actual );
-fcns.thunkname{fcnNum}='int32voidPtrint32uint32voidPtrThunk';fcns.name{fcnNum}='bladerf_set_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32', 'uint32Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtruint32voidPtrThunk';fcns.name{fcnNum}='bladerf_set_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32', 'uint32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_rational_sample_rate ( struct bladerf * dev , bladerf_channel ch , struct bladerf_rational_rate * rate , struct bladerf_rational_rate * actual );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_set_rational_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rational_ratePtr', 'bladerf_rational_ratePtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_set_rational_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rational_ratePtr', 'bladerf_rational_ratePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_sample_rate ( struct bladerf * dev , bladerf_channel ch , bladerf_sample_rate * rate );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_rational_sample_rate ( struct bladerf * dev , bladerf_channel ch , struct bladerf_rational_rate * rate );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_rational_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rational_ratePtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rational_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rational_ratePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_sampling ( struct bladerf * dev , bladerf_sampling sampling );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_samplingThunk';fcns.name{fcnNum}='bladerf_set_sampling'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_sampling'};fcnNum=fcnNum+1;
@@ -205,34 +205,34 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_sampling'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_samplingPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_bandwidth ( struct bladerf * dev , bladerf_channel ch , bladerf_bandwidth bandwidth , bladerf_bandwidth * actual );
-fcns.thunkname{fcnNum}='int32voidPtrint32uint32voidPtrThunk';fcns.name{fcnNum}='bladerf_set_bandwidth'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32', 'uint32Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtruint32voidPtrThunk';fcns.name{fcnNum}='bladerf_set_bandwidth'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32', 'uint32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_bandwidth ( struct bladerf * dev , bladerf_channel ch , bladerf_bandwidth * bandwidth );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_bandwidth'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_bandwidth'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'uint32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_lpf_mode ( struct bladerf * dev , bladerf_channel ch , bladerf_lpf_mode mode );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_lpf_modeThunk';fcns.name{fcnNum}='bladerf_set_lpf_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_lpf_mode'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_lpf_modeThunk';fcns.name{fcnNum}='bladerf_set_lpf_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_lpf_mode'};fcnNum=fcnNum+1;
 
 % int bladerf_get_lpf_mode ( struct bladerf * dev , bladerf_channel ch , bladerf_lpf_mode * mode );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_lpf_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_lpf_modePtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_lpf_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_lpf_modePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_select_band ( struct bladerf * dev , bladerf_channel ch , bladerf_frequency frequency );
-fcns.thunkname{fcnNum}=['int32voidPtrint32' u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_select_band'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', u64_type};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrvoidPtr' u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_select_band'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', u64_type};fcnNum=fcnNum+1;
 
 % int bladerf_set_frequency ( struct bladerf * dev , bladerf_channel ch , bladerf_frequency frequency );
-fcns.thunkname{fcnNum}=['int32voidPtrint32' u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_set_frequency'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', u64_type};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrvoidPtr' u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_set_frequency'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', u64_type};fcnNum=fcnNum+1;
 
 % int bladerf_schedule_retune ( struct bladerf * dev , bladerf_channel ch , bladerf_timestamp timestamp , bladerf_frequency frequency , struct bladerf_quick_tune * quick_tune );
-fcns.thunkname{fcnNum}=['int32voidPtrint32' u64_type u64_type 'voidPtrThunk'];fcns.name{fcnNum}='bladerf_schedule_retune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', u64_type, u64_type, 'voidPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrvoidPtr' u64_type u64_type 'voidPtrThunk'];fcns.name{fcnNum}='bladerf_schedule_retune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', u64_type, u64_type, 'voidPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_cancel_scheduled_retunes ( struct bladerf * dev , bladerf_channel ch );
-fcns.thunkname{fcnNum}='int32voidPtrint32Thunk';fcns.name{fcnNum}='bladerf_cancel_scheduled_retunes'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_cancel_scheduled_retunes'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel'};fcnNum=fcnNum+1;
 
 % int bladerf_get_frequency ( struct bladerf * dev , bladerf_channel ch , bladerf_frequency * frequency );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_frequency'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', [u64_type 'Ptr'] };fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_frequency'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', [u64_type 'Ptr'] };fcnNum=fcnNum+1;
 
 % int bladerf_get_quick_tune ( struct bladerf * dev , bladerf_channel ch , struct bladerf_quick_tune * quick_tune );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_quick_tune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'voidPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_quick_tune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'voidPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_tuning_mode ( struct bladerf * dev , bladerf_tuning_mode mode );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_tuning_modeThunk';fcns.name{fcnNum}='bladerf_set_tuning_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_tuning_mode'};fcnNum=fcnNum+1;
@@ -262,7 +262,7 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_smb_frequency'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'uint32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_trigger_init ( struct bladerf * dev , bladerf_channel ch , bladerf_trigger_signal signal , struct bladerf_trigger * trigger );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_trigger_signalvoidPtrThunk';fcns.name{fcnNum}='bladerf_trigger_init'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_trigger_signal', 'bladerf_triggerPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_trigger_signalvoidPtrThunk';fcns.name{fcnNum}='bladerf_trigger_init'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_trigger_signal', 'bladerf_triggerPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_trigger_arm ( struct bladerf * dev , const struct bladerf_trigger * trigger , _Bool arm , uint64_t resv1 , uint64_t resv2 );
 fcns.thunkname{fcnNum}=['int32voidPtrvoidPtr_Bool' u64_type u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_trigger_arm'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_triggerPtr', 'bool', u64_type, u64_type};fcnNum=fcnNum+1;
@@ -274,10 +274,10 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_tri
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrvoidPtrvoidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_trigger_state'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_triggerPtr', 'boolPtr', 'boolPtr', 'boolPtr', [u64_type 'Ptr'], [u64_type 'Ptr']};fcnNum=fcnNum+1;
 
 % int bladerf_set_correction ( struct bladerf * dev , bladerf_channel ch , bladerf_correction corr , bladerf_correction_value value );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_correctionint16Thunk';fcns.name{fcnNum}='bladerf_set_correction'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_correction', 'int16'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_correctionint16Thunk';fcns.name{fcnNum}='bladerf_set_correction'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_correction', 'int16'};fcnNum=fcnNum+1;
 
 % int bladerf_get_correction ( struct bladerf * dev , bladerf_channel ch , bladerf_correction corr , bladerf_correction_value * value );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_correctionvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_correction'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_correction', 'int16Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_correctionvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_correction'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_correction', 'int16Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_vctcxo_tamer_mode ( struct bladerf * dev , bladerf_vctcxo_tamer_mode mode );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_vctcxo_tamer_modeThunk';fcns.name{fcnNum}='bladerf_set_vctcxo_tamer_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_vctcxo_tamer_mode'};fcnNum=fcnNum+1;
@@ -298,16 +298,16 @@ fcns.thunkname{fcnNum}='int32voidPtrbladerf_xbThunk';fcns.name{fcnNum}='bladerf_
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_expansion_get_attached'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_xbPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_xb200_set_filterbank ( struct bladerf * dev , bladerf_channel ch , bladerf_xb200_filter filter );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_xb200_filterThunk';fcns.name{fcnNum}='bladerf_xb200_set_filterbank'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_filter'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_xb200_filterThunk';fcns.name{fcnNum}='bladerf_xb200_set_filterbank'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_filter'};fcnNum=fcnNum+1;
 
 % int bladerf_xb200_get_filterbank ( struct bladerf * dev , bladerf_channel ch , bladerf_xb200_filter * filter );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_xb200_get_filterbank'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_filterPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_xb200_get_filterbank'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_filterPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_xb200_set_path ( struct bladerf * dev , bladerf_channel ch , bladerf_xb200_path path );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_xb200_pathThunk';fcns.name{fcnNum}='bladerf_xb200_set_path'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_path'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_xb200_pathThunk';fcns.name{fcnNum}='bladerf_xb200_set_path'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_path'};fcnNum=fcnNum+1;
 
 % int bladerf_xb200_get_path ( struct bladerf * dev , bladerf_channel ch , bladerf_xb200_path * path );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_xb200_get_path'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_pathPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_xb200_get_path'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_xb200_pathPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_xb300_set_trx ( struct bladerf * dev , bladerf_xb300_trx trx );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_xb300_trxThunk';fcns.name{fcnNum}='bladerf_xb300_set_trx'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_xb300_trx'};fcnNum=fcnNum+1;
@@ -462,10 +462,10 @@ fcns.thunkname{fcnNum}='int32voidPtruint32Thunk';fcns.name{fcnNum}='bladerf_xb_s
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_cal_moduleThunk';fcns.name{fcnNum}='bladerf_calibrate_dc'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_cal_module'};fcnNum=fcnNum+1;
 
 % int bladerf_read_trigger ( struct bladerf * dev , bladerf_channel ch , bladerf_trigger_signal signal , uint8_t * val );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_trigger_signalvoidPtrThunk';fcns.name{fcnNum}='bladerf_read_trigger'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_trigger_signal', 'uint8Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_trigger_signalvoidPtrThunk';fcns.name{fcnNum}='bladerf_read_trigger'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_trigger_signal', 'uint8Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_write_trigger ( struct bladerf * dev , bladerf_channel ch , bladerf_trigger_signal signal , uint8_t val );
-fcns.thunkname{fcnNum}='int32voidPtrint32bladerf_trigger_signaluint8Thunk';fcns.name{fcnNum}='bladerf_write_trigger'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_trigger_signal', 'uint8'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrbladerf_trigger_signaluint8Thunk';fcns.name{fcnNum}='bladerf_write_trigger'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_trigger_signal', 'uint8'};fcnNum=fcnNum+1;
 
 % int bladerf_erase_flash ( struct bladerf * dev , uint32_t erase_block , uint32_t count );
 fcns.thunkname{fcnNum}='int32voidPtruint32uint32Thunk';fcns.name{fcnNum}='bladerf_erase_flash'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'uint32', 'uint32'};fcnNum=fcnNum+1;
@@ -486,43 +486,43 @@ fcns.thunkname{fcnNum}='cstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_boar
 fcns.thunkname{fcnNum}=[ u64_type 'voidPtrbladerf_directionThunk'];fcns.name{fcnNum}='bladerf_get_channel_count'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=u64_type; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_direction'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain ( struct bladerf * dev , bladerf_channel ch , bladerf_gain * gain );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'int32Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'int32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain_modes ( struct bladerf * dev , bladerf_channel ch , const struct bladerf_gain_modes ** modes );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_modes'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_gain_modesPtrPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_modes'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_gain_modesPtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain_range ( struct bladerf * dev , bladerf_channel ch , const struct bladerf_range ** range );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_gain_stage ( struct bladerf * dev , bladerf_channel ch , const char * stage , bladerf_gain gain );
-fcns.thunkname{fcnNum}='int32voidPtrint32cstringint32Thunk';fcns.name{fcnNum}='bladerf_set_gain_stage'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring', 'int32'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrcstringint32Thunk';fcns.name{fcnNum}='bladerf_set_gain_stage'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring', 'int32'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain_stage ( struct bladerf * dev , bladerf_channel ch , const char * stage , bladerf_gain * gain );
-fcns.thunkname{fcnNum}='int32voidPtrint32cstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_stage'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring', 'int32Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrcstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_stage'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring', 'int32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain_stage_range ( struct bladerf * dev , bladerf_channel ch , const char * stage , const struct bladerf_range ** range );
-fcns.thunkname{fcnNum}='int32voidPtrint32cstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_stage_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrcstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_stage_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain_stages ( struct bladerf * dev , bladerf_channel ch , const char ** stages , size_t count );
-fcns.thunkname{fcnNum}=['int32voidPtrint32voidPtr' u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_get_gain_stages'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr', u64_type};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrvoidPtrvoidPtr' u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_get_gain_stages'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr', u64_type};fcnNum=fcnNum+1;
 
 % int bladerf_get_sample_rate_range ( struct bladerf * dev , bladerf_channel ch , const struct bladerf_range ** range );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_sample_rate_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_sample_rate_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_bandwidth_range ( struct bladerf * dev , bladerf_channel ch , const struct bladerf_range ** range );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_bandwidth_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_bandwidth_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_frequency_range ( struct bladerf * dev , bladerf_channel ch , const struct bladerf_range ** range );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_frequency_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_frequency_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_rf_port ( struct bladerf * dev , bladerf_channel ch , const char * port );
-fcns.thunkname{fcnNum}='int32voidPtrint32cstringThunk';fcns.name{fcnNum}='bladerf_set_rf_port'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrcstringThunk';fcns.name{fcnNum}='bladerf_set_rf_port'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring'};fcnNum=fcnNum+1;
 
 % int bladerf_get_rf_port ( struct bladerf * dev , bladerf_channel ch , const char ** port );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_rf_port'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rf_port'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_rf_ports ( struct bladerf * dev , bladerf_channel ch , const char ** ports , unsigned int count );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtruint32Thunk';fcns.name{fcnNum}='bladerf_get_rf_ports'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr', 'uint32'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtruint32Thunk';fcns.name{fcnNum}='bladerf_get_rf_ports'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr', 'uint32'};fcnNum=fcnNum+1;
 
 % int bladerf_get_loopback_modes ( struct bladerf * dev , const struct bladerf_loopback_modes ** modes );
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_loopback_modes'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_loopback_modesPtrPtr'};fcnNum=fcnNum+1;
@@ -546,10 +546,10 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_tri
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_tuning_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_tuning_modePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_bias_tee ( struct bladerf * dev , bladerf_channel ch , _Bool * enable );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_bias_tee'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'boolPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_bias_tee'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'boolPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_bias_tee ( struct bladerf * dev , bladerf_channel ch , _Bool enable );
-fcns.thunkname{fcnNum}='int32voidPtrint32_BoolThunk';fcns.name{fcnNum}='bladerf_set_bias_tee'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bool'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtr_BoolThunk';fcns.name{fcnNum}='bladerf_set_bias_tee'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bool'};fcnNum=fcnNum+1;
 
 % int bladerf_get_rfic_register ( struct bladerf * dev , uint16_t address , uint8_t * val );
 fcns.thunkname{fcnNum}='int32voidPtruint16voidPtrThunk';fcns.name{fcnNum}='bladerf_get_rfic_register'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'uint16', 'uint8Ptr'};fcnNum=fcnNum+1;
@@ -561,7 +561,7 @@ fcns.thunkname{fcnNum}='int32voidPtruint16uint8Thunk';fcns.name{fcnNum}='bladerf
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rfic_temperature'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'singlePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_rfic_rssi ( struct bladerf * dev , bladerf_channel ch , int32_t * pre_rssi , int32_t * sym_rssi );
-fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rfic_rssi'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'int32Ptr', 'int32Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rfic_rssi'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'int32Ptr', 'int32Ptr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_rfic_ctrl_out ( struct bladerf * dev , uint8_t * ctrl_out );
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rfic_ctrl_out'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'uint8Ptr'};fcnNum=fcnNum+1;
