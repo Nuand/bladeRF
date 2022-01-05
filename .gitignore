@@ -15,6 +15,7 @@
 *.cmp
 *.objdump
 *.orig
+*.dylib
 .tmp_versions
 .dir-locals.el
 GPATH
