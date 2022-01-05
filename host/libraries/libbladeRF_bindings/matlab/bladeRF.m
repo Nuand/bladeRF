@@ -227,6 +227,40 @@ classdef bladeRF < handle
             calllib('libbladeRF', 'bladerf_log_set_verbosity', enum_val);
         end
 
+
+        function int32 = str2ch(str)
+        % Convert channel string to integer constant
+        %
+        % bladeRF.str2ch(channel_string)
+        %
+        % Options for chanel_string are:
+        %   'BLADERF_MODULE_RX'
+        %   'BLADERF_CHANNEL_RX1'
+        %   'BLADERF_CHANNEL_RX2'
+        %   'BLADERF_MODULE_TX'
+        %   'BLADERF_CHANNEL_TX1'
+        %   'BLADERF_CHANNEL_TX2'
+        %
+            str = upper(str);
+
+            switch str
+                case 'BLADERF_MODULE_RX'
+                    int32 = 0;
+                case 'BLADERF_CHANNEL_RX1'
+                    int32 = 0;
+                case 'BLADERF_CHANNEL_RX2'
+                    int32 = 2;
+                case 'BLADERF_MODULE_TX'
+                    int32 = 1;
+                case 'BLADERF_CHANNEL_TX1'
+                    int32 = 1;
+                case 'BLADERF_CHANNEL_TX2'
+                    int32 = 3;
+                otherwise
+                    error('Invalid channel string: "%s"', str);
+            end
+        end
+
         function build_thunk
         % Build the MATLAB thunk library for use with the bladeRF MATLAB wrapper
         %
