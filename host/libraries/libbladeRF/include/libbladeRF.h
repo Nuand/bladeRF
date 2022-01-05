@@ -661,7 +661,7 @@ typedef int bladerf_channel;
  * bladerf_channel ch = BLADERF_CHANNEL_RX(1);
  * @endcode
  */
-#define BLADERF_CHANNEL_RX(ch) (bladerf_channel)(((ch) << 1) | 0x0)
+#define BLADERF_CHANNEL_RX(ch) (bladerf_channel)(((ch) << 1U) | 0x0U)
 
 /**
  * TX Channel Macro
@@ -676,7 +676,7 @@ typedef int bladerf_channel;
  * bladerf_channel ch = BLADERF_CHANNEL_TX(1);
  * @endcode
  */
-#define BLADERF_CHANNEL_TX(ch) (bladerf_channel)(((ch) << 1) | 0x1)
+#define BLADERF_CHANNEL_TX(ch) (bladerf_channel)(((ch) << 1U) | 0x1U)
 
 /**
  * Invalid channel
@@ -2221,7 +2221,7 @@ typedef enum {
  * This indicates that either the host (more likely) or the FPGA is not keeping
  * up with the incoming samples.
  */
-#define BLADERF_META_STATUS_OVERRUN (1 << 0)
+#define BLADERF_META_STATUS_OVERRUN (1U << 0U)
 
 /**
  * A sample underrun has occurred.
@@ -2231,7 +2231,7 @@ typedef enum {
  *
  * @note libbladeRF does not report this status. It is here for future use.
  */
-#define BLADERF_META_STATUS_UNDERRUN (1 << 1)
+#define BLADERF_META_STATUS_UNDERRUN (1U << 1U)
 
 /*
  * Metadata flags
@@ -2254,7 +2254,7 @@ typedef enum {
  * correct value is used, based upon the timestamp initially provided and
  * the number of samples that have been sent.
  */
-#define BLADERF_META_FLAG_TX_BURST_START (1 << 0)
+#define BLADERF_META_FLAG_TX_BURST_START (1U << 0U)
 
 /**
  * Mark the associated buffer as the end of a burst transmission. This will
@@ -2282,7 +2282,7 @@ typedef enum {
  * @note This is only used for the bladerf_sync_tx() call. It is ignored by the
  *       bladerf_sync_rx() call.
  */
-#define BLADERF_META_FLAG_TX_BURST_END (1 << 1)
+#define BLADERF_META_FLAG_TX_BURST_END (1U << 1U)
 
 /**
  * Use this flag in conjunction with ::BLADERF_META_FLAG_TX_BURST_START to
@@ -2292,7 +2292,7 @@ typedef enum {
  * When this flag is used, there is no need to set the
  * bladerf_metadata::timestamp field.
  */
-#define BLADERF_META_FLAG_TX_NOW (1 << 2)
+#define BLADERF_META_FLAG_TX_NOW (1U << 2U)
 
 /**
  * Use this flag within a burst (i.e., between the use of
@@ -2312,32 +2312,32 @@ typedef enum {
  * The ::BLADERF_META_FLAG_TX_BURST_END would only be used to end the stream
  * when shutting down.
  */
-#define BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP (1 << 3)
+#define BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP (1U << 3U)
 
 /**
  * This flag indicates that calls to bladerf_sync_rx should return any available
  * samples, rather than wait until the timestamp indicated in the
  * bladerf_metadata timestamp field.
  */
-#define BLADERF_META_FLAG_RX_NOW (1 << 31)
+#define BLADERF_META_FLAG_RX_NOW (1U << 31U)
 
 /**
  * This flag is asserted in bladerf_metadata.status by the hardware when an
  * underflow is detected in the sample buffering system on the device.
  */
-#define BLADERF_META_FLAG_RX_HW_UNDERFLOW (1 << 0)
+#define BLADERF_META_FLAG_RX_HW_UNDERFLOW (1U << 0U)
 
 /**
  * This flag is asserted in bladerf_metadata.status by the hardware if mini
  * expansion IO pin 1 is asserted.
  */
-#define BLADERF_META_FLAG_RX_HW_MINIEXP1 (1 << 16)
+#define BLADERF_META_FLAG_RX_HW_MINIEXP1 (1U << 16U)
 
 /**
  * This flag is asserted in bladerf_metadata.status by the hardware if mini
  * expansion IO pin 2 is asserted.
  */
-#define BLADERF_META_FLAG_RX_HW_MINIEXP2 (1 << 17)
+#define BLADERF_META_FLAG_RX_HW_MINIEXP2 (1U << 17U)
 
 /**
  * Sample metadata
@@ -3568,7 +3568,7 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
  * A 0 in this bit disables the trigger controller. Samples will continue to
  * flow as they normally do in this state.
  */
-#define BLADERF_TRIGGER_REG_ARM ((uint8_t)(1 << 0))
+#define BLADERF_TRIGGER_REG_ARM ((uint8_t)(1U << 0U))
 
 /**
  * Trigger control register "Fire" bit
@@ -3579,7 +3579,7 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
  *
  * This bit has no effect on slave devices.
  */
-#define BLADERF_TRIGGER_REG_FIRE ((uint8_t)(1 << 1))
+#define BLADERF_TRIGGER_REG_FIRE ((uint8_t)(1U << 1U))
 
 /**
  * Trigger control register "Master" bit
@@ -3589,7 +3589,7 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
  *
  * Slave devices configure the trigger signal as an input.
  */
-#define BLADERF_TRIGGER_REG_MASTER ((uint8_t)(1 << 2))
+#define BLADERF_TRIGGER_REG_MASTER ((uint8_t)(1U << 2U))
 
 /**
  * Trigger control registers "line" bit
@@ -3597,7 +3597,7 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
  * This is a read-only register bit that denotes the current state of the the
  * trigger signal.
  */
-#define BLADERF_TRIGGER_REG_LINE ((uint8_t)(1 << 3))
+#define BLADERF_TRIGGER_REG_LINE ((uint8_t)(1U << 3U))
 
 /**
  * Read trigger control register
