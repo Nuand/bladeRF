@@ -172,7 +172,7 @@ classdef bladeRF_XCVR < handle
                 otherwise
                     error(strcat('Invalid AGC setting: ', val));
             end
-            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device, ch, agc_val);
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device, bladeRF.str2ch(ch), agc_val);
             if status == -8
                 if obj.bladerf.info.gen == 1
                     disp('Cannot enable AGC. AGC DC LUT file is missing, run `cal table agc rx'' in bladeRF-cli.')
@@ -192,7 +192,7 @@ classdef bladeRF_XCVR < handle
             end
 
             tmp = int32(0);
-            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, ch, tmp);
+            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
             bladeRF.check_status('bladerf_get_gain_mode', status);
 
             switch mode
@@ -261,7 +261,7 @@ classdef bladeRF_XCVR < handle
             else
                 ch = 'BLADERF_CHANNEL_TX1';
             end
-            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain', obj.bladerf.device, ch, val);
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain', obj.bladerf.device, bladeRF.str2ch(ch), val);
             bladeRF.check_status('bladerf_set_gain', status);
         end
 
@@ -275,7 +275,7 @@ classdef bladeRF_XCVR < handle
             end
 
             tmp = int32(0);
-            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_gain', obj.bladerf.device, ch, tmp);
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_gain', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
             bladeRF.check_status('bladerf_get_gain', status);
 
             %fprintf('Read %s gain: %d\n', obj.direction, val);
@@ -368,6 +368,7 @@ classdef bladeRF_XCVR < handle
                         valid_value = false;
                 end
             else
+                val = lower(val);
                 if strcmpi(val,'bypass')   == true
                     lna_val = 'BLADERF_LNA_GAIN_BYPASS';
                 elseif strcmpi(val, 'mid') == true
@@ -424,7 +425,7 @@ classdef bladeRF_XCVR < handle
                 ch = 'BLADERF_CHANNEL_TX1';
             end
 
-            [status, ~] = calllib('libbladeRF', 'bladerf_set_bias_tee', obj.bladerf.device, ch, val);
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_bias_tee', obj.bladerf.device, bladeRF.str2ch(ch), val);
 
             %fprintf('Set %s biastee: %d\n', obj.direction, obj.vga2);
         end
@@ -437,7 +438,7 @@ classdef bladeRF_XCVR < handle
                 ch = 'BLADERF_CHANNEL_TX1';
             end
             tmp = int32(0);
-            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_bias_tee', obj.bladerf.device, ch, tmp);
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_bias_tee', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
 
             %fprintf('Get %s biastee: %d\n', obj.direction, val);
         end
