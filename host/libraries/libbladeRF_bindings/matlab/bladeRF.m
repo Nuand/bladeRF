@@ -137,14 +137,15 @@ classdef bladeRF < handle
             end
         end
 
-        function [major, minor, patch] = version()
+        function [major, minor, patch, version_string] = version()
         % Get the version of this MATLAB libbladeRF wrapper.
         %
-        % [major, minor, patch] = bladeRF.version()
+        % [major, minor, patch, version_string] = bladeRF.version()
         %
-            major = 0;
-            minor = 1;
-            patch = 2;
+            major = 2;
+            minor = 4;
+            patch = 0;
+            version_string = char(sprintf("%d.%d.%d", major, minor, patch));
         end
 
         function [major, minor, patch, version_string] = library_version()
@@ -490,7 +491,8 @@ classdef bladeRF < handle
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             [obj.versions.matlab.major, ...
              obj.versions.matlab.minor, ...
-             obj.versions.matlab.patch] = bladeRF.version();
+             obj.versions.matlab.patch, ...
+             obj.versions.matlab.string ] = bladeRF.version();
 
             [obj.versions.libbladeRF.major, ...
              obj.versions.libbladeRF.minor, ...
@@ -501,13 +503,19 @@ classdef bladeRF < handle
             [~, ver_ptr] = bladeRF.empty_version();
             status = calllib('libbladeRF', 'bladerf_fw_version', dptr, ver_ptr);
             bladeRF.check_status('bladerf_fw_version', status);
-            obj.versions.firmware = ver_ptr.value;
+            obj.versions.firmware.major  = ver_ptr.value.major;
+            obj.versions.firmware.minor  = ver_ptr.value.minor;
+            obj.versions.firmware.patch  = ver_ptr.value.patch;
+            obj.versions.firmware.string = ver_ptr.value.describe;
 
             % FPGA version
             [~, ver_ptr] = bladeRF.empty_version();
             status = calllib('libbladeRF', 'bladerf_fpga_version', dptr, ver_ptr);
             bladeRF.check_status('bladerf_fpga_version', status);
-            obj.versions.fpga = ver_ptr.value;
+            obj.versions.fpga.major  = ver_ptr.value.major;
+            obj.versions.fpga.minor  = ver_ptr.value.minor;
+            obj.versions.fpga.patch  = ver_ptr.value.patch;
+            obj.versions.fpga.string = ver_ptr.value.describe;
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Populate information
