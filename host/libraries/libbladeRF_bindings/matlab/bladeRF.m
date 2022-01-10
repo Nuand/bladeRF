@@ -918,7 +918,7 @@ classdef bladeRF < handle
                 case 'RF_LNA1'
                 case 'RF_LNA2'
                 case 'RF_LNA3'
-
+                case 'RFIC_BIST'
                 otherwise
                     error(['Invalid loopback mode: ' mode]);
             end
