@@ -90,7 +90,20 @@ classdef bladeRF < handle
     end
 
     properties(Dependent)
-        loopback    % Loopback mode. Available options: 'NONE', 'FIRMWARE', 'BB_TXLPF_RXVGA2', 'BB_TXVGA1_RXVGA2', 'BB_TXLPF_RXLPF', 'BB_TXVGA1_RXLPF', 'RF_LNA1', 'RF_LNA2', 'RF_LNA3'
+        % Loopback mode. 
+        % 
+        % Available options: 
+        %   'NONE', 
+        %   'FIRMWARE', 
+        %   'BB_TXLPF_RXVGA2', 
+        %   'BB_TXVGA1_RXVGA2', 
+        %   'BB_TXLPF_RXLPF', 
+        %   'BB_TXVGA1_RXLPF', 
+        %   'RF_LNA1',  
+        %   'RF_LNA2',
+        %   'RF_LNA3',
+        %   'RFIC_BIST'
+        loopback    
     end
 
     properties(SetAccess=immutable)
