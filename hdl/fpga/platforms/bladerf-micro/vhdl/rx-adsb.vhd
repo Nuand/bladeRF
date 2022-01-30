@@ -48,6 +48,11 @@ entity rx is
         trigger_master         : in    std_logic;
         trigger_line           : inout std_logic; -- this is not good, should be in/out/oe
 
+        -- Packet to host via FX3
+        packet_en              : in    std_logic;
+        packet_control         : in    packet_control_t;
+        packet_ready           : out   std_logic;
+
         -- Samples to host via FX3
         sample_fifo_rclock     : in    std_logic;
         sample_fifo_raclr      : in    std_logic;
@@ -89,6 +94,8 @@ entity rx is
 end entity;
 
 architecture arch of rx is
+
+    signal rx_packet : packet_control_t;
 
     -- Can be set from libbladeRF using bladerf_set_rx_mux()
     type rx_mux_mode_t is (
@@ -231,6 +238,7 @@ begin
 
             usb_speed           =>  usb_speed,
             meta_en             =>  meta_en,
+            packet_en           =>  packet_en,
             timestamp           =>  rx_timestamp,
             mini_exp            =>  mini_exp,
 
@@ -238,6 +246,9 @@ begin
             fifo_usedw          =>  sample_fifo.wused,
             fifo_data           =>  open,
             fifo_write          =>  open,
+
+            packet_control      =>  packet_control,
+            packet_ready        =>  packet_ready,
 
             meta_fifo_full      =>  meta_fifo.wfull,
             meta_fifo_usedw     =>  meta_fifo.wused,

@@ -90,6 +90,10 @@ architecture adsb_bladerf of bladerf is
     signal meta_en_tx             : std_logic;
     signal meta_en_rx             : std_logic;
 
+    signal packet_en_pclk         : std_logic;
+    signal packet_en_tx           : std_logic;
+    signal packet_en_rx           : std_logic;
+
     signal tx_timestamp           : unsigned(63 downto 0);
     signal rx_timestamp           : unsigned(63 downto 0);
     signal timestamp_sync         : std_logic;
@@ -161,9 +165,29 @@ architecture adsb_bladerf of bladerf is
     signal dac_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
     signal adc_controls           : sample_controls_t(ad9361.ch'range)    := (others => SAMPLE_CONTROL_DISABLE);
     signal adc_streams            : sample_streams_t(adc_controls'range)  := (others => ZERO_SAMPLE);
+    signal adc_streams_last_v     : std_logic_vector(adc_controls'range)  := (others => '0');
 
     signal   ps_sync              : std_logic_vector(0 downto 0)          := (others => '0');
 
+    signal tx_packet_control      : packet_control_t ;
+    signal rx_packet_control      : packet_control_t := PACKET_CONTROL_DEFAULT ;
+
+    signal rx_packet_ready        : std_logic;
+
+    signal tx_packet_ready        : std_logic;
+    signal tx_packet_empty        : std_logic;
+
+
+    signal wbm_wb_clk_i           : std_logic;
+    signal wbm_wb_rst_i           : std_logic;
+    signal wbm_wb_adr_o           : std_logic_vector(31 downto 0);
+    signal wbm_wb_dat_o           : std_logic_vector(31 downto 0);
+    signal wbm_wb_dat_i           : std_logic_vector(31 downto 0);
+    signal wbm_wb_we_o            : std_logic;
+    signal wbm_wb_sel_o           : std_logic;
+    signal wbm_wb_stb_o           : std_logic;
+    signal wbm_wb_ack_i           : std_logic;
+    signal wbm_wb_cyc_o           : std_logic;
 begin
 
     -- ========================================================================
@@ -245,6 +269,7 @@ begin
             usb_speed           =>  usb_speed_pclk,
 
             meta_enable         =>  meta_en_pclk,
+            packet_enable       =>  packet_en_pclk,
             rx_enable           =>  rx_enable_pclk,
             tx_enable           =>  tx_enable_pclk,
 
@@ -408,7 +433,17 @@ begin
             rx_trigger_ctl_out_port         => rx_trigger_ctl_i,
             tx_trigger_ctl_out_port         => tx_trigger_ctl_i,
             rx_trigger_ctl_in_port          => pack(rx_trigger_ctl),
-            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl)
+            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl),
+            wbm_wb_clk_i                    => wbm_wb_clk_i,
+            wbm_wb_rst_i                    => wbm_wb_rst_i,
+            wbm_wb_adr_o                    => wbm_wb_adr_o,
+            wbm_wb_dat_o                    => wbm_wb_dat_o,
+            wbm_wb_dat_i                    => wbm_wb_dat_i,
+            wbm_wb_we_o                     => wbm_wb_we_o,
+            wbm_wb_sel_o                    => wbm_wb_sel_o,
+            wbm_wb_stb_o                    => wbm_wb_stb_o,
+            wbm_wb_ack_i                    => wbm_wb_ack_i,
+            wbm_wb_cyc_o                    => wbm_wb_cyc_o
         );
 
     -- FX3 UART
@@ -487,6 +522,7 @@ begin
         exp_gpio(i) <= nios_xb_gpio_out(i) when nios_xb_gpio_oe(i) = '1' else 'Z';
     end generate;
 
+    tx_packet_ready <= '1';
 
     -- TX Submodule
     U_tx : entity work.tx
@@ -509,6 +545,12 @@ begin
             trigger_fire         => tx_trigger_ctl.fire,
             trigger_master       => tx_trigger_ctl.master,
             trigger_line         => tx_trigger_line,
+
+            -- Packet FIFO
+            packet_en            => packet_en_tx,
+            packet_empty         => tx_packet_empty,
+            packet_control       => tx_packet_control,
+            packet_ready         => tx_packet_ready,
 
             -- Samples from host via FX3
             sample_fifo_wclock   => fx3_pclk_pll,
@@ -577,6 +619,11 @@ begin
             trigger_master         => rx_trigger_ctl.master,
             trigger_line           => rx_trigger_line,
 
+            -- Packet FIFO
+            packet_en              => packet_en_rx,
+            packet_control         => rx_packet_control,
+            packet_ready           => rx_packet_ready,
+
             -- Samples to host via FX3
             sample_fifo_rclock     => fx3_pclk_pll,
             sample_fifo_raclr      => not rx_enable_pclk,
@@ -623,8 +670,19 @@ begin
             adc_controls(i).data_req <= '1';
             adc_streams(i).data_i    <= signed(ad9361.ch(i).adc.i.data);
             adc_streams(i).data_q    <= signed(ad9361.ch(i).adc.q.data);
-            adc_streams(i).data_v    <= ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid;
+            adc_streams(i).data_v    <= (ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid) and not adc_streams_last_v(i);
         end loop;
+    end process;
+
+    process(rx_clock)
+    begin
+        if( rx_reset = '1' ) then
+            adc_streams_last_v  <= ( others => '0' ) ;
+        elsif( rising_edge( rx_clock ) ) then
+            for i in adc_controls'range loop
+                adc_streams_last_v(i)  <= ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid;
+            end loop;
+        end if;
     end process;
 
     -- ========================================================================
@@ -745,6 +803,39 @@ begin
             clock               =>  tx_clock,
             async               =>  nios_gpio.o.meta_sync,
             sync                =>  meta_en_tx
+        );
+
+    U_sync_packet_en_pclk : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  fx3_pclk_pll,
+            async               =>  nios_gpio.o.packet_en,
+            sync                =>  packet_en_pclk
+        );
+
+    U_sync_packet_en_rx : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  rx_clock,
+            async               =>  nios_gpio.o.packet_en,
+            sync                =>  packet_en_rx
+        );
+
+    U_sync_packet_en_tx : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  tx_clock,
+            async               =>  nios_gpio.o.packet_en,
+            sync                =>  packet_en_tx
         );
 
     generate_sync_rx_mux_sel : for i in rx_mux_sel'range generate
