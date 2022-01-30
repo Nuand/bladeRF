@@ -416,7 +416,7 @@ begin
 
                            if (fifo_current.fifo_data'high > 31) then
                               fifo_future.fifo_data <= unsigned(packet_control.data) &
-                                 fifo_current.fifo_data(fifo_current.fifo_data'high downto fifo_current.fifo_data'high - 31);
+                                 fifo_current.fifo_data(fifo_current.fifo_data'high downto 32);
                            else
                               fifo_future.fifo_data <= unsigned(packet_control.data);
                            end if;
