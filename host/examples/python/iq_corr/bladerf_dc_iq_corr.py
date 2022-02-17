@@ -7,7 +7,7 @@
 # DC offset are also included.
 #
 # License: GPLv3
-# 
+#
 # The original version of this script was downloaded from 
 # https://gist.github.com/jynik/9503066 on 2022-02-17.
 #
@@ -50,6 +50,19 @@ KEY_DC_OFF_Q = 'dc_offset_imag'
 KEY_IQ_BAL_I = 'iq_balance_mag'
 KEY_IQ_BAL_Q = 'iq_balance_pha'
 
+
+from packaging.version import Version as StrictVersion
+
+if __name__ == '__main__':
+    import ctypes
+    import sys
+    if sys.platform.startswith('linux'):
+        try:
+            x11 = ctypes.cdll.LoadLibrary('libX11.so')
+            x11.XInitThreads()
+        except:
+            print("Warning: failed to XInitThreads()")
+
 import osmosdr
 from gnuradio import gr, gru, eng_notation, analog
 from gnuradio.gr.pubsub import pubsub
@@ -57,11 +70,12 @@ from gnuradio.eng_option import eng_option
 from optparse import OptionParser
 
 try:
-    from gnuradio.wxgui import stdgui2, form, slider, forms, fftsink2, scopesink2
-    import wx
-
+    from PyQt5 import Qt
+    from gnuradio import qtgui
+    from gnuradio.qtgui import Range, RangeWidget
+    from PyQt5 import QtCore
 except ImportError:
-    sys.stderr.write('Error importing GNU Radio\'s wxgui. Please make sure gr-wxgui is installed.\n')
+    sys.stderr.write('Error importing GNU Radio\'s qtgui.\n')
     sys.exit(1)
 
 class top_block(stdgui2.std_top_block, pubsub):
