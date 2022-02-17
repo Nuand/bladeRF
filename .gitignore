@@ -64,3 +64,4 @@ hdl/quartus/wlan*/*
 
 # MacOS dir properties
 .DS_Store
+host/libraries/libbladeRF_bindings/python/.eggs
