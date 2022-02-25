@@ -1,5 +1,5 @@
 # bladeRF Source #
-This repository contains all the source code required to program and interact with a bladeRF platform, including firmware for the Cypress FX3 USB controller, HDL for the Altera Cyclone IV FPGA, and C code for the host side libraries, drivers, and utilities.
+This repository contains all the source code required to program and interact with a bladeRF platform, including firmware for the Cypress FX3 USB controller, HDL for the Altera Cyclone FPGA, and C code for the host side libraries, drivers, and utilities.
 The source is organized as follows:
 
 
@@ -7,7 +7,7 @@ The source is organized as follows:
 | ----------------- |:--------------------------------------------------------------------------------------------------|
 | [firmware_common] | Source and header files common between firmware and host software                                 |
 | [fx3_firmware]    | Firmware for the Cypress FX3 USB controller                                                       |
-| [hdl]             | All HDL code associated with the Cyclone IV FPGA                                                  |
+| [hdl]             | All HDL code associated with the Cyclone FPGA                                                  |
 | [host]            | Host-side libraries, drivers, utilities and samples                                               |
 
 

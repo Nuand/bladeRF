@@ -88,7 +88,7 @@ check_quartus_version()
         sed -e 's/Version=//' \
     )
 
-    echo "Detected Quartus II ${VERSION}"
+    echo "Detected Quartus Prime ${VERSION}"
 
     QUARTUS_VER[major]=$( \
         echo "${VERSION}" | \
@@ -108,7 +108,7 @@ check_quartus_version()
     fi
 
     if [ $(expr ${QUARTUS_VER[major]}\.${QUARTUS_VER[minor]} \< ${exp_ver}) -eq 1 ]; then
-        echo "The bladeRF FPGA design requires Quartus II version ${exp_ver}" >&2
+        echo "The bladeRF FPGA design requires Quartus Prime version ${exp_ver}" >&2
         echo "The installed version is: $VERSION" >&2
         return 1
     fi
@@ -296,7 +296,7 @@ fi
 nios_system=../fpga/ip/altera/nios_system
 
 # 9a484b436: Windows-specific workaround for Quartus bug
-if [ "x$(uname)" != "xLinux" ]; then
+if [ "x$(uname)" != "xLinux" -a "x$(uname)" != "xDarwin"]; then
     QUARTUS_BINDIR=$QUARTUS_ROOTDIR/bin
     export QUARTUS_BINDIR
     echo "## Non-Linux OS Detected (Windows?)"
@@ -482,4 +482,6 @@ printf "%s %02d:%02d:%02d\n" "Total Build Time:" "$(($SECONDS / 3600))" "$((($SE
 echo ""
 
 # Delete empty SOPC directories in the user's home directory
-find ~ -maxdepth 1 -type d -empty -iname "sopc_altera_pll*" -delete
+if [ "x$(uname)" == "xLinux" -o "x$(uname)" == "xDarwin" ]; then
+    find ~ -maxdepth 1 -type d -empty -iname "sopc_altera_pll*" -delete
+fi

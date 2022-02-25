@@ -15,6 +15,7 @@
 *.cmp
 *.objdump
 *.orig
+*.dylib
 .tmp_versions
 .dir-locals.el
 GPATH
@@ -54,3 +55,5 @@ host/misc/windows/scripts/work
 **/modelsim/*.wlf
 **/modelsim/work/
 **/modelsim/nuand/
+
+.vscode

@@ -88,7 +88,7 @@ classdef bladeRF_XCVR < handle
             [rate.num, rate.den] = rat(mod(val,1));
 
             % Set the samplerate
-            [status, ~, ~, actual] = calllib('libbladeRF', 'bladerf_set_rational_sample_rate', obj.bladerf.device, obj.module, rate, rate);
+            [status, ~, ~, actual] = calllib('libbladeRF', 'bladerf_set_rational_sample_rate', obj.bladerf.device, bladeRF.str2ch(obj.module), rate, rate);
             bladeRF.check_status('bladerf_set_rational_sample_rate', status);
 
             %fprintf('Set %s samplerate. Requested: %d + %d/%d, Actual: %d + %d/%d\n', ...
@@ -104,7 +104,7 @@ classdef bladeRF_XCVR < handle
             rate.den = 1;
 
             % Get the sample rate from the hardware
-            [status, ~, rate] = calllib('libbladeRF', 'bladerf_get_rational_sample_rate', obj.bladerf.device, obj.module, rate);
+            [status, ~, rate] = calllib('libbladeRF', 'bladerf_get_rational_sample_rate', obj.bladerf.device, bladeRF.str2ch(obj.module), rate);
             bladeRF.check_status('bladerf_get_rational_sample_rate', status);
 
             %fprintf('Read %s samplerate: %d + %d/%d\n', ...
@@ -115,7 +115,7 @@ classdef bladeRF_XCVR < handle
 
         % Frequency
         function set.frequency(obj, val)
-            [status, ~] = calllib('libbladeRF', 'bladerf_set_frequency', obj.bladerf.device, obj.module, val);
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_frequency', obj.bladerf.device,  bladeRF.str2ch(obj.module), val);
             bladeRF.check_status('bladerf_set_frequency', status);
 
             %fprintf('Set %s frequency: %f\n', obj.direction, val);
@@ -123,7 +123,7 @@ classdef bladeRF_XCVR < handle
 
         function freq_val = get.frequency(obj)
             freq_val = uint32(0);
-            [status, ~, freq_val] = calllib('libbladeRF', 'bladerf_get_frequency', obj.bladerf.device, obj.module, freq_val);
+            [status, ~, freq_val] = calllib('libbladeRF', 'bladerf_get_frequency', obj.bladerf.device,  bladeRF.str2ch(obj.module), freq_val);
             bladeRF.check_status('bladerf_get_frequency', status);
 
             %fprintf('Read %s frequency: %f\n', obj.direction, freq_val);
@@ -132,7 +132,7 @@ classdef bladeRF_XCVR < handle
         % Configures the LPF bandwidth on the associated module
         function set.bandwidth(obj, val)
             actual = uint32(0);
-            [status, ~, actual] = calllib('libbladeRF', 'bladerf_set_bandwidth', obj.bladerf.device, obj.module, val, actual);
+            [status, ~, actual] = calllib('libbladeRF', 'bladerf_set_bandwidth', obj.bladerf.device,  bladeRF.str2ch(obj.module), val, actual);
             bladeRF.check_status('bladerf_set_bandwidth', status);
 
             %fprintf('Set %s bandwidth. Requested: %f, Actual: %f\n', ...
@@ -142,7 +142,7 @@ classdef bladeRF_XCVR < handle
         % Reads the LPF bandwidth configuration on the associated module
         function bw_val = get.bandwidth(obj)
             bw_val = uint32(0);
-            [status, ~, bw_val] = calllib('libbladeRF', 'bladerf_get_bandwidth', obj.bladerf.device, obj.module, bw_val);
+            [status, ~, bw_val] = calllib('libbladeRF', 'bladerf_get_bandwidth', obj.bladerf.device,  bladeRF.str2ch(obj.module), bw_val);
             bladeRF.check_status('bladerf_get_bandwidth', status);
 
             %fprintf('Read %s bandwidth: %f\n', obj.direction, bw_val);
@@ -172,7 +172,7 @@ classdef bladeRF_XCVR < handle
                 otherwise
                     error(strcat('Invalid AGC setting: ', val));
             end
-            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device, ch, agc_val);
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device, bladeRF.str2ch(ch), agc_val);
             if status == -8
                 if obj.bladerf.info.gen == 1
                     disp('Cannot enable AGC. AGC DC LUT file is missing, run `cal table agc rx'' in bladeRF-cli.')
@@ -192,7 +192,7 @@ classdef bladeRF_XCVR < handle
             end
 
             tmp = int32(0);
-            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, ch, tmp);
+            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
             bladeRF.check_status('bladerf_get_gain_mode', status);
 
             switch mode
@@ -229,7 +229,7 @@ classdef bladeRF_XCVR < handle
             if obj.running
                 [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
                                       obj.bladerf.device, ...
-                                      obj.current_channel, ...
+                                      bladeRF.str2ch(obj.current_channel), ...
                                       false);
 
                 bladeRF.check_status('bladerf_enable_module', status);
@@ -261,7 +261,7 @@ classdef bladeRF_XCVR < handle
             else
                 ch = 'BLADERF_CHANNEL_TX1';
             end
-            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain', obj.bladerf.device, ch, val);
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain', obj.bladerf.device, bladeRF.str2ch(ch), val);
             bladeRF.check_status('bladerf_set_gain', status);
         end
 
@@ -275,7 +275,7 @@ classdef bladeRF_XCVR < handle
             end
 
             tmp = int32(0);
-            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_gain', obj.bladerf.device, ch, tmp);
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_gain', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
             bladeRF.check_status('bladerf_get_gain', status);
 
             %fprintf('Read %s gain: %d\n', obj.direction, val);
@@ -368,6 +368,7 @@ classdef bladeRF_XCVR < handle
                         valid_value = false;
                 end
             else
+                val = lower(val);
                 if strcmpi(val,'bypass')   == true
                     lna_val = 'BLADERF_LNA_GAIN_BYPASS';
                 elseif strcmpi(val, 'mid') == true
@@ -424,7 +425,7 @@ classdef bladeRF_XCVR < handle
                 ch = 'BLADERF_CHANNEL_TX1';
             end
 
-            [status, ~] = calllib('libbladeRF', 'bladerf_set_bias_tee', obj.bladerf.device, ch, val);
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_bias_tee', obj.bladerf.device, bladeRF.str2ch(ch), val);
 
             %fprintf('Set %s biastee: %d\n', obj.direction, obj.vga2);
         end
@@ -437,7 +438,7 @@ classdef bladeRF_XCVR < handle
                 ch = 'BLADERF_CHANNEL_TX1';
             end
             tmp = int32(0);
-            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_bias_tee', obj.bladerf.device, ch, tmp);
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_bias_tee', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
 
             %fprintf('Get %s biastee: %d\n', obj.direction, val);
         end
@@ -468,7 +469,7 @@ classdef bladeRF_XCVR < handle
             end
 
             filter_val = ['BLADERF_XB200_' filter ];
-            status = calllib('libbladeRF', 'bladerf_xb200_set_filterbank', obj.bladerf.device, obj.module, filter_val);
+            status = calllib('libbladeRF', 'bladerf_xb200_set_filterbank', obj.bladerf.device,  bladeRF.str2ch(obj.module), filter_val);
             bladeRF.check_status('bladerf_xb200_set_filterbank', status);
         end
 
@@ -480,7 +481,7 @@ classdef bladeRF_XCVR < handle
             end
 
             filter_val = 0;
-            [status, ~, filter_val] = calllib('libbladeRF', 'bladerf_xb200_get_filterbank', obj.bladerf.device, obj.module, filter_val);
+            [status, ~, filter_val] = calllib('libbladeRF', 'bladerf_xb200_get_filterbank', obj.bladerf.device,  bladeRF.str2ch(obj.module), filter_val);
             bladeRF.check_status('bladerf_xb200_get_filterbank', status);
 
             filter_val = strrep(filter_val, 'BLADERF_XB200_', '');
@@ -548,20 +549,20 @@ classdef bladeRF_XCVR < handle
 
             freqrange = libstruct('bladerf_range');
 
-            status = calllib('libbladeRF', 'bladerf_get_frequency_range', obj.bladerf.device, obj.module, freqrange);
+            status = calllib('libbladeRF', 'bladerf_get_frequency_range', obj.bladerf.device,  bladeRF.str2ch(obj.module), freqrange);
             bladeRF.check_status('bladerf_get_frequency_range', status);
             obj.min_frequency = freqrange.min;
             obj.max_frequency = freqrange.max;
 
             samplerange = libstruct('bladerf_range');
 
-            status = calllib('libbladeRF', 'bladerf_get_sample_rate_range', obj.bladerf.device, obj.module, samplerange);
+            status = calllib('libbladeRF', 'bladerf_get_sample_rate_range', obj.bladerf.device,  bladeRF.str2ch(obj.module), samplerange);
             bladeRF.check_status('bladerf_get_frequency_range', status);
             obj.min_sampling = samplerange.min;
             obj.max_sampling = samplerange.max;
 
             if strcmpi(dir,'RX') == true
-                status = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device, obj.module, 'BLADERF_GAIN_DEFAULT');
+                status = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device,  bladeRF.str2ch(obj.module), 'BLADERF_GAIN_DEFAULT');
                 if status == -8
                     if obj.bladerf.info.gen == 1
                         disp('Cannot enable AGC. AGC DC LUT file is missing, run `cal table agc rx'' in bladeRF-cli.')
@@ -571,7 +572,7 @@ classdef bladeRF_XCVR < handle
                 end
 
                 gainmode = int32(0);
-                [status, ~, gainmode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, obj.module, gainmode);
+                [status, ~, gainmode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device,  bladeRF.str2ch(obj.module), gainmode);
             end
 
 
@@ -612,7 +613,7 @@ classdef bladeRF_XCVR < handle
             % Configure the sync config
             [status, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
                                   obj.bladerf.device, ...
-                                  obj.module, ...
+                                   bladeRF.str2ch(obj.module), ...
                                   'BLADERF_FORMAT_SC16_Q11_META', ...
                                   obj.config.num_buffers, ...
                                   obj.config.buffer_size, ...
@@ -624,7 +625,7 @@ classdef bladeRF_XCVR < handle
             % Enable the module
             [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
                                   obj.bladerf.device, ...
-                                  obj.current_channel, ...
+                                  bladeRF.str2ch(obj.current_channel), ...
                                   true);
 
             bladeRF.check_status('bladerf_enable_module', status);
@@ -661,7 +662,7 @@ classdef bladeRF_XCVR < handle
             % Disable the module
             [status, ~] = calllib('libbladeRF', 'bladerf_enable_module', ...
                                   obj.bladerf.device, ...
-                                  obj.current_channel, ...
+                                  bladeRF.str2ch(obj.current_channel), ...
                                   false);
 
             bladeRF.check_status('bladerf_enable_module', status);

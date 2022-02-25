@@ -54,9 +54,9 @@ switch arch
         libsuffix = '.dll';
         u64_type  = 'uint64';
 
-    case 'imac64'
+    case 'maci64'
         % Additional type changes for this may be required for OSX support
-        libname   = 'libbladeRF_thunk_imac64';
+        libname   = 'libbladeRF_thunk_maci64';
         libsuffix = '.dylib';
         u64_type  = 'ulong';
 

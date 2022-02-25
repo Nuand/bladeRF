@@ -125,6 +125,9 @@ make_revision foxhunt
 make_revision wlan
 
 
+# Create the radar
+make_revision radar
+
 # Projects created!
 puts "${PROJECT_NAME} projects created!"
 puts "Please use the build.tcl script to build images.\n"
