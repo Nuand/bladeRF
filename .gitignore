@@ -36,8 +36,10 @@ fx3_firmware/make/toolchain.mk
 fx3_firmware/build/*
 
 build/*
+build-*/*
 
 host/build/*
+host/build*/*
 
 host/examples/gnuradio/frs/bladeRF_frs.py
 
@@ -57,3 +59,9 @@ host/misc/windows/scripts/work
 **/modelsim/nuand/
 
 .vscode
+
+hdl/quartus/wlan*/*
+
+# MacOS dir properties
+.DS_Store
+host/libraries/libbladeRF_bindings/python/.eggs
