@@ -61,7 +61,7 @@ else()
     set(FX3_WINDOWS_HOST False)
     unset(EXE)
 
-    set(ARM_NONE_EABI_PATH  "${FX3_INSTALL_PATH}/arm-${ARM_TOOLCHAIN_VERSION}")
+    set(ARM_NONE_EABI_PATH  "${FX3_INSTALL_PATH}/../ARM_GCC/arm-${ARM_TOOLCHAIN_VERSION}")
     set(FX3_FWLIB_DIR "${FX3_INSTALL_PATH}/cyfx3sdk/fw_lib/${FX3_SDK_VERSION_PATH}")
     set(FX3_FW_COMMON_DIR "${FX3_INSTALL_PATH}/cyfx3sdk/firmware/common")
     set(FX3_ELF2IMG "${FX3_INSTALL_PATH}/cyfx3sdk/util/elf2img/elf2img.c")
@@ -120,7 +120,7 @@ if(NOT EXISTS ${CMAKE_C_COMPILER})
 endif()
 
 if(NOT EXISTS ${ARM_NONE_EABI_LIBGCC})
-    message(FATAL_ERROR "Could not find libgcc.a")
+    message(FATAL_ERROR "Could not find libgcc.a: ${ARM_NONE_EABI_PATH}/lib/gcc/arm-none-eabi/${GCC_VERSION}/")
 endif()
 
 if(NOT EXISTS ${ARM_NONE_EABI_LIBC})
