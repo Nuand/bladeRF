@@ -112,7 +112,7 @@ static int term_init()
         return status;
     }
 
-    memcpy(&termios_new, &termios_backup, sizeof(termios_new));
+    memcpy(&termios_new, termios_backup, sizeof(termios_new));
 
     termios_new.c_cc[VMIN] = 1;
     termios_new.c_cc[VTIME] = 0;
