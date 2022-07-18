@@ -31,7 +31,7 @@ architecture micro_dma of fx3_model is
 
     constant PCLK_HALF_PERIOD       : time      := 1 sec * (1.0/100.0e6/2.0);
     constant START_COUNT            : natural   := 32;
-    constant BLOCKS_PER_ITERATION   : natural   := 4;
+    constant BLOCKS_PER_ITERATION   : natural   := 3;
     constant ITERATIONS             : natural   := 4;
 
     -- Control mapping
@@ -138,6 +138,7 @@ begin
     end process;
 
     tx_sample_stream : process
+        constant TIME_BETWEEN_ITERATIONS : natural := 4593;
         constant BLOCK_SIZE     : natural := 512;
         variable count          : natural := START_COUNT;
         variable timestamp_cntr : natural := 400;
@@ -162,7 +163,7 @@ begin
         for k in 1 to ITERATIONS loop
             dma_tx_enable <= '1';
 
-            for j in 1 to 2 loop
+            for j in 1 to BLOCKS_PER_ITERATION loop
                 header_len      := 0;
                 dma3_tx_reqx    <= '0';
                 req_time        := now;
@@ -184,8 +185,8 @@ begin
                                 data_out := x"00000000";
                             when 2 =>
                                 data_out(31 downto 0) := std_logic_vector(to_signed(timestamp_cntr, 32));
-                                if (i < 1) then
-                                   timestamp_cntr := timestamp_cntr + 2000;
+                                if (j = BLOCKS_PER_ITERATION) then
+                                   timestamp_cntr := timestamp_cntr + TIME_BETWEEN_ITERATIONS;
                                 else
                                    timestamp_cntr := timestamp_cntr + 254;
                                 end if;
@@ -366,9 +367,10 @@ begin
     end process;
 
     tx_sample_stream : process
+        constant TIME_BETWEEN_ITERATIONS : natural := 4556;
         constant BLOCK_SIZE     : natural := 512;
         variable count          : natural := START_COUNT;
-        variable timestamp_cntr : natural := 100;
+        variable timestamp_cntr : natural := 250;
         variable header_len     : natural := 0;
         variable packet_len     : natural := 0;
         variable data_out       : std_logic_vector(31 downto 0);
@@ -411,10 +413,14 @@ begin
                     for i in 1 to 4 loop
                         case (i) is
                             when 1 =>
-                                data_out := x"100000" & std_logic_vector(to_unsigned(packet_len, 8));
+                                data_out := x"100000" & std_logic_vector(to_unsigned(packet_len-1, 8));
                             when 2 =>
                                 data_out(31 downto 0) := std_logic_vector(to_signed(timestamp_cntr, 32));
-                                timestamp_cntr := timestamp_cntr + 300;
+                                if (j = BLOCKS_PER_ITERATION) then
+                                    timestamp_cntr := timestamp_cntr + TIME_BETWEEN_ITERATIONS;
+                                else
+                                    timestamp_cntr := timestamp_cntr + 50;
+                                end if;
                             when 3 =>
                                 data_out := (others => '0');
                             when 4 =>
