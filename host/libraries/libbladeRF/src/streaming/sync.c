@@ -161,6 +161,11 @@ int sync_init(struct bladerf_sync *sync,
     }
 
     switch (format) {
+        case BLADERF_FORMAT_SC8_Q7:
+        case BLADERF_FORMAT_SC8_Q7_META:
+            bytes_per_sample = 2;
+            break;
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
         case BLADERF_FORMAT_PACKET_META:
