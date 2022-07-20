@@ -33,7 +33,7 @@ library nuand;
     use nuand.common_dcfifo_p.all;
     use nuand.bladerf_p.all;
 
-entity fx3_gpif_iq_8bit_tb is
+entity fx3_gpif_meta_8bit_tb is
     generic (
         -- For bladeRF2 (2x2 MIMO):
         NUM_MIMO_STREAMS            : natural := 2;
@@ -44,7 +44,7 @@ entity fx3_gpif_iq_8bit_tb is
     );
 end entity;
 
-architecture arch of fx3_gpif_iq_8bit_tb is
+architecture arch of fx3_gpif_meta_8bit_tb is
 
     -- bladerf-hosted uses ad9361.clock (125 MHz) for rx_clock and tx_clock
     constant SYSCLK_HALF_PERIOD     : time  := 1 sec * (1.0/125.0e6/2.0);
@@ -237,7 +237,7 @@ begin
 
     -- Discrete control signals for fx3_gpif
     fx3_control.usb_speed   <= '0';
-    fx3_control.meta_enable <= '0';
+    fx3_control.meta_enable <= '1';
     fx3_control.packet      <= '0';
     eight_bit_mode_en       <= '1';
 
@@ -507,7 +507,7 @@ begin
                                 adc_streams(i).data_i <= to_signed(count, 16);
                                 adc_streams(i).data_q <= to_signed(-count, 16);
                                 count := (count + 1) mod 2048;
-                            end if;
+                           end if;
                         end if;
                         adc_streams(i).data_v <= not adc_streams(i).data_v;
                     end if;
@@ -648,9 +648,57 @@ begin
     --
     -- Tx Sample Check
     --
+    tx_sample_start_check: process
+        type time_state_t is (
+            WAIT_FOR_HEADER_TIMESTAMP,
+            WAIT_FOR_SAMPLE
+        );
+        variable state : time_state_t := WAIT_FOR_HEADER_TIMESTAMP;
+        variable timestamp_in_header : unsigned (31 downto 0) := (others => '0');
+    begin
+        case state is
+            when WAIT_FOR_HEADER_TIMESTAMP =>
+                wait until rising_edge(dma3_tx_reqx);
+                if( fx3_control.meta_enable = '1' ) then
+                    wait until rising_edge(fx3_pclk);
+                    wait until rising_edge(fx3_pclk);
+                    report "Timestamp: 0x" & to_hstring(fx3_gpif_i);
+                    timestamp_in_header := unsigned(fx3_gpif_i);
+                    report "Timestamp Saved: " & to_string(to_integer(timestamp_in_header));
+                end if;
+                state := WAIT_FOR_SAMPLE;
+
+            when WAIT_FOR_SAMPLE =>
+                while( timestamp_in_header /= tx_timestamp ) loop
+                    assert(tx_timestamp < timestamp_in_header)
+                        report "Header timestamp is in the past. Samples " &
+                               "usually ignored but considered a failure in tb."
+                        severity failure;
+                    for i in dac_controls'range loop
+                        assert(dac_streams(i).data_v = '0')
+                            report "Dac_stream("&to_string(i)&") data being transmitted before expected tx_timestamp."
+                            severity failure;
+                    end loop;
+                    wait until rising_edge(tx_clock);
+                end loop;
+                report "TX TIMESTAMP = META TIMESTAMP";
+
+                wait until rising_edge(tx_clock);
+                for i in dac_controls'range loop
+                    if( dac_controls(i).enable = '1') then
+                        assert(dac_streams(i).data_v = '1')
+                            report "Dac_stream("&to_string(i)&") sample not seen at expected tx_timestamp."
+                            severity failure;
+                    end if;
+                end loop;
+                state := WAIT_FOR_HEADER_TIMESTAMP;
+        end case;
+    end process tx_sample_start_check;
+
     look_for_dropped_tx_samples : process(tx_clock) is
         constant MESSAGES_PER_ITERATION   : natural := 3; --Provided in fx3_model
         constant SIGMA_DELTA_BITS         : signed (3 downto 0) := "0000";
+        variable dac_stream_back_to_0     : natural := 0;
         variable current_message_count    : natural := 1;
         variable iq_value                 : signed (15 downto 0) := x"0000";
         variable expected_sample_i        : signed (15 downto 0);
@@ -659,9 +707,9 @@ begin
     begin
         for i in dac_controls'range loop
             if( rising_edge(tx_clock)
-                 and dac_controls(i).enable = '1'
-                 and dac_streams(i).data_v  = '1'
-                 and fx3_control.tx_enable  = '1' )
+                and dac_controls(i).enable = '1'
+                and dac_streams(i).data_v  = '1'
+                and fx3_control.tx_enable  = '1' )
             then
                 if( eight_bit_mode_en = '1' ) then
                     expected_sample_i := iq_value (11 downto 0) & SIGMA_DELTA_BITS;
@@ -669,11 +717,11 @@ begin
 
                     assert ( dac_streams(i).data_i = expected_sample_i )
                         report "dac_streams("&to_string(i)&").data_i: " & to_hstring(dac_streams(i).data_i) & " | " &
-                               "expected_sample_i: " & to_hstring(expected_sample_i)
+                            "expected_sample_i: " & to_hstring(expected_sample_i)
                         severity warning;
                     assert ( dac_streams(i).data_q = expected_sample_q )
                         report "dac_streams("&to_string(i)&").data_q: " & to_hstring(dac_streams(i).data_q) & " | " &
-                               "expected_sample_q: " & to_hstring(expected_sample_q)
+                            "expected_sample_q: " & to_hstring(expected_sample_q)
                         severity warning;
 
                     if ( dac_streams(i).data_i /= expected_sample_i or dac_streams(i).data_q /= expected_sample_q ) then
@@ -683,23 +731,25 @@ begin
                         end if;
                     end if;
 
-                        iq_value := (iq_value + 2) mod 128;
+                    dac_stream_back_to_0 := dac_stream_back_to_0 + 1 when iq_value = 0;
+                    iq_value := (iq_value + 2) mod 128 when dac_stream_back_to_0 mod 16 /= 0 else
+                                (iq_value + 2) mod 112;
                 else
                     expected_sample_i := iq_value;
                     expected_sample_q := to_signed(current_message_count, 8) & (iq_value(7 downto 0) + 1);
 
                     assert(dac_streams(i).data_i = expected_sample_i)
                         report "dac_streams("&to_string(i)&").data_i: " & to_hstring(dac_streams(i).data_i) & " | " &
-                               "expected_sample_i: " & to_hstring(expected_sample_i)
+                            "expected_sample_i: " & to_hstring(expected_sample_i)
                         severity failure;
                     assert(dac_streams(i).data_q = expected_sample_q)
                         report "dac_streams("&to_string(i)&").data_q: " & to_hstring(dac_streams(i).data_q) & " | " &
-                               "expected_sample_q: " & to_hstring(expected_sample_q)
+                            "expected_sample_q: " & to_hstring(expected_sample_q)
                         severity failure;
 
                     -- Set iq values based on blocks received
                     -- See tx_sample_stream's encoding scheme in fx3_model.vhd
-                    if( iq_value = x"03FE" ) then
+                    if( iq_value = x"03F6" ) then
                         iq_value  := x"0000";
                         if( current_message_count < MESSAGES_PER_ITERATION ) then
                             current_message_count := current_message_count + 1;
@@ -735,8 +785,9 @@ begin
     end process first_rx_val_at_mux;
 
     look_for_dropped_rx_samples: process(fx3_pclk_pll)
+        constant HEADER_LEN       : integer := 4; -- In clk cycles
+        variable header_downcount : integer := HEADER_LEN;
         variable rx_val     : integer := 0;
-
         variable q_expected : std_logic_vector (15 downto 0);
         variable i_expected : std_logic_vector (15 downto 0);
         variable q_out      : std_logic_vector (15 downto 0);
@@ -763,69 +814,76 @@ begin
         if( rising_edge(fx3_pclk_pll)
              and fx3_gpif.gpif_oe = '1'
              and fx3_control.rx_enable = '1' ) then
-            if( eight_bit_mode_en = '1') then
-                -- The +-1 ch1 offset in SISO mode will not reach 128
-                both_channels_en := ENABLE_CHANNEL_0 and ENABLE_CHANNEL_1;
-                q1_expected_eight_bit_mode := std_logic_vector(to_signed(-rx_val - 1, 8)) when both_channels_en else
-                                              std_logic_vector(to_signed(-((rx_val + 1) mod 128), 8));
-                i1_expected_eight_bit_mode := std_logic_vector(to_signed(rx_val + 1, 8)) when both_channels_en else
-                                              std_logic_vector(to_signed((rx_val + 1) mod 128, 8));
-                q0_expected_eight_bit_mode := std_logic_vector(to_signed(-rx_val, 8));
-                i0_expected_eight_bit_mode := std_logic_vector(to_signed(rx_val,  8));
 
-                q1_out_eight_bit_mode := fx3_gpif.gpif_out(31 downto 24);
-                i1_out_eight_bit_mode := fx3_gpif.gpif_out(23 downto 16);
-                q0_out_eight_bit_mode := fx3_gpif.gpif_out(15 downto 8);
-                i0_out_eight_bit_mode := fx3_gpif.gpif_out(7  downto 0);
-
-                if( q1_out_eight_bit_mode /= q1_expected_eight_bit_mode or
-                    i1_out_eight_bit_mode /= i1_expected_eight_bit_mode or
-                    q0_out_eight_bit_mode /= q0_expected_eight_bit_mode or
-                    i0_out_eight_bit_mode /= i0_expected_eight_bit_mode) then
-                        fail_count := fail_count + 1;
-                        report "-----------------------------";
-                        if( fail_count > 3 ) then
-                            report "rx fail count tolerance exceeded" severity failure;
-                        end if;
-                end if;
-
-                assert ( q1_out_eight_bit_mode = q1_expected_eight_bit_mode )
-                    report "data_q1: " & to_hstring(q1_out_eight_bit_mode) & " | " &
-                           "expected: " & to_hstring(q1_expected_eight_bit_mode)
-                    severity warning;
-                assert ( i1_out_eight_bit_mode = i1_expected_eight_bit_mode )
-                    report "data_i1: " & to_hstring(i1_out_eight_bit_mode) & " | " &
-                           "expected: " & to_hstring(i1_expected_eight_bit_mode)
-                    severity warning;
-                assert ( q0_out_eight_bit_mode = q0_expected_eight_bit_mode )
-                    report "data_q0: " & to_hstring(q0_out_eight_bit_mode) & " | " &
-                           "expected: " & to_hstring(q0_expected_eight_bit_mode)
-                    severity warning;
-                assert ( i0_out_eight_bit_mode = i0_expected_eight_bit_mode )
-                    report "data_i0: " & to_hstring(i0_out_eight_bit_mode) & " | " &
-                           "expected: " & to_hstring(i0_expected_eight_bit_mode)
-                    severity warning;
-
-                -- 128 limit set by gen_adc_controls above
-                rx_val := (rx_val + 2) mod 128;
+            if( fx3_control.meta_enable = '1' and header_downcount /= 0 ) then
+                header_downcount := header_downcount - 1;
             else
-                q_expected := std_logic_vector(to_signed(-rx_val, 16));
-                i_expected := std_logic_vector(to_signed(rx_val, 16));
-                q_out := fx3_gpif.gpif_out(31 downto 16);
-                i_out := fx3_gpif.gpif_out(15 downto 0);
+                if( eight_bit_mode_en = '1' ) then
+                    -- The +-1 ch1 offset in SISO mode will not reach 128
+                    both_channels_en := ENABLE_CHANNEL_0 and ENABLE_CHANNEL_1;
+                    q1_expected_eight_bit_mode := std_logic_vector(to_signed(-rx_val - 1, 8)) when both_channels_en else
+                                                std_logic_vector(to_signed(-((rx_val + 1) mod 128), 8));
+                    i1_expected_eight_bit_mode := std_logic_vector(to_signed(rx_val + 1, 8)) when both_channels_en else
+                                                std_logic_vector(to_signed((rx_val + 1) mod 128, 8));
+                    q0_expected_eight_bit_mode := std_logic_vector(to_signed(-rx_val, 8));
+                    i0_expected_eight_bit_mode := std_logic_vector(to_signed(rx_val,  8));
 
-                assert(q_out = q_expected)
-                    report "data_q: " & to_hstring(q_out) & " | " &
-                           "expected: " & to_hstring(q_expected)
-                    severity failure;
-                assert(i_out = i_expected)
-                    report "data_i: " & to_hstring(i_out) & " | " &
-                           "expected: " & to_hstring(i_expected)
-                    severity failure;
+                    q1_out_eight_bit_mode := fx3_gpif.gpif_out(31 downto 24);
+                    i1_out_eight_bit_mode := fx3_gpif.gpif_out(23 downto 16);
+                    q0_out_eight_bit_mode := fx3_gpif.gpif_out(15 downto 8);
+                    i0_out_eight_bit_mode := fx3_gpif.gpif_out(7  downto 0);
 
-                -- 2047 limit set by gen_adc_controls above
-                rx_val := (rx_val + 1) mod 2048;
+                    if( q1_out_eight_bit_mode /= q1_expected_eight_bit_mode or
+                        i1_out_eight_bit_mode /= i1_expected_eight_bit_mode or
+                        q0_out_eight_bit_mode /= q0_expected_eight_bit_mode or
+                        i0_out_eight_bit_mode /= i0_expected_eight_bit_mode) then
+                            fail_count := fail_count + 1;
+                            report "-----------------------------";
+                            if( fail_count > 3 ) then
+                                report "rx fail count tolerance exceeded" severity failure;
+                            end if;
+                    end if;
+
+                    assert ( q1_out_eight_bit_mode = q1_expected_eight_bit_mode )
+                        report "data_q1: " & to_hstring(q1_out_eight_bit_mode) & " | " &
+                            "expected: " & to_hstring(q1_expected_eight_bit_mode)
+                        severity warning;
+                    assert ( i1_out_eight_bit_mode = i1_expected_eight_bit_mode )
+                        report "data_i1: " & to_hstring(i1_out_eight_bit_mode) & " | " &
+                            "expected: " & to_hstring(i1_expected_eight_bit_mode)
+                        severity warning;
+                    assert ( q0_out_eight_bit_mode = q0_expected_eight_bit_mode )
+                        report "data_q0: " & to_hstring(q0_out_eight_bit_mode) & " | " &
+                            "expected: " & to_hstring(q0_expected_eight_bit_mode)
+                        severity warning;
+                    assert ( i0_out_eight_bit_mode = i0_expected_eight_bit_mode )
+                        report "data_i0: " & to_hstring(i0_out_eight_bit_mode) & " | " &
+                            "expected: " & to_hstring(i0_expected_eight_bit_mode)
+                        severity warning;
+
+                    -- 128 limit set by gen_adc_controls above
+                    rx_val := (rx_val + 2) mod 128;
+                else
+                    q_expected := std_logic_vector(to_signed(-rx_val, 16));
+                    i_expected := std_logic_vector(to_signed(rx_val, 16));
+                    q_out := fx3_gpif.gpif_out(31 downto 16);
+                    i_out := fx3_gpif.gpif_out(15 downto 0);
+
+                    assert(q_out = q_expected)
+                        report "data_q: " & to_hstring(q_out) & " | " &
+                            "expected: " & to_hstring(q_expected)
+                        severity failure;
+                    assert(i_out = i_expected)
+                        report "data_i: " & to_hstring(i_out) & " | " &
+                            "expected: " & to_hstring(i_expected)
+                        severity failure;
+
+                    -- 2047 limit set by gen_adc_controls above
+                    rx_val := (rx_val + 1) mod 2048;
+                end if;
             end if;
+
+            header_downcount := HEADER_LEN;
         end if;
     end process look_for_dropped_rx_samples;
 
