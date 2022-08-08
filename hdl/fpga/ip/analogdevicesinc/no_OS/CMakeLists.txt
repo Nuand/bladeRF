@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 2.8.12)
 project(ad936x C)
 
 message(STATUS "libad936x: Configuring build...")

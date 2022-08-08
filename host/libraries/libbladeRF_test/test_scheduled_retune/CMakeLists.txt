@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(libbladeRF_test_scheduled_retune C)
 
 include_directories(${libbladeRF_SOURCE_DIR}/include)
