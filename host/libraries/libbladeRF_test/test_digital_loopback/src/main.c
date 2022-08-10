@@ -551,6 +551,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    /******************************************************************************
+    * RX init & config
+    ******************************************************************************/
+
     rx_state.idx       = 0;
     rx_state.num       = NUM_TRANSFERS;
     rx_state.i_count   = 0;
@@ -577,6 +581,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    /******************************************************************************
+    * TX init & config
+    ******************************************************************************/
+
     tx_state.idx     = 0;
     tx_state.num     = NUM_TRANSFERS;
     tx_state.i_count = 0;
@@ -601,6 +609,10 @@ int main(int argc, char *argv[])
         bladerf_close(dev);
         return -1;
     }
+
+    /******************************************************************************
+    * Loopback configuration
+    ******************************************************************************/
 
     // Default: disable loopback mode
     status = bladerf_set_loopback(dev, BLADERF_LB_NONE);
@@ -659,6 +671,10 @@ int main(int argc, char *argv[])
         perror("signal()");
         return -1;
     }
+
+    /******************************************************************************
+    * Enable RX and TX streams
+    ******************************************************************************/
 
     status = bladerf_enable_module(dev, BLADERF_CHANNEL_TX(0), true);
     if (status < 0) {
