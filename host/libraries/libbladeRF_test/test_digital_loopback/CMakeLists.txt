@@ -5,6 +5,7 @@ set(INCLUDES
     ${libbladeRF_SOURCE_DIR}/include
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../libbladeRF/src/streaming
 )
 
 if(MSVC)
