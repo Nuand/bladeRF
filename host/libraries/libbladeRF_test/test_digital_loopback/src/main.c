@@ -35,6 +35,7 @@
 #include "log.h"
 #include "test_common.h"
 #include <libbladeRF.h>
+#include "async.h"
 
 /******************************************************************************
  * Type definitions
@@ -686,6 +687,10 @@ int main(int argc, char *argv[])
     if (status < 0) {
         log_error("pthread_create(TX): %s\n", strerror(status));
         goto error;
+    }
+
+    while (tx_stream->state != STREAM_RUNNING) {
+        usleep(100);
     }
 
     status = bladerf_enable_module(dev, BLADERF_CHANNEL_RX(0), true);
