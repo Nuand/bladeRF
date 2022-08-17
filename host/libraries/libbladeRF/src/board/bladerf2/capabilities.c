@@ -98,5 +98,9 @@ uint64_t bladerf2_get_fpga_capabilities(
         capabilities |= BLADERF_CAP_FPGA_PACKET_META;
     }
 
+    if (version_fields_greater_or_equal(fpga_version, 0, 15, 0)) {
+        capabilities |= BLADERF_CAP_FPGA_8BIT_SAMPLES;
+    }
+
     return capabilities;
 }
