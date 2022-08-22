@@ -35,9 +35,14 @@ struct module_config{
     unsigned int bandwidth;
     unsigned int samplerate;
     /* Gains */
+    int use_unified;
+    int use_agc;
+    int unified_gain;
     bladerf_lna_gain rx_lna;
     int vga1;
     int vga2;
+    /* Biastee control */
+    int biastee;
 };
 //internal functinos
 static int radio_configure_module(struct bladerf *dev, struct module_config *c);
@@ -69,39 +74,72 @@ static int radio_configure_module(struct bladerf *dev, struct module_config *c)
     }
     switch (c->module) {
         case BLADERF_MODULE_RX:
-            /* Configure the gains of the RX LNA, RX VGA1, and RX VGA2  */
-            status = bladerf_set_lna_gain(dev, c->rx_lna);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set RX LNA gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-            status = bladerf_set_rxvga1(dev, c->vga1);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set RX VGA1 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-            status = bladerf_set_rxvga2(dev, c->vga2);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set RX VGA2 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
+            if (c->use_agc) {
+                status = bladerf_set_gain_mode(dev, c->module, BLADERF_GAIN_AUTOMATIC);
+                if (status != 0) {
+                    fprintf(stderr, "Failed enable RX AGC: %s\n",
+                            bladerf_strerror(status));
+                    return status;
+                }
+            } else {
+                status = bladerf_set_gain_mode(dev, c->module, BLADERF_GAIN_MANUAL);
+                if (status != 0) {
+                    fprintf(stderr, "Failed to disable RX AGC: %s\n",
+                            bladerf_strerror(status));
+                    return status;
+                }
+                if (c->use_unified) {
+                    status = bladerf_set_gain(dev, c->module, c->unified_gain);
+                    if (status != 0) {
+                        fprintf(stderr, "Failed to set unified RX gain: %s\n",
+                                bladerf_strerror(status));
+                        return status;
+                    }
+                } else {
+                    /* Configure the gains of the RX LNA, RX VGA1, and RX VGA2  */
+                    status = bladerf_set_lna_gain(dev, c->rx_lna);
+                    if (status != 0) {
+                        fprintf(stderr, "Failed to set RX LNA gain: %s\n",
+                                bladerf_strerror(status));
+                        return status;
+                    }
+                    status = bladerf_set_rxvga1(dev, c->vga1);
+                    if (status != 0) {
+                        fprintf(stderr, "Failed to set RX VGA1 gain: %s\n",
+                                bladerf_strerror(status));
+                        return status;
+                    }
+                    status = bladerf_set_rxvga2(dev, c->vga2);
+                    if (status != 0) {
+                        fprintf(stderr, "Failed to set RX VGA2 gain: %s\n",
+                                bladerf_strerror(status));
+                        return status;
+                    }
+                }
             }
             break;
         case BLADERF_MODULE_TX:
-            /* Configure the TX VGA1 and TX VGA2 gains */
-            status = bladerf_set_txvga1(dev, c->vga1);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set TX VGA1 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-            status = bladerf_set_txvga2(dev, c->vga2);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set TX VGA2 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
+            if (c->use_unified) {
+                status = bladerf_set_gain(dev, c->module, c->unified_gain);
+                if (status != 0) {
+                    fprintf(stderr, "Failed to set unified TX gain: %s\n",
+                            bladerf_strerror(status));
+                    return status;
+                }
+            } else {
+                /* Configure the TX VGA1 and TX VGA2 gains */
+                status = bladerf_set_txvga1(dev, c->vga1);
+                if (status != 0) {
+                    fprintf(stderr, "Failed to set TX VGA1 gain: %s\n",
+                            bladerf_strerror(status));
+                    return status;
+                }
+                status = bladerf_set_txvga2(dev, c->vga2);
+                if (status != 0) {
+                    fprintf(stderr, "Failed to set TX VGA2 gain: %s\n",
+                            bladerf_strerror(status));
+                    return status;
+                }
             }
             break;
         default:
@@ -166,6 +204,9 @@ int radio_init_and_configure(struct bladerf *dev, struct radio_params *params)
     config.samplerate   = BLADERF_SAMPLE_RATE;
     config.vga1         = params->tx_vga1_gain;
     config.vga2         = params->tx_vga2_gain;
+    config.use_unified  = params->tx_use_unified;
+    config.unified_gain = params->tx_unified_gain;
+    config.biastee      = params->tx_biastee;
     status = radio_configure_module(dev, &config);
     if (status != 0){
         fprintf(stderr, "Couldn't configure TX module: %s\n", bladerf_strerror(status));
@@ -180,6 +221,9 @@ int radio_init_and_configure(struct bladerf *dev, struct radio_params *params)
     config.rx_lna       = params->rx_lna_gain;
     config.vga1         = params->rx_vga1_gain;
     config.vga2         = params->rx_vga2_gain;
+    config.use_unified  = params->rx_use_unified;
+    config.unified_gain = params->rx_unified_gain;
+    config.biastee      = params->rx_biastee;
     status = radio_configure_module(dev, &config);
     if (status != 0){
         fprintf(stderr, "Couldn't configure RX module: %s\n", bladerf_strerror(status));
