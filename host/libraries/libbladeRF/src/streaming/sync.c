@@ -520,10 +520,12 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
+                    case BLADERF_FORMAT_SC8_Q7:
                         s->state = SYNC_STATE_USING_BUFFER;
                         break;
 
                     case BLADERF_FORMAT_SC16_Q11_META:
+                    case BLADERF_FORMAT_SC8_Q7_META:
                         s->state = SYNC_STATE_USING_BUFFER_META;
                         s->meta.curr_msg_off = 0;
                         s->meta.msg_num = 0;
@@ -1037,10 +1039,12 @@ int sync_tx(struct bladerf_sync *s,
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
+                    case BLADERF_FORMAT_SC8_Q7:
                         s->state = SYNC_STATE_USING_BUFFER;
                         break;
 
                     case BLADERF_FORMAT_SC16_Q11_META:
+                    case BLADERF_FORMAT_SC8_Q7_META:
                         s->state             = SYNC_STATE_USING_BUFFER_META;
                         s->meta.curr_msg_off = 0;
                         s->meta.msg_num      = 0;
