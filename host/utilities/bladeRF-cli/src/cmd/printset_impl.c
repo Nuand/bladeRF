@@ -1221,6 +1221,45 @@ out:
     return rv;
 }
 
+/* bitmode */
+int print_bitmode(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    printf("  Bit Mode: %s bit samples\n", state->bit_mode_8bit ? "8" : "16");
+    return rv;
+}
+
+int set_bitmode(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+
+    if (cli_device_is_streaming(state)) {
+        printf("  Warning: Changing bit mode will not take affect while device"
+               " is streaming.\n\n");
+    }
+
+    if (argc != 3) {
+        if (argc == 2) {
+            printf("Usage: %s %s <8|16>\n", argv[0], argv[1]);
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
+    }
+
+    if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2])) {
+        state->bit_mode_8bit = false;
+    } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
+        state->bit_mode_8bit = true;
+    } else {
+        return CLI_RET_INVPARAM;
+    }
+
+    rv = print_bitmode(state, 0, NULL);
+
+    return rv;
+}
+
 /* rxvga1 */
 int print_rxvga1(struct cli_state *state, int argc, char **argv)
 {
