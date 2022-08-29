@@ -517,6 +517,8 @@ Common parameters:
 
 `tuning_mode`   Tuning mode settings
 
+`bitmode`       Sample bit width
+
 `hardware`      Low-level hardware status
 ----------------------------------------------------------------------
 
@@ -935,6 +937,8 @@ Common parameters:
 `trimdac`       VCTCXO Trim DAC settings
 
 `tuning_mode`   Tuning mode settings
+
+`bitmode`       Sample bit width
 ----------------------------------------------------------------------
 
 BladeRF1-only parameters:
