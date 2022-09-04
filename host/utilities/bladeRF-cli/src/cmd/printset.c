@@ -216,7 +216,7 @@ struct printset_entry *get_printset_entry(char *name)
     size_t i;
 
     for (i = 0; entry == NULL && printset_table[i].print != NULL; ++i) {
-        if (strcasecmp(name, printset_table[i].name) == 0) {
+        if (strncasecmp(name, printset_table[i].name, strlen(name)) == 0) {
             entry = &(printset_table[i]);
         }
     }
