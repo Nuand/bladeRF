@@ -44,7 +44,7 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
 
         if (!strcasecmp(argv[1], "fpga")) {
 
-            printf("\n  Loading fpga from %s...\n", expanded_path);
+            printf("\n  Loading FPGA from %s...\n", expanded_path);
             lib_status = bladerf_load_fpga(dev, expanded_path);
             if (lib_status == 0) {
                 printf("  Done.\n\n");
