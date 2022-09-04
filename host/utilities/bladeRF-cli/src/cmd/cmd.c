@@ -384,13 +384,21 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
 
     /* Asking for general help */
     if (1 == argc) {
-        printf("\n");
-        for (i = 0; cmd_table[i].names != NULL; ++i) {
+        printf(" |%-18s|%-75s|%-8s|%-7s|\n", " Command name", " Description", " Device", " FPGA");
+
+        for (i = 0; ; ++i) {
+            if ((i % 5) == 0) {
+                printf(" |%-18s+%-75s+%-8s+%-7s|\n", "------------------", "---------------------------------------------------------------------------", "--------", "-------");
+
+            }
+            if (cmd_table[i].names == NULL) {
+                break;
+            }
             /* Hidden functions for fun and profit */
             if (cmd_table[i].names[0][0] == '_') {
                 continue;
             }
-            printf("  %-20s%s\n", cmd_table[i].names[0], cmd_table[i].desc);
+            printf(" | %-17s| %-74s|%-8s|%-7s|\n", cmd_table[i].names[0], cmd_table[i].desc, cmd_table[i].requires_device ? "   Y":"", cmd_table[i].requires_fpga ? "   Y" : "");
         }
         printf("\n");
 
@@ -410,6 +418,9 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
     } else {
         ret = CLI_RET_NARGS;
     }
+
+    printf("The letter Y in the \"Device\" and \"FPGA\" columns indicates the command\n"
+           "  needs the device to open, and the FPGA to be loaded, respectively.\n");
 
     return ret;
 }
@@ -511,6 +522,10 @@ int cmd_handle(struct cli_state *s, char const *line)
                      * starting up or finishing up a stream() call*/
                     MUTEX_LOCK(&s->dev_lock);
                     ret = cmd->exec(s, argc, argv);
+                    if (ret == CLI_RET_INVPARAM || ret == CLI_RET_NARGS) {
+                        printf("\nDescription of %s command:\n=========\n"
+                               "%s\n=========\n", cmd->names[0], cmd->help);
+                    }
                     MUTEX_UNLOCK(&s->dev_lock);
                 }
             } else {

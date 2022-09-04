@@ -291,6 +291,9 @@ const char *cli_strerror(int error, int lib_error)
         case CLI_RET_PERMISSION:
             return "Insufficient permissions for the requested operation";
 
+        case CLI_RET_INVPARAM:
+            return "Invalid parameter provided";
+
         /* Other commands shall print out helpful info from within their
          * implementation */
         default:
