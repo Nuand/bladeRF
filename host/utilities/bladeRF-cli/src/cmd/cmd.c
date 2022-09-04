@@ -43,6 +43,7 @@ DECLARE_CMD(flash_image, "flash_image", "fi");
 DECLARE_CMD(flash_init_cal, "flash_init_cal", "fic");
 DECLARE_CMD(flash_restore, "flash_restore", "fr");
 DECLARE_CMD(fw_log, "fw_log");
+DECLARE_CMD(generate, "generate");
 DECLARE_CMD(help, "help", "h", "?");
 DECLARE_CMD(info, "info", "i");
 DECLARE_CMD(jump_to_bootloader, "jump_to_boot", "j");
@@ -158,6 +159,15 @@ static struct cmd const cmd_table[] = {
         FIELD_INIT(.desc, "Read firmware log contents"),
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_fw_log),
         FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
+    },
+    {
+        FIELD_INIT(.names, cmd_names_generate),
+        FIELD_INIT(.exec, cmd_generate),
+        FIELD_INIT(.desc, "Generates signals such as an offset CW"),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_generate),
+        FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
         FIELD_INIT(.allow_while_streaming, true),
     },
