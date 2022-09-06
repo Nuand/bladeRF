@@ -549,6 +549,9 @@ begin
             trigger_master       => tx_trigger_ctl.master,
             trigger_line         => tx_trigger_line,
 
+            -- Eightbit mode
+            eight_bit_mode_en    => eightbit_en_tx,
+
             -- Packet FIFO
             packet_en            => packet_en_tx,
             packet_empty         => tx_packet_empty,
@@ -621,6 +624,9 @@ begin
             trigger_fire           => rx_trigger_ctl.fire,
             trigger_master         => rx_trigger_ctl.master,
             trigger_line           => rx_trigger_line,
+
+            -- Eightbit mode
+            eight_bit_mode_en      => eightbit_en_rx,
 
             -- Packet FIFO
             packet_en              => packet_en_rx,
