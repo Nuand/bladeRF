@@ -392,14 +392,14 @@ begin
 
             if (sample = '0') then
                 for i in rv'range loop
-                    rv(i).data_i := "0000" & resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(I_HIGH downto I_LOW)), 8) & SIGMA_DELTA_BITS;
-                    rv(i).data_q := "0000" & resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(Q_HIGH downto Q_LOW)), 8) & SIGMA_DELTA_BITS;
+                    rv(i).data_i := shift_left(resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(I_HIGH downto I_LOW)), rv(i).data_i'length),4);
+                    rv(i).data_q := shift_left(resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(Q_HIGH downto Q_LOW)), rv(i).data_q'length),4);
                     rv(i).data_v := '0';
                 end loop;
             elsif (sample = '1') then
                 for i in rv'range loop
-                    rv(i).data_i := "0000" & resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT + SAMPLE_OFFSET_UNIT)(I_HIGH downto I_LOW)), 8) & SIGMA_DELTA_BITS;
-                    rv(i).data_q := "0000" & resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT + SAMPLE_OFFSET_UNIT)(Q_HIGH downto Q_LOW)), 8) & SIGMA_DELTA_BITS;
+                    rv(i).data_i := shift_left(resize(signed(shift_left(shift_right(unsigned(d),i*OFFSET_UNIT + SAMPLE_OFFSET_UNIT)(I_HIGH downto I_LOW),0)), rv(i).data_i'length),4);
+                    rv(i).data_q := shift_left(resize(signed(shift_left(shift_right(unsigned(d),i*OFFSET_UNIT + SAMPLE_OFFSET_UNIT)(Q_HIGH downto Q_LOW),0)), rv(i).data_q'length),4);
                     rv(i).data_v := '0';
                 end loop;
             else
