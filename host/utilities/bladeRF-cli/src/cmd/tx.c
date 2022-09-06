@@ -195,7 +195,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 
         /* If there were no errors, transmit the data buffer */
         if (status == 0) {
-            bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer, NULL,
+            status = bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer, NULL,
                             timeout_ms);
         }
     }
