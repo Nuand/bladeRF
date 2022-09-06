@@ -70,6 +70,8 @@ static inline size_t samples_to_bytes(bladerf_format format, size_t n)
     switch (format) {
         case BLADERF_FORMAT_SC8_Q7:
         case BLADERF_FORMAT_SC8_Q7_META:
+            return sc8q7_to_bytes(n);
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
             return sc16q11_to_bytes(n);
@@ -89,6 +91,8 @@ static inline size_t bytes_to_samples(bladerf_format format, size_t n)
     switch (format) {
         case BLADERF_FORMAT_SC8_Q7:
         case BLADERF_FORMAT_SC8_Q7_META:
+            return bytes_to_sc8q7(n);
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
             return bytes_to_sc16q11(n);
