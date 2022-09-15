@@ -57,16 +57,29 @@ architecture micro_dma of fx3_model is
     signal rx_data  : std_logic_vector(31 downto 0);
     signal tx_data  : std_logic_vector(31 downto 0);
 
-    function data_gen (count : natural) return std_logic_vector is
-        variable msw, lsw : std_logic_vector(15 downto 0);
+    impure function data_gen (count : natural) return std_logic_vector is
+        variable eight_bit_msw_i : std_logic_vector(7 downto 0);
+        variable eight_bit_msw_q : std_logic_vector(7 downto 0);
+        variable eight_bit_lsw_i : std_logic_vector(7 downto 0);
+        variable eight_bit_lsw_q : std_logic_vector(7 downto 0);
+        variable msw, lsw        : std_logic_vector(15 downto 0);
     begin
-        msw := std_logic_vector(to_signed(count+1, 16));
-        lsw := std_logic_vector(to_signed(count, 16));
+        if( eight_bit_mode_en = '1' ) then
+            eight_bit_lsw_i := std_logic_vector(to_unsigned(count,   8));
+            eight_bit_lsw_q := std_logic_vector(to_unsigned(count+1, 8));
+            eight_bit_msw_i := std_logic_vector(to_unsigned(count+2, 8));
+            eight_bit_msw_q := std_logic_vector(to_unsigned(count+3, 8));
+            lsw := eight_bit_lsw_q & eight_bit_lsw_i;
+            msw := eight_bit_msw_q & eight_bit_msw_i;
+        else
+            msw := std_logic_vector(to_signed(count+1, 16));
+            lsw := std_logic_vector(to_signed(count, 16));
+        end if;
 
         return (msw & lsw);
     end function data_gen;
 
-    function data_check (count : natural ; rxdata : std_logic_vector(31 downto 0)) return boolean is
+    impure function data_check (count : natural ; rxdata : std_logic_vector(31 downto 0)) return boolean is
     begin
         return (rxdata = data_gen(count));
     end function data_check;
@@ -210,11 +223,17 @@ begin
                 for i in 1 to (BLOCK_SIZE - header_len) loop
                     gpif_state_tx   <= TX_SAMPLES;
                     data_out        := data_gen(count);
-                    fx3_gpif        <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
-                    tx_data         <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
+                    if( eight_bit_mode_en = '1' ) then
+                        fx3_gpif <= data_out;
+                        tx_data  <= data_out;
+                    else
+                        fx3_gpif <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
+                        tx_data  <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
+                    end if;
                     wait until rising_edge( fx3_pclk );
 
-                    count           := (count + 2) mod 2048;
+                    count := (count + 4) mod 128 when eight_bit_mode_en = '1' else
+                             (count + 2) mod 2048;
                     gpif_state_tx   <= IDLE;
                     tx_data         <= (others => 'X');
                 end loop;

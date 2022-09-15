@@ -49,6 +49,9 @@ entity rx is
         trigger_line           : inout std_logic; -- this is not good, should be in/out/oe
         trigger_signal_sync_tb : out   std_logic;
 
+        -- 8-bit mode
+        eight_bit_mode_en      : in std_logic := '0';
+
         -- Packet to host via FX3
         packet_en              : in    std_logic;
         packet_control         : in    packet_control_t;
@@ -246,6 +249,8 @@ begin
 
             packet_control      =>  packet_control,
             packet_ready        =>  packet_ready,
+
+            eight_bit_mode_en   => eight_bit_mode_en,
 
             meta_fifo_full      =>  meta_fifo.wfull,
             meta_fifo_usedw     =>  meta_fifo.wused,
