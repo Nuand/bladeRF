@@ -41,6 +41,7 @@ entity fifo_writer is
         usb_speed           :   in      std_logic;
         meta_en             :   in      std_logic;
         packet_en           :   in      std_logic;
+        eight_bit_mode_en   :   in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
         mini_exp            :   in      std_logic_vector(1 downto 0);
 
@@ -118,6 +119,7 @@ architecture simple of fifo_writer is
         fifo_write          : std_logic;
         fifo_data           : unsigned(fifo_data'range);
         samples_left        : natural range 0 to in_sample_controls'length;
+        eight_bit_delay     : std_logic;
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
@@ -125,7 +127,8 @@ architecture simple of fifo_writer is
         fifo_clear          => '1',
         fifo_write          => '0',
         fifo_data           => (others => '-'),
-        samples_left        => 0
+        samples_left        => 0,
+        eight_bit_delay     => '0'
     );
 
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
@@ -357,6 +360,40 @@ begin
             return rv;
         end function;
 
+        -- --------------------------------------------------------------------
+        -- MIMO PACKER: STEP 1 of 3 (8bit mode)
+        -- --------------------------------------------------------------------
+        -- This block receives samples as an array of sample streams, one
+        -- element per channel. These streams need to be packed into a single,
+        -- wide bus that is written to a FIFO and eventually delivered to the
+        -- host. When all channels are enabled, this wide bus will contain one
+        -- I/Q sample pair for each channel. When channels are disabled, the
+        -- wide bus may contain multiple samples from the remaining enabled
+        -- channels in order to more efficiently use the available USB bandwidth.
+        -- For example, a 2x2 MIMO design with 16-bit samples will pack its data
+        -- into a 64-bit wide bus in one of the following ways:
+        --      |          Sample Set 1         |          Sample Set 0        |
+        --      | 63:56 | 55:48 | 47:40 | 39:32 | 31:24 | 23:16 |  15:8 |  7:0 | Bit indices
+        --   1. |   Q1  |   I1  |   Q0  |  I0   |   Q1  |   I1  |   Q0  |  I0  | Channels 0 & 1 enabled
+        --   2. |   Q0' |   I0' |   Q0  |  I0   |   Q0' |   I0' |   Q0  |  I0  | Channel 0 only enabled
+        --   3. |   Q1' |   I1' |   Q1  |  I1   |   Q1' |   I1' |   Q1  |  I1  | Channel 1 only enabled
+        function pack_eight_bit_mode( sc : sample_controls_t;
+                                      ss : sample_streams_t;
+                                      d  : unsigned ) return unsigned is
+            constant IQ_PAIR_LEN  : natural := ss(ss'low).data_i'length/2 + ss(ss'low).data_q'length/2;
+            variable rv           : unsigned(d'range) := (others => '0');
+        begin
+            rv := d;
+            for i in sc'range loop
+                if( (sc(i).enable = '1') and (ss(i).data_v = '1') ) then
+                    rv := unsigned(ss(i).data_q(11 downto 4)) &
+                          unsigned(ss(i).data_i(11 downto 4)) &
+                          rv(rv'high downto rv'low+IQ_PAIR_LEN);
+                end if;
+            end loop;
+            return rv;
+        end function;
+
 
         variable write_req : std_logic := '0';
 
@@ -369,7 +406,11 @@ begin
 
         -- MIMO PACKER: STEP 1 of 3
         if( packet_en = '0' ) then
-            fifo_future.fifo_data  <= pack(in_sample_controls, in_samples, fifo_current.fifo_data);
+            if( eight_bit_mode_en = '1' ) then
+                fifo_future.fifo_data <= pack_eight_bit_mode(in_sample_controls, in_samples, fifo_current.fifo_data);
+            else
+                fifo_future.fifo_data  <= pack(in_sample_controls, in_samples, fifo_current.fifo_data);
+            end if;
         end if;
 
         case fifo_current.state is
@@ -390,6 +431,7 @@ begin
                     end if;
                 else
                     fifo_future.fifo_clear <= '1';
+                    fifo_future.eight_bit_delay <= '0';
                 end if;
 
             when WRITE_PACKET_PAYLOAD =>
@@ -451,7 +493,12 @@ begin
                     if( write_req = '1' ) then
                         if( fifo_current.samples_left = 0 ) then
                             fifo_future.samples_left <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
-                            fifo_future.fifo_write   <= write_req;
+                            if( eight_bit_mode_en = '1' ) then
+                                fifo_future.fifo_write <= write_req and fifo_current.eight_bit_delay;
+                                fifo_future.eight_bit_delay <= not fifo_current.eight_bit_delay;
+                            else
+                                fifo_future.fifo_write <= write_req;
+                            end if;
                         else
                             -- MIMO PACKER: STEP 3 of 3
                             fifo_future.samples_left <= fifo_current.samples_left - 1;
