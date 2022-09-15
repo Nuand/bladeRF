@@ -99,6 +99,7 @@ struct cli_state *cli_state_create()
         cli_state->dev            = NULL;
         cli_state->last_lib_error = 0;
         cli_state->scripts        = NULL;
+        cli_state->bit_mode_8bit  = false;
 
         cli_state->dev_info.fpga_size = BLADERF_FPGA_UNKNOWN;
         cli_state->dev_info.is_bladerf_x40_x115 = false;

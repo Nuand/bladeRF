@@ -115,6 +115,8 @@ struct cli_state {
 
     struct rxtx_data *rx; /**< Data for sample reception */
     struct rxtx_data *tx; /**< Data for sample transmission */
+
+    bool bit_mode_8bit; /**< Bit mode is set to 16 bits */
 };
 
 /**
