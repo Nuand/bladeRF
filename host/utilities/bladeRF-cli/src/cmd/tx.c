@@ -231,7 +231,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
  *
  * return 0 on success, CLI_RET_* on failure
  */
-static int tx_csv_to_sc16q11(struct cli_state *s)
+static int tx_csv_to_bladerf_format(struct cli_state *s)
 {
     struct rxtx_data *tx = s->tx;
     char buf[81]         = { 0 };
@@ -253,18 +253,18 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
 
     status = expand_and_open(tx->file_mgmt.path, "r", &csv);
     if (status != 0) {
-        goto tx_csv_to_sc16q11_out;
+        goto tx_csv_to_bladerf_format_out;
     }
 
     bin_name = strdup(TMP_FILE_NAME);
     if (!bin_name) {
         status = CLI_RET_MEM;
-        goto tx_csv_to_sc16q11_out;
+        goto tx_csv_to_bladerf_format_out;
     }
 
     status = expand_and_open(bin_name, "wb+", &bin);
     if (status != 0) {
-        goto tx_csv_to_sc16q11_out;
+        goto tx_csv_to_bladerf_format_out;
     }
 
 
@@ -349,7 +349,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
         }
     }
 
-tx_csv_to_sc16q11_out:
+tx_csv_to_bladerf_format_out:
     if (status != 0) {
         free(bin_name);
     }
@@ -484,7 +484,7 @@ static int tx_cmd_start(struct cli_state *s)
     MUTEX_LOCK(&s->tx->file_mgmt.file_meta_lock);
 
     if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
-        status = tx_csv_to_sc16q11(s);
+        status = tx_csv_to_bladerf_format(s);
 
         if (status == 0) {
             printf("  Converted CSV to SC16 Q11 file and "
