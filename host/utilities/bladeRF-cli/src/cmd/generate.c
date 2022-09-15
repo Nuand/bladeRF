@@ -57,6 +57,9 @@ int cmd_generate(struct cli_state *s, int argc, char **argv)
     int mag = 2047;
     int i;
 
+    if (s->bit_mode_8bit) {
+        mag /= 16;
+    }
     int remaining_argc;
 
     enum rxtx_fmt fmt = RXTX_FMT_CSV_SC16Q11;
