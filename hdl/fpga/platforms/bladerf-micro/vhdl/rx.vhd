@@ -47,6 +47,7 @@ entity rx is
         trigger_fire           : in    std_logic;
         trigger_master         : in    std_logic;
         trigger_line           : inout std_logic; -- this is not good, should be in/out/oe
+        trigger_signal_sync_tb : out   std_logic;
 
         -- Packet to host via FX3
         packet_en              : in    std_logic;
@@ -413,5 +414,6 @@ begin
             async       =>  trigger_signal_out,
             sync        =>  trigger_signal_out_sync
         );
+        trigger_signal_sync_tb <= trigger_signal_out_sync;
 
 end architecture;
