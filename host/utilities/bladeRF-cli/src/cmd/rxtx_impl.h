@@ -138,7 +138,7 @@ struct tx_params {
 
 struct rx_params {
     size_t n_samples; /* Number of samples to receive */
-    int (*write_samples)(struct rxtx_data *rx, struct cli_state *s, void *samples, size_t n);
+    int (*write_samples)(struct cli_state *s, void *samples, size_t n);
 };
 
 /* Multipliers in units of 1024 */
