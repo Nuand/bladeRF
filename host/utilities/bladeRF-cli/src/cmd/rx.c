@@ -75,12 +75,12 @@ static inline void sc16q11_sample_fixup(int16_t *buf, size_t n)
  * @pre data_mgmt lock is held
  *
  * returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
-static int rx_write_bin_sc16q11(struct rxtx_data *rx,
-                                struct cli_state *s,
+static int rx_write_bin_sc16q11(struct cli_state *s,
                                 void *samples,
                                 size_t n_samples)
 {
     size_t status;
+    struct rxtx_data *rx = s->rx;
 
     MUTEX_LOCK(&rx->file_mgmt.file_lock);
     status = fwrite(samples, sizeof(int16_t),
@@ -97,10 +97,9 @@ static int rx_write_bin_sc16q11(struct rxtx_data *rx,
 }
 
 /* returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
-static int rx_write_csv(struct rxtx_data *rx,
-                        struct cli_state *s,
-                                void *samples,
-                                size_t n_samples)
+static int rx_write_csv(struct cli_state *s,
+                        void *samples,
+                        size_t n_samples)
 {
     const size_t MAXLEN = 128; /* max line length (with newline and null) */
 
@@ -108,7 +107,7 @@ static int rx_write_csv(struct rxtx_data *rx,
     char *tmp  = NULL;
     int8_t *samples_sc8q7;
     int16_t *samples_sc16q11;
-
+    struct rxtx_data *rx = s->rx;
     size_t i, j, nchans;
     int status = 0;
 
@@ -204,14 +203,15 @@ out:
     return status;
 }
 
-static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
+static int rx_task_exec_running(struct cli_state *s)
 {
     int status = 0;
     int samples_per_buffer;
     void *samples;
     size_t num_samples;
     size_t samples_read = 0;
-    int (*write_samples)(struct rxtx_data *rx, struct cli_state *s, void *samples, size_t n);
+    struct rxtx_data *rx = s->rx;
+    int (*write_samples)(struct cli_state *s, void *samples, size_t n);
     unsigned int timeout_ms;
 
     /* Read the parameters that will be used for the sync transfers */
@@ -259,7 +259,7 @@ static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
 
             /* Write the samples to the output file */
             sc16q11_sample_fixup(samples, to_write);
-            status = write_samples(rx, s, samples, to_write);
+            status = write_samples(s, samples, to_write);
 
             if (status != 0) {
                 set_last_error(&rx->last_error, ETYPE_CLI, status);
@@ -371,7 +371,7 @@ void *rx_task(void *cli_state_arg)
                 if (status < 0) {
                     set_last_error(&rx->last_error, ETYPE_BLADERF, status);
                 } else {
-                    status = rx_task_exec_running(rx, cli_state);
+                    status = rx_task_exec_running(cli_state);
 
                     if (status < 0) {
                         set_last_error(&rx->last_error, ETYPE_BLADERF, status);
