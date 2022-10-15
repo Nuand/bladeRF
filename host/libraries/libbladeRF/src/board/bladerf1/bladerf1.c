@@ -2066,8 +2066,19 @@ static int bladerf1_set_frequency(struct bladerf *dev,
             break;
 
         case BLADERF_TUNING_MODE_FPGA: {
-            status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW,
-                                                 frequency, NULL);
+            if (attached == BLADERF_XB_200) {
+                bladerf_quick_tune qt;
+                status = bladerf_get_quick_tune(dev, ch, &qt);
+                if (status != 0) {
+                    return status;
+                }
+                
+                status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, 0, &qt);
+            }
+            else {
+                status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, frequency, NULL);
+            }
+            
             break;
         }
 
@@ -2394,7 +2405,7 @@ static int bladerf1_schedule_retune(struct bladerf *dev,
 
     if (quick_tune == NULL) {
         if (dev->xb == BLADERF_XB_200) {
-           log_error("Consider supplying the quick_tune parameter to"
+           log_info("Consider supplying the quick_tune parameter to"
                  " bladerf_schedule_retune() when the XB-200 is enabled.\n");
         }
         status = lms_calculate_tuning_params((uint32_t)frequency, &f);
