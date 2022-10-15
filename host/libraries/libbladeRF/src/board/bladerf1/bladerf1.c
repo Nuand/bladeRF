@@ -2066,8 +2066,19 @@ static int bladerf1_set_frequency(struct bladerf *dev,
             break;
 
         case BLADERF_TUNING_MODE_FPGA: {
-            status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW,
-                                                 frequency, NULL);
+            if (attached == BLADERF_XB_200) {
+                bladerf_quick_tune qt;
+                status = bladerf_get_quick_tune(dev, ch, &qt);
+                if (status != 0) {
+                    return status;
+                }
+                
+                status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, 0, &qt);
+            }
+            else {
+                status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, frequency, NULL);
+            }
+            
             break;
         }
 
