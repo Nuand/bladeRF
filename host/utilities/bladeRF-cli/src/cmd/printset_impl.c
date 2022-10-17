@@ -1250,20 +1250,24 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
     }
 
     if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2])) {
-        // Reopen the device with a fresh register config
-        bladerf_get_devinfo(state->dev, &info);
-        bladerf_close(state->dev);
-        bladerf_open_with_devinfo(&(state->dev), &info);
-        state->bit_mode_8bit = false;
+        if(state->bit_mode_8bit) {
+            // Reopen the device with a fresh register config
+            bladerf_get_devinfo(state->dev, &info);
+            bladerf_close(state->dev);
+            bladerf_open_with_devinfo(&(state->dev), &info);
+            state->bit_mode_8bit = false;
+        }
     } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
-        state->bit_mode_8bit = true;
+        if (!state->bit_mode_8bit) {
+            printf("  Note: Sample rates must be reassigned\n"
+                   "        for bit mode changes to take effect\n\n");
+            state->bit_mode_8bit = true;
+        }
     } else {
         return CLI_RET_INVPARAM;
     }
 
     rv = print_bitmode(state, 0, NULL);
-    printf("\n  Note: Sample rates must be reassigned"
-           "\n        for bit mode changes to take effect\n");
 
     return rv;
 }
