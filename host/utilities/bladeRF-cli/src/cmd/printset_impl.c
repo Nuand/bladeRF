@@ -1328,10 +1328,27 @@ static int _do_print_samplerate(struct cli_state *state,
         goto out;
     }
 
-    printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
-           " (Range: [%.0f, %.0f])\n",
-           channel2str(ch), rate.integer, rate.num, rate.den,
-           range->min * range->scale, range->max * range->scale);
+    if (state->bit_mode_8bit) {
+        /* The AD9361 should not report a sample rate
+             exceeding 61.44MHz. There is a bug when setting a
+             sample rate from a script right after the bitmode
+             changes from 16bit to 8bit where the AD9361 will report
+             the actual over clocked sample rate. */
+        if (rate.integer > 61440000)
+            printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
+                   " (Range: [%.0f, %.0f])\n",
+                   channel2str(ch), rate.integer, rate.num, rate.den,
+                   range->min * range->scale * 2, range->max * range->scale * 2);
+        else
+            printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
+                   " (Range: [%.0f, %.0f])\n",
+                   channel2str(ch), rate.integer*2, rate.num*2, rate.den,
+                   range->min * range->scale * 2, range->max * range->scale * 2);
+    } else
+        printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
+               " (Range: [%.0f, %.0f])\n",
+               channel2str(ch), rate.integer, rate.num, rate.den,
+               range->min * range->scale, range->max * range->scale);
 
 out:
     return rv;
