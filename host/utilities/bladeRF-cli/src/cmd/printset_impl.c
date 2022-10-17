@@ -1401,8 +1401,12 @@ static int _do_set_samplerate(struct cli_state *state,
         goto out;
     }
 
-    printf(settext, channel2str(ch), rate->integer, rate->num, rate->den,
-           actual.integer, actual.num, actual.den);
+    if (state->bit_mode_8bit)
+        printf(settext, channel2str(ch), rate->integer*2, rate->num*2, rate->den,
+               actual.integer*2, actual.num*2, actual.den);
+    else
+        printf(settext, channel2str(ch), rate->integer, rate->num, rate->den,
+               actual.integer, actual.num, actual.den);
 
     /* Discontinuities have been reported for 2.0 on Intel
      * controllers above 6MHz. */
