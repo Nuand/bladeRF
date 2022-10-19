@@ -1384,11 +1384,20 @@ static int _do_set_samplerate(struct cli_state *state,
         "           current %s connection. A SuperSpeed connection or a lower\n"
         "           sample rate are recommended.\n";
 
+    const char *bitmode_rate_warning =
+        "\n"
+        "  Error: The provided sample rate extends outside of the 16bit\n"
+        "         bladeRF format range. Enable 8bit mode for an extended\n"
+        "         sample rate range.";
+
     status = bladerf_set_rational_sample_rate(state->dev, ch, rate, &actual);
 
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
+        if (rate->integer <= 122880000) {
+            printf("%s", bitmode_rate_warning);
+        }
         goto out;
     }
 
