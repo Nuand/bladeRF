@@ -259,10 +259,12 @@ generate
   
                format Output file format. One of the following:
   
-                      csv: CSV of SC16 Q11 samples (default)
+                      csv: CSV of SC16 Q11 or SC8 Q7 samples (default)
   
-                      bin: Raw SC16 Q11 DAC samples
+                      bin: Raw SC16 Q11 or SC8 Q7 DAC samples
   
+                     Note: Sample format will depend on the
+                           bitmode state
   
   Generates signal for use with tx command. Signal types include:
   
@@ -736,9 +738,12 @@ available parameters.
 
 `format`        Output file format. One of the following:
 
-                `csv`: CSV of SC16 Q11 samples
+                `csv`: CSV of SC16 Q11 or SC8 Q7 samples
 
-                `bin`: Raw SC16 Q11 DAC samples
+                `bin`: Raw SC16 Q11 or SC8 Q7 DAC samples
+
+                 Note: Sample format will depend on the
+                       `bitmode` state
 
 `samples`       Number of samples per buffer to use in the
                 asynchronous stream.  Must be divisible by 1024 and
@@ -917,9 +922,11 @@ available parameters.
 
 `format`        Input file format. One of the following:
 
-                `csv`: CSV of SC16 Q11 samples ([-2048, 2047])
+                `csv`: CSV of SC16 Q11 or SC8 Q7 samples
 
-                `bin`: Raw SC16 Q11 DAC samples ([-2048, 2047])
+                `bin`: Raw SC16 Q11 or SC8 Q7 DAC samples
+
+                 Note: Sample format will depend on the `bitmode` state
 
 `repeat`        The number of times the file contents should be
                 transmitted. 0 implies repeat until stopped.
