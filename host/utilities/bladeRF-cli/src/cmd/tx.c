@@ -487,8 +487,14 @@ static int tx_cmd_start(struct cli_state *s)
         status = tx_csv_to_bladerf_format(s);
 
         if (status == 0) {
-            printf("  Converted CSV to SC16 Q11 file and "
-                   "switched to converted file.\n\n");
+            if (s->bit_mode_8bit) {
+                printf("  Converted CSV to SC8 Q7 file and "
+                    "switched to converted file.\n\n");
+
+            } else {
+                printf("  Converted CSV to SC16 Q11 file and "
+                    "switched to converted file.\n\n");
+            }
         }
     }
 
