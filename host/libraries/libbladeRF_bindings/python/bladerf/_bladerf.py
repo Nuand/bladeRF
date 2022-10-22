@@ -850,8 +850,6 @@ class BladeRF:
 
     def sync_config(self, layout, fmt, num_buffers, buffer_size, num_transfers,
                     stream_timeout):
-        if fmt != Format.SC16_Q11:
-            raise NotImplementedError("Format not supported by binding.")
 
         ret = libbladeRF.bladerf_sync_config(self.dev[0],
                                              layout.value,
@@ -862,19 +860,19 @@ class BladeRF:
                                              stream_timeout)
         _check_error(ret)
 
-    def sync_tx(self, buf, num_samples, timeout_ms=None):
+    def sync_tx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
         ret = libbladeRF.bladerf_sync_tx(self.dev[0],
                                          ffi.from_buffer(buf),
                                          num_samples,
-                                         ffi.NULL,
+                                         ffi.cast("struct bladerf_metadata *", meta),
                                          timeout_ms or 0)
         _check_error(ret)
 
-    def sync_rx(self, buf, num_samples, timeout_ms=None):
+    def sync_rx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
         ret = libbladeRF.bladerf_sync_rx(self.dev[0],
                                          ffi.from_buffer(buf),
                                          num_samples,
-                                         ffi.NULL,
+                                         meta,
                                          timeout_ms or 0)
         _check_error(ret)
 
