@@ -2034,11 +2034,17 @@ static int bladerf2_stream(struct bladerf_stream *stream,
             return -EINVAL;
     }
 
-    CHECK_STATUS(perform_format_config(stream->dev, dir, stream->format));
+    WITH_MUTEX(&stream->dev->lock, {
+        CHECK_STATUS_LOCKED(
+            perform_format_config(stream->dev, dir, stream->format));
+    });
 
     rv = async_run_stream(stream, layout);
 
-    CHECK_STATUS(perform_format_deconfig(stream->dev, dir));
+    WITH_MUTEX(&stream->dev->lock, {
+        CHECK_STATUS_LOCKED(
+            perform_format_deconfig(stream->dev, dir));
+    });
 
     return rv;
 }
