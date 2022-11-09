@@ -705,10 +705,6 @@ int main(int argc, char *argv[])
         goto error;
     }
 
-    while (tx_stream->state != STREAM_RUNNING) {
-        usleep(100);
-    }
-
     status = bladerf_enable_module(dev, BLADERF_CHANNEL_RX(0), true);
     if (status < 0) {
         log_error("bladerf_enable_module(RX): %s\n", bladerf_strerror(status));
