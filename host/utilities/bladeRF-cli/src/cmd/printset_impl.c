@@ -1221,6 +1221,54 @@ out:
     return rv;
 }
 
+/* feature */
+int print_feature(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    bladerf_feature feature;
+
+    bladerf_get_feature(state->dev, &feature);
+    printf("  Feature:  %s enabled\n", (feature == DEFAULT) ? "Default" : "Oversample");
+
+    return rv;
+}
+
+int set_feature(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CLI_RET_OK;
+    char* str_16_enable[3] = {"set", "bitmode", "16"};
+    char* str_8_enable[3] = {"set", "bitmode", "8"};
+
+    if (argc != 3) {
+        if (argc == 2) {
+            printf("Usage: %s %s <default|oversample>\n", argv[0], argv[1]);
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
+    }
+
+    if (!strcasecmp("default", argv[2])) {
+        bladerf_set_feature(state->dev, DEFAULT);
+        rv = set_bitmode(state, 3, str_16_enable);
+        if(rv != CLI_RET_OK) {
+            return rv;
+        }
+    } else if(!strcasecmp("oversample", argv[2])) {
+        bladerf_set_feature(state->dev, OVERSAMPLE);
+        rv = set_bitmode(state, 3, str_8_enable);
+        if(rv != CLI_RET_OK) {
+            return rv;
+        }
+    } else {
+        return CLI_RET_INVPARAM;
+    }
+
+    rv = print_feature(state, 0, NULL);
+
+    return rv;
+}
+
 /* bitmode */
 int print_bitmode(struct cli_state *state, int argc, char **argv)
 {

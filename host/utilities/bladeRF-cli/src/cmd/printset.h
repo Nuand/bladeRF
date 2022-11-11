@@ -106,6 +106,8 @@ int print_tuning_mode(struct cli_state *state, int argc, char **argv);
 int set_tuning_mode(struct cli_state *state, int argc, char **argv);
 int print_bitmode(struct cli_state *state, int argc, char **argv);
 int set_bitmode(struct cli_state *state, int argc, char **argv);
+int print_feature(struct cli_state *state, int argc, char **argv);
+int set_feature(struct cli_state *state, int argc, char **argv);
 int print_rxvga1(struct cli_state *state, int argc, char **argv);
 int set_rxvga1(struct cli_state *state, int argc, char **argv);
 int print_rxvga2(struct cli_state *state, int argc, char **argv);
