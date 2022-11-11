@@ -189,6 +189,9 @@ struct bladerf {
 
     /* XB's private data */
     void *xb_data;
+
+    /* Enabled feature */
+    bladerf_feature feature;
 };
 
 struct board_fns {
