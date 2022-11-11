@@ -1891,3 +1891,25 @@ int bladerf_xb300_get_output_power(struct bladerf *dev, float *val)
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
+
+/******************************************************************************/
+/* Features */
+/******************************************************************************/
+
+int bladerf_set_feature(struct bladerf *dev, bladerf_feature feature)
+{
+    MUTEX_LOCK(&dev->lock);
+    dev->feature = feature;
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_get_feature(struct bladerf *dev, bladerf_feature* feature)
+{
+    MUTEX_LOCK(&dev->lock);
+    *feature = dev->feature;
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
