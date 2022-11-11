@@ -4069,6 +4069,49 @@ int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev,
 /** @} (End of FN_LOW_LEVEL) */
 
 /**
+ * @defgroup    FN_SF Features
+ *
+ * This group of functions provides the ability to set features available
+ * to bladeRF devices.
+ *
+ * @{
+ */
+
+/**
+ * Feature Set
+ */
+typedef enum {
+    DEFAULT = 0,   /**< No feature enabled */
+    OVERSAMPLE     /**< Enforces AD9361 OC and 8bit mode */
+} bladerf_feature;
+
+/**
+ * Enables a feature.
+ *
+ * @param       dev         Device handle
+ * @param[out]  feature     Feature
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_feature(struct bladerf *dev,
+                                  bladerf_feature feature);
+
+/**
+ * Gets currently enabled feature.
+ *
+ * @param       dev         Device handle
+ * @param[out]  feature     Feature
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_feature(struct bladerf *dev,
+                                  bladerf_feature* feature);
+
+/** @} (End of FN_SF) */
+
+/**
  * @defgroup    FN_XB   Expansion board support
  *
  * This group of functions provides the ability to attach and detach expansion
