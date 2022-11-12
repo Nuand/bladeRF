@@ -1497,6 +1497,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
     int rv = CLI_RET_OK;
 
     bladerf_channel ch = BLADERF_CHANNEL_INVALID;
+    bladerf_feature feature;
     struct bladerf_rational_rate rate;
     bool ok;
     size_t idx;
@@ -1608,7 +1609,8 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 
     /* The AD9361 doubles the sampling rate in 8bit mode
        so we must halve the sampling rate prior to setting */
-    if (state->bit_mode_8bit) {
+    bladerf_get_feature(state->dev, &feature);
+    if (feature == OVERSAMPLE) {
         rate.integer = rate.integer/2;
         rate.den = rate.den*2;
         rate.num = rate.num;
@@ -1622,7 +1624,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
       Sample rate assignments clear previous register
       values. We must reassign for every set_samplerate().
     *******************************************************/
-    if (state->bit_mode_8bit) {
+    if (feature == OVERSAMPLE) {
         bladerf_set_rfic_register(state->dev,0x003,0x54); // OC Register
 
         /* TX Register Assignments */
