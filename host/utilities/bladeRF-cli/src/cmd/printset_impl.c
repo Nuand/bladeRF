@@ -1503,7 +1503,6 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
     int rv = CLI_RET_OK;
 
     bladerf_channel ch = BLADERF_CHANNEL_INVALID;
-    bladerf_feature feature;
     struct bladerf_rational_rate rate;
     bool ok;
     size_t idx;
@@ -1613,58 +1612,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         }
     }
 
-    /* The AD9361 doubles the sampling rate in 8bit mode
-       so we must halve the sampling rate prior to setting */
-    bladerf_get_feature(state->dev, &feature);
-    if (feature == OVERSAMPLE) {
-        rate.integer = rate.integer/2;
-        rate.den = rate.den*2;
-        rate.num = rate.num;
-    }
-
     rv = ps_foreach_chan(state, true, true, ch, _do_set_samplerate, &rate);
-
-    /*****************************************************
-      Register config for 8bit operation
-
-      Sample rate assignments clear previous register
-      values. We must reassign for every set_samplerate().
-    *******************************************************/
-    if (feature == OVERSAMPLE) {
-        bladerf_set_rfic_register(state->dev,0x003,0x54); // OC Register
-
-        /* TX Register Assignments */
-        bladerf_set_rfic_register(state->dev,0xc2,0x9f);  // TX BBF R1
-        bladerf_set_rfic_register(state->dev,0xc3,0x9f);  // TX baseband filter R2
-        bladerf_set_rfic_register(state->dev,0xc4,0x9f);  // TX baseband filter R3
-        bladerf_set_rfic_register(state->dev,0xc5,0x9f);  // TX baseband filter R4
-        bladerf_set_rfic_register(state->dev,0xc6,0x9f);  // TX baseband filter real pole word
-        bladerf_set_rfic_register(state->dev,0xc7,0x00);  // TX baseband filter C1
-        bladerf_set_rfic_register(state->dev,0xc8,0x00);  // TX baseband filter C2
-        bladerf_set_rfic_register(state->dev,0xc9,0x00);  // TX baseband filter real pole word
-
-        /* RX Register Assignments */
-        // Gain and calibration
-        bladerf_set_rfic_register(state->dev,0x1e0,0xBF);
-        bladerf_set_rfic_register(state->dev,0x1e4,0xFF);
-        bladerf_set_rfic_register(state->dev,0x1f2,0xFF);
-        bladerf_set_rfic_register(state->dev,0x1e6,0x87);
-
-        // Miller and BBF caps
-        bladerf_set_rfic_register(state->dev,0x1e7,0x00);
-        bladerf_set_rfic_register(state->dev,0x1e8,0x00);
-        bladerf_set_rfic_register(state->dev,0x1e9,0x00);
-        bladerf_set_rfic_register(state->dev,0x1ea,0x00);
-        bladerf_set_rfic_register(state->dev,0x1eb,0x00);
-        bladerf_set_rfic_register(state->dev,0x1ec,0x00);
-        bladerf_set_rfic_register(state->dev,0x1ed,0x00);
-        bladerf_set_rfic_register(state->dev,0x1ee,0x00);
-        bladerf_set_rfic_register(state->dev,0x1ef,0x00);
-        bladerf_set_rfic_register(state->dev,0x1e0,0xBF);
-
-        // BIST and Data Port Test Config [D1:D0] "Must be 2’b00"
-        bladerf_set_rfic_register(state->dev,0x3f6,0x03);
-    }
 
 out:
     return rv;
