@@ -1281,6 +1281,7 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
 {
     int rv   = CLI_RET_OK;
     struct bladerf_devinfo info;
+    bladerf_feature feature;
 
     if (cli_device_is_streaming(state)) {
         printf("  Changing bit mode will not take affect while device"
@@ -1298,7 +1299,12 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
     }
 
     if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2])) {
-        if(state->bit_mode_8bit) {
+        bladerf_get_feature(state->dev, &feature);
+        if(feature == OVERSAMPLE) {
+            printf("  Error: 16bit mode not permitted when\n"
+                   "         over sampling is enabled.\n");
+            return 0;
+        } else if(state->bit_mode_8bit) {
             // Reopen the device with a fresh register config
             bladerf_get_devinfo(state->dev, &info);
             bladerf_close(state->dev);
