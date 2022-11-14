@@ -653,11 +653,66 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
                                      struct bladerf_rational_rate *actual)
 {
     int status;
+    struct bladerf_rational_rate half_rate = *rate;
+    bladerf_feature* feature = &dev->feature;
+
+    /* The AD9361 doubles the sampling rate in OVERSAMPLE mode
+       so we must halve the sampling rate prior to setting */
     MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
-
+    if (*feature == OVERSAMPLE) {
+        half_rate.integer = rate->integer / 2;
+        half_rate.den = rate->den * 2;
+        status = dev->board->set_rational_sample_rate(dev, ch, &half_rate, actual);
+    } else {
+        status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
+    }
     MUTEX_UNLOCK(&dev->lock);
+
+    /*****************************************************
+      Register config for OVERSAMPLE operation
+
+      Sample rate assignments clear previous register
+      values. We must reassign for every set_samplerate().
+
+      Note: bladerf_set_rfic_register is mutex locked. Must
+            be placed outside of a mutex lock like above.
+    *******************************************************/
+    if (*feature == OVERSAMPLE) {
+        bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
+
+        /* TX Register Assignments */
+        bladerf_set_rfic_register(dev,0xc2,0x9f);  // TX BBF R1
+        bladerf_set_rfic_register(dev,0xc3,0x9f);  // TX baseband filter R2
+        bladerf_set_rfic_register(dev,0xc4,0x9f);  // TX baseband filter R3
+        bladerf_set_rfic_register(dev,0xc5,0x9f);  // TX baseband filter R4
+        bladerf_set_rfic_register(dev,0xc6,0x9f);  // TX baseband filter real pole word
+        bladerf_set_rfic_register(dev,0xc7,0x00);  // TX baseband filter C1
+        bladerf_set_rfic_register(dev,0xc8,0x00);  // TX baseband filter C2
+        bladerf_set_rfic_register(dev,0xc9,0x00);  // TX baseband filter real pole word
+
+        /* RX Register Assignments */
+        // Gain and calibration
+        bladerf_set_rfic_register(dev,0x1e0,0xBF);
+        bladerf_set_rfic_register(dev,0x1e4,0xFF);
+        bladerf_set_rfic_register(dev,0x1f2,0xFF);
+        // bladerf_set_rfic_register(dev,0x1e6,0x87); // Causes gr-osmosdr to freak out
+
+        // Miller and BBF caps
+        bladerf_set_rfic_register(dev,0x1e7,0x00);
+        bladerf_set_rfic_register(dev,0x1e8,0x00);
+        bladerf_set_rfic_register(dev,0x1e9,0x00);
+        bladerf_set_rfic_register(dev,0x1ea,0x00);
+        bladerf_set_rfic_register(dev,0x1eb,0x00);
+        bladerf_set_rfic_register(dev,0x1ec,0x00);
+        bladerf_set_rfic_register(dev,0x1ed,0x00);
+        bladerf_set_rfic_register(dev,0x1ee,0x00);
+        bladerf_set_rfic_register(dev,0x1ef,0x00);
+        bladerf_set_rfic_register(dev,0x1e0,0xBF);
+
+        // BIST and Data Port Test Config [D1:D0] "Must be 2’b00"
+        bladerf_set_rfic_register(dev,0x3f6,0x03);
+    }
+
     return status;
 }
 
