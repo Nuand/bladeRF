@@ -509,7 +509,7 @@ static enum rf_gain_ctrl_mode const bladerf2_rx_gain_mode_default[2] = {
 /* Sample Rate Range */
 static struct bladerf_range const bladerf2_sample_rate_range = {
     FIELD_INIT(.min,    520834),
-    FIELD_INIT(.max,    61440000),
+    FIELD_INIT(.max,    122880000),
     FIELD_INIT(.step,   1),
     FIELD_INIT(.scale,  1),
 };

@@ -1386,27 +1386,10 @@ static int _do_print_samplerate(struct cli_state *state,
         goto out;
     }
 
-    if (state->bit_mode_8bit) {
-        /* The AD9361 should not report a sample rate
-             exceeding 61.44MHz. There is a bug when setting a
-             sample rate from a script right after the bitmode
-             changes from 16bit to 8bit where the AD9361 will report
-             the actual over clocked sample rate. */
-        if (rate.integer > 61440000)
-            printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
-                   " (Range: [%.0f, %.0f])\n",
-                   channel2str(ch), rate.integer, rate.num, rate.den,
-                   range->min * range->scale * 2, range->max * range->scale * 2);
-        else
-            printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
-                   " (Range: [%.0f, %.0f])\n",
-                   channel2str(ch), rate.integer*2, rate.num*2, rate.den,
-                   range->min * range->scale * 2, range->max * range->scale * 2);
-    } else
-        printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
-               " (Range: [%.0f, %.0f])\n",
-               channel2str(ch), rate.integer, rate.num, rate.den,
-               range->min * range->scale, range->max * range->scale);
+    printf("  %s sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64
+           " (Range: [%.0f, %.0f])\n",
+           channel2str(ch), rate.integer, rate.num, rate.den,
+           range->min * range->scale, range->max * range->scale);
 
 out:
     return rv;
@@ -1448,6 +1431,7 @@ static int _do_set_samplerate(struct cli_state *state,
 
     struct bladerf_rational_rate *rate = (struct bladerf_rational_rate *)arg;
     struct bladerf_rational_rate actual;
+    bladerf_feature feature;
 
     const char *settext =
         "  Setting %s sample rate - req: %9" PRIu64 " %" PRIu64 "/%" PRIu64
@@ -1476,8 +1460,9 @@ static int _do_set_samplerate(struct cli_state *state,
         goto out;
     }
 
-    if (state->bit_mode_8bit)
-        printf(settext, channel2str(ch), rate->integer*2, rate->num*2, rate->den,
+    bladerf_get_feature(state->dev, &feature);
+    if (feature == OVERSAMPLE)
+        printf(settext, channel2str(ch), rate->integer, rate->num, rate->den,
                actual.integer*2, actual.num*2, actual.den);
     else
         printf(settext, channel2str(ch), rate->integer, rate->num, rate->den,

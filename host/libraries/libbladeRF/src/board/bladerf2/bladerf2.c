@@ -1092,6 +1092,12 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         }
     }
 
+    /* The AD9361 doubles the sampling rate in OVERSAMPLE mode
+       so we must halve the sampling rate prior to setting */
+    if (dev->feature == OVERSAMPLE) {
+        rate /= 2;
+    }
+
     /* Set the sample rate */
     CHECK_STATUS(rfic->set_sample_rate(dev, ch, rate));
 
