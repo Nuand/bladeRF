@@ -653,19 +653,10 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
                                      struct bladerf_rational_rate *actual)
 {
     int status;
-    struct bladerf_rational_rate half_rate = *rate;
     bladerf_feature* feature = &dev->feature;
 
-    /* The AD9361 doubles the sampling rate in OVERSAMPLE mode
-       so we must halve the sampling rate prior to setting */
     MUTEX_LOCK(&dev->lock);
-    if (*feature == OVERSAMPLE) {
-        half_rate.integer = rate->integer / 2;
-        half_rate.den = rate->den * 2;
-        status = dev->board->set_rational_sample_rate(dev, ch, &half_rate, actual);
-    } else {
-        status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
-    }
+    status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
     MUTEX_UNLOCK(&dev->lock);
 
     /*****************************************************
