@@ -1037,6 +1037,17 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         return BLADERF_ERR_RANGE;
     }
 
+    /* Feature range check */
+    if (dev->feature == OVERSAMPLE &&
+        !is_within_range(&bladerf2_sample_rate_range_oversample, rate)) {
+        log_error("Sample rate outside of OVERSAMPLE feature range\n");
+        return BLADERF_ERR_RANGE;
+    } else if (dev->feature == DEFAULT &&
+               !is_within_range(&bladerf2_sample_rate_range_base, rate)) {
+        log_error("Sample rate outside of DEFAULT feature range\n");
+        return BLADERF_ERR_RANGE;
+    }
+
     /* Get current sample rate, and check it against the low-rate range */
     CHECK_STATUS(dev->board->get_sample_rate(dev, ch, &current));
 
