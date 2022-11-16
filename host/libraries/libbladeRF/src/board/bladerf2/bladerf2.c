@@ -1011,8 +1011,17 @@ static int bladerf2_get_sample_rate(struct bladerf *dev,
     NULL_CHECK(rate);
 
     struct bladerf2_board_data *board_data = dev->board_data;
+    bladerf_sample_rate double_rate;
+    CHECK_STATUS(board_data->rfic->get_sample_rate(dev, ch, rate));
 
-    return board_data->rfic->get_sample_rate(dev, ch, rate);
+    /* OVERSAMPLE feature reports half of the actual
+       sample rate so we have to double it on return */
+    if (dev->feature == OVERSAMPLE) {
+        double_rate = *rate*2;
+        *rate = double_rate;
+    }
+
+    return 0;
 }
 
 static int bladerf2_set_sample_rate(struct bladerf *dev,
