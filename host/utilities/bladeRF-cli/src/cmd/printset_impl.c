@@ -1266,6 +1266,11 @@ int set_feature(struct cli_state *state, int argc, char **argv)
 
     rv = print_feature(state, 0, NULL);
 
+    if (!strcasecmp("oversample", argv[2]))
+        printf("\n"
+               "  Note: Sample rates must be reassigned\n"
+               "        for OVERSAMPLE changes to take effect\n\n");
+
     return rv;
 }
 
@@ -1313,8 +1318,6 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
         }
     } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
         if (!state->bit_mode_8bit) {
-            printf("  Note: Sample rates must be reassigned\n"
-                   "        for bit mode changes to take effect\n\n");
             state->bit_mode_8bit = true;
         }
     } else {
