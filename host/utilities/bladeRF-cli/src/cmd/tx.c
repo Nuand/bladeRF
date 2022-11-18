@@ -567,12 +567,18 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
     char *val;
     int status;
     struct tx_params *tx_params = s->tx->params;
+    bladerf_feature feature;
 
     assert(argc >= 2);
 
     if (argc == 2) {
         tx_print_config(s->tx);
         return 0;
+    }
+
+    bladerf_get_feature(s->dev, &feature);
+    if (feature == OVERSAMPLE) {
+        printf("  Warning: TX with OVERSAMPLE enabled is experimental.\n\n");
     }
 
     for (i = 2; i < argc; i++) {
