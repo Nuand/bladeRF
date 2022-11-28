@@ -577,7 +577,7 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
     }
 
     bladerf_get_feature(s->dev, &feature);
-    if (feature == OVERSAMPLE) {
+    if (feature == BLADERF_FEATURE_OVERSAMPLE) {
         printf("  Warning: TX with OVERSAMPLE enabled is experimental.\n\n");
     }
 

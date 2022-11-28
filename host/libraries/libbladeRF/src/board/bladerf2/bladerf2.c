@@ -1016,7 +1016,7 @@ static int bladerf2_get_sample_rate(struct bladerf *dev,
 
     /* OVERSAMPLE feature reports half of the actual
        sample rate so we have to double it on return */
-    if (dev->feature == OVERSAMPLE) {
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE) {
         double_rate = *rate*2;
         *rate = double_rate;
     }
@@ -1047,11 +1047,11 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     }
 
     /* Feature range check */
-    if (dev->feature == OVERSAMPLE &&
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE &&
         !is_within_range(&bladerf2_sample_rate_range_oversample, rate)) {
         log_error("Sample rate outside of OVERSAMPLE feature range\n");
         return BLADERF_ERR_RANGE;
-    } else if (dev->feature == DEFAULT &&
+    } else if (dev->feature == BLADERF_FEATURE_DEFAULT &&
                !is_within_range(&bladerf2_sample_rate_range_base, rate)) {
         log_error("Sample rate outside of DEFAULT feature range\n");
         return BLADERF_ERR_RANGE;
@@ -1114,7 +1114,7 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
 
     /* The AD9361 doubles the sampling rate in OVERSAMPLE mode
        so we must halve the sampling rate prior to setting */
-    if (dev->feature == OVERSAMPLE) {
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE) {
         rate /= 2;
     }
 
@@ -2134,7 +2134,7 @@ static int bladerf2_sync_config(struct bladerf *dev,
     bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
     int status;
 
-    if (dev->feature == OVERSAMPLE
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE
         && (format == BLADERF_FORMAT_SC16_Q11 || format == BLADERF_FORMAT_SC16_Q11_META)) {
         log_error("16bit format unsupported with OVERSAMPLE feature enabled\n");
         return BLADERF_ERR_UNSUPPORTED;

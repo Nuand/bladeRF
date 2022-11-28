@@ -668,7 +668,7 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
       Note: bladerf_set_rfic_register is mutex locked. Must
             be placed outside of a mutex lock like above.
     *******************************************************/
-    if (*feature == OVERSAMPLE) {
+    if (*feature == BLADERF_FEATURE_OVERSAMPLE) {
         bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
 
         /* TX Register Assignments */

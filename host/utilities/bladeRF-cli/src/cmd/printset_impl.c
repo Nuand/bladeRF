@@ -1228,7 +1228,7 @@ int print_feature(struct cli_state *state, int argc, char **argv)
     bladerf_feature feature;
 
     bladerf_get_feature(state->dev, &feature);
-    printf("  Feature:  %s enabled\n", (feature == DEFAULT) ? "Default" : "Oversample");
+    printf("  Feature:  %s enabled\n", (feature == BLADERF_FEATURE_DEFAULT) ? "Default" : "Oversample");
 
     return rv;
 }
@@ -1249,13 +1249,13 @@ int set_feature(struct cli_state *state, int argc, char **argv)
     }
 
     if (!strcasecmp("default", argv[2])) {
-        bladerf_set_feature(state->dev, DEFAULT);
+        bladerf_set_feature(state->dev, BLADERF_FEATURE_DEFAULT);
         rv = set_bitmode(state, 3, str_16_enable);
         if(rv != CLI_RET_OK) {
             return rv;
         }
     } else if(!strcasecmp("oversample", argv[2])) {
-        bladerf_set_feature(state->dev, OVERSAMPLE);
+        bladerf_set_feature(state->dev, BLADERF_FEATURE_OVERSAMPLE);
         rv = set_bitmode(state, 3, str_8_enable);
         if(rv != CLI_RET_OK) {
             return rv;
@@ -1305,7 +1305,7 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
 
     if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2])) {
         bladerf_get_feature(state->dev, &feature);
-        if(feature == OVERSAMPLE) {
+        if(feature == BLADERF_FEATURE_OVERSAMPLE) {
             printf("  Error: 16bit mode not permitted when\n"
                    "         over sampling is enabled.\n");
             return 0;
