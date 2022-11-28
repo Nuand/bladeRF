@@ -4081,8 +4081,8 @@ int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev,
  * Feature Set
  */
 typedef enum {
-    DEFAULT = 0,   /**< No feature enabled */
-    OVERSAMPLE     /**< Enforces AD9361 OC and 8bit mode */
+    BLADERF_FEATURE_DEFAULT = 0,   /**< No feature enabled */
+    BLADERF_FEATURE_OVERSAMPLE     /**< Enforces AD9361 OC and 8bit mode */
 } bladerf_feature;
 
 /**
