@@ -96,6 +96,31 @@ static int rx_write_bin_sc16q11(struct cli_state *s,
     }
 }
 
+/*
+ * @pre data_mgmt lock is held
+ *
+ * returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
+static int rx_write_bin_sc8q7(struct cli_state *s,
+                                void *samples,
+                                size_t n_samples)
+{
+    size_t status;
+    struct rxtx_data *rx = s->rx;
+
+    MUTEX_LOCK(&rx->file_mgmt.file_lock);
+    status = fwrite(samples, sizeof(int8_t),
+                    2 * n_samples, /* I and Q are each an int8_t */
+                    rx->file_mgmt.file);
+    MUTEX_UNLOCK(&rx->file_mgmt.file_lock);
+
+    if (status != (2 * n_samples)) {
+        set_last_error(&rx->last_error, ETYPE_CLI, CLI_RET_FILEOP);
+        return CLI_RET_FILEOP;
+    } else {
+        return 0;
+    }
+}
+
 /* returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
 static int rx_write_csv(struct cli_state *s,
                         void *samples,
@@ -323,6 +348,10 @@ void *rx_task(void *cli_state_arg)
 
                     case RXTX_FMT_BIN_SC16Q11:
                         rx_params->write_samples = rx_write_bin_sc16q11;
+                        break;
+
+                    case RXTX_FMT_BIN_SC8Q7:
+                        rx_params->write_samples = rx_write_bin_sc8q7;
                         break;
 
                     default:

@@ -57,7 +57,8 @@
 enum rxtx_fmt {
     RXTX_FMT_INVALID = -1,
     RXTX_FMT_CSV,         /* CSV (Comma-separated, one entry per line) */
-    RXTX_FMT_BIN_SC16Q11  /* Binary (big-endian), c16 I,Q */
+    RXTX_FMT_BIN_SC16Q11, /* Binary (big-endian), c16 I,Q */
+    RXTX_FMT_BIN_SC8Q7    /* Binary (big-endian), c8 I,Q */
 };
 
 enum rxtx_state {
@@ -195,10 +196,11 @@ void rxtx_set_file_format(struct rxtx_data *rxtx, enum rxtx_fmt format);
  * Convert a string to an rxtx_fmt value
  *
  * @param   str     Format in string form
+ * @param   s       State for getting bitmode
  *
  * @return rxtx_fmt value. RXTX_FMT_INVALID is returned for invalid strings.
  */
-enum rxtx_fmt rxtx_str2fmt(const char *str);
+enum rxtx_fmt rxtx_str2fmt(const char *str, struct cli_state *s);
 
 /**
  * Print the task state with the provided prefix and suffix
