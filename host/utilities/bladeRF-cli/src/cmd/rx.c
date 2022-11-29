@@ -317,7 +317,7 @@ void *rx_task(void *cli_state_arg)
                 MUTEX_LOCK(&rx->file_mgmt.file_meta_lock);
 
                 switch (rx->file_mgmt.format) {
-                    case RXTX_FMT_CSV_SC16Q11:
+                    case RXTX_FMT_CSV:
                         rx_params->write_samples = rx_write_csv;
                         break;
 
@@ -419,7 +419,7 @@ static int rx_cmd_start(struct cli_state *s)
 
     /* Set up output file */
     MUTEX_LOCK(&s->rx->file_mgmt.file_lock);
-    if (s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
+    if (s->rx->file_mgmt.format == RXTX_FMT_CSV) {
         status =
             expand_and_open(s->rx->file_mgmt.path, "w", &s->rx->file_mgmt.file);
 

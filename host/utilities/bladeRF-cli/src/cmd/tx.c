@@ -483,7 +483,7 @@ static int tx_cmd_start(struct cli_state *s)
     /* Perform file conversion (if needed) and open input file */
     MUTEX_LOCK(&s->tx->file_mgmt.file_meta_lock);
 
-    if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
+    if (s->tx->file_mgmt.format == RXTX_FMT_CSV) {
         status = tx_csv_to_bladerf_format(s);
 
         if (status == 0) {
