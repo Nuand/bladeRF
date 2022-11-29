@@ -501,7 +501,8 @@ static int tx_cmd_start(struct cli_state *s)
     if (status == 0) {
         MUTEX_LOCK(&s->tx->file_mgmt.file_lock);
 
-        assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
+        assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11 ||
+               s->tx->file_mgmt.format == RXTX_FMT_BIN_SC8Q7);
         status = expand_and_open(s->tx->file_mgmt.path, "rb",
                                  &s->tx->file_mgmt.file);
         MUTEX_UNLOCK(&s->tx->file_mgmt.file_lock);

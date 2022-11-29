@@ -43,6 +43,11 @@ int gen_write_fmt_sample(FILE *fp, enum rxtx_fmt fmt, int16_t s_i, int16_t s_q) 
         if (status > 0) {
             status = fwrite(&s_q, sizeof(int16_t), 1, fp);
         }
+    } else if (fmt == RXTX_FMT_BIN_SC8Q7) {
+        status = fwrite(&s_i, sizeof(int8_t), 1, fp);
+        if (status > 0) {
+            status = fwrite(&s_q, sizeof(int8_t), 1, fp);
+        }
     }
     return status <= 0;
 }
@@ -112,7 +117,7 @@ int cmd_generate(struct cli_state *s, int argc, char **argv)
                 goto out;
             }
         } else if (!strcasecmp("format", argv[i])) {
-            fmt = rxtx_str2fmt(val);
+            fmt = rxtx_str2fmt(val, s);
             if (fmt == RXTX_FMT_INVALID) {
                 cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[i], val));
                 status = CLI_RET_INVPARAM;
