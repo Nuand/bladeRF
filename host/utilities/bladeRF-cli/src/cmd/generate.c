@@ -36,7 +36,7 @@
 
 int gen_write_fmt_sample(FILE *fp, enum rxtx_fmt fmt, int16_t s_i, int16_t s_q) {
     int status = 0;
-    if (fmt == RXTX_FMT_CSV_SC16Q11) {
+    if (fmt == RXTX_FMT_CSV) {
         status = fprintf(fp, "%d, %d\n", s_i, s_q);
     } else if (fmt == RXTX_FMT_BIN_SC16Q11) {
         status = fwrite(&s_i, sizeof(int16_t), 1, fp);
@@ -62,7 +62,7 @@ int cmd_generate(struct cli_state *s, int argc, char **argv)
     }
     int remaining_argc;
 
-    enum rxtx_fmt fmt = RXTX_FMT_CSV_SC16Q11;
+    enum rxtx_fmt fmt = RXTX_FMT_CSV;
     unsigned int n;
     bool ok;
 
@@ -195,12 +195,12 @@ int cmd_generate(struct cli_state *s, int argc, char **argv)
         free(s->tx->file_mgmt.path);
     }
     s->tx->file_mgmt.path = strdup(argv[1]);
-    status = expand_and_open(s->tx->file_mgmt.path, fmt == RXTX_FMT_CSV_SC16Q11 ? "r" : "rb",
+    status = expand_and_open(s->tx->file_mgmt.path, fmt == RXTX_FMT_CSV ? "r" : "rb",
                                 &s->tx->file_mgmt.file);
     if (status) {
         printf("  Configure tx by running:\n"
            "    tx config file=%s format=%s repeat=0\n\n",
-           argv[1], fmt == RXTX_FMT_CSV_SC16Q11 ? "csv" : "bin");
+           argv[1], fmt == RXTX_FMT_CSV ? "csv" : "bin");
 
     }
 

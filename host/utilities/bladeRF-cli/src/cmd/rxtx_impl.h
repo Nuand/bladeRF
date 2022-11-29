@@ -56,7 +56,7 @@
 
 enum rxtx_fmt {
     RXTX_FMT_INVALID = -1,
-    RXTX_FMT_CSV_SC16Q11, /* CSV (Comma-separated, one entry per line) */
+    RXTX_FMT_CSV,         /* CSV (Comma-separated, one entry per line) */
     RXTX_FMT_BIN_SC16Q11  /* Binary (big-endian), c16 I,Q */
 };
 
