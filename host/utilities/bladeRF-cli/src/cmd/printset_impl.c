@@ -1238,6 +1238,7 @@ int set_feature(struct cli_state *state, int argc, char **argv)
     int rv = CLI_RET_OK;
     char* str_16_enable[3] = {"set", "bitmode", "16"};
     char* str_8_enable[3] = {"set", "bitmode", "8"};
+    struct bladerf_devinfo info;
 
     if (argc != 3) {
         if (argc == 2) {
@@ -1249,6 +1250,11 @@ int set_feature(struct cli_state *state, int argc, char **argv)
     }
 
     if (!strcasecmp("default", argv[2])) {
+        // Reopen the device with a fresh register config
+        bladerf_get_devinfo(state->dev, &info);
+        bladerf_close(state->dev);
+        bladerf_open_with_devinfo(&(state->dev), &info);
+
         bladerf_set_feature(state->dev, BLADERF_FEATURE_DEFAULT);
         rv = set_bitmode(state, 3, str_16_enable);
         if(rv != CLI_RET_OK) {
@@ -1285,7 +1291,6 @@ int print_bitmode(struct cli_state *state, int argc, char **argv)
 int set_bitmode(struct cli_state *state, int argc, char **argv)
 {
     int rv   = CLI_RET_OK;
-    struct bladerf_devinfo info;
     bladerf_feature feature;
 
     if (cli_device_is_streaming(state)) {
@@ -1310,10 +1315,6 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
                    "         over sampling is enabled.\n");
             return 0;
         } else if(state->bit_mode_8bit) {
-            // Reopen the device with a fresh register config
-            bladerf_get_devinfo(state->dev, &info);
-            bladerf_close(state->dev);
-            bladerf_open_with_devinfo(&(state->dev), &info);
             state->bit_mode_8bit = false;
         }
     } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
