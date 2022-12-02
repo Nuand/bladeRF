@@ -1944,11 +1944,19 @@ int bladerf_xb300_get_output_power(struct bladerf *dev, float *val)
 
 int bladerf_set_feature(struct bladerf *dev, bladerf_feature feature)
 {
+    int status;
     MUTEX_LOCK(&dev->lock);
-    dev->feature = feature;
-    MUTEX_UNLOCK(&dev->lock);
 
-    return 0;
+    if(feature == BLADERF_FEATURE_OVERSAMPLE && strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
+        log_error("BladeRF2 required for OVERSAMPLE feature\n");
+        status = BLADERF_ERR_UNSUPPORTED;
+    } else {
+        dev->feature = feature;
+        status = 0;
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
 }
 
 int bladerf_get_feature(struct bladerf *dev, bladerf_feature* feature)
