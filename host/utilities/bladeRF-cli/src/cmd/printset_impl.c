@@ -1235,6 +1235,8 @@ int print_feature(struct cli_state *state, int argc, char **argv)
 
 int set_feature(struct cli_state *state, int argc, char **argv)
 {
+    int status;
+    int *err = &state->last_lib_error;
     int rv = CLI_RET_OK;
     char* str_16_enable[3] = {"set", "bitmode", "16"};
     char* str_8_enable[3] = {"set", "bitmode", "8"};
@@ -1255,28 +1257,45 @@ int set_feature(struct cli_state *state, int argc, char **argv)
         bladerf_close(state->dev);
         bladerf_open_with_devinfo(&(state->dev), &info);
 
-        bladerf_set_feature(state->dev, BLADERF_FEATURE_DEFAULT);
-        rv = set_bitmode(state, 3, str_16_enable);
-        if(rv != CLI_RET_OK) {
-            return rv;
+        status = bladerf_set_feature(state->dev, BLADERF_FEATURE_DEFAULT);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        }
+
+        status = set_bitmode(state, 3, str_16_enable);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
         }
     } else if(!strcasecmp("oversample", argv[2])) {
-        bladerf_set_feature(state->dev, BLADERF_FEATURE_OVERSAMPLE);
-        rv = set_bitmode(state, 3, str_8_enable);
-        if(rv != CLI_RET_OK) {
-            return rv;
+        status = bladerf_set_feature(state->dev, BLADERF_FEATURE_OVERSAMPLE);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        }
+
+        status = set_bitmode(state, 3, str_8_enable);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
         }
     } else {
         return CLI_RET_INVPARAM;
     }
 
-    rv = print_feature(state, 0, NULL);
+    print_feature(state, 0, NULL);
 
     if (!strcasecmp("oversample", argv[2]))
         printf("\n"
                "  Note: Sample rates must be reassigned\n"
                "        for OVERSAMPLE changes to take effect\n\n");
 
+out:
     return rv;
 }
 
