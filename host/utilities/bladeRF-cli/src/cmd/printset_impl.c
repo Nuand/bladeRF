@@ -1314,16 +1314,19 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
 
     if (cli_device_is_streaming(state)) {
         printf("  Changing bit mode will not take affect while device"
-               " is streaming.");
-        return CLI_RET_STATE;
+               " is streaming.\n");
+        rv = CLI_RET_STATE;
+        goto out;
     }
 
     if (argc != 3) {
         if (argc == 2) {
-            printf("Usage: %s %s <8|16>\n", argv[0], argv[1]);
-            return 0;
+            printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);
+            rv = CLI_RET_OK;
+            goto out;
         } else {
-            return CLI_RET_NARGS;
+            rv = CLI_RET_NARGS;
+            goto out;
         }
     }
 
@@ -1332,7 +1335,7 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
         if(feature == BLADERF_FEATURE_OVERSAMPLE) {
             printf("  Error: 16bit mode not permitted when\n"
                    "         over sampling is enabled.\n");
-            return 0;
+            goto out;
         } else if(state->bit_mode_8bit) {
             state->bit_mode_8bit = false;
         }
@@ -1341,11 +1344,13 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
             state->bit_mode_8bit = true;
         }
     } else {
-        return CLI_RET_INVPARAM;
+        printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);
+        rv = CLI_RET_UNSUPPORTED;
+        goto out;
     }
 
-    rv = print_bitmode(state, 0, NULL);
-
+out:
+    print_bitmode(state, 0, NULL);
     return rv;
 }
 
