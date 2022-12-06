@@ -51,6 +51,8 @@
 #define CLI_RET_PERMISSION                      \
     (-13) /**< Insufficient permissions for the \
            *   requested operations */
+#define CLI_RET_UNSUPPORTED                     \
+    (-14) /**< Operation unsupported */
 #define CLI_RET_CMD_HANDLED                            \
     (-255) /**< A command-specific error has occurred, \
             *   and the associated command has already \
