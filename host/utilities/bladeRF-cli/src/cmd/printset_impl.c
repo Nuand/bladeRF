@@ -1341,7 +1341,13 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
         }
     } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
         if (!state->bit_mode_8bit) {
-            state->bit_mode_8bit = true;
+            if (strcmp(bladerf_get_board_name(state->dev), "bladerf2") != 0) {
+                printf("  Error: BladeRF2 required for 8bit format\n");
+                rv = CLI_RET_UNSUPPORTED;
+                goto out;
+            } else {
+                state->bit_mode_8bit = true;
+            }
         }
     } else {
         printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);
