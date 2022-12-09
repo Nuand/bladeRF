@@ -1009,6 +1009,13 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     int status;
     MUTEX_LOCK(&dev->lock);
 
+    if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
+        if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
+            log_error("bladeRF 2.0 required for 8bit format\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    }
+
     status = dev->board->init_stream(stream, dev, callback, buffers,
                                      num_buffers, format, samples_per_buffer,
                                      num_transfers, data);
@@ -1078,6 +1085,13 @@ int bladerf_sync_config(struct bladerf *dev,
 {
     int status;
     MUTEX_LOCK(&dev->lock);
+
+    if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
+        if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
+            log_error("bladeRF 2.0 required for 8bit format\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    }
 
     status =
         dev->board->sync_config(dev, layout, format, num_buffers, buffer_size,
