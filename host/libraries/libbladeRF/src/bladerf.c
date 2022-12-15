@@ -672,6 +672,7 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
         bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
 
         /* TX Register Assignments */
+        bladerf_set_rfic_register(dev,0x02,0xc0);  // TX Enable and Filter Control
         bladerf_set_rfic_register(dev,0xc2,0x9f);  // TX BBF R1
         bladerf_set_rfic_register(dev,0xc3,0x9f);  // TX baseband filter R2
         bladerf_set_rfic_register(dev,0xc4,0x9f);  // TX baseband filter R3
