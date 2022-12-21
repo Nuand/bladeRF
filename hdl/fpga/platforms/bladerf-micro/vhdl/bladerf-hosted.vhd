@@ -482,13 +482,9 @@ begin
     tx_trigger_ctl <= unpack(tx_trigger_ctl_i, tx_trigger_line);
 
     -- LEDs
-    -- led(1) <= led1_blink        when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(1);
-    -- led(2) <= tx_underflow_led  when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(2);
-    -- led(3) <= rx_overflow_led   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(3);
-    led(1) <= sys_clock;
-    led(2) <= c5_clock2;
-    led(3) <= tx_clock;
-
+    led(1) <= led1_blink        when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(1);
+    led(2) <= tx_underflow_led  when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(2);
+    led(3) <= rx_overflow_led   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(3);
 
     -- DAC SPI (data latched on falling edge)
     dac_sclk <= not nios_sclk when nios_gpio.o.adf_chip_enable = '0' else '0';
