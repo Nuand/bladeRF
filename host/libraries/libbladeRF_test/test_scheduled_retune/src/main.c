@@ -50,16 +50,14 @@
 
 #define VERBOSITY   BLADERF_LOG_LEVEL_INFO
 
-#define TIMEOUT_MS  2500
-#define ITERATIONS  500
-#define SAMPLE_RATE 5000000
-#define BANDWIDTH   5000000
+#define ITERATIONS  16
+#define SAMPLE_RATE 8 * 1000 * 1000
+#define TIMEOUT_MS  ITERATIONS * 1000
+#define BANDWIDTH   SAMPLE_RATE
 
-#define NUM_SAMPLES 2000
-#define TS_INC      50000
+#define NUM_SAMPLES SAMPLE_RATE/3  // 1/3 second worth of samples to make a blip
+#define TS_INC      SAMPLE_RATE    // 1 second hop intervals
 #define RETUNE_INC  (NUM_SAMPLES + (TS_INC - NUM_SAMPLES) / 10)
-
-#define SCHEDULE_AHEAD 4
 
 int schedule_retune(struct bladerf *dev, bladerf_module m, struct hop_set *hops,
                     bool quick_tune, uint64_t *hop_ts)
@@ -123,7 +121,7 @@ int run_test(struct bladerf *dev, bladerf_module module,
     }
 
     /* Add some initial startup delay */
-    meta.timestamp += (SAMPLE_RATE / 50);
+    meta.timestamp += SAMPLE_RATE;
 
     if (module == BLADERF_MODULE_TX) {
         meta.flags = BLADERF_META_FLAG_TX_BURST_START |
@@ -142,19 +140,10 @@ int run_test(struct bladerf *dev, bladerf_module module,
         goto out;
     }
 
-    /* Schedule first N hops */
-    for (i = 0; i < SCHEDULE_AHEAD; i++) {
-        status = schedule_retune(dev, module, hops, quick_tune, &retune_ts);
-        if (status != 0) {
-            fprintf(stderr, "Failed to schedule initial retune #%u: %s\n",
-                    i, bladerf_strerror(status));
-            goto out;
-        }
-    }
 
     for (i = 0; i < ITERATIONS; i++) {
         if (module == BLADERF_MODULE_TX) {
-            status = bladerf_sync_tx(dev, samples, NUM_SAMPLES, &meta, TIMEOUT_MS);
+            status = bladerf_sync_tx(dev, samples, NUM_SAMPLES, &meta, 0);
             if (status != 0) {
                 fprintf(stderr, "Failed to TX @ iteration %u: %s\n",
                         i + 1, bladerf_strerror(status));
@@ -163,7 +152,7 @@ int run_test(struct bladerf *dev, bladerf_module module,
         } else {
             size_t n_written;
 
-            status = bladerf_sync_rx(dev, samples, NUM_SAMPLES, &meta, TIMEOUT_MS);
+            status = bladerf_sync_rx(dev, samples, NUM_SAMPLES, &meta, 0);
             if (status != 0) {
                 fprintf(stderr, "Failed to RX @ iteration %u: %s\n",
                         i + 1, bladerf_strerror(status));
@@ -191,6 +180,8 @@ int run_test(struct bladerf *dev, bladerf_module module,
             fprintf(stderr, "Failed to schedule retune @ %"PRIu64": %s\n",
                     meta.timestamp + RETUNE_INC, bladerf_strerror(status));
             goto out;
+        } else {
+            printf("Retune set successfully @ iteration %u\n", i);
         }
     }
 
@@ -199,7 +190,7 @@ int run_test(struct bladerf *dev, bladerf_module module,
     if (module == BLADERF_MODULE_TX) {
         fprintf(stderr, "Waiting for transmission to complete...\n");
         status = wait_for_timestamp(dev, BLADERF_MODULE_TX,
-                                    meta.timestamp, 2500);
+                                    meta.timestamp, TIMEOUT_MS);
 
         if (status == BLADERF_ERR_TIMEOUT) {
             fprintf(stderr, "Wait timed out.\n");
