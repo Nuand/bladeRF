@@ -59,6 +59,8 @@
 #define TS_INC      SAMPLE_RATE    // 1 second hop intervals
 #define RETUNE_INC  (NUM_SAMPLES + (TS_INC - NUM_SAMPLES) / 10)
 
+#define CW true
+
 int schedule_retune(struct bladerf *dev, bladerf_module m, struct hop_set *hops,
                     bool quick_tune, uint64_t *hop_ts)
 {
@@ -100,9 +102,16 @@ int run_test(struct bladerf *dev, bladerf_module module,
     }
 
     if (module == BLADERF_MODULE_TX) {
-        /* Set IQ values to ~ sqrt(2)/2 */
+        int16_t cw_samp_values[4] = {0, 2047, 0, -2047};
         for (i = 0; i < (2 * NUM_SAMPLES); i += 2) {
-            samples[i] = samples[i+1] = 1448;
+            if (CW) {
+                /* IQ values for CW @ -1/4 samp_rate */
+                samples[i]   = cw_samp_values[(i/2) % 4];
+                samples[i+1] = cw_samp_values[(i/2 + 1) % 4];
+            } else {
+                /* Set IQ values to ~ sqrt(2)/2 */
+                samples[i] = samples[i+1] = 1448;
+            }
         }
     } else {
         out = fopen("samples.bin", "wb");
