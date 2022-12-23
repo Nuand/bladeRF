@@ -50,13 +50,14 @@
 
 #define VERBOSITY   BLADERF_LOG_LEVEL_INFO
 
-#define ITERATIONS  16
 #define SAMPLE_RATE 8 * 1000 * 1000
-#define TIMEOUT_MS  ITERATIONS * 1000
 #define BANDWIDTH   SAMPLE_RATE
 
-#define NUM_SAMPLES SAMPLE_RATE/3  // 1/3 second worth of samples to make a blip
-#define TS_INC      SAMPLE_RATE    // 1 second hop intervals
+#define SPEED       1    // hops/sec
+#define ITERATIONS  8
+#define TIMEOUT_MS  ITERATIONS * 1000 / SPEED
+#define NUM_SAMPLES SAMPLE_RATE / (2*SPEED)    // 1/3 second worth of samples to make a blip
+#define TS_INC      SAMPLE_RATE / SPEED        // 1 second hop intervals
 #define RETUNE_INC  (NUM_SAMPLES + (TS_INC - NUM_SAMPLES) / 10)
 
 #define CW true
