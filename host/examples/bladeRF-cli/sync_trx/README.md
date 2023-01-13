@@ -12,16 +12,18 @@ devices, connected as follows:
 
 2. The "slave" bladeRF has its RX port connected to the combiner.
 
-3. Pin 4 on J71 on both devices is connected together. This connects
+3. `mini_exp[1]` on both devices is connected together. This connects
    the trigger signal on both devices. The "master" will output this
    signal, and the "slave" will receive it.
 
-4. Pin 2 on J71 on both devices is connected. This provides a common ground.
+4. Connect both boards to GND using pin J71-2 or J51-3 for the bladeRF x40/x115 or xA4/xA5/xA9 respectively.
 
 5. The J62 SMB clock connector of both devices are connected together.
    The "master" bladeRF will output its 38.4 MHz reference clock, and the
    "slave" bladeRF will utilize this reference instead of its own on-board
    clock. This ensures that both devices are sampling using the same clock.
+
+Note: `mini_exp[1]` is J71-4 on bladeRF x40/x115, and J51-1 on bladeRF xA4/xA5/xA9.
 
 When a trigger is "armed," the FPGA will gate both transmit and receive
 samples; the flow of samples to/from the host is blocked. The assertion
@@ -30,7 +32,7 @@ begin transmitting or receiving within +/- 1 sample clock period.
 
 In this example, the "master" will transmit a series of on-off pulses at a
 1 MHz offset, and both the "master" and "slave" will receive these pulses. The
-transmission and reception are synchronized using the J71-4 trigger signal.
+transmission and reception are synchronized using the `mini_exp[1]` trigger signal.
 
 ## Creating Samples ##
 
@@ -95,8 +97,14 @@ $ bladeRF -d '*:serial=e93' -s slave.txt
 At this point, both devices' sample streams are blocked and awaiting
 a trigger. In the "master" console, fire the trigger via:
 
+bladeRF x40/x115
 ```
 trigger j71-4 tx fire
+```
+
+bladeRF xA4/xA5/xA9
+```
+trigger J51-1 tx fire
 ```
 
 Wait for the RX and TX operations complete via the commands:
