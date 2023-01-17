@@ -2394,7 +2394,7 @@ static int bladerf1_schedule_retune(struct bladerf *dev,
 
     if (quick_tune == NULL) {
         if (dev->xb == BLADERF_XB_200) {
-           log_error("Consider supplying the quick_tune parameter to"
+           log_info("Consider supplying the quick_tune parameter to"
                  " bladerf_schedule_retune() when the XB-200 is enabled.\n");
         }
         status = lms_calculate_tuning_params((uint32_t)frequency, &f);
