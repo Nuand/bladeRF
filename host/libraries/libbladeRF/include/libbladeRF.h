@@ -4090,12 +4090,14 @@ typedef enum {
  *
  * @param       dev         Device handle
  * @param[out]  feature     Feature
+ * @param[in]   enable  true to enable, false to disable
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_feature(struct bladerf *dev,
-                                  bladerf_feature feature);
+int CALL_CONV bladerf_enable_feature(struct bladerf *dev,
+                                  bladerf_feature feature,
+                                  bool enable);
 
 /**
  * Gets currently enabled feature.

@@ -1257,7 +1257,7 @@ int set_feature(struct cli_state *state, int argc, char **argv)
         bladerf_close(state->dev);
         bladerf_open_with_devinfo(&(state->dev), &info);
 
-        status = bladerf_set_feature(state->dev, BLADERF_FEATURE_DEFAULT);
+        status = bladerf_enable_feature(state->dev, BLADERF_FEATURE_DEFAULT, true);
         if (status < 0) {
             *err = status;
             rv   = CLI_RET_LIBBLADERF;
@@ -1271,7 +1271,7 @@ int set_feature(struct cli_state *state, int argc, char **argv)
             goto out;
         }
     } else if(!strcasecmp("oversample", argv[2])) {
-        status = bladerf_set_feature(state->dev, BLADERF_FEATURE_OVERSAMPLE);
+        status = bladerf_enable_feature(state->dev, BLADERF_FEATURE_OVERSAMPLE, true);
         if (status < 0) {
             *err = status;
             rv   = CLI_RET_LIBBLADERF;

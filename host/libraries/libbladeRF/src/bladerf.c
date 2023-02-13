@@ -653,7 +653,7 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
                                      struct bladerf_rational_rate *actual)
 {
     int status;
-    bladerf_feature* feature = &dev->feature;
+    bladerf_feature feature = dev->feature;
 
     MUTEX_LOCK(&dev->lock);
     status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
@@ -668,7 +668,7 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
       Note: bladerf_set_rfic_register is mutex locked. Must
             be placed outside of a mutex lock like above.
     *******************************************************/
-    if (*feature == BLADERF_FEATURE_OVERSAMPLE) {
+    if ((feature & BLADERF_FEATURE_OVERSAMPLE)) {
         bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
 
         /* TX Register Assignments */
@@ -1957,17 +1957,33 @@ int bladerf_xb300_get_output_power(struct bladerf *dev, float *val)
 /* Features */
 /******************************************************************************/
 
-int bladerf_set_feature(struct bladerf *dev, bladerf_feature feature)
+int bladerf_enable_feature(struct bladerf *dev, bladerf_feature feature, bool enable)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    if(feature == BLADERF_FEATURE_OVERSAMPLE && strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
-        log_error("BladeRF2 required for OVERSAMPLE feature\n");
-        status = BLADERF_ERR_UNSUPPORTED;
+    status = 0;
+
+    if(feature == BLADERF_FEATURE_DEFAULT) {
+        dev->feature = 0;
     } else {
-        dev->feature = feature;
-        status = 0;
+        if(feature == BLADERF_FEATURE_OVERSAMPLE) {
+            if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
+                log_error("BladeRF2 required for OVERSAMPLE feature\n");
+                status = BLADERF_ERR_UNSUPPORTED;
+            }
+        } else {
+            /* Unknown / Unsupported feature */
+            status = BLADERF_ERR_UNSUPPORTED;
+        }
+
+        if (status == 0) {
+            if (enable) {
+                dev->feature |= feature;
+            } else {
+                dev->feature &= ~feature;
+            }
+        }
     }
 
     MUTEX_UNLOCK(&dev->lock);
