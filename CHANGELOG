@@ -6,6 +6,35 @@ hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2023.02 (2023-02-13)
+--------------------------------------------------------------------------------
+
+This release candidate consists of the following versions:
+
+    * FPGA bitstream                v0.15.0
+    * FX3 firmware                  v2.4.0
+    * libbladeRF                    v2.5.0
+    * bladeRF-cli                   v1.9.0
+    * MATLAB & Simulink bindings    v1.0.5
+    * Python bindings               v1.3.0
+
+API docs: https://www.nuand.com/bladeRF-doc/libbladeRF/
+FX3 firmware: https://www.nuand.com/fx3_images/
+FPGA bitstreams: https://www.nuand.com/fpga_images/
+Ubuntu PPA: https://launchpad.net/~nuandllc/+archive/ubuntu/bladerf
+Windows installer: https://www.nuand.com/win_installers/
+
+Summary of changes in 2023.02
+
+* libbladeRF
+    - Add 8bit format mode support
+    - Add AD936x overclocking feature
+    - Fix bugs, including a locking bug
+
+* FPGA:
+    - Add 8bit mode support to FIFO reader and writer
+
+--------------------------------------------------------------------------------
  2021.10 (2021-10-04)
 --------------------------------------------------------------------------------
 
