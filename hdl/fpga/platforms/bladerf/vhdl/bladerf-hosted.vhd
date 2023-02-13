@@ -768,6 +768,7 @@ begin
         usb_speed           =>  usb_speed_rx,
         meta_en             =>  meta_en_rx,
         packet_en           =>  packet_en_rx,
+        eight_bit_mode_en   =>  '0',
         timestamp           =>  rx_timestamp,
         mini_exp            =>  mini_exp2 & mini_exp1,
 
@@ -917,6 +918,7 @@ begin
         usb_speed           =>  usb_speed_tx,
         meta_en             =>  meta_en_tx,
         packet_en           =>  packet_en_tx,
+        eight_bit_mode_en   =>  '0',
         timestamp           =>  tx_timestamp,
 
         fifo_empty          =>  tx_sample_fifo.rempty,
