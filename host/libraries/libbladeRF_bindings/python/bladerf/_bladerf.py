@@ -206,6 +206,8 @@ class Format(enum.Enum):
     SC16_Q11 = libbladeRF.BLADERF_FORMAT_SC16_Q11
     SC16_Q11_META = libbladeRF.BLADERF_FORMAT_SC16_Q11_META
     PACKET_META = libbladeRF.BLADERF_FORMAT_PACKET_META
+    SC8_Q7 = libbladeRF.BLADERF_FORMAT_SC8_Q7
+    SC8_Q7_META = libbladeRF.BLADERF_FORMAT_SC8_Q7_META
 
 
 class Loopback(enum.Enum):
@@ -850,7 +852,7 @@ class BladeRF:
 
     def sync_config(self, layout, fmt, num_buffers, buffer_size, num_transfers,
                     stream_timeout):
-        if fmt != Format.SC16_Q11:
+        if fmt not in [Format.SC16_Q11, Format.SC8_Q7]:
             raise NotImplementedError("Format not supported by binding.")
 
         ret = libbladeRF.bladerf_sync_config(self.dev[0],
