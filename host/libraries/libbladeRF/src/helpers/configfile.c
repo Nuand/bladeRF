@@ -321,7 +321,14 @@ int config_load_options_file(struct bladerf *dev)
         if (status < 0) {
             log_warning("Invalid config option `%s' on line %d\n", optv[j].key,
                         optv[j].lineno);
-            break;
+            /* Some config options will require the FPGA to be loaded, however
+             * this function is called during bladerf_open(). The solution is
+             * to treat BLADERF_ERR_NOT_INIT as a warning and continue. */
+            if (status == BLADERF_ERR_NOT_INIT) {
+                status = 0;
+            } else {
+                break;
+            }
         }
     }
 
