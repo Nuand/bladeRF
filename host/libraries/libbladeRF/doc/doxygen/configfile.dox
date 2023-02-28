@@ -10,14 +10,14 @@ A configuration file may be named either `bladeRF.conf` (preferred) or
 `bladerf.conf`. libbladeRF uses the same search path it uses for finding FPGA
 images and calibration tables, defined by file_find() in file_ops.c:
 
-<b>Linux and OSX:</b>
+<b>Linux and OSX directories:</b>
 <ul>
     <li>The current working directory</li>
     <li>The directory containing the program being executed</li>
-    <li><code>~/.config/Nuand/bladeRF</code></li>
-    <li><code>~/.Nuand/bladeRF</code></li>
-    <li><code>/etc/Nuand/bladeRF</code></li>
-    <li><code>/usr/share/Nuand/bladeRF</code></li>
+    <li><code>~/.config/Nuand/bladeRF/</code></li>
+    <li><code>~/.Nuand/bladeRF/</code></li>
+    <li><code>/etc/Nuand/bladeRF/</code></li>
+    <li><code>/usr/share/Nuand/bladeRF/</code></li>
 </ul>
 
 <b>Windows:</b>
