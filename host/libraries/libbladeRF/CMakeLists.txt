@@ -425,6 +425,7 @@ if(MSVC)
     )
 endif()
 
+cmake_policy(SET CMP0115 OLD)
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
 
