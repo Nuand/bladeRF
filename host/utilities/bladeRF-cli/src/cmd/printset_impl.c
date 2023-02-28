@@ -1468,8 +1468,8 @@ static int _do_set_samplerate(struct cli_state *state,
     bladerf_feature feature;
 
     const char *settext =
-        "  Setting %s sample rate - req: %9" PRIu64 " %" PRIu64 "/%" PRIu64
-        "Hz, actual: %9" PRIu64 " %" PRIu64 "/%" PRIu64 "Hz\n";
+        "  Setting %s sample rate - requested: I=%9" PRIu64 " N=%" PRIu64 "/D=%" PRIu64
+        "Hz, actual: I=%9" PRIu64 " N=%" PRIu64 "/D=%" PRIu64 "Hz\n";
 
     const char *samplewarning =
         "\n"
@@ -1619,6 +1619,8 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
     }
 
     rv = ps_foreach_chan(state, true, true, ch, _do_set_samplerate, &rate);
+    printf("\n  I, N, D are respectively the Integer, Numerator, and Denominator settings for the "
+        "Fractional PLL.\n");
 
 out:
     return rv;

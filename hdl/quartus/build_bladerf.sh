@@ -482,4 +482,4 @@ printf "%s %02d:%02d:%02d\n" "Total Build Time:" "$(($SECONDS / 3600))" "$((($SE
 echo ""
 
 # Delete empty SOPC directories in the user's home directory
-find ~ -maxdepth 1 -type d -empty -iname "sopc_altera_pll*" -delete
+#find ~ -maxdepth 1 -type d -empty -iname "sopc_altera_pll*" -delete
