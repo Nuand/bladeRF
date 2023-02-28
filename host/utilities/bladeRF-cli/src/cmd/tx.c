@@ -37,6 +37,9 @@
 #define SC16Q11_IQ_MIN (-2048)
 #define SC16Q11_IQ_MAX (2047)
 
+#define SC8Q7_IQ_MIN (-128)
+#define SC8Q7_IQ_MAX (127)
+
 static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 {
     int status = 0;
@@ -195,7 +198,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 
         /* If there were no errors, transmit the data buffer */
         if (status == 0) {
-            bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer, NULL,
+            status = bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer, NULL,
                             timeout_ms);
         }
     }
@@ -228,35 +231,46 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
  *
  * return 0 on success, CLI_RET_* on failure
  */
-static int tx_csv_to_sc16q11(struct cli_state *s)
+static int tx_csv_to_bladerf_format(struct cli_state *s)
 {
     struct rxtx_data *tx = s->tx;
     char buf[81]         = { 0 };
     FILE *bin            = NULL;
     FILE *csv            = NULL;
     char *bin_name       = NULL;
-    int16_t *tmp_iq      = NULL;
+    int8_t *tmp_iq       = NULL;
     int line             = 1;
     size_t n_clamped     = 0;
 
+    int min_val          = SC16Q11_IQ_MIN;
+    int max_val          = SC16Q11_IQ_MAX;
+
+    // 16 bit samples are 2*int8_t samples wide
+    int sample_size      = s->bit_mode_8bit ? 1 : 2;
     int status;
 
     assert(tx->file_mgmt.path != NULL);
 
     status = expand_and_open(tx->file_mgmt.path, "r", &csv);
     if (status != 0) {
-        goto tx_csv_to_sc16q11_out;
+        goto tx_csv_to_bladerf_format_out;
     }
 
     bin_name = strdup(TMP_FILE_NAME);
     if (!bin_name) {
         status = CLI_RET_MEM;
-        goto tx_csv_to_sc16q11_out;
+        goto tx_csv_to_bladerf_format_out;
     }
 
     status = expand_and_open(bin_name, "wb+", &bin);
     if (status != 0) {
-        goto tx_csv_to_sc16q11_out;
+        goto tx_csv_to_bladerf_format_out;
+    }
+
+
+    if (s->bit_mode_8bit) {
+        min_val = SC8Q7_IQ_MIN;
+        max_val = SC8Q7_IQ_MAX;
     }
 
     while (fgets(buf, sizeof(buf), csv)) {
@@ -276,20 +290,20 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
             continue;
         }
 
-        tmp_iq = realloc(tmp_iq, cols * sizeof(int16_t));
+        tmp_iq = realloc(tmp_iq, cols * sample_size);
 
         for (i = 0; i < cols; ++i) {
             tmp_int = *args[i];
 
-            if (tmp_int < SC16Q11_IQ_MIN) {
-                tmp_int = SC16Q11_IQ_MIN;
+            if (tmp_int < min_val) {
+                tmp_int = min_val;
                 n_clamped++;
-            } else if (tmp_int > SC16Q11_IQ_MAX) {
-                tmp_int = SC16Q11_IQ_MAX;
+            } else if (tmp_int > max_val) {
+                tmp_int = max_val;
                 n_clamped++;
             }
 
-            tmp_iq[i] = tmp_int;
+            memcpy(tmp_iq + i * sample_size, &tmp_int, sample_size);
         }
 
         free_csv2int(cols, args);
@@ -303,7 +317,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
             break;
         }
 
-        if ((int)fwrite(tmp_iq, sizeof(tmp_iq[0]), cols, bin) != cols) {
+        if ((int)fwrite(tmp_iq, sample_size, cols, bin) != cols) {
             status = CLI_RET_FILEOP;
             break;
         }
@@ -313,22 +327,29 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
 
     if (status == 0) {
         if (feof(csv)) {
-            tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
             free(tx->file_mgmt.path);
             tx->file_mgmt.path = bin_name;
+            tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
 
             if (n_clamped != 0) {
-                printf("  Warning: %zu value%s clamped within DAC SC16 Q11 "
-                       "range of [%d, %d].\n",
-                       n_clamped, 1 == n_clamped ? "" : "s", SC16Q11_IQ_MIN,
-                       SC16Q11_IQ_MAX);
+               if (s->bit_mode_8bit) {
+                   printf("  Warning: %zu value%s clamped within DAC SC8 Q7 "
+                          "range of [%d, %d].\n",
+                          n_clamped, 1 == n_clamped ? "" : "s", SC8Q7_IQ_MIN,
+                          SC8Q7_IQ_MAX);
+               } else {
+                  printf("  Warning: %zu value%s clamped within DAC SC16 Q11 "
+                         "range of [%d, %d].\n",
+                         n_clamped, 1 == n_clamped ? "" : "s", SC16Q11_IQ_MIN,
+                         SC16Q11_IQ_MAX);
+               }
             }
         } else {
             status = CLI_RET_FILEOP;
         }
     }
 
-tx_csv_to_sc16q11_out:
+tx_csv_to_bladerf_format_out:
     if (status != 0) {
         free(bin_name);
     }
@@ -354,6 +375,7 @@ void *tx_task(void *cli_state_arg)
     enum rxtx_state task_state;
     struct cli_state *cli_state = (struct cli_state *)cli_state_arg;
     struct rxtx_data *tx        = cli_state->tx;
+    bladerf_format sync_fmt;
 
     /* We expect to be in the IDLE state when this is kicked off. We could
      * also get into the shutdown state if the program exits before we
@@ -386,10 +408,13 @@ void *tx_task(void *cli_state_arg)
                 assert(tx->file_mgmt.file != NULL);
                 MUTEX_UNLOCK(&tx->file_mgmt.file_meta_lock);
 
+                sync_fmt = cli_state->bit_mode_8bit ?
+                    BLADERF_FORMAT_SC8_Q7 : BLADERF_FORMAT_SC16_Q11;
+
                 /* Initialize the TX synchronous data configuration */
                 status = bladerf_sync_config(
                     cli_state->dev, tx->data_mgmt.layout,
-                    BLADERF_FORMAT_SC16_Q11, tx->data_mgmt.num_buffers,
+                    sync_fmt, tx->data_mgmt.num_buffers,
                     tx->data_mgmt.samples_per_buffer,
                     tx->data_mgmt.num_transfers, tx->data_mgmt.timeout_ms);
 
@@ -458,19 +483,26 @@ static int tx_cmd_start(struct cli_state *s)
     /* Perform file conversion (if needed) and open input file */
     MUTEX_LOCK(&s->tx->file_mgmt.file_meta_lock);
 
-    if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
-        status = tx_csv_to_sc16q11(s);
+    if (s->tx->file_mgmt.format == RXTX_FMT_CSV) {
+        status = tx_csv_to_bladerf_format(s);
 
         if (status == 0) {
-            printf("  Converted CSV to SC16 Q11 file and "
-                   "switched to converted file.\n\n");
+            if (s->bit_mode_8bit) {
+                printf("  Converted CSV to SC8 Q7 file and "
+                    "switched to converted file.\n\n");
+
+            } else {
+                printf("  Converted CSV to SC16 Q11 file and "
+                    "switched to converted file.\n\n");
+            }
         }
     }
 
     if (status == 0) {
         MUTEX_LOCK(&s->tx->file_mgmt.file_lock);
 
-        assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
+        assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11 ||
+               s->tx->file_mgmt.format == RXTX_FMT_BIN_SC8Q7);
         status = expand_and_open(s->tx->file_mgmt.path, "rb",
                                  &s->tx->file_mgmt.file);
         MUTEX_UNLOCK(&s->tx->file_mgmt.file_lock);

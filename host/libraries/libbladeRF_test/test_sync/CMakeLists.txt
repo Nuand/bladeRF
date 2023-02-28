@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(libbladeRF_test_sync C)
 
 set(TEST_SYNC_INCLUDES

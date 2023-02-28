@@ -91,6 +91,8 @@ PRINTSET_DECL(refin_freq);
 PRINTSET_DECL(rssi);
 PRINTSET_DECL(rx_mux);
 PRINTSET_DECL(tuning_mode);
+PRINTSET_DECL(bitmode);
+PRINTSET_DECL(feature);
 PRINTSET_DECL(rxvga1);
 PRINTSET_DECL(rxvga2);
 PRINTSET_DECL(samplerate);
@@ -110,6 +112,8 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(bandwidth,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(frequency,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(tuning_mode,  PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(bitmode,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(feature,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(agc,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(clock_ref,    PRINTALL_OPTION_NONE,           BOARD_BLADERF2),
     PRINTSET_ENTRY(refin_freq,   PRINTALL_OPTION_NONE,           BOARD_BLADERF2),
@@ -216,7 +220,7 @@ struct printset_entry *get_printset_entry(char *name)
     size_t i;
 
     for (i = 0; entry == NULL && printset_table[i].print != NULL; ++i) {
-        if (strcasecmp(name, printset_table[i].name) == 0) {
+        if (strncasecmp(name, printset_table[i].name, strlen(name)) == 0) {
             entry = &(printset_table[i]);
         }
     }

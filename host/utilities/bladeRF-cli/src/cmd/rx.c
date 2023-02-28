@@ -75,11 +75,12 @@ static inline void sc16q11_sample_fixup(int16_t *buf, size_t n)
  * @pre data_mgmt lock is held
  *
  * returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
-static int rx_write_bin_sc16q11(struct rxtx_data *rx,
-                                int16_t *samples,
+static int rx_write_bin_sc16q11(struct cli_state *s,
+                                void *samples,
                                 size_t n_samples)
 {
     size_t status;
+    struct rxtx_data *rx = s->rx;
 
     MUTEX_LOCK(&rx->file_mgmt.file_lock);
     status = fwrite(samples, sizeof(int16_t),
@@ -95,16 +96,43 @@ static int rx_write_bin_sc16q11(struct rxtx_data *rx,
     }
 }
 
-/* returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
-static int rx_write_csv_sc16q11(struct rxtx_data *rx,
-                                int16_t *samples,
+/*
+ * @pre data_mgmt lock is held
+ *
+ * returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
+static int rx_write_bin_sc8q7(struct cli_state *s,
+                                void *samples,
                                 size_t n_samples)
+{
+    size_t status;
+    struct rxtx_data *rx = s->rx;
+
+    MUTEX_LOCK(&rx->file_mgmt.file_lock);
+    status = fwrite(samples, sizeof(int8_t),
+                    2 * n_samples, /* I and Q are each an int8_t */
+                    rx->file_mgmt.file);
+    MUTEX_UNLOCK(&rx->file_mgmt.file_lock);
+
+    if (status != (2 * n_samples)) {
+        set_last_error(&rx->last_error, ETYPE_CLI, CLI_RET_FILEOP);
+        return CLI_RET_FILEOP;
+    } else {
+        return 0;
+    }
+}
+
+/* returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
+static int rx_write_csv(struct cli_state *s,
+                        void *samples,
+                        size_t n_samples)
 {
     const size_t MAXLEN = 128; /* max line length (with newline and null) */
 
     char *line = NULL;
     char *tmp  = NULL;
-
+    int8_t *samples_sc8q7;
+    int16_t *samples_sc16q11;
+    struct rxtx_data *rx = s->rx;
     size_t i, j, nchans;
     int status = 0;
 
@@ -144,24 +172,50 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
 
     MUTEX_LOCK(&rx->file_mgmt.file_lock);
 
-    // Output 2 columns for each enabled channel
-    // (2 cols for BLADERF_RX_X1, 4 cols for BLADERF_RX_X2, etc)
-    for (i = 0; i < 2 * n_samples; i += 2 * nchans) {
-        memset(line, 0, MAXLEN);
-        memset(tmp, 0, MAXLEN);
+    if (s->bit_mode_8bit) {
+        samples_sc8q7 = (int8_t*)samples;
+        // Output 2 columns for each enabled channel
+        // (2 cols for BLADERF_RX_X1, 4 cols for BLADERF_RX_X2, etc)
+        for (i = 0; i < 2 * n_samples; i += 2 * nchans) {
+            memset(line, 0, MAXLEN);
+            memset(tmp, 0, MAXLEN);
 
-        for (j = 0; j < 2 * nchans; j += 2) {
-            snprintf(tmp, MAXLEN, "%s%d, %d", (j > 0) ? ", " : "",
-                     samples[i + j], samples[i + j + 1]);
-            strncat(line, tmp, MAXLEN - 1);
+            for (j = 0; j < 2 * nchans; j += 2) {
+                snprintf(tmp, MAXLEN, "%s%d, %d", (j > 0) ? ", " : "",
+                    samples_sc8q7[i + j], samples_sc8q7[i + j + 1]);
+                strncat(line, tmp, MAXLEN - 1);
+            }
+
+            strncat(line, EOL, MAXLEN - 1);
+
+            if (fputs(line, rx->file_mgmt.file) < 0) {
+                set_last_error(&rx->last_error, ETYPE_ERRNO, errno);
+                status = CLI_RET_FILEOP;
+                break;
+            }
         }
+    }
+    else {
+        samples_sc16q11 = (int16_t*)samples;
+        // Output 2 columns for each enabled channel
+        // (2 cols for BLADERF_RX_X1, 4 cols for BLADERF_RX_X2, etc)
+        for (i = 0; i < 2 * n_samples; i += 2 * nchans) {
+            memset(line, 0, MAXLEN);
+            memset(tmp, 0, MAXLEN);
 
-        strncat(line, EOL, MAXLEN - 1);
+            for (j = 0; j < 2 * nchans; j += 2) {
+                snprintf(tmp, MAXLEN, "%s%d, %d", (j > 0) ? ", " : "",
+                    samples_sc16q11[i + j], samples_sc16q11[i + j + 1]);
+                strncat(line, tmp, MAXLEN - 1);
+            }
 
-        if (fputs(line, rx->file_mgmt.file) < 0) {
-            set_last_error(&rx->last_error, ETYPE_ERRNO, errno);
-            status = CLI_RET_FILEOP;
-            break;
+            strncat(line, EOL, MAXLEN - 1);
+
+            if (fputs(line, rx->file_mgmt.file) < 0) {
+                set_last_error(&rx->last_error, ETYPE_ERRNO, errno);
+                status = CLI_RET_FILEOP;
+                break;
+            }
         }
     }
 
@@ -174,14 +228,15 @@ out:
     return status;
 }
 
-static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
+static int rx_task_exec_running(struct cli_state *s)
 {
     int status = 0;
     int samples_per_buffer;
     void *samples;
     size_t num_samples;
     size_t samples_read = 0;
-    int (*write_samples)(struct rxtx_data * rx, int16_t * samples, size_t n);
+    struct rxtx_data *rx = s->rx;
+    int (*write_samples)(struct cli_state *s, void *samples, size_t n);
     unsigned int timeout_ms;
 
     /* Read the parameters that will be used for the sync transfers */
@@ -229,7 +284,7 @@ static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
 
             /* Write the samples to the output file */
             sc16q11_sample_fixup(samples, to_write);
-            status = write_samples(rx, samples, to_write);
+            status = write_samples(s, samples, to_write);
 
             if (status != 0) {
                 set_last_error(&rx->last_error, ETYPE_CLI, status);
@@ -256,6 +311,7 @@ void *rx_task(void *cli_state_arg)
     struct cli_state *cli_state = (struct cli_state *)cli_state_arg;
     struct rxtx_data *rx        = cli_state->rx;
     struct rx_params *rx_params = rx->params;
+    bladerf_format sync_fmt;
 
     task_state = rxtx_get_state(rx);
     assert(task_state == RXTX_STATE_INIT);
@@ -286,12 +342,16 @@ void *rx_task(void *cli_state_arg)
                 MUTEX_LOCK(&rx->file_mgmt.file_meta_lock);
 
                 switch (rx->file_mgmt.format) {
-                    case RXTX_FMT_CSV_SC16Q11:
-                        rx_params->write_samples = rx_write_csv_sc16q11;
+                    case RXTX_FMT_CSV:
+                        rx_params->write_samples = rx_write_csv;
                         break;
 
                     case RXTX_FMT_BIN_SC16Q11:
                         rx_params->write_samples = rx_write_bin_sc16q11;
+                        break;
+
+                    case RXTX_FMT_BIN_SC8Q7:
+                        rx_params->write_samples = rx_write_bin_sc8q7;
                         break;
 
                     default:
@@ -310,9 +370,12 @@ void *rx_task(void *cli_state_arg)
                 if (status == 0) {
                     MUTEX_LOCK(&rx->data_mgmt.lock);
 
+                    sync_fmt = cli_state->bit_mode_8bit ?
+                        BLADERF_FORMAT_SC8_Q7 : BLADERF_FORMAT_SC16_Q11;
+
                     status = bladerf_sync_config(
                         cli_state->dev, rx->data_mgmt.layout,
-                        BLADERF_FORMAT_SC16_Q11, rx->data_mgmt.num_buffers,
+                        sync_fmt, rx->data_mgmt.num_buffers,
                         rx->data_mgmt.samples_per_buffer,
                         rx->data_mgmt.num_transfers, rx->data_mgmt.timeout_ms);
 
@@ -337,7 +400,7 @@ void *rx_task(void *cli_state_arg)
                 if (status < 0) {
                     set_last_error(&rx->last_error, ETYPE_BLADERF, status);
                 } else {
-                    status = rx_task_exec_running(rx, cli_state);
+                    status = rx_task_exec_running(cli_state);
 
                     if (status < 0) {
                         set_last_error(&rx->last_error, ETYPE_BLADERF, status);
@@ -385,7 +448,7 @@ static int rx_cmd_start(struct cli_state *s)
 
     /* Set up output file */
     MUTEX_LOCK(&s->rx->file_mgmt.file_lock);
-    if (s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
+    if (s->rx->file_mgmt.format == RXTX_FMT_CSV) {
         status =
             expand_and_open(s->rx->file_mgmt.path, "w", &s->rx->file_mgmt.file);
 

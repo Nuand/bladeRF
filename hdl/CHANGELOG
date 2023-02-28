@@ -6,6 +6,18 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.15.0 (2023-02-13)
+--------------------------------
+
+ Added 8bit mode feature necessary for oversampling on the bladeRF 2.0 micro
+
+ Fixes:
+ *  hdl: rx-adsb: update rx-adsb and bladerf-adsb to handle packet_mode
+
+ Features:
+ *  hdl: 8bit mode added
+
+--------------------------------
 v0.14.0 (2021-10-01)
 --------------------------------
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(bladeRF CXX C)
 # Indicate that this is a top-level build
 set(BLADERF_TOP_LEVEL_BUILD ON)

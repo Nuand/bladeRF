@@ -160,7 +160,20 @@ int sync_init(struct bladerf_sync *sync,
         }
     }
 
+    if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
+        if (!have_cap_dev(dev, BLADERF_CAP_FPGA_8BIT_SAMPLES)) {
+            log_error("FPGA does not support 8bit mode. "
+                      "Upgrade to at least FPGA version 0.15.0.\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    }
+
     switch (format) {
+        case BLADERF_FORMAT_SC8_Q7:
+        case BLADERF_FORMAT_SC8_Q7_META:
+            bytes_per_sample = 2;
+            break;
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
         case BLADERF_FORMAT_PACKET_META:
@@ -507,10 +520,12 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
+                    case BLADERF_FORMAT_SC8_Q7:
                         s->state = SYNC_STATE_USING_BUFFER;
                         break;
 
                     case BLADERF_FORMAT_SC16_Q11_META:
+                    case BLADERF_FORMAT_SC8_Q7_META:
                         s->state = SYNC_STATE_USING_BUFFER_META;
                         s->meta.curr_msg_off = 0;
                         s->meta.msg_num = 0;
@@ -1024,10 +1039,12 @@ int sync_tx(struct bladerf_sync *s,
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
+                    case BLADERF_FORMAT_SC8_Q7:
                         s->state = SYNC_STATE_USING_BUFFER;
                         break;
 
                     case BLADERF_FORMAT_SC16_Q11_META:
+                    case BLADERF_FORMAT_SC8_Q7_META:
                         s->state             = SYNC_STATE_USING_BUFFER_META;
                         s->meta.curr_msg_off = 0;
                         s->meta.msg_num      = 0;

@@ -51,6 +51,8 @@
 #define CLI_RET_PERMISSION                      \
     (-13) /**< Insufficient permissions for the \
            *   requested operations */
+#define CLI_RET_UNSUPPORTED                     \
+    (-14) /**< Operation unsupported */
 #define CLI_RET_CMD_HANDLED                            \
     (-255) /**< A command-specific error has occurred, \
             *   and the associated command has already \
@@ -115,6 +117,8 @@ struct cli_state {
 
     struct rxtx_data *rx; /**< Data for sample reception */
     struct rxtx_data *tx; /**< Data for sample transmission */
+
+    bool bit_mode_8bit; /**< Bit mode is set to 16 bits */
 };
 
 /**

@@ -35,6 +35,7 @@
 #include "log.h"
 #include "test_common.h"
 #include <libbladeRF.h>
+#include "async.h"
 
 /******************************************************************************
  * Type definitions
@@ -84,6 +85,7 @@ static struct option const long_options[] = {
     { "device", required_argument, NULL, 'd' },
     { "loopback", required_argument, NULL, 'l' },
     { "samplerate", required_argument, 0, 's' },
+    { "bitmode", required_argument, NULL, 'b' },
     { "count", required_argument, 0, 'c' },
     { "data", required_argument, NULL, 'D' },
     { "help", no_argument, NULL, 'h' },
@@ -427,6 +429,7 @@ int main(int argc, char *argv[])
 {
     uint32_t sample_rate                  = 7680000;
     enum loopback_mode test_loopback_mode = LOOPBACK_FW;
+    bladerf_format bitmode                = BLADERF_FORMAT_SC16_Q11;
     enum data_mode test_data_mode         = DATA_CONSTANT;
     char *devstr                          = NULL;
     size_t max_count                      = 0;
@@ -447,7 +450,7 @@ int main(int argc, char *argv[])
     int opt_ind = 0;
 
     while (opt != -1) {
-        opt = getopt_long(argc, argv, "d:l:c:D:s:h", long_options, &opt_ind);
+        opt = getopt_long(argc, argv, "d:l:b:c:D:s:h", long_options, &opt_ind);
 
         switch (opt) {
             case 'd':
@@ -463,6 +466,17 @@ int main(int argc, char *argv[])
                     test_loopback_mode = LOOPBACK_RFIC;
                 } else {
                     log_error("Unknown loopback mode: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
+            case 'b':
+                if (strcmp(optarg, "16bit") == 0 || strcmp(optarg, "16") == 0) {
+                    bitmode = BLADERF_FORMAT_SC16_Q11;
+                } else if (strcmp(optarg, "8bit") == 0 || strcmp(optarg, "8") == 0) {
+                    bitmode = BLADERF_FORMAT_SC8_Q7;
+                } else {
+                    log_error("Unknown bitmode: %s\n", optarg);
                     return -1;
                 }
                 break;
@@ -527,6 +541,9 @@ int main(int argc, char *argv[])
                 printf("                             fpga\n");
                 printf("                             rfic\n");
                 printf("  -s, --samplerate <sps>   Specify sample rate.\n");
+                printf("  -b, --bitmode <mode>     Specify 16bit or 8bit mode\n");
+                printf("                             16bit or 16 (default)\n");
+                printf("                             8bit or 8\n");
                 printf("  -c, --count <num>        Specify number of samples "
                        "to test (0 = unlimited).\n");
                 printf("  -D, --data <mode>        Specify data.\n");
@@ -551,6 +568,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    /******************************************************************************
+    * RX init & config
+    ******************************************************************************/
+
     rx_state.idx       = 0;
     rx_state.num       = NUM_TRANSFERS;
     rx_state.i_count   = 0;
@@ -562,7 +583,7 @@ int main(int argc, char *argv[])
 
     status = bladerf_init_stream(
         &rx_stream, dev, rx_callback, &rx_state.buffers, NUM_BUFFERS,
-        BLADERF_FORMAT_SC16_Q11, BUFFER_SIZE, NUM_TRANSFERS, &rx_state);
+        bitmode, BUFFER_SIZE, NUM_TRANSFERS, &rx_state);
     if (status < 0) {
         log_error("bladerf_init_stream(): %s\n", bladerf_strerror(status));
         bladerf_close(dev);
@@ -577,6 +598,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    /******************************************************************************
+    * TX init & config
+    ******************************************************************************/
+
     tx_state.idx     = 0;
     tx_state.num     = NUM_TRANSFERS;
     tx_state.i_count = 0;
@@ -587,7 +612,7 @@ int main(int argc, char *argv[])
 
     status = bladerf_init_stream(
         &tx_stream, dev, tx_callback, &tx_state.buffers, NUM_BUFFERS,
-        BLADERF_FORMAT_SC16_Q11, BUFFER_SIZE, NUM_TRANSFERS, &tx_state);
+        bitmode, BUFFER_SIZE, NUM_TRANSFERS, &tx_state);
     if (status < 0) {
         log_error("bladerf_init_stream(): %s\n", bladerf_strerror(status));
         bladerf_close(dev);
@@ -601,6 +626,10 @@ int main(int argc, char *argv[])
         bladerf_close(dev);
         return -1;
     }
+
+    /******************************************************************************
+    * Loopback configuration
+    ******************************************************************************/
 
     // Default: disable loopback mode
     status = bladerf_set_loopback(dev, BLADERF_LB_NONE);
@@ -659,6 +688,10 @@ int main(int argc, char *argv[])
         perror("signal()");
         return -1;
     }
+
+    /******************************************************************************
+    * Enable RX and TX streams
+    ******************************************************************************/
 
     status = bladerf_enable_module(dev, BLADERF_CHANNEL_TX(0), true);
     if (status < 0) {

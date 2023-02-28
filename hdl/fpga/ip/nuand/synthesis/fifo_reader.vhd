@@ -42,6 +42,7 @@ entity fifo_reader is
         usb_speed           :   in      std_logic;
         meta_en             :   in      std_logic;
         packet_en           :   in      std_logic;
+        eight_bit_mode_en   :   in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
 
         fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
@@ -133,6 +134,7 @@ architecture simple of fifo_reader is
         packet_data_cache   : std_logic_vector(31 downto 0);
         fifo_read           : std_logic;
         out_samples         : sample_streams_t(out_samples'range);
+        eight_bit_sample_sel: std_logic;
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
@@ -147,7 +149,8 @@ architecture simple of fifo_reader is
         packet_control      => PACKET_CONTROL_DEFAULT,
         packet_data_cache   => (others => '0'),
         fifo_read           => '0',
-        out_samples         => (others => ZERO_SAMPLE)
+        out_samples         => (others => ZERO_SAMPLE),
+        eight_bit_sample_sel => '0'
     );
 
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
@@ -351,6 +354,62 @@ begin
         end function;
 
         -- --------------------------------------------------------------------
+        -- MIMO UNPACKER: STEP 1 of 5 (8-bit/half band mode)
+        -- --------------------------------------------------------------------
+        -- The sample FIFO output is a wide data bus that may contain more
+        -- than one sample for a given channel. This function unpacks
+        -- the bus into an array of sample streams. For example, a 2x2 MIMO
+        -- design with 8-bit samples will pack its data into a 64-bit wide
+        -- bus in one of the following ways:
+        --      |           Sample 1            |          Sample 0            |
+        --      | 63:56 | 55:48 | 47:40 | 39:32 | 31:24 | 23:16 | 15:8  | 7:0  | Bits
+        --   1. |   Q1  |   I1  |   Q0  |  I0   |   Q1  |   I1  |   Q0  |  I0  | Channels 0 & 1 enabled
+        --   2. |   Q0' |   I0' |   Q0  |  I0   |   Q0' |   I0' |   Q0  |  I0  | Channel 0 only enabled
+        --   3. |   Q1' |   I1' |   Q1  |  I1   |   Q1' |   I1' |   Q1  |  I1  | Channel 1 only enabled
+        --
+        -- Note: This function is meant to be ran twice to retreive both samples on the bus
+        function unpack_eight_bit_mode( c : sample_controls_t;
+                                        d : std_logic_vector;
+                                        sample : std_logic ) return sample_streams_t is
+
+            variable rv : sample_streams_t(c'range);
+            constant OFFSET_UNIT        : natural := 16;
+            constant SAMPLE_OFFSET_UNIT : natural := 2 * OFFSET_UNIT;
+            -- The following 4 constants are platform-specific and perhaps
+            -- should be parameters instead. This is good enough for now.
+            constant I_HIGH  :  natural := 7;
+            constant I_LOW   :  natural := 0;
+            constant Q_HIGH  :  natural := 15;
+            constant Q_LOW   :  natural := 8;
+
+            -- 8bit mode constants
+            constant SIGMA_DELTA_BITS : signed (3 downto 0) := "0000";
+        begin
+            -- Ensure the array indices are normalized
+            assert (c'low = 0) and (c'high >= c'low)
+                report "Invalid range for parameter 'c'"
+                severity failure;
+
+            if (sample = '0') then
+                for i in rv'range loop
+                    rv(i).data_i := shift_left(resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(I_HIGH downto I_LOW)), rv(i).data_i'length),4);
+                    rv(i).data_q := shift_left(resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(Q_HIGH downto Q_LOW)), rv(i).data_q'length),4);
+                    rv(i).data_v := '0';
+                end loop;
+            elsif (sample = '1') then
+                for i in rv'range loop
+                    rv(i).data_i := shift_left(resize(signed(shift_left(shift_right(unsigned(d),i*OFFSET_UNIT + SAMPLE_OFFSET_UNIT)(I_HIGH downto I_LOW),0)), rv(i).data_i'length),4);
+                    rv(i).data_q := shift_left(resize(signed(shift_left(shift_right(unsigned(d),i*OFFSET_UNIT + SAMPLE_OFFSET_UNIT)(Q_HIGH downto Q_LOW),0)), rv(i).data_q'length),4);
+                    rv(i).data_v := '0';
+                end loop;
+            else
+                report "fifo_reader: Sample choice out of range" severity failure;
+            end if;
+
+            return rv;
+        end function;
+
+        -- --------------------------------------------------------------------
         -- MIMO UNPACKER: STEP 3 of 5
         -- --------------------------------------------------------------------
         -- The FIFO data has been unpacked into an array containing I and Q
@@ -378,9 +437,8 @@ begin
             return rv;
         end function;
 
-
-        variable unpacked         : sample_streams_t(out_samples'range);
-        variable read_req         : std_logic                     := '0';
+        variable unpacked : sample_streams_t(out_samples'range);
+        variable read_req : std_logic := '0';
 
     begin
 
@@ -391,7 +449,12 @@ begin
 
         fifo_future.packet_control.data_valid <= '0';
         -- MIMO UNPACKER: STEP 1 of 5
-        unpacked := unpack(fifo_current.sample_controls_reg, fifo_data);
+        if( eight_bit_mode_en = '1') then
+            unpacked := unpack_eight_bit_mode(fifo_current.sample_controls_reg, fifo_data, fifo_current.eight_bit_sample_sel);
+        else
+            unpacked := unpack(fifo_current.sample_controls_reg, fifo_data);
+        end if;
+
         for i in fifo_future.out_samples'range loop
             if( fifo_current.sample_controls_reg(i).enable = '1' ) then
                 fifo_future.out_samples(i) <= unpacked(fifo_current.ch_offsets(i) + fifo_current.ch_shift);
@@ -489,7 +552,12 @@ begin
                         if( fifo_current.samples_left = 0 ) then
                             fifo_future.samples_left <= fifo_current.samples_left_init;
                             fifo_future.ch_shift     <= 0;
-                            fifo_future.fifo_read    <= read_req;
+                            if( eight_bit_mode_en = '1' ) then
+                                fifo_future.fifo_read <= read_req and fifo_current.eight_bit_sample_sel;
+                                fifo_future.eight_bit_sample_sel <= not fifo_current.eight_bit_sample_sel;
+                            else
+                                fifo_future.fifo_read <= read_req;
+                            end if;
                         else
                             -- MIMO UNPACKER: STEP 5 of 5
                             --   Add the number of enabled channels to each channel's offset index.

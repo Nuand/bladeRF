@@ -235,11 +235,14 @@ void rxtx_print_file_format(struct rxtx_data *rxtx,
     MUTEX_UNLOCK(&rxtx->file_mgmt.file_meta_lock);
 
     switch (fmt) {
-        case RXTX_FMT_CSV_SC16Q11:
-            printf("%sSC16 Q11, CSV%s", prefix, suffix);
+        case RXTX_FMT_CSV:
+            printf("%sCSV%s", prefix, suffix);
             break;
         case RXTX_FMT_BIN_SC16Q11:
             printf("%sSC16 Q11, Binary%s", prefix, suffix);
+            break;
+        case RXTX_FMT_BIN_SC8Q7:
+            printf("%sSC8 Q7, Binary%s", prefix, suffix);
             break;
         default:
             printf("%sNot configured%s", prefix, suffix);
@@ -330,14 +333,14 @@ void rxtx_print_channel(struct rxtx_data *rxtx,
     printf("%s", suffix);
 }
 
-enum rxtx_fmt rxtx_str2fmt(const char *str)
+enum rxtx_fmt rxtx_str2fmt(const char *str, struct cli_state *s)
 {
     enum rxtx_fmt ret = RXTX_FMT_INVALID;
 
     if (!strcasecmp("csv", str)) {
-        ret = RXTX_FMT_CSV_SC16Q11;
+        ret = RXTX_FMT_CSV;
     } else if (!strcasecmp("bin", str)) {
-        ret = RXTX_FMT_BIN_SC16Q11;
+        ret = (s->bit_mode_8bit) ? RXTX_FMT_BIN_SC8Q7 : RXTX_FMT_BIN_SC16Q11;
     }
 
     return ret;
@@ -521,7 +524,7 @@ int rxtx_handle_config_param(struct cli_state *s,
             }
         } else if (!strcasecmp("format", param)) {
             enum rxtx_fmt fmt;
-            fmt = rxtx_str2fmt(*val);
+            fmt = rxtx_str2fmt(*val, s);
 
             if (fmt == RXTX_FMT_INVALID) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));

@@ -20,6 +20,13 @@ header = """
     char manufacturer[33];
     char product[33];
   };
+  struct bladerf_backendinfo
+  {
+    int handle_count;
+    void *handle;
+    int lock_count;
+    void *lock;
+  };
   int bladerf_open(struct bladerf **device, const char
     *device_identifier);
   void bladerf_close(struct bladerf *device);
@@ -30,6 +37,8 @@ header = """
   void bladerf_init_devinfo(struct bladerf_devinfo *info);
   int bladerf_get_devinfo(struct bladerf *dev, struct bladerf_devinfo
     *info);
+  int bladerf_get_backendinfo(struct bladerf *dev, struct
+    bladerf_backendinfo *info);
   int bladerf_get_devinfo_from_str(const char *devstr, struct
     bladerf_devinfo *info);
   bool bladerf_devinfo_matches(const struct bladerf_devinfo *a, const
@@ -262,6 +271,7 @@ header = """
         uint16_t nint;
         uint32_t nfrac;
         uint8_t flags;
+        uint8_t xb_gpio;
       };
       struct
       {
@@ -295,7 +305,9 @@ header = """
   {
     BLADERF_FORMAT_SC16_Q11,
     BLADERF_FORMAT_SC16_Q11_META,
-    BLADERF_FORMAT_PACKET_META
+    BLADERF_FORMAT_PACKET_META,
+    BLADERF_FORMAT_SC8_Q7,
+    BLADERF_FORMAT_SC8_Q7_META
   } bladerf_format;
   struct bladerf_metadata
   {
@@ -365,7 +377,7 @@ header = """
     BLADERF_IMAGE_TYPE_TX_DC_CAL,
     BLADERF_IMAGE_TYPE_RX_IQ_CAL,
     BLADERF_IMAGE_TYPE_TX_IQ_CAL,
-    BLADERF_IMAGE_TYPE_FPGA_A5,
+    BLADERF_IMAGE_TYPE_FPGA_A5
   } bladerf_image_type;
   struct bladerf_image
   {
@@ -416,6 +428,10 @@ header = """
     bladerf_trigger_signal signal, uint8_t *val);
   int bladerf_write_trigger(struct bladerf *dev, bladerf_channel ch,
     bladerf_trigger_signal signal, uint8_t val);
+  int bladerf_wishbone_master_read(struct bladerf *dev, uint32_t addr,
+    uint32_t *data);
+  int bladerf_wishbone_master_write(struct bladerf *dev, uint32_t addr,
+    uint32_t val);
   int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
   int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
   int bladerf_erase_flash(struct bladerf *dev, uint32_t erase_block,
@@ -430,15 +446,24 @@ header = """
     uint32_t page, uint32_t count);
   int bladerf_write_flash_bytes(struct bladerf *dev, const uint8_t *buf,
     uint32_t address, uint32_t length);
+  int bladerf_lock_otp(struct bladerf *dev);
   int bladerf_read_otp(struct bladerf *dev, uint8_t *buf);
   int bladerf_write_otp(struct bladerf *dev, uint8_t *buf);
-  int bladerf_lock_otp(struct bladerf *dev);
   int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch, const
     char *port);
   int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch, const
     char **port);
   int bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
     const char **ports, unsigned int count);
+  typedef enum
+  {
+    BLADERF_FEATURE_DEFAULT = 0,
+    BLADERF_FEATURE_OVERSAMPLE
+  } bladerf_feature;
+  int bladerf_enable_feature(struct bladerf *dev, bladerf_feature
+    feature, bool enable);
+  int bladerf_get_feature(struct bladerf *dev, bladerf_feature
+    *feature);
   typedef enum
   {
     BLADERF_XB_NONE = 0,

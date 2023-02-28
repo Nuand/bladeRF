@@ -261,6 +261,57 @@
   "\n" \
 
 
+#define CLI_CMD_HELPTEXT_generate \
+  "Usage: generate <filename> [parameters] <signal_type>\n" \
+  "\n" \
+  "\n" \
+  "Configuration parameters take the form param=value, and may be\n" \
+  "specified in a single or multiple rx config invocations. Below is a\n" \
+  "list of available parameters.\n" \
+  "\n" \
+  "  ---------------------------------------------------------------------------\n" \
+  "          Parameter Description\n" \
+  "  ----------------- ---------------------------------------------------------\n" \
+  "                  n Number of samples to generate. 0 = unlimited.\n" \
+  "\n" \
+  "                mag Magnitude of signal [-mag, mag]. Default is 2047\n" \
+  "\n" \
+  "             format Output file format. One of the following:\n" \
+  "\n" \
+  "                    csv: CSV of SC16 Q11 samples (default)\n" \
+  "\n" \
+  "                    bin: Raw SC16 Q11 DAC samples\n" \
+  "\n" \
+  "\n" \
+  "Generates signal for use with tx command. Signal types include:\n" \
+  "\n" \
+  "-   cw <period>\n" \
+  "\n" \
+  "    Generate a complex tone with a period relative to system sampling rate\n" \
+  "\n" \
+  "    period indicates the number of samples between 2*M_PI. For example, cw of 4 would\n" \
+  "    generate a complex tone at +4/F_s. With a sampling rate of 20MSPS, the complex\n" \
+  "    tone would be generated at +5MHz. A negative period indicates negative frequency.\n" \
+  "\n" \
+  "-   prn\n" \
+  "\n" \
+  "    Generates pseudorandom noise" \
+  "\n" \
+  "\n" \
+  "Examples:\n" \
+  "\n" \
+  "-   To generate a CSV for a complex tone at -F_s/4 with a full scale swing of -500 to 500:\n" \
+  "\n" \
+  "    generate output.csv format=csv mag=500 cw 4\n" \
+  "\n" \
+  "\n" \
+  "-   To generate 10,000,000 samples of PRN:\n" \
+  "\n" \
+  "    generate output.csv format=csv n=10e6 prn\n" \
+  "\n" \
+  "\n" \
+
+
 #define CLI_CMD_HELPTEXT_help \
   "Usage: help [<command>]\n" \
   "\n" \
@@ -522,6 +573,7 @@
   "      samplerate Samplerate settings\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
   "     tuning_mode Tuning mode settings\n" \
+  "         bitmode Sample bit width\n" \
   "        hardware Low-level hardware status\n" \
   "\n" \
   "BladeRF1-only parameters:\n" \
@@ -894,6 +946,7 @@
   "      samplerate Samplerate settings\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
   "     tuning_mode Tuning mode settings\n" \
+  "         bitmode Sample bit width\n" \
   "\n" \
   "BladeRF1-only parameters:\n" \
   "\n" \

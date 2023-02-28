@@ -110,5 +110,9 @@ uint64_t bladerf1_get_fpga_capabilities(const struct bladerf_version *fpga_versi
         capabilities |= BLADERF_CAP_FPGA_PACKET_META;
     }
 
+    if (version_fields_greater_or_equal(fpga_version, 0, 15, 0)) {
+        capabilities |= BLADERF_CAP_FPGA_8BIT_SAMPLES;
+    }
+
     return capabilities;
 }

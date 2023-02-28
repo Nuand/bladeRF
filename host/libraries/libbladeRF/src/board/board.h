@@ -156,6 +156,11 @@
  */
 #define BLADERF_CAP_FW_SHORT_PACKET (((uint64_t)1) << 38)
 
+/**
+ * FPGA v0.15.0 introduces support for 8bit mode.
+ */
+#define BLADERF_CAP_FPGA_8BIT_SAMPLES (((uint64_t)1) << 39)
+
 struct bladerf {
     /* Handle lock - to ensure atomic access to control and configuration
      * operations */
@@ -184,6 +189,9 @@ struct bladerf {
 
     /* XB's private data */
     void *xb_data;
+
+    /* Enabled feature */
+    bladerf_feature feature;
 };
 
 struct board_fns {

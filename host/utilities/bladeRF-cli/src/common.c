@@ -99,6 +99,7 @@ struct cli_state *cli_state_create()
         cli_state->dev            = NULL;
         cli_state->last_lib_error = 0;
         cli_state->scripts        = NULL;
+        cli_state->bit_mode_8bit  = false;
 
         cli_state->dev_info.fpga_size = BLADERF_FPGA_UNKNOWN;
         cli_state->dev_info.is_bladerf_x40_x115 = false;
@@ -290,6 +291,9 @@ const char *cli_strerror(int error, int lib_error)
 
         case CLI_RET_PERMISSION:
             return "Insufficient permissions for the requested operation";
+
+        case CLI_RET_INVPARAM:
+            return "Invalid parameter provided";
 
         /* Other commands shall print out helpful info from within their
          * implementation */

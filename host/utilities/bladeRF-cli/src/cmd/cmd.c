@@ -43,6 +43,7 @@ DECLARE_CMD(flash_image, "flash_image", "fi");
 DECLARE_CMD(flash_init_cal, "flash_init_cal", "fic");
 DECLARE_CMD(flash_restore, "flash_restore", "fr");
 DECLARE_CMD(fw_log, "fw_log");
+DECLARE_CMD(generate, "generate");
 DECLARE_CMD(help, "help", "h", "?");
 DECLARE_CMD(info, "info", "i");
 DECLARE_CMD(jump_to_bootloader, "jump_to_boot", "j");
@@ -158,6 +159,15 @@ static struct cmd const cmd_table[] = {
         FIELD_INIT(.desc, "Read firmware log contents"),
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_fw_log),
         FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
+    },
+    {
+        FIELD_INIT(.names, cmd_names_generate),
+        FIELD_INIT(.exec, cmd_generate),
+        FIELD_INIT(.desc, "Generates signals such as an offset CW"),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_generate),
+        FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
         FIELD_INIT(.allow_while_streaming, true),
     },
@@ -384,13 +394,21 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
 
     /* Asking for general help */
     if (1 == argc) {
-        printf("\n");
-        for (i = 0; cmd_table[i].names != NULL; ++i) {
+        printf(" |%-18s|%-75s|%-8s|%-7s|\n", " Command name", " Description", " Device", " FPGA");
+
+        for (i = 0; ; ++i) {
+            if ((i % 5) == 0) {
+                printf(" |%-18s+%-75s+%-8s+%-7s|\n", "------------------", "---------------------------------------------------------------------------", "--------", "-------");
+
+            }
+            if (cmd_table[i].names == NULL) {
+                break;
+            }
             /* Hidden functions for fun and profit */
             if (cmd_table[i].names[0][0] == '_') {
                 continue;
             }
-            printf("  %-20s%s\n", cmd_table[i].names[0], cmd_table[i].desc);
+            printf(" | %-17s| %-74s|%-8s|%-7s|\n", cmd_table[i].names[0], cmd_table[i].desc, cmd_table[i].requires_device ? "   Y":"", cmd_table[i].requires_fpga ? "   Y" : "");
         }
         printf("\n");
 
@@ -410,6 +428,9 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
     } else {
         ret = CLI_RET_NARGS;
     }
+
+    printf("The letter Y in the \"Device\" and \"FPGA\" columns indicates the command\n"
+           "  needs the device to open, and the FPGA to be loaded, respectively.\n");
 
     return ret;
 }
@@ -511,6 +532,10 @@ int cmd_handle(struct cli_state *s, char const *line)
                      * starting up or finishing up a stream() call*/
                     MUTEX_LOCK(&s->dev_lock);
                     ret = cmd->exec(s, argc, argv);
+                    if (ret == CLI_RET_INVPARAM || ret == CLI_RET_NARGS) {
+                        printf("\nDescription of %s command:\n=========\n"
+                               "%s\n=========\n", cmd->names[0], cmd->help);
+                    }
                     MUTEX_UNLOCK(&s->dev_lock);
                 }
             } else {

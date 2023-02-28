@@ -25,6 +25,26 @@
 #include "rel_assert.h"
 
 /*
+ * Convert SC8Q8 samples to bytes
+ */
+static inline size_t sc8q7_to_bytes(size_t n_samples)
+{
+    const size_t sample_size = 2 * sizeof(int8_t);
+    assert(n_samples <= (SIZE_MAX / sample_size));
+    return n_samples * sample_size;
+}
+
+/*
+ * Convert bytes to SC8Q8 samples
+ */
+static inline size_t bytes_to_sc8q7(size_t n_bytes)
+{
+    const size_t sample_size = 2 * sizeof(int8_t);
+    assert((n_bytes % sample_size) == 0);
+    return n_bytes / sample_size;
+}
+
+/*
  * Convert SC16Q11 samples to bytes
  */
 static inline size_t sc16q11_to_bytes(size_t n_samples)
@@ -48,6 +68,10 @@ static inline size_t bytes_to_sc16q11(size_t n_bytes)
 static inline size_t samples_to_bytes(bladerf_format format, size_t n)
 {
     switch (format) {
+        case BLADERF_FORMAT_SC8_Q7:
+        case BLADERF_FORMAT_SC8_Q7_META:
+            return sc8q7_to_bytes(n);
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
             return sc16q11_to_bytes(n);
@@ -65,6 +89,10 @@ static inline size_t samples_to_bytes(bladerf_format format, size_t n)
 static inline size_t bytes_to_samples(bladerf_format format, size_t n)
 {
     switch (format) {
+        case BLADERF_FORMAT_SC8_Q7:
+        case BLADERF_FORMAT_SC8_Q7_META:
+            return bytes_to_sc8q7(n);
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
             return bytes_to_sc16q11(n);

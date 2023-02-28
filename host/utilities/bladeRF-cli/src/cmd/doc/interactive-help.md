@@ -241,6 +241,80 @@ Read the contents of the device's firmware log and write it to the
 specified file. If no filename is specified, the log content is written
 to stdout.
 
+generate
+--------
+  Usage: generate \<filename\> [parameters] \<signal_type\>
+  
+
+  Configuration parameters take the form param=value, and may be
+  specified in a single or multiple rx config invocations. Below is a
+  list of available parameters.
+  
+    ---------------------------------------------------------------------------
+            Parameter Description
+    ----------------- ---------------------------------------------------------
+                    n Number of samples to generate. 0 = unlimited.
+  
+                  mag Magnitude of signal [-mag, mag]. Default is 2047
+  
+               format Output file format. One of the following:
+  
+                      csv: CSV of SC16 Q11 or SC8 Q7 samples (default)
+  
+                      bin: Raw SC16 Q11 or SC8 Q7 DAC samples
+  
+                     Note: Sample format will depend on the
+                           bitmode state
+  
+  Generates signal for use with tx command. Signal types include:
+  
+  -   cw <period>
+  
+      Generate a complex tone with a period relative to system sampling rate
+  
+      period indicates the number of samples between 2*M_PI. For example, cw of 4 would
+      generate a complex tone at +4/F_s. With a sampling rate of 20MSPS, the complex
+      tone would be generated at +5MHz. A negative period indicates negative frequency.
+  
+  -   prn
+  
+      Generates pseudorandom noise \
+  
+  
+  Examples:
+  
+  -   To generate a CSV for a complex tone at -F_s/4 with a full scale swing of -500 to 500:
+  
+      generate output.csv format=csv mag=500 cw 4
+  
+  
+  -   To generate 10,000,000 samples of PRN:
+  
+      generate output.csv format=csv n=10e6 prn
+
+help
+----
+
+Usage: `help [<command>]`
+
+Provides extended help, like this, on any command.
+
+
+info
+----
+
+Usage: `info`
+
+Prints the following information about an opened device:
+
+ * Serial number
+ * VCTCXO DAC calibration value
+ * FPGA size
+ * Whether or not the FPGA is loaded
+ * USB bus, address, and speed
+ * Backend (Denotes which device interface code is being used.)
+ * Instance number
+
 
 help
 ----
@@ -517,6 +591,8 @@ Common parameters:
 
 `tuning_mode`   Tuning mode settings
 
+`bitmode`       Sample bit width
+
 `hardware`      Low-level hardware status
 ----------------------------------------------------------------------
 
@@ -662,9 +738,12 @@ available parameters.
 
 `format`        Output file format. One of the following:
 
-                `csv`: CSV of SC16 Q11 samples
+                `csv`: CSV of SC16 Q11 or SC8 Q7 samples
 
-                `bin`: Raw SC16 Q11 DAC samples
+                `bin`: Raw SC16 Q11 or SC8 Q7 DAC samples
+
+                 Note: Sample format will depend on the
+                       `bitmode` state
 
 `samples`       Number of samples per buffer to use in the
                 asynchronous stream.  Must be divisible by 1024 and
@@ -843,9 +922,11 @@ available parameters.
 
 `format`        Input file format. One of the following:
 
-                `csv`: CSV of SC16 Q11 samples ([-2048, 2047])
+                `csv`: CSV of SC16 Q11 or SC8 Q7 samples
 
-                `bin`: Raw SC16 Q11 DAC samples ([-2048, 2047])
+                `bin`: Raw SC16 Q11 or SC8 Q7 DAC samples
+
+                 Note: Sample format will depend on the `bitmode` state
 
 `repeat`        The number of times the file contents should be
                 transmitted. 0 implies repeat until stopped.
@@ -935,6 +1016,8 @@ Common parameters:
 `trimdac`       VCTCXO Trim DAC settings
 
 `tuning_mode`   Tuning mode settings
+
+`bitmode`       Sample bit width
 ----------------------------------------------------------------------
 
 BladeRF1-only parameters:

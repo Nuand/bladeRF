@@ -42,6 +42,10 @@ size_t _interleave_calc_num_channels(bladerf_channel_layout layout)
 size_t _interleave_calc_bytes_per_sample(bladerf_format format)
 {
     switch (format) {
+        case BLADERF_FORMAT_SC8_Q7:
+        case BLADERF_FORMAT_SC8_Q7_META:
+            return 2;
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
         case BLADERF_FORMAT_PACKET_META:
@@ -54,9 +58,11 @@ size_t _interleave_calc_bytes_per_sample(bladerf_format format)
 size_t _interleave_calc_metadata_bytes(bladerf_format format)
 {
     switch (format) {
+        case BLADERF_FORMAT_SC8_Q7_META:
         case BLADERF_FORMAT_SC16_Q11_META:
         case BLADERF_FORMAT_PACKET_META:
             return 0x10;
+        case BLADERF_FORMAT_SC8_Q7:
         case BLADERF_FORMAT_SC16_Q11:
             return 0;
     }

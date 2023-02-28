@@ -47,6 +47,9 @@ entity tx is
         trigger_master       : in    std_logic;
         trigger_line         : inout std_logic; -- this is not good, should be in/out/oe
 
+        -- 8-bit mode
+        eight_bit_mode_en    : in std_logic := '0';
+
         -- Packet from host via FX3
         packet_en            : in    std_logic;
         packet_empty         : out   std_logic;
@@ -213,6 +216,8 @@ begin
             meta_en             =>  meta_en,
             packet_en           =>  packet_en,
             timestamp           =>  tx_timestamp,
+
+            eight_bit_mode_en   =>  eight_bit_mode_en,
 
             fifo_empty          =>  sample_fifo.rempty,
             fifo_usedw          =>  sample_fifo.rused,

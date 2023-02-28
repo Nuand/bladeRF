@@ -1221,6 +1221,145 @@ out:
     return rv;
 }
 
+/* feature */
+int print_feature(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    bladerf_feature feature;
+
+    bladerf_get_feature(state->dev, &feature);
+    printf("  Feature:  %s enabled\n", (feature == BLADERF_FEATURE_DEFAULT) ? "Default" : "Oversample");
+
+    return rv;
+}
+
+int set_feature(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    int *err = &state->last_lib_error;
+    int rv = CLI_RET_OK;
+    char* str_16_enable[3] = {"set", "bitmode", "16"};
+    char* str_8_enable[3] = {"set", "bitmode", "8"};
+    struct bladerf_devinfo info;
+
+    if (argc != 3) {
+        if (argc == 2) {
+            printf("Usage: %s %s <default|oversample>\n", argv[0], argv[1]);
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
+    }
+
+    if (!strcasecmp("default", argv[2])) {
+        // Reopen the device with a fresh register config
+        bladerf_get_devinfo(state->dev, &info);
+        bladerf_close(state->dev);
+        bladerf_open_with_devinfo(&(state->dev), &info);
+
+        status = bladerf_enable_feature(state->dev, BLADERF_FEATURE_DEFAULT, true);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        }
+
+        status = set_bitmode(state, 3, str_16_enable);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        }
+    } else if(!strcasecmp("oversample", argv[2])) {
+        status = bladerf_enable_feature(state->dev, BLADERF_FEATURE_OVERSAMPLE, true);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        }
+
+        status = set_bitmode(state, 3, str_8_enable);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        }
+    } else {
+        return CLI_RET_INVPARAM;
+    }
+
+    print_feature(state, 0, NULL);
+
+    if (!strcasecmp("oversample", argv[2]))
+        printf("\n"
+               "  Note: Sample rates must be reassigned\n"
+               "        for OVERSAMPLE changes to take effect\n\n");
+
+out:
+    return rv;
+}
+
+/* bitmode */
+int print_bitmode(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    printf("  Bit Mode: %s bit samples\n", state->bit_mode_8bit ? "8" : "16");
+    return rv;
+}
+
+int set_bitmode(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    bladerf_feature feature;
+
+    if (cli_device_is_streaming(state)) {
+        printf("  Changing bit mode will not take affect while device"
+               " is streaming.\n");
+        rv = CLI_RET_STATE;
+        goto out;
+    }
+
+    if (argc != 3) {
+        if (argc == 2) {
+            printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);
+            rv = CLI_RET_OK;
+            goto out;
+        } else {
+            rv = CLI_RET_NARGS;
+            goto out;
+        }
+    }
+
+    if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2])) {
+        bladerf_get_feature(state->dev, &feature);
+        if(feature == BLADERF_FEATURE_OVERSAMPLE) {
+            printf("  Error: 16bit mode not permitted when\n"
+                   "         over sampling is enabled.\n");
+            goto out;
+        } else if(state->bit_mode_8bit) {
+            state->bit_mode_8bit = false;
+        }
+    } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
+        if (!state->bit_mode_8bit) {
+            if (strcmp(bladerf_get_board_name(state->dev), "bladerf2") != 0) {
+                printf("  Error: BladeRF2 required for 8bit format\n");
+                rv = CLI_RET_UNSUPPORTED;
+                goto out;
+            } else {
+                state->bit_mode_8bit = true;
+            }
+        }
+    } else {
+        printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);
+        rv = CLI_RET_UNSUPPORTED;
+        goto out;
+    }
+
+out:
+    print_bitmode(state, 0, NULL);
+    return rv;
+}
+
 /* rxvga1 */
 int print_rxvga1(struct cli_state *state, int argc, char **argv)
 {
@@ -1326,6 +1465,7 @@ static int _do_set_samplerate(struct cli_state *state,
 
     struct bladerf_rational_rate *rate = (struct bladerf_rational_rate *)arg;
     struct bladerf_rational_rate actual;
+    bladerf_feature feature;
 
     const char *settext =
         "  Setting %s sample rate - req: %9" PRIu64 " %" PRIu64 "/%" PRIu64
@@ -1345,6 +1485,7 @@ static int _do_set_samplerate(struct cli_state *state,
         goto out;
     }
 
+    bladerf_get_feature(state->dev, &feature);
     printf(settext, channel2str(ch), rate->integer, rate->num, rate->den,
            actual.integer, actual.num, actual.den);
 

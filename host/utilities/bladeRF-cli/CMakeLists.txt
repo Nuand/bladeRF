@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(bladeRF-cli C)
 
 ################################################################################
@@ -6,7 +6,7 @@ project(bladeRF-cli C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  1)
-set(VERSION_INFO_MINOR  8)
+set(VERSION_INFO_MINOR  9)
 set(VERSION_INFO_PATCH  0)
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
@@ -196,6 +196,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/flash_init_cal.c
         src/cmd/flash_restore.c
         src/cmd/fw_log.c
+        src/cmd/generate.c
         src/cmd/info.c
         src/cmd/jump_boot.c
         src/cmd/lms_reg_info.c

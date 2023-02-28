@@ -31,7 +31,7 @@ architecture micro_dma of fx3_model is
 
     constant PCLK_HALF_PERIOD       : time      := 1 sec * (1.0/100.0e6/2.0);
     constant START_COUNT            : natural   := 32;
-    constant BLOCKS_PER_ITERATION   : natural   := 4;
+    constant BLOCKS_PER_ITERATION   : natural   := 3;
     constant ITERATIONS             : natural   := 4;
 
     -- Control mapping
@@ -57,16 +57,29 @@ architecture micro_dma of fx3_model is
     signal rx_data  : std_logic_vector(31 downto 0);
     signal tx_data  : std_logic_vector(31 downto 0);
 
-    function data_gen (count : natural) return std_logic_vector is
-        variable msw, lsw : std_logic_vector(15 downto 0);
+    impure function data_gen (count : natural) return std_logic_vector is
+        variable eight_bit_msw_i : std_logic_vector(7 downto 0);
+        variable eight_bit_msw_q : std_logic_vector(7 downto 0);
+        variable eight_bit_lsw_i : std_logic_vector(7 downto 0);
+        variable eight_bit_lsw_q : std_logic_vector(7 downto 0);
+        variable msw, lsw        : std_logic_vector(15 downto 0);
     begin
-        msw := std_logic_vector(to_signed(count+1, 16));
-        lsw := std_logic_vector(to_signed(count, 16));
+        if( eight_bit_mode_en = '1' ) then
+            eight_bit_lsw_i := std_logic_vector(to_unsigned(count,   8));
+            eight_bit_lsw_q := std_logic_vector(to_unsigned(count+1, 8));
+            eight_bit_msw_i := std_logic_vector(to_unsigned(count+2, 8));
+            eight_bit_msw_q := std_logic_vector(to_unsigned(count+3, 8));
+            lsw := eight_bit_lsw_q & eight_bit_lsw_i;
+            msw := eight_bit_msw_q & eight_bit_msw_i;
+        else
+            msw := std_logic_vector(to_signed(count+1, 16));
+            lsw := std_logic_vector(to_signed(count, 16));
+        end if;
 
         return (msw & lsw);
     end function data_gen;
 
-    function data_check (count : natural ; rxdata : std_logic_vector(31 downto 0)) return boolean is
+    impure function data_check (count : natural ; rxdata : std_logic_vector(31 downto 0)) return boolean is
     begin
         return (rxdata = data_gen(count));
     end function data_check;
@@ -138,6 +151,7 @@ begin
     end process;
 
     tx_sample_stream : process
+        constant TIME_BETWEEN_ITERATIONS : natural := 4593;
         constant BLOCK_SIZE     : natural := 512;
         variable count          : natural := START_COUNT;
         variable timestamp_cntr : natural := 400;
@@ -162,7 +176,7 @@ begin
         for k in 1 to ITERATIONS loop
             dma_tx_enable <= '1';
 
-            for j in 1 to 2 loop
+            for j in 1 to BLOCKS_PER_ITERATION loop
                 header_len      := 0;
                 dma3_tx_reqx    <= '0';
                 req_time        := now;
@@ -184,8 +198,8 @@ begin
                                 data_out := x"00000000";
                             when 2 =>
                                 data_out(31 downto 0) := std_logic_vector(to_signed(timestamp_cntr, 32));
-                                if (i < 1) then
-                                   timestamp_cntr := timestamp_cntr + 2000;
+                                if (j = BLOCKS_PER_ITERATION) then
+                                   timestamp_cntr := timestamp_cntr + TIME_BETWEEN_ITERATIONS;
                                 else
                                    timestamp_cntr := timestamp_cntr + 254;
                                 end if;
@@ -209,11 +223,17 @@ begin
                 for i in 1 to (BLOCK_SIZE - header_len) loop
                     gpif_state_tx   <= TX_SAMPLES;
                     data_out        := data_gen(count);
-                    fx3_gpif        <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
-                    tx_data         <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
+                    if( eight_bit_mode_en = '1' ) then
+                        fx3_gpif <= data_out;
+                        tx_data  <= data_out;
+                    else
+                        fx3_gpif <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
+                        tx_data  <= std_logic_vector(to_unsigned(j, 8)) & data_out(23 downto 0);
+                    end if;
                     wait until rising_edge( fx3_pclk );
 
-                    count           := (count + 2) mod 2048;
+                    count := (count + 4) mod 128 when eight_bit_mode_en = '1' else
+                             (count + 2) mod 2048;
                     gpif_state_tx   <= IDLE;
                     tx_data         <= (others => 'X');
                 end loop;
@@ -366,9 +386,10 @@ begin
     end process;
 
     tx_sample_stream : process
+        constant TIME_BETWEEN_ITERATIONS : natural := 4556;
         constant BLOCK_SIZE     : natural := 512;
         variable count          : natural := START_COUNT;
-        variable timestamp_cntr : natural := 100;
+        variable timestamp_cntr : natural := 250;
         variable header_len     : natural := 0;
         variable packet_len     : natural := 0;
         variable data_out       : std_logic_vector(31 downto 0);
@@ -411,10 +432,14 @@ begin
                     for i in 1 to 4 loop
                         case (i) is
                             when 1 =>
-                                data_out := x"100000" & std_logic_vector(to_unsigned(packet_len, 8));
+                                data_out := x"100000" & std_logic_vector(to_unsigned(packet_len-1, 8));
                             when 2 =>
                                 data_out(31 downto 0) := std_logic_vector(to_signed(timestamp_cntr, 32));
-                                timestamp_cntr := timestamp_cntr + 300;
+                                if (j = BLOCKS_PER_ITERATION) then
+                                    timestamp_cntr := timestamp_cntr + TIME_BETWEEN_ITERATIONS;
+                                else
+                                    timestamp_cntr := timestamp_cntr + 50;
+                                end if;
                             when 3 =>
                                 data_out := (others => '0');
                             when 4 =>

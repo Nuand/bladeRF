@@ -101,7 +101,20 @@ int async_init_stream(struct bladerf_stream **stream,
         }
     }
 
+    if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
+        if (!have_cap_dev(dev, BLADERF_CAP_FPGA_8BIT_SAMPLES)) {
+            log_error("FPGA does not support 8bit mode. "
+                      "Upgrade to at least FPGA version 0.15.0.\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    }
+
     switch(format) {
+        case BLADERF_FORMAT_SC8_Q7:
+        case BLADERF_FORMAT_SC8_Q7_META:
+            buffer_size_bytes = sc8q7_to_bytes(samples_per_buffer);
+            break;
+
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
             buffer_size_bytes = sc16q11_to_bytes(samples_per_buffer);

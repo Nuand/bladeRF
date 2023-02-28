@@ -47,6 +47,10 @@ entity rx is
         trigger_fire           : in    std_logic;
         trigger_master         : in    std_logic;
         trigger_line           : inout std_logic; -- this is not good, should be in/out/oe
+        trigger_signal_sync_tb : out   std_logic;
+
+        -- 8-bit mode
+        eight_bit_mode_en      : in std_logic := '0';
 
         -- Packet to host via FX3
         packet_en              : in    std_logic;
@@ -246,6 +250,8 @@ begin
             packet_control      =>  packet_control,
             packet_ready        =>  packet_ready,
 
+            eight_bit_mode_en   => eight_bit_mode_en,
+
             meta_fifo_full      =>  meta_fifo.wfull,
             meta_fifo_usedw     =>  meta_fifo.wused,
             meta_fifo_data      =>  meta_fifo.wdata,
@@ -262,7 +268,7 @@ begin
 
     loopback_fifo_control : process( rx_reset, loopback_fifo.rclock )
         variable offset     : natural range 0 to loopback_fifo.rdata'length;
-        variable remaining  : natural range 0 to loopback_fifo.rdata'length/32;
+        variable remaining  : natural range 0 to loopback_fifo.rdata'length/16;
         variable loopdata   : std_logic_vector(loopback_fifo.rdata'range);
     begin
         if( rx_reset = '1' ) then
@@ -291,7 +297,11 @@ begin
                 -- We have fresh data!
                 loopback_fifo.rreq <= '0';
                 loopdata    := loopback_fifo.rdata;
-                remaining   := loopback_fifo.rdata'length/32;
+                if( eight_bit_mode_en = '0' ) then
+                    remaining := loopback_fifo.rdata'length/32;
+                else
+                    remaining := loopback_fifo.rdata'length/16;
+                end if;
             elsif( remaining = 0 and sample_fifo.wfull = '0' and loopback_fifo.rempty = '0' ) then
                 -- Read more from the FIFO if we can
                 loopback_fifo.rreq <= '1';
@@ -299,17 +309,30 @@ begin
 
             -- Do the loopback
             for i in loopback_streams'range loop
-
-                offset := loopdata'length - (remaining*32);
+                if( eight_bit_mode_en = '0' ) then
+                    offset := loopdata'length - (remaining*32);
+                else
+                    offset := loopdata'length - (remaining*16);
+                end if;
 
                 if( adc_controls(i).enable = '1' and remaining > 0 ) then
-                    loopback_streams(i).data_i <=
-                        resize(signed(loopdata(offset+11 downto offset+0)),
-                                loopback_streams(i).data_i'length);
+                    if( eight_bit_mode_en = '0' ) then
+                        loopback_streams(i).data_i <=
+                            resize(signed(loopdata(offset+11 downto offset+0)),
+                                    loopback_streams(i).data_i'length);
 
-                    loopback_streams(i).data_q <=
-                        resize(signed(loopdata(offset+27 downto offset+16)),
-                                loopback_streams(i).data_q'length);
+                        loopback_streams(i).data_q <=
+                            resize(signed(loopdata(offset+27 downto offset+16)),
+                                    loopback_streams(i).data_q'length);
+                    else
+                        loopback_streams(i).data_i <=
+                            shift_left(resize(signed(loopdata(offset+7 downto offset+0)),
+                                    loopback_streams(i).data_i'length), 4);
+
+                        loopback_streams(i).data_q <=
+                            shift_left(resize(signed(loopdata(offset+15 downto offset+8)),
+                                    loopback_streams(i).data_q'length), 4);
+                    end if;
 
                     loopback_streams(i).data_v <= '1';
 
@@ -413,5 +436,6 @@ begin
             async       =>  trigger_signal_out,
             sync        =>  trigger_signal_out_sync
         );
+        trigger_signal_sync_tb <= trigger_signal_out_sync;
 
 end architecture;

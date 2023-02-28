@@ -443,7 +443,7 @@ static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
             print_error_need_devarg();
             status = -1;
         } else {
-            printf("Loading fpga...\n");
+            printf("Loading FPGA...\n");
             status = bladerf_load_fpga(state->dev, rc->fpga_file);
             if (status) {
                 fprintf(stderr, "Error: failed to load FPGA: %s\n",

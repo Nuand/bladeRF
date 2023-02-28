@@ -1372,6 +1372,11 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
 #define BLADERF_GPIO_PACKET (1 << 19)
 
 /**
+ * Enable 8bit sample mode
+ */
+#define BLADERF_GPIO_8BIT_MODE (1 << 20)
+
+/**
  * AGC enable control bit
  *
  * @note This is set using bladerf_set_gain_mode().

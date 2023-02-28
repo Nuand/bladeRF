@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(libbladeRF_test_digital_loopback C)
 
 set(INCLUDES
     ${libbladeRF_SOURCE_DIR}/include
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../libbladeRF/src/streaming
 )
 
 if(MSVC)

@@ -87,6 +87,10 @@ architecture hosted_bladerf of bladerf is
     signal meta_en_tx             : std_logic;
     signal meta_en_rx             : std_logic;
 
+    signal eightbit_en_pclk       : std_logic;
+    signal eightbit_en_tx         : std_logic;
+    signal eightbit_en_rx         : std_logic;
+
     signal packet_en_pclk         : std_logic;
     signal packet_en_tx           : std_logic;
     signal packet_en_rx           : std_logic;
@@ -545,6 +549,9 @@ begin
             trigger_master       => tx_trigger_ctl.master,
             trigger_line         => tx_trigger_line,
 
+            -- Eightbit mode
+            eight_bit_mode_en    => eightbit_en_tx,
+
             -- Packet FIFO
             packet_en            => packet_en_tx,
             packet_empty         => tx_packet_empty,
@@ -617,6 +624,9 @@ begin
             trigger_fire           => rx_trigger_ctl.fire,
             trigger_master         => rx_trigger_ctl.master,
             trigger_line           => rx_trigger_line,
+
+            -- Eightbit mode
+            eight_bit_mode_en      => eightbit_en_rx,
 
             -- Packet FIFO
             packet_en              => packet_en_rx,
@@ -798,6 +808,39 @@ begin
             clock               =>  tx_clock,
             async               =>  nios_gpio.o.meta_sync,
             sync                =>  meta_en_tx
+        );
+
+    U_sync_eightbit_en_pclk : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  fx3_pclk_pll,
+            async               =>  nios_gpio.o.eightbit_en,
+            sync                =>  eightbit_en_pclk
+        );
+
+    U_sync_eightbit_en_rx : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  rx_clock,
+            async               =>  nios_gpio.o.eightbit_en,
+            sync                =>  eightbit_en_rx
+        );
+
+    U_sync_eightbit_en_tx : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  tx_clock,
+            async               =>  nios_gpio.o.eightbit_en,
+            sync                =>  eightbit_en_tx
         );
 
     U_sync_packet_en_pclk : entity work.synchronizer
