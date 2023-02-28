@@ -2074,8 +2074,7 @@ static int bladerf1_set_frequency(struct bladerf *dev,
                 }
                 
                 status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, 0, &qt);
-            }
-            else {
+            } else {
                 status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, frequency, NULL);
             }
             
