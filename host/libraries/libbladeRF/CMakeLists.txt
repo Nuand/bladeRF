@@ -425,7 +425,9 @@ if(MSVC)
     )
 endif()
 
-cmake_policy(SET CMP0115 OLD)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+    cmake_policy(SET CMP0115 OLD)
+endif(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
 
