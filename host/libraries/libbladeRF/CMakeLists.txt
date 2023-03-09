@@ -120,6 +120,8 @@ if(NOT ENABLE_BACKEND_LIBUSB
    AND NOT ENABLE_BACKEND_CYAPI
    AND NOT ENABLE_BACKEND_DUMMY)
     message(FATAL_ERROR
+            "Cannot enable any libbladeRF backends due to missing library support. "
+            "Consider installing lisusb dev package (libusb-1.0-0-dev on Ubuntu). "
             "No libbladeRF backends are enabled. "
             "Please enable one or more backends." )
 endif()
