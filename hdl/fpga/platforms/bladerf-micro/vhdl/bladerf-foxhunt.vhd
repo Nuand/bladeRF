@@ -252,6 +252,13 @@ architecture foxhunt_bladerf of bladerf is
       );
     end component;
 
+    signal tx_packet_control      : packet_control_t ;
+    signal rx_packet_control      : packet_control_t := PACKET_CONTROL_DEFAULT ;
+
+    signal rx_packet_ready        : std_logic;
+
+    signal tx_packet_ready        : std_logic;
+    signal tx_packet_empty        : std_logic;
 begin
 
     -- ========================================================================
@@ -333,6 +340,7 @@ begin
             usb_speed           =>  usb_speed_pclk,
 
             meta_enable         =>  meta_en_pclk,
+            packet_enable       =>  '0',
             rx_enable           =>  rx_enable_pclk,
             tx_enable           =>  tx_enable_pclk,
 
@@ -610,6 +618,15 @@ begin
             trigger_master       => tx_trigger_ctl.master,
             trigger_line         => tx_trigger_line,
 
+            -- Eightbit mode
+            eight_bit_mode_en    => '0',
+
+            -- Packet FIFO
+            packet_en            => '0',
+            packet_empty         => tx_packet_empty,
+            packet_control       => tx_packet_control,
+            packet_ready         => tx_packet_ready,
+
             -- Samples from host via FX3
             sample_fifo_wclock   => fx3_pclk_pll,
             sample_fifo_wreq     => '0',
@@ -679,6 +696,14 @@ begin
             trigger_fire           => rx_trigger_ctl.fire,
             trigger_master         => rx_trigger_ctl.master,
             trigger_line           => rx_trigger_line,
+
+            -- Eightbit mode
+            eight_bit_mode_en      => '0',
+
+            -- Packet FIFO
+            packet_en              => '0',
+            packet_control         => rx_packet_control,
+            packet_ready           => rx_packet_ready,
 
             -- Samples to host via FX3
             sample_fifo_rclock     => fx3_pclk_pll,
