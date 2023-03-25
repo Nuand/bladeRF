@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 
 #include "example_common.h"
 
@@ -234,9 +235,21 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
 
 /** [rx_meta_sched_example] */
 
+static struct option const long_options[] = {
+    { "device", required_argument, NULL, 'd' },
+    { "bitmode", required_argument, NULL, 'b' },
+    { "help", no_argument, NULL, 'h' },
+    { NULL, 0, NULL, 0 },
+};
+
 static void usage(const char *argv0)
 {
-    printf("Usage: %s [device specifier]\n\n", argv0);
+    printf("Usage: %s [options]\n", argv0);
+    printf("  -d, --device <str>       Specify device to open.\n");
+    printf("  -b, --bitmode <mode>     Specify 16bit or 8bit mode\n");
+    printf("                             <16bit|16> (default)\n");
+    printf("                             <8bit|8>\n");
+    printf("  -h, --help               Show this text.\n");
 }
 
 int main(int argc, char *argv[])
@@ -251,16 +264,34 @@ int main(int argc, char *argv[])
     const unsigned int rx_count    = 15;
     const unsigned int timeout_ms  = 2500;
 
-    if (argc == 2) {
-        if (!strcasecmp("-h", argv[1]) || !strcasecmp("--help", argv[1])) {
-            usage(argv[0]);
-            return 0;
-        } else {
-            devstr = argv[1];
+    int opt = 0;
+    int opt_ind = 0;
+    while (opt != -1) {
+        opt = getopt_long(argc, argv, "d:b:h", long_options, &opt_ind);
+
+        switch (opt) {
+            case 'd':
+                devstr = optarg;
+                break;
+
+            case 'b':
+                if (strcmp(optarg, "16bit") == 0 || strcmp(optarg, "16") == 0) {
+                    fmt = BLADERF_FORMAT_SC16_Q11_META;
+                } else if (strcmp(optarg, "8bit") == 0 || strcmp(optarg, "8") == 0) {
+                    fmt = BLADERF_FORMAT_SC8_Q7_META;
+                } else {
+                    printf("Unknown bitmode: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
+            case 'h':
+                usage(argv[0]);
+                return 0;
+
+            default:
+                break;
         }
-    } else if (argc > 1) {
-        usage(argv[0]);
-        return -1;
     }
 
     dev = example_init(devstr);
