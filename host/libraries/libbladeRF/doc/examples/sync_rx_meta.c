@@ -41,7 +41,7 @@
  * Return sample buffer on success, or NULL on failure.
  */
 
-int16_t *init(struct bladerf *dev, int16_t num_samples)
+int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format)
 {
     int status = -1;
 
@@ -76,7 +76,7 @@ int16_t *init(struct bladerf *dev, int16_t num_samples)
     /* Configure the device's RX for use with the sync interface.
      * SC16 Q11 samples *with* metadata are used. */
     status = bladerf_sync_config(dev, BLADERF_RX_X1,
-                                 BLADERF_FORMAT_SC16_Q11_META, num_buffers,
+                                 format, num_buffers,
                                  buffer_size, num_transfers, timeout_ms);
     if (status != 0) {
         fprintf(stderr, "Failed to configure RX sync interface: %s\n",
@@ -245,6 +245,7 @@ int main(int argc, char *argv[])
     struct bladerf *dev = NULL;
     const char *devstr  = NULL;
     int16_t *samples    = NULL;
+    bladerf_format fmt  = BLADERF_FORMAT_SC16_Q11_META;
 
     const unsigned int num_samples = 4096;
     const unsigned int rx_count    = 15;
@@ -264,7 +265,7 @@ int main(int argc, char *argv[])
 
     dev = example_init(devstr);
     if (dev) {
-        samples = init(dev, num_samples);
+        samples = init(dev, num_samples, fmt);
         if (samples != NULL) {
             printf("\nRunning RX meta \"now\" example...\n");
             status = sync_rx_meta_now_example(dev, samples, num_samples,
