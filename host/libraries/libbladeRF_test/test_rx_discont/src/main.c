@@ -197,7 +197,7 @@ int run_test(struct bladerf *dev, struct app_params *p)
 
     /* TODO use API macro (in upcoming changeset) */
     gpio_backup = gpio_val;
-    gpio_val |= 0x200;
+    gpio_val |= BLADERF_GPIO_COUNTER_ENABLE;
 
     status = bladerf_config_gpio_write(dev, gpio_val);
     if (status != 0) {
