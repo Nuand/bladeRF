@@ -7,6 +7,11 @@ set(INCLUDES
 )
 set(LIBS libbladerf_shared)
 
+set(SRC
+    ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
+    ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
+)
+
 if(MSVC)
     set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
 endif()
@@ -16,7 +21,7 @@ include_directories(${INCLUDES})
 add_executable(libbladeRF_example_sync_rxtx sync_rxtx.c example_common.c)
 target_link_libraries(libbladeRF_example_sync_rxtx ${LIBS})
 
-add_executable(libbladeRF_example_sync_rx_meta sync_rx_meta.c example_common.c)
+add_executable(libbladeRF_example_sync_rx_meta sync_rx_meta.c example_common.c ${SRC})
 target_link_libraries(libbladeRF_example_sync_rx_meta ${LIBS})
 
 add_executable(libbladeRF_example_sync_tx_meta sync_tx_meta.c example_common.c)

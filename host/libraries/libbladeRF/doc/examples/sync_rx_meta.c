@@ -35,6 +35,8 @@
 #include <getopt.h>
 
 #include "example_common.h"
+#include "conversions.h"
+#include "log.h"
 
 /* Initialize sync interface for metadata and allocate our "working"
  * buffer that we'd use to process our RX'd samples.
@@ -238,6 +240,7 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
 static struct option const long_options[] = {
     { "device", required_argument, NULL, 'd' },
     { "bitmode", required_argument, NULL, 'b' },
+    { "verbosity", required_argument, 0, 'v' },
     { "help", no_argument, NULL, 'h' },
     { NULL, 0, NULL, 0 },
 };
@@ -245,11 +248,12 @@ static struct option const long_options[] = {
 static void usage(const char *argv0)
 {
     printf("Usage: %s [options]\n", argv0);
-    printf("  -d, --device <str>       Specify device to open.\n");
-    printf("  -b, --bitmode <mode>     Specify 16bit or 8bit mode\n");
-    printf("                             <16bit|16> (default)\n");
-    printf("                             <8bit|8>\n");
-    printf("  -h, --help               Show this text.\n");
+    printf("  -d, --device <str>        Specify device to open.\n");
+    printf("  -b, --bitmode <mode>      Specify 16bit or 8bit mode\n");
+    printf("                              <16bit|16> (default)\n");
+    printf("                              <8bit|8>\n");
+    printf("  -v, --verbosity <level>   Set test verbosity\n");
+    printf("  -h, --help                Show this text.\n");
 }
 
 int main(int argc, char *argv[])
@@ -264,10 +268,14 @@ int main(int argc, char *argv[])
     const unsigned int rx_count    = 15;
     const unsigned int timeout_ms  = 2500;
 
+    bladerf_log_level lvl = BLADERF_LOG_LEVEL_SILENT;
+    bladerf_log_set_verbosity(lvl);
+    bool ok;
+
     int opt = 0;
     int opt_ind = 0;
     while (opt != -1) {
-        opt = getopt_long(argc, argv, "d:b:h", long_options, &opt_ind);
+        opt = getopt_long(argc, argv, "d:b:v:h", long_options, &opt_ind);
 
         switch (opt) {
             case 'd':
@@ -282,6 +290,16 @@ int main(int argc, char *argv[])
                 } else {
                     printf("Unknown bitmode: %s\n", optarg);
                     return -1;
+                }
+                break;
+
+            case 'v':
+                lvl = str2loglevel(optarg, &ok);
+                if (!ok) {
+                    log_error("Invalid log level provided: %s\n", optarg);
+                    return -1;
+                } else {
+                    bladerf_log_set_verbosity(lvl);
                 }
                 break;
 
