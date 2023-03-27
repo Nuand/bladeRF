@@ -42,12 +42,13 @@
 
 #define RESET_EXPECTED  UINT32_MAX
 
-#define OPTSTR "hs:i:t:v"
+#define OPTSTR "hs:i:t:b:v"
 const struct option long_options[] = {
     { "help",           no_argument,        0,          'h' },
     { "device",         required_argument,  0,          'd' },
     { "samplerate",     required_argument,  0,          's' },
     { "iterations",     required_argument,  0,          'i' },
+    { "bitmode",        required_argument,  0,          'b' },
     { "verbose",        no_argument,        0,          'v' },
 };
 
@@ -70,6 +71,7 @@ struct app_params {
     unsigned int samplerate;
     unsigned int iterations;
     char *device_str;
+    bladerf_format fmt;
 };
 
 static void print_usage(const char *argv0)
@@ -78,6 +80,9 @@ static void print_usage(const char *argv0)
     printf("libbladerf_test_discont: Test for discontinuities.\n");
     printf("\n");
     printf("Options:\n");
+    printf("    -b, --bitmode <mode>        Specify 16bit or 8bit mode\n");
+    printf("                                    <16bit|16> (default)\n");
+    printf("                                    <8bit|8>\n");
     printf("    -s, --samplerate <value>    Use the specified sample rate.\n");
     printf("    -t, --test <test name>      Run the specified test.\n");
     printf("    -i, --iterations <count>    Run the specified number of iterations\n");
@@ -100,6 +105,7 @@ int handle_cmdline(int argc, char *argv[], struct app_params *p)
     p->samplerate = 1000000;
     p->iterations = 10000;
     p->device_str = NULL;
+    p->fmt        = BLADERF_FORMAT_SC16_Q11;
 
     while ((c = getopt_long(argc, argv, OPTSTR, long_options, &idx)) >= 0) {
         switch (c) {
@@ -137,6 +143,17 @@ int handle_cmdline(int argc, char *argv[], struct app_params *p)
                 bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_VERBOSE);
                 break;
 
+            case 'b':
+                if (strcmp(optarg, "16bit") == 0 || strcmp(optarg, "16") == 0) {
+                    p->fmt = BLADERF_FORMAT_SC16_Q11;
+                } else if (strcmp(optarg, "8bit") == 0 || strcmp(optarg, "8") == 0) {
+                    p->fmt = BLADERF_FORMAT_SC8_Q7;
+                } else {
+                    printf("Unknown bitmode: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
             case 'h':
                 print_usage(argv[0]);
                 return 1;
@@ -159,7 +176,7 @@ int run_test(struct bladerf *dev, struct app_params *p)
 
     status = bladerf_sync_config(dev,
                                  BLADERF_MODULE_RX,
-                                 BLADERF_FORMAT_SC16_Q11,
+                                 p->fmt,
                                  NUM_BUFFERS,
                                  BUFFER_SIZE,
                                  NUM_XFERS,
