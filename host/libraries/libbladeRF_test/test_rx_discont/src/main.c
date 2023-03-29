@@ -169,6 +169,9 @@ int run_test(struct bladerf *dev, struct app_params *p)
     uint32_t gpio_val, gpio_backup;
     unsigned int i, j;
     uint32_t *data = NULL;
+    uint16_t eight_bit_sample0;
+    uint16_t eight_bit_sample1;
+    int num_samples = (p->fmt == BLADERF_FORMAT_SC8_Q7) ? 2*BUFFER_SIZE : BUFFER_SIZE;
     unsigned int discontinuities = 0;
     unsigned int sample_num = 0;
     unsigned int count_exp = RESET_EXPECTED;
@@ -228,7 +231,7 @@ int run_test(struct bladerf *dev, struct app_params *p)
             fflush(stdout);
         }
 
-        status = bladerf_sync_rx(dev, data, BUFFER_SIZE, NULL, TIMEOUT_MS);
+        status = bladerf_sync_rx(dev, data, num_samples, NULL, TIMEOUT_MS);
         if (status != 0) {
             fprintf(stderr, "\nRX failed: %s\n", bladerf_strerror(status));
         }
@@ -244,10 +247,19 @@ int run_test(struct bladerf *dev, struct app_params *p)
                     count_exp = UINT32_MAX;
                     discontinuities++;
                 } else {
-                    count_exp++;
+                    if (p->fmt == BLADERF_FORMAT_SC8_Q7)
+                        /** Increment both samples within the buffer by 2 */
+                        count_exp = (((count_exp>>16) + 2)<<16) | (((count_exp<<16)>>16) + 2);
+                    else
+                        count_exp++;
                 }
             } else {
-                count_exp = data[j] + 1;
+                eight_bit_sample1 = (uint16_t)(data[j]>>16);
+                eight_bit_sample0 = (uint16_t)data[j];
+                if (p->fmt == BLADERF_FORMAT_SC8_Q7)
+                    count_exp = ((eight_bit_sample1+2)<<16) | (eight_bit_sample0+2);
+                else
+                    count_exp = data[j] + 1;
             }
         }
 
