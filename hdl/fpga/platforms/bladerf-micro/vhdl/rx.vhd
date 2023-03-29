@@ -353,6 +353,7 @@ begin
             enable          =>  rx_enable,
 
             mode            =>  rx_gen_mode,
+            eightbit_en     => eight_bit_mode_en,
 
             sample_i        =>  rx_gen_i,
             sample_q        =>  rx_gen_q,

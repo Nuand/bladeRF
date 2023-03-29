@@ -246,7 +246,7 @@ begin
     fx3_control.usb_speed   <= '0';
     fx3_control.meta_enable <= '0';
     fx3_control.packet      <= '0';
-    eight_bit_mode_en       <= '0';
+    eight_bit_mode_en       <= '1';
 
     U_pkt_gen : entity nuand.rx_packet_generator
         port map(
@@ -656,11 +656,11 @@ begin
     -- Rx Sample Check
     --
     look_for_dropped_rx_samples: process(fx3_pclk_pll)
-        variable rx_val     : unsigned (31 downto 0) := to_unsigned(1, 32);
-        variable q_expected : std_logic_vector (15 downto 0);
-        variable i_expected : std_logic_vector (15 downto 0);
-        variable q_out      : std_logic_vector (15 downto 0);
-        variable i_out      : std_logic_vector (15 downto 0);
+        variable rx_val               : unsigned (15 downto 0) := to_unsigned(1, 16);
+        variable sample1_expected     : std_logic_vector (15 downto 0);
+        variable sample0_expected     : std_logic_vector (15 downto 0);
+        variable sample1              : std_logic_vector (15 downto 0);
+        variable sample0              : std_logic_vector (15 downto 0);
 
         variable fail_count: natural := 0;
         variable both_channels_en : std_logic;
@@ -669,21 +669,19 @@ begin
             and fx3_gpif.gpif_oe = '1'
             and fx3_control.rx_enable = '1')
         then
-            q_expected := std_logic_vector(rx_val(31 downto 16));
-            i_expected := std_logic_vector(rx_val(15 downto 0));
-            q_out := fx3_gpif.gpif_out(31 downto 16);
-            i_out := fx3_gpif.gpif_out(15 downto 0);
+            sample1_expected := std_logic_vector(rx_val + 1);
+            sample0_expected := std_logic_vector(rx_val);
+            sample1 := fx3_gpif.gpif_out(31 downto 16);
+            sample0 := fx3_gpif.gpif_out(15 downto 0);
 
-            assert(q_out = q_expected)
-                report lf&"data_q:   " & to_hstring(q_out) &lf&
-                          "expected: " & to_hstring(q_expected)
-                severity failure;
-            assert(i_out = i_expected)
-                report lf&"data_i:   " & to_hstring(i_out) &lf&
-                          "expected: " & to_hstring(i_expected)
+            assert(sample1 = sample1_expected and sample0 = sample0_expected)
+                report lf&"sample0          " & to_hstring(sample0) &lf&
+                          "sample0_expected " & to_hstring(sample0_expected) &lf&
+                          "sample1          " & to_hstring(sample1) &lf&
+                          "sample1_expected " & to_hstring(sample1_expected)
                 severity failure;
 
-            rx_val := rx_val + 1;
+            rx_val := rx_val + 2;
         end if;
     end process look_for_dropped_rx_samples;
 

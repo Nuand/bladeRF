@@ -9,6 +9,7 @@ entity signal_generator is
     enable          :   in      std_logic ;
 
     mode            :   in      std_logic ;
+    eightbit_en     :   in      std_logic := '0';
 
     sample_i        :   out     signed(15 downto 0) ;
     sample_q        :   out     signed(15 downto 0) ;
@@ -38,6 +39,11 @@ begin
             else
                 sample_i <= signed(std_logic_vector(count32(15 downto 0))) ;
                 sample_q <= signed(std_logic_vector(count32(31 downto 16))) ;
+
+                if eightbit_en = '1' then
+                    sample_i <= signed(std_logic_vector(shift_left(resize(count32(8 downto 0), 16), 4)));
+                    sample_q <= signed(std_logic_vector(shift_left(resize(count32(15 downto 8), 16), 4)));
+                end if;
             end if ;
 
             if( enable = '0' ) then
