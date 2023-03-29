@@ -227,7 +227,7 @@ int run_test(struct bladerf *dev, struct app_params *p)
 
     for (i = 0, status = 0; i < p->iterations && status == 0; i++) {
         if (i % update_interval == 0) {
-            printf("\rCurrent iteration %10u / %-10u", i, p->iterations);
+            printf("\rCurrent iteration %10u / %-10u\n", i, p->iterations);
             fflush(stdout);
         }
 
@@ -239,13 +239,13 @@ int run_test(struct bladerf *dev, struct app_params *p)
         for (j = 0; j < BUFFER_SIZE; j++) {
             if (count_exp != RESET_EXPECTED) {
                 if (count_exp != data[j]) {
-                    fprintf(stderr, "\nDiscontinuity @ sample %u\n",
-                            sample_num + j);
-                    fprintf(stderr, "   Expected 0x%08x, Got 0x%08x\n",
-                            count_exp, data[j]);
+                    fprintf(stderr, "[%3u] Expected 0x%08x, Got 0x%08x\n",
+                            sample_num+j, count_exp, data[j]);
 
                     count_exp = UINT32_MAX;
                     discontinuities++;
+                    if (discontinuities > 10)
+                        goto out;
                 } else {
                     if (p->fmt == BLADERF_FORMAT_SC8_Q7)
                         /** Increment both samples within the buffer by 2 */
