@@ -410,6 +410,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
     MUTEX_LOCK(&s->lock);
 
     if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META ||
+          s->stream_config.format == BLADERF_FORMAT_SC8_Q7_META ||
           s->stream_config.format == BLADERF_FORMAT_PACKET_META) {
         if (user_meta == NULL) {
             log_debug("NULL metadata pointer passed to %s\n", __FUNCTION__);
