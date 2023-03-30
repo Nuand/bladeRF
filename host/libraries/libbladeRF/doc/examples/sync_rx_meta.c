@@ -323,6 +323,13 @@ int main(int argc, char *argv[])
     }
 
     dev = example_init(devstr);
+    printf("Format: ");
+    if (fmt == BLADERF_FORMAT_SC16_Q11_META)
+        printf("SC16_Q11_META\n");
+    else
+        printf("SC8_Q7_META\n");
+    printf("RX Count: %i\n", rx_count);
+
     if (dev) {
         samples = init(dev, num_samples, fmt);
         if (samples != NULL) {
