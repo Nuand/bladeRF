@@ -277,7 +277,14 @@ begin
                 if( meta_current.dma_downcount <= NUM_STREAMS ) then
                     -- Look for 2 because of the 2 cycles passing
                     -- through IDLE and META_WRITE after this.
-                    meta_future.state <= IDLE;
+                    -- 8bit format requires an additional 2 cycle delay.
+                    if( eight_bit_mode_en = '1' ) then
+                        if( fifo_future.eight_bit_delay = '1' and fifo_future.samples_left = 0) then
+                            meta_future.state <= IDLE;
+                        end if;
+                    else
+                        meta_future.state <= IDLE;
+                    end if;
                 end if;
 
             when PACKET_WAIT_EOP =>
