@@ -625,14 +625,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                                         s->meta.curr_timestamp);
                         }
 
-                        if (s->stream_config.format == BLADERF_FORMAT_SC8_Q7_META) {
-                            if (b->cons_i == 0 && s->meta.msg_num == 0) {
-                                s->meta.curr_timestamp = s->meta.msg_timestamp-2;
-                            } else
-                                s->meta.curr_timestamp = s->meta.msg_timestamp-4;
-                        } else
-                            s->meta.curr_timestamp = s->meta.msg_timestamp;
-
+                        s->meta.curr_timestamp = s->meta.msg_timestamp;
                         s->meta.state = SYNC_META_STATE_SAMPLES;
                         break;
 
