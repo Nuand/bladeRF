@@ -6,6 +6,16 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.15.1 (2023-04-03)
+--------------------------------
+
+Fixes timestamps and signal generator when 8bit format enabled.
+
+ Fixes:
+ *  hdl: 8bit support for signal_generator.vhd
+ *  hdl: 8bit RX timestamp correction
+
+--------------------------------
 v0.15.0 (2023-02-13)
 --------------------------------
 
