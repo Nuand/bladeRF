@@ -1116,7 +1116,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
             /* Call user callback requesting more data to transmit */
             next_buffer = stream->cb(
                 stream->dev, stream, &metadata, transfer->buffer,
-                bytes_to_sc16q11(transfer->actual_length), stream->user_data);
+                bytes_to_samples(stream->format, transfer->actual_length), stream->user_data);
         }
 
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
