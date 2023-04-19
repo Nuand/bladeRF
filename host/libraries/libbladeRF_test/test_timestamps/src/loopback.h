@@ -43,6 +43,7 @@ struct loopback_burst_test {
     pthread_mutex_t lock;
     bool stop;
     bool rx_ready;
+    bladerf_frequency frequency;
 };
 
 struct loopback_burst {

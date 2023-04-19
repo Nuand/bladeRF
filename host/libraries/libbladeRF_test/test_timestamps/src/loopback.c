@@ -144,6 +144,13 @@ int setup_device_loopback_rf(struct loopback_burst_test *t)
         return status;
     }
 
+    status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, t->frequency);
+    if (status!= 0) {
+        fprintf(stderr, "Failed to set RX sample rate: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
     status = bladerf_sync_config(t->dev, BLADERF_MODULE_RX,
                                  BLADERF_FORMAT_SC16_Q11_META,
                                  t->params->num_buffers,
@@ -163,6 +170,14 @@ int setup_device_loopback_rf(struct loopback_burst_test *t)
         return status;
 
     }
+
+    status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, t->frequency);
+    if (status!= 0) {
+        fprintf(stderr, "Failed to set TX frequency: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
 
     status = bladerf_sync_config(t->dev, BLADERF_MODULE_TX,
                                  BLADERF_FORMAT_SC16_Q11_META,

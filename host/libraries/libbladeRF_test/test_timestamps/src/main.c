@@ -139,6 +139,7 @@ static void usage(const char *argv0)
     printf("         loopback_onoff       Transmits ON-OFF bursts which are verified\n");
     printf("         loopback_onoff_rf    Transmits ON-OFF bursts verified by\n");
     printf("                                looping back from TX1 to RX1 via SMA cable.\n");
+    printf("                                NOTE: 20dB attenuator required\n");
     printf("         loopback_onoff_zp    Transmits ON-OFF bursts with zero-padding,\n");
     printf("                                which are verified via baseband loopback\n");
     printf("                                to the RX module.\n");

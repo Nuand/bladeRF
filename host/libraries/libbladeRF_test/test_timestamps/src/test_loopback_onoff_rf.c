@@ -211,8 +211,13 @@ int test_fn_loopback_onoff_rf(struct bladerf *dev, struct app_params *p)
     test.num_bursts = 1000;
     test.stop = false;
     test.rx_ready = false;
+    test.frequency = 100e6;
 
     pthread_mutex_init(&test.lock, NULL);
+
+    fprintf(stderr, "[WARNING] loopback_onoff_rf under construction\n");
+    fprintf(stderr, "[WARNING] Failure expected\n");
+    fprintf(stderr, "[WARNING] 20dB attenuator required\n");
 
     test.bursts = (struct loopback_burst *) malloc(test.num_bursts * sizeof(test.bursts[0]));
     if (test.bursts == NULL) {
@@ -243,9 +248,6 @@ int test_fn_loopback_onoff_rf(struct bladerf *dev, struct app_params *p)
         rx_ready = test.rx_ready;
         pthread_mutex_unlock(&test.lock);
     }
-
-    fprintf(stderr, "[Error] loopback_onoff_rf under construction\n");
-    goto out;
 
     status = pthread_create(&tx_thread, NULL, tx_task, &test);
     if (status != 0) {
