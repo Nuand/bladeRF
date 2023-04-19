@@ -52,6 +52,7 @@ struct loopback_burst {
 
 /* Returns 0 on success, non-zero on failure */
 int setup_device_loopback(struct loopback_burst_test *t);
+int setup_device_loopback_rf(struct loopback_burst_test *t);
 
 /* Alloc and fill sample buffer for TX.
  * Returns heap-allocated sample buffer on success, NULL on failure */

@@ -222,10 +222,13 @@ int test_fn_loopback_onoff_rf(struct bladerf *dev, struct app_params *p)
         fill_bursts(&test);
     }
 
-    status = setup_device_loopback(&test);
+    status = setup_device_loopback_rf(&test);
     if (status != 0) {
         goto out;
     }
+
+    fprintf(stderr, "[ERROR] loopback_onoff_rf under construction\n");
+    goto out;
 
     printf("Starting bursts...\n");
 

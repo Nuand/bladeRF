@@ -83,6 +83,68 @@ int setup_device_loopback(struct loopback_burst_test *t)
 
 
     status = bladerf_sync_config(t->dev, BLADERF_MODULE_RX,
+                                 BLADERF_FORMAT_SC16_Q11,
+                                 t->params->num_buffers,
+                                 t->params->buf_size,
+                                 t->params->num_xfers,
+                                 t->params->timeout_ms);
+    if (status != 0) {
+        fprintf(stderr, "Failed to configure RX stream: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_enable_module(t->dev, BLADERF_MODULE_RX, true);
+    if (status != 0) {
+        fprintf(stderr, "Failed to enable RX module: %s\n",
+                bladerf_strerror(status));
+        return status;
+
+    }
+
+    status = bladerf_sync_config(t->dev, BLADERF_MODULE_TX,
+                                 BLADERF_FORMAT_SC16_Q11,
+                                 t->params->num_buffers,
+                                 t->params->buf_size,
+                                 t->params->num_xfers,
+                                 t->params->timeout_ms);
+    if (status != 0) {
+        fprintf(stderr, "Failed to configure TX stream: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_enable_module(t->dev, BLADERF_MODULE_TX, true);
+    if (status != 0) {
+        fprintf(stderr, "Failed to enable RX module: %s\n",
+                bladerf_strerror(status));
+        return status;
+
+    }
+
+    return status;
+}
+
+int setup_device_loopback_rf(struct loopback_burst_test *t)
+{
+    int status;
+    struct bladerf *dev = t->dev;
+
+    status = bladerf_set_gain_mode(dev,BLADERF_MODULE_RX, BLADERF_GAIN_MGC);
+    if (status!= 0) {
+        fprintf(stderr, "Failed to set RX gain value: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_gain(dev, BLADERF_MODULE_RX, 0);
+    if (status!= 0) {
+        fprintf(stderr, "Failed to set RX gain value: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_sync_config(t->dev, BLADERF_MODULE_RX,
                                  BLADERF_FORMAT_SC16_Q11_META,
                                  t->params->num_buffers,
                                  t->params->buf_size,
