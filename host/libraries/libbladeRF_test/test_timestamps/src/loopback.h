@@ -60,5 +60,6 @@ int16_t * alloc_loopback_samples(size_t n_samples);
 
 /* Returns NULL, args should be the loopback_burst_test structure */
 void *loopback_burst_rx_task(void *args);
+void *loopback_burst_rx_task_rf(void *args);
 
 #endif

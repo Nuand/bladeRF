@@ -227,12 +227,9 @@ int test_fn_loopback_onoff_rf(struct bladerf *dev, struct app_params *p)
         goto out;
     }
 
-    fprintf(stderr, "[ERROR] loopback_onoff_rf under construction\n");
-    goto out;
-
     printf("Starting bursts...\n");
 
-    status = pthread_create(&rx_thread, NULL, loopback_burst_rx_task, &test);
+    status = pthread_create(&rx_thread, NULL, loopback_burst_rx_task_rf, &test);
     if (status != 0) {
         fprintf(stderr, "Failed to start RX thread: %s\n", strerror(status));
         goto out;
@@ -246,6 +243,9 @@ int test_fn_loopback_onoff_rf(struct bladerf *dev, struct app_params *p)
         rx_ready = test.rx_ready;
         pthread_mutex_unlock(&test.lock);
     }
+
+    fprintf(stderr, "[Error] loopback_onoff_rf under construction\n");
+    goto out;
 
     status = pthread_create(&tx_thread, NULL, tx_task, &test);
     if (status != 0) {
