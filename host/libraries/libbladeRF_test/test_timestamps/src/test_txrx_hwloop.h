@@ -67,4 +67,13 @@ static void usage()
     printf("    -h, --help                  Show this help text\n");
     printf("    -v, --lib-verbosity <level> Set libbladeRF verbosity (Default: warning)\n");
     printf("\n");
+    printf("\n");
+
+    printf("Parameter Definitions\n");
+    printf("------------------------------------------------------------------------------------------------------------------------------------\n");
+    printf("|  50%% MAX MAX MAX MAX |    50%% 0 0 0 0  |                    <--- gap --->           |  50%% MAX MAX MAX MAX |    50%% 0 0 0 0  |\n");
+    printf("------------------------------------------------------------------------------------------------------------------------------------\n");
+    printf(" <-------- fill ------>\n");
+    printf(" <---------------- burst -------------->\n");
+    printf(" <------------------------------------------ period -------------------------------->\n");
 }

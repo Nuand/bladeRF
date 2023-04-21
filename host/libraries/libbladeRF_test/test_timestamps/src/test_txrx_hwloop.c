@@ -54,10 +54,11 @@ static struct option const long_options[] = {
 };
 
 struct test_case {
-    unsigned int buf_len;
     unsigned int burst_len;     /* Length of a burst, in samples */
     unsigned int iterations;
     unsigned int num_zero_samples;
+    unsigned int period;
+    unsigned int fill;
     bladerf_frequency frequency;
     char* dev_tx_str;
     char* dev_rx_str;
@@ -72,17 +73,20 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     tc->dev_tx_str = "*:serial=52f4b4c4e1164ce3a7b89d3e47c8c0e8";
     tc->dev_rx_str = "*:serial=96707f3c6ffcba3fcea7f8ae85c04178";
     tc->iterations = 10;
-    tc->burst_len = 100e3;
-    tc->num_zero_samples = 1e3;
-    tc->buf_len = 2048;
+    tc->fill = 50; //percent
 
     memset(p, 0, sizeof(p[0]));
     p->samplerate = 1e6;
     p->prng_seed = 1;
     p->num_buffers = 16;
     p->num_xfers = 8;
-    p->buf_size = tc->burst_len + tc->num_zero_samples;
+    p->buf_size = 2048;
     p->timeout_ms = 10000;
+
+    // Interdependencies
+    tc->period = p->samplerate;
+    tc->burst_len = tc->period/2;
+    tc->num_zero_samples = tc->burst_len - (tc->fill*tc->burst_len/100);
 }
 
 int init_devices(struct bladerf **dev_tx, struct bladerf** dev_rx, struct app_params *p, struct test_case *tc) {
@@ -103,7 +107,7 @@ int init_devices(struct bladerf **dev_tx, struct bladerf** dev_rx, struct app_pa
         return status;
     }
 
-    status = perform_sync_init(*dev_tx, BLADERF_MODULE_TX, tc->buf_len, p);
+    status = perform_sync_init(*dev_tx, BLADERF_MODULE_TX, 0, p);
     if (status != 0) {
         fprintf(stderr, "Failed to set TX sync init: %s\n", bladerf_strerror(status));
         return status;
@@ -166,12 +170,27 @@ int main(int argc, char *argv[]) {
     while ((c = getopt_long(argc, argv, optstr, long_options, &opt_ind)) >= 0) {
         switch (c) {
             case 'b':
+                test.burst_len = str2uint(optarg, 0, UINT32_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid burst length: %s\n", optarg);
+                    return -1;
+                }
                 break;
 
             case 'p':
+                test.period = str2uint(optarg, 0, UINT32_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid period: %s\n", optarg);
+                    return -1;
+                }
                 break;
 
             case 'f':
+                test.fill = str2uint(optarg, 0, 100, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid fill: %s\n", optarg);
+                    return -1;
+                }
                 break;
 
             case 'v':
@@ -194,15 +213,19 @@ int main(int argc, char *argv[]) {
                 break;
         }
     }
+    test.num_zero_samples = test.burst_len - (test.fill*test.burst_len/100);
 
-    samples = calloc(2 * sizeof(int16_t), test.burst_len + test.num_zero_samples);
+    printf("fill: %u%%\n", test.fill);
+    printf("Burst:  %4.0f ksamples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
+    printf("Period: %4.0f ksamples || %2.3fs\n", test.period/1e3, (float)test.period/p.samplerate);
+
+    samples = calloc(test.burst_len, 2 * sizeof(int16_t));
     if (samples == NULL) {
         perror("malloc");
         return BLADERF_ERR_MEM;
     }
 
-    /* Leave the last two samples zero */
-    for (i = 0; i < (2 * test.burst_len); i += 2) {
+    for (i = 0; i < (2 * test.burst_len * test.fill/100); i += 2) {
         samples[i] = samples[i + 1] = MAGNITUDE;
     }
 
@@ -218,7 +241,7 @@ int main(int argc, char *argv[]) {
                 bladerf_strerror(status));
         goto out;
     } else {
-        printf("Initial timestamp: 0x%016"PRIx64"\n", meta.timestamp);
+        printf("\nInitial timestamp: 0x%016"PRIx64"\n", meta.timestamp);
     }
 
     /** Timestamp to start pulse */
@@ -227,7 +250,7 @@ int main(int argc, char *argv[]) {
     gettimeofday(&start, NULL);
     for (i = 0; i < test.iterations && status == 0; i++) {
         meta.flags = BLADERF_META_FLAG_TX_BURST_START;
-        samples_left = test.burst_len + test.num_zero_samples;
+        samples_left = test.burst_len;
         buf = samples;
 
 
@@ -253,7 +276,7 @@ int main(int argc, char *argv[]) {
             buf += 2 * to_send;
         }
 
-        meta.timestamp += p.samplerate;
+        meta.timestamp += test.period;
     }
 
     printf("Waiting for samples to finish...\n");
