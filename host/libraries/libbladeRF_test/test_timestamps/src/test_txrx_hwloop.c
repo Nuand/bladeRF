@@ -46,11 +46,19 @@ struct test_case {
     unsigned int burst_len;     /* Length of a burst, in samples */
     unsigned int iterations;
     unsigned int num_zero_samples;
+    bladerf_frequency frequency;
+    char* dev_tx_str;
+    char* dev_rx_str;
+    bool just_tx;
 };
 
 
 static void init_app_params(struct app_params *p, struct test_case *tc) {
     memset(tc, 0, sizeof(tc[0]));
+    tc->just_tx = true;
+    tc->frequency = 900e6;
+    tc->dev_tx_str = "*:serial=52f4b4c4e1164ce3a7b89d3e47c8c0e8";
+    tc->dev_rx_str = "*:serial=96707f3c6ffcba3fcea7f8ae85c04178";
     tc->iterations = 10;
     tc->burst_len = 100e3;
     tc->num_zero_samples = 1e3;
@@ -65,10 +73,66 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     p->timeout_ms = 10000;
 }
 
+int init_devices(struct bladerf **dev_tx, struct bladerf** dev_rx, struct app_params *p, struct test_case *tc) {
+    int status;
+
+    /** TX init */
+    status = bladerf_open(dev_tx, tc->dev_tx_str);
+    if (status != 0) {
+        fprintf(stderr, "Failed to open TX device: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_sample_rate(*dev_tx, BLADERF_MODULE_TX, p->samplerate, NULL);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set TX sample rate: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = perform_sync_init(*dev_tx, BLADERF_MODULE_TX, tc->buf_len, p);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set TX sync init: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_frequency(*dev_tx, BLADERF_MODULE_TX, tc->frequency);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set TX frequency: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    /** RX init */
+    if (tc->just_tx) {
+        printf("Mode: TX Only\n");
+        return 0;
+    } else {
+        printf("Mode: TXRX currently unsuported\n");
+    }
+
+    status = bladerf_open(dev_rx, tc->dev_rx_str);
+    if (status != 0) {
+        fprintf(stderr, "Failed to open TX device: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_sample_rate(*dev_rx, BLADERF_MODULE_RX, p->samplerate, NULL);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set TX sample rate: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     struct app_params p;
     struct test_case test;
     struct bladerf *dev_tx = NULL;
+    struct bladerf *dev_rx = NULL;
     int status, status_out, status_wait;
     unsigned int samples_left;
     size_t i;
@@ -78,6 +142,7 @@ int main(int argc, char *argv[]) {
     double time_passed;
 
     init_app_params(&p, &test);
+    memset(&meta, 0, sizeof(meta));
 
     samples = calloc(2 * sizeof(int16_t), test.burst_len + test.num_zero_samples);
     if (samples == NULL) {
@@ -85,35 +150,14 @@ int main(int argc, char *argv[]) {
         return BLADERF_ERR_MEM;
     }
 
-    status = bladerf_open(&dev_tx, p.device_str);
-    if (status != 0) {
-        fprintf(stderr, "Failed to open device: %s\n",
-                bladerf_strerror(status));
-        goto out;
-    }
-
-    status = bladerf_set_sample_rate(dev_tx, BLADERF_MODULE_TX, p.samplerate, NULL);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set TX sample rate: %s\n",
-                bladerf_strerror(status));
-        goto out;
-    }
-
     /* Leave the last two samples zero */
     for (i = 0; i < (2 * test.burst_len); i += 2) {
         samples[i] = samples[i + 1] = MAGNITUDE;
     }
 
-    memset(&meta, 0, sizeof(meta));
-
-    status = perform_sync_init(dev_tx, BLADERF_MODULE_TX, test.buf_len, &p);
-    if (status != 0) {
-        goto out;
-    }
-
-    status = bladerf_set_frequency(dev_tx, BLADERF_MODULE_TX, 900e6);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set TX frequency: %s\n", bladerf_strerror(status));
+    status = init_devices(&dev_tx, &dev_rx, &p, &test);
+    if (status < 0) {
+        fprintf(stderr, "Error initializing devices: %s\n", bladerf_strerror(status));
         goto out;
     }
 
@@ -126,8 +170,8 @@ int main(int argc, char *argv[]) {
         printf("Initial timestamp: 0x%016"PRIx64"\n", meta.timestamp);
     }
 
+    /** Timestamp to start pulse */
     meta.timestamp += 200000;
-
 
     gettimeofday(&start, NULL);
     for (i = 0; i < test.iterations && status == 0; i++) {
