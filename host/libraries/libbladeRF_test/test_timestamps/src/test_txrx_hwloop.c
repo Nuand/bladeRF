@@ -31,7 +31,10 @@
 #include <inttypes.h>
 #include <libbladeRF.h>
 #include <sys/time.h>
+#include <getopt.h>
+#include "conversions.h"
 #include "test_timestamps.h"
+#include "test_txrx_hwloop.h"
 #include "minmax.h"
 
 /* This test requires external verification via a spectrum analyzer.
@@ -40,6 +43,15 @@
  */
 
 #define MAGNITUDE 2000
+
+static struct option const long_options[] = {
+    { "buflen", required_argument, NULL, 'b' },
+    { "period", required_argument, NULL, 'p' },
+    { "fill", required_argument, NULL, 'f' },
+    { "verbosity", required_argument, NULL, 'v' },
+    { "help", no_argument, NULL, 'h' },
+    { NULL, 0, NULL, 0 },
+};
 
 struct test_case {
     unsigned int buf_len;
@@ -141,8 +153,47 @@ int main(int argc, char *argv[]) {
     struct timeval start, end;
     double time_passed;
 
+    int opt_ind = 0;
+    bool ok;
+    char* optstr;
+    char c;
+    bladerf_log_level log_level;
+
     init_app_params(&p, &test);
     memset(&meta, 0, sizeof(meta));
+
+    optstr = getopt_str(long_options);
+    while ((c = getopt_long(argc, argv, optstr, long_options, &opt_ind)) >= 0) {
+        switch (c) {
+            case 'b':
+                break;
+
+            case 'p':
+                break;
+
+            case 'f':
+                break;
+
+            case 'v':
+                log_level = str2loglevel(optarg, &ok);
+                if (!ok) {
+                    fprintf(stderr, "[ERROR] Invalid log level provided: %s\n", optarg);
+                    return -1;
+                }
+
+                bladerf_log_set_verbosity(log_level);
+                break;
+
+            case 'h':
+                usage();
+                return 1;
+
+            default:
+                usage();
+                return -1;
+                break;
+        }
+    }
 
     samples = calloc(2 * sizeof(int16_t), test.burst_len + test.num_zero_samples);
     if (samples == NULL) {
