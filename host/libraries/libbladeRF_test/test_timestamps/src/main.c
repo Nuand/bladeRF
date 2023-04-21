@@ -53,6 +53,7 @@ DECLARE_TEST(tx_onoff);
 DECLARE_TEST(tx_onoff_nowsched);
 DECLARE_TEST(tx_gmsk_bursts);
 DECLARE_TEST(loopback_onoff);
+DECLARE_TEST(loopback_onoff_rf);
 DECLARE_TEST(loopback_onoff_zp);
 DECLARE_TEST(format_mismatch);
 DECLARE_TEST(readback);
@@ -65,6 +66,7 @@ static const struct test *tests[] = {
     TEST(tx_onoff_nowsched),
     TEST(tx_gmsk_bursts),
     TEST(loopback_onoff),
+    TEST(loopback_onoff_rf),
     TEST(loopback_onoff_zp),
     TEST(format_mismatch),
     TEST(readback),
@@ -135,6 +137,8 @@ static void usage(const char *argv0)
     printf("         tx_gmsk_bursts       Transmits GMSK bursts.\n");
     printf("                                Requires external verification.\n");
     printf("         loopback_onoff       Transmits ON-OFF bursts which are verified\n");
+    printf("         loopback_onoff_rf    Transmits ON-OFF bursts verified by\n");
+    printf("                                looping back from TX1 to RX1 via SMA cable.\n");
     printf("         loopback_onoff_zp    Transmits ON-OFF bursts with zero-padding,\n");
     printf("                                which are verified via baseband loopback\n");
     printf("                                to the RX module.\n");

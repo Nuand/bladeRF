@@ -34,6 +34,7 @@ set(SRC
     src/test_tx_gmsk_bursts.c
     src/test_loopback_onoff.c
     src/test_loopback_onoff_zp.c
+    src/test_loopback_onoff_rf.c
     src/loopback.c
     src/test_format_mismatch.c
     src/test_readback.c
