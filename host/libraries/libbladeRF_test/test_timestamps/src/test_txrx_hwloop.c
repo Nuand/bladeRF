@@ -216,8 +216,9 @@ int main(int argc, char *argv[]) {
     test.num_zero_samples = test.burst_len - (test.fill*test.burst_len/100);
 
     printf("fill: %u%%\n", test.fill);
-    printf("Burst:  %4.0f ksamples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
-    printf("Period: %4.0f ksamples || %2.3fs\n", test.period/1e3, (float)test.period/p.samplerate);
+    printf("Burst:  %9.3fk samples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
+    printf("Period: %9.3fk samples || %2.3fs\n", test.period/1e3, (float)test.period/p.samplerate);
+    printf("Gap:    %9.3fk samples || %2.3fs\n", (test.period - test.burst_len)/1e3, (float)test.period/p.samplerate);
 
     samples = calloc(test.burst_len, 2 * sizeof(int16_t));
     if (samples == NULL) {

@@ -57,8 +57,8 @@ static void usage()
     printf("TXRX Hardware Loop Test\n\n");
 
     printf("Test configuration:\n");
-    printf("    -b, --buflen <value>      Buffer length. Must be multiple of 1024.\n");
-    printf("    -p, --period <value>      Length between timestamps\n");
+    printf("    -b, --burst <value>       Number of samples in a burst.\n");
+    printf("    -p, --period <value>      Length between timestamps in samples\n");
     printf("    -f, --fill <value>        %% of burst to fill with [2000,2000]\n");
     printf("                                others set to [0,0]\n");
     printf("\n");
@@ -69,11 +69,27 @@ static void usage()
     printf("\n");
     printf("\n");
 
-    printf("Parameter Definitions\n");
-    printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-    printf("|  50%% MAX MAX MAX MAX |    50%% 0 0 0 0  |                    <--- gap --->           |  50%% MAX MAX MAX MAX |    50%% 0 0 0 0  |\n");
-    printf("------------------------------------------------------------------------------------------------------------------------------------\n");
-    printf(" <-------- fill ------>\n");
-    printf(" <---------------- burst -------------->\n");
-    printf(" <------------------------------------------ period -------------------------------->\n");
+    printf("Loop setup:\n");
+    printf("    A bladeRF device will TX into the other bladeRF device’s\n"
+           "    RX port over SMA and a 20dB attenuator. See the following\n"
+           "    tested config.\n\n");
+    printf("        bladeRF micro 2.0 TX -> 20dB att. -> SMA -> RX bladeRF x115\n");
+    printf("\n\n");
+
+    printf("Parameter Definitions:\n");
+    printf("    -------------------------------------------------------------------------------------------------------------\n");
+    printf("    |  50%% MAX MAX |    50%% 0 0 0 0  |           <--- gap --->           |  50%% MAX MAX |    50%% 0 0 0 0  |\n");
+    printf("    -------------------------------------------------------------------------------------------------------------\n");
+    printf("     <---- fill -->\n");
+    printf("     <------------ burst ---------->\n");
+    printf("     <---------------------------------- period ----------------------->\n");
+    printf("\n");
+    printf("\n");
+
+    printf("Example:\n");
+    printf("    Generate a pulse using 50%% of a 50k sample burst every 100ms.\n");
+    printf("    Note: The sample rate is preset to 1MSPS.\n");
+    printf("\n");
+    printf("        ./libbladeRF_test_txrx_hwloop -f 50 -b 50000 -p 100000\n");
+    printf("\n\n");
 }
