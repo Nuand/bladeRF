@@ -48,6 +48,7 @@ static struct option const long_options[] = {
     { "buflen", required_argument, NULL, 'b' },
     { "period", required_argument, NULL, 'p' },
     { "fill", required_argument, NULL, 'f' },
+    { "iterations", required_argument, NULL, 'i' },
     { "verbosity", required_argument, NULL, 'v' },
     { "help", no_argument, NULL, 'h' },
     { NULL, 0, NULL, 0 },
@@ -193,6 +194,14 @@ int main(int argc, char *argv[]) {
                 }
                 break;
 
+            case 'i':
+                test.iterations = str2uint(optarg, 1, UINT32_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid number of iterations %s\n", optarg);
+                    return -1;
+                }
+                break;
+
             case 'v':
                 log_level = str2loglevel(optarg, &ok);
                 if (!ok) {
@@ -218,7 +227,7 @@ int main(int argc, char *argv[]) {
     printf("fill: %u%%\n", test.fill);
     printf("Burst:  %9.3fk samples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
     printf("Period: %9.3fk samples || %2.3fs\n", test.period/1e3, (float)test.period/p.samplerate);
-    printf("Gap:    %9.3fk samples || %2.3fs\n", (test.period - test.burst_len)/1e3, (float)test.period/p.samplerate);
+    printf("Gap:    %9.3fk samples || %2.3fms\n", (test.period - test.burst_len)/1e3, (test.period - test.burst_len)*1e3/p.samplerate);
 
     samples = calloc(test.burst_len, 2 * sizeof(int16_t));
     if (samples == NULL) {
