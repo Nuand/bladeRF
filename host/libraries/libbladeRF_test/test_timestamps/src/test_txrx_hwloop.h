@@ -61,6 +61,7 @@ static void usage()
     printf("    -p, --period <value>      Length between timestamps in samples\n");
     printf("    -f, --fill <value>        %% of burst to fill with [2000,2000]\n");
     printf("                                others set to [0,0]\n");
+    printf("    -l, --loop                Enables RX device for TX capture\n");
     printf("    -i, --iterations          Number of pulses\n");
     printf("\n");
 

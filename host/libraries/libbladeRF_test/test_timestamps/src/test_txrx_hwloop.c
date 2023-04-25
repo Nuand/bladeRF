@@ -48,6 +48,7 @@ static struct option const long_options[] = {
     { "buflen", required_argument, NULL, 'b' },
     { "period", required_argument, NULL, 'p' },
     { "fill", required_argument, NULL, 'f' },
+    { "loop", no_argument, NULL, 'l' },
     { "iterations", required_argument, NULL, 'i' },
     { "verbosity", required_argument, NULL, 'v' },
     { "help", no_argument, NULL, 'h' },
@@ -125,20 +126,32 @@ int init_devices(struct bladerf **dev_tx, struct bladerf** dev_rx, struct app_pa
         printf("Mode: TX Only\n");
         return 0;
     } else {
-        printf("Mode: TXRX currently unsuported\n");
+        printf("Mode: TX -> RX\n");
     }
 
     status = bladerf_open(dev_rx, tc->dev_rx_str);
     if (status != 0) {
-        fprintf(stderr, "Failed to open TX device: %s\n",
+        fprintf(stderr, "Failed to open RX device: %s\n",
                 bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_set_sample_rate(*dev_rx, BLADERF_MODULE_RX, p->samplerate, NULL);
     if (status != 0) {
-        fprintf(stderr, "Failed to set TX sample rate: %s\n",
+        fprintf(stderr, "Failed to set RX sample rate: %s\n",
                 bladerf_strerror(status));
+        return status;
+    }
+
+    status = perform_sync_init(*dev_rx, BLADERF_MODULE_RX, 0, p);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set RX sync init: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_frequency(*dev_rx, BLADERF_MODULE_RX, tc->frequency);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set RX frequency: %s\n", bladerf_strerror(status));
         return status;
     }
 
@@ -194,6 +207,10 @@ int main(int argc, char *argv[]) {
                 }
                 break;
 
+            case 'l':
+                test.just_tx = false;
+                break;
+
             case 'i':
                 test.iterations = str2uint(optarg, 1, UINT32_MAX, &ok);
                 if (!ok) {
@@ -217,7 +234,6 @@ int main(int argc, char *argv[]) {
                 return 1;
 
             default:
-                usage();
                 return -1;
                 break;
         }
@@ -310,6 +326,13 @@ out:
     } else {
         printf("Done waiting.\n");
         fflush(stdout);
+    }
+
+    if (dev_rx != NULL)
+        status_out = bladerf_enable_module(dev_rx, BLADERF_MODULE_RX, false);
+    if (status_out != 0) {
+        fprintf(stderr, "Failed to disable RX module: %s\n",
+                bladerf_strerror(status));
     }
 
     status = first_error(status, status_out);
