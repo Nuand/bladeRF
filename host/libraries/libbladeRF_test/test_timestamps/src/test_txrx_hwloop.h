@@ -25,6 +25,29 @@
 #include <stdio.h>
 #include <getopt.h>
 
+struct test_case {
+    unsigned int burst_len;     /* Length of a burst, in samples */
+    unsigned int iterations;
+    unsigned int num_zero_samples;
+    unsigned int period;
+    unsigned int fill;
+    bladerf_frequency frequency;
+    char* dev_tx_str;
+    char* dev_rx_str;
+    bool just_tx;
+};
+
+static struct option const long_options[] = {
+    { "burst", required_argument, NULL, 'b' },
+    { "period", required_argument, NULL, 'p' },
+    { "fill", required_argument, NULL, 'f' },
+    { "loop", no_argument, NULL, 'l' },
+    { "iterations", required_argument, NULL, 'i' },
+    { "verbosity", required_argument, NULL, 'v' },
+    { "help", no_argument, NULL, 'h' },
+    { NULL, 0, NULL, 0 },
+};
+
 char* getopt_str(const struct option* long_options) {
     size_t len = 0;
 
@@ -94,4 +117,71 @@ static void usage()
     printf("\n");
     printf("        ./libbladeRF_test_txrx_hwloop -f 50 -b 50000 -p 100000\n");
     printf("\n\n");
+}
+
+int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_params *p, struct test_case *tc) {
+    int status;
+
+    /** TX init */
+    status = bladerf_open(dev_tx, tc->dev_tx_str);
+    if (status != 0) {
+        fprintf(stderr, "Failed to open TX device: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_sample_rate(*dev_tx, BLADERF_MODULE_TX, p->samplerate, NULL);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set TX sample rate: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = perform_sync_init(*dev_tx, BLADERF_MODULE_TX, 0, p);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set TX sync init: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_frequency(*dev_tx, BLADERF_MODULE_TX, tc->frequency);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set TX frequency: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    /** RX init */
+    if (tc->just_tx) {
+        printf("Mode: TX Only\n");
+        return 0;
+    } else {
+        printf("Mode: TX -> RX\n");
+    }
+
+    status = bladerf_open(dev_rx, tc->dev_rx_str);
+    if (status != 0) {
+        fprintf(stderr, "Failed to open RX device: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_sample_rate(*dev_rx, BLADERF_MODULE_RX, p->samplerate, NULL);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set RX sample rate: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = perform_sync_init(*dev_rx, BLADERF_MODULE_RX, 0, p);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set RX sync init: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_frequency(*dev_rx, BLADERF_MODULE_RX, tc->frequency);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set RX frequency: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    return 0;
 }
