@@ -32,6 +32,7 @@
 #include <libbladeRF.h>
 #include <sys/time.h>
 #include <getopt.h>
+#include <pthread.h>
 #include "conversions.h"
 #include "test_timestamps.h"
 #include "test_txrx_hwloop.h"
@@ -183,6 +184,12 @@ int main(int argc, char *argv[]) {
     meta.timestamp += 200000;
 
     gettimeofday(&start, NULL);
+
+    pthread_t thread_id;
+    if (!test.just_tx) {
+        rx_thread_args rx_args = {dev_rx, &test};
+        pthread_create(&thread_id, NULL, rx_task, &rx_args);
+    }
     for (i = 0; i < test.iterations && status == 0; i++) {
         meta.flags = BLADERF_META_FLAG_TX_BURST_START;
         samples_left = test.burst_len;
@@ -228,6 +235,11 @@ int main(int argc, char *argv[]) {
     time_passed = (end.tv_sec - start.tv_sec) + (end.tv_usec - end.tv_usec) / 1000000.0;
     printf("TX finished in %.4f seconds\n", time_passed);
 out:
+    if (!test.just_tx) {
+        pthread_join(thread_id, NULL);
+        bladerf_close(dev_rx);
+    }
+
     status_out = bladerf_enable_module(dev_tx, BLADERF_MODULE_TX, false);
     if (status_out != 0) {
         fprintf(stderr, "Failed to disable TX module: %s\n",
@@ -235,13 +247,6 @@ out:
     } else {
         printf("Done waiting.\n");
         fflush(stdout);
-    }
-
-    if (dev_rx != NULL)
-        status_out = bladerf_enable_module(dev_rx, BLADERF_MODULE_RX, false);
-    if (status_out != 0) {
-        fprintf(stderr, "Failed to disable RX module: %s\n",
-                bladerf_strerror(status));
     }
 
     status = first_error(status, status_out);

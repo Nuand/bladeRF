@@ -171,17 +171,67 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return status;
     }
 
-    status = perform_sync_init(*dev_rx, BLADERF_MODULE_RX, 0, p);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set RX sync init: %s\n", bladerf_strerror(status));
-        return status;
-    }
-
     status = bladerf_set_frequency(*dev_rx, BLADERF_MODULE_RX, tc->frequency);
     if (status != 0) {
         fprintf(stderr, "Failed to set RX frequency: %s\n", bladerf_strerror(status));
         return status;
     }
 
+    status = bladerf_sync_config(*dev_rx, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11,
+                                 p->num_buffers, p->buf_size, p->num_xfers, p->timeout_ms);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set RX sync config: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_enable_module(*dev_rx, BLADERF_MODULE_RX, true);
+    if (status != 0) {
+        fprintf(stderr, "Failed to enable RX module: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
     return 0;
+}
+
+typedef struct {
+    struct bladerf *dev;
+    struct test_case *tc;
+} rx_thread_args;
+
+void *rx_task(void *args) {
+    #define ZERO_SAMPLE_THRESHOLD 1500
+
+    int status;
+    int16_t *samples;
+    int zero_sample_count = 0;
+    int power;
+
+    rx_thread_args *rx_args = (rx_thread_args *)args;
+    unsigned int num_rx_samples = rx_args->tc->iterations*rx_args->tc->period;
+    samples = calloc(num_rx_samples, 2*sizeof(int16_t));
+
+    status = bladerf_sync_rx(rx_args->dev, samples, num_rx_samples, NULL, 1000);
+    if (status == BLADERF_ERR_TIMEOUT) {
+        fprintf(stderr, "RX Timeout: %s\n", bladerf_strerror(status));
+        goto cleanup;
+    } else if (status!= 0) {
+        fprintf(stderr, "Failed to sync RX: %s\n", bladerf_strerror(status));
+        status = BLADERF_ERR_UNEXPECTED;
+        goto cleanup;
+    }
+
+    for (unsigned int i = 0; i < 2*num_rx_samples; i+=2) {
+        power = abs(samples[i]) + abs(samples[i+1]);
+        if (power < ZERO_SAMPLE_THRESHOLD) {
+            zero_sample_count++;
+            // printf("Zeros sample count: %i\n", zero_sample_count);
+            // printf("\033[1A\r\033[K");
+        }
+    }
+    printf("\nZero sample count: %i/%i = %.2f%%\n",
+           zero_sample_count, num_rx_samples, (double)zero_sample_count*100/num_rx_samples);
+
+cleanup:
+    free(samples);
+    pthread_exit(NULL);
 }
