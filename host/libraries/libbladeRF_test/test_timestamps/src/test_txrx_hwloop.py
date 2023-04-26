@@ -1,0 +1,47 @@
+# This file is part of the bladeRF project:
+#   http://www.github.com/nuand/bladeRF
+#
+# Copyright (C) 2023 Nuand LLC
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+data = pd.read_csv('samples.csv')
+I = data['I'].to_numpy()
+Q = data['Q'].to_numpy()
+amp = np.abs(I + Q*1j)
+num_samples = range(len(I))
+
+fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 6))
+ax1.plot(I, label='I')
+ax1.plot(Q, label='Q')
+ax1.set_title('I and Q Components')
+ax1.set_xlabel('Sample Index')
+ax1.set_ylabel('Amplitude')
+ax1.legend()
+ax2.plot(amp, label='Amplitude', color='red')
+ax2.set_title('Amplitude')
+ax2.set_xlabel('Sample Index')
+ax2.set_ylabel('Amplitude')
+ax2.legend()
+
+fig.subplots_adjust(hspace=0.5)
+plt.show()
