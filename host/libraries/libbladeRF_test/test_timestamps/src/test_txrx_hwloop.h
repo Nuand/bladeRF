@@ -205,6 +205,7 @@ void *rx_task(void *args) {
     int16_t *samples;
     int zero_sample_count = 0;
     int power;
+    FILE *samples_out;
 
     rx_thread_args *rx_args = (rx_thread_args *)args;
     unsigned int num_rx_samples = rx_args->tc->iterations*rx_args->tc->period;
@@ -220,7 +221,15 @@ void *rx_task(void *args) {
         goto cleanup;
     }
 
+    samples_out = fopen("samples.csv", "w");
+    if (samples_out == NULL)
+        fprintf(stderr, "Failed to open samples.csv\n");
+
+    fprintf(samples_out, "Q,I\n");
     for (unsigned int i = 0; i < 2*num_rx_samples; i+=2) {
+        if (samples_out != NULL)
+            fprintf(samples_out, "%i,%i\n", samples[i], samples[i+1]);
+
         power = abs(samples[i]) + abs(samples[i+1]);
         if (power < ZERO_SAMPLE_THRESHOLD) {
             zero_sample_count++;
@@ -231,7 +240,11 @@ void *rx_task(void *args) {
     printf("\nZero sample count: %i/%i = %.2f%%\n",
            zero_sample_count, num_rx_samples, (double)zero_sample_count*100/num_rx_samples);
 
+    if (samples_out != NULL)
+        printf("RX samples written to \"samples.csv\"\n");
+
 cleanup:
     free(samples);
     pthread_exit(NULL);
+    fclose(samples_out);
 }
