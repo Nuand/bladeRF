@@ -43,5 +43,11 @@ ax2.set_xlabel('Sample Index')
 ax2.set_ylabel('Amplitude')
 ax2.legend()
 
+threshold = 1800
+positive_edge = np.diff(np.sign(amp - threshold)) > 0
+edge_indexes = np.argwhere(positive_edge).flatten()
+for i in edge_indexes:
+    ax2.plot(i, threshold, 'g_', markersize=10)
+
 fig.subplots_adjust(hspace=0.5)
 plt.show()
