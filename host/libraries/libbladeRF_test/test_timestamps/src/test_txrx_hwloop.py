@@ -49,5 +49,15 @@ edge_indexes = np.argwhere(positive_edge).flatten()
 for i in edge_indexes:
     ax2.plot(i, threshold, 'g_', markersize=10)
 
+time_between_edges = np.diff(edge_indexes)
+avg = np.average(time_between_edges)
+var = np.var(time_between_edges)
+dev = np.std(time_between_edges)
+
+print("\nRising Edge Results:")
+print(f"  Average:  {avg:.2f}")
+print(f"  Variance: {var:.2f}")
+print(f"  Std.Dev:  {avg:.2f}")
+
 fig.subplots_adjust(hspace=0.5)
 plt.show()
