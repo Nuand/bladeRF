@@ -23,6 +23,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats as st
 
 def close_figure(event):
     if event.key == 'escape':
@@ -54,6 +55,7 @@ for i in edge_indexes:
     ax2.plot(i, threshold, 'g_', markersize=10)
 
 time_between_edges = np.diff(edge_indexes)
+mode, mode_count = st.mode(time_between_edges)
 avg = np.average(time_between_edges)
 var = np.var(time_between_edges)
 dev = np.std(time_between_edges)
@@ -62,6 +64,7 @@ print("\nRising Edge Results:")
 print(f"  Average:  {avg:.2f}")
 print(f"  Variance: {var:.2f}")
 print(f"  Std.Dev:  {avg:.2f}")
+print(f"\n  Predicted Timestamp: {mode[0]:.2f} @ {mode_count[0]} occurrences")
 
 fig.subplots_adjust(hspace=0.5)
 print(f"\nPress [Escape] to close figure")
