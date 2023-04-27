@@ -24,6 +24,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+def close_figure(event):
+    if event.key == 'escape':
+        plt.close()
+
 data = pd.read_csv('samples.csv')
 I = data['I'].to_numpy()
 Q = data['Q'].to_numpy()
@@ -60,4 +64,6 @@ print(f"  Variance: {var:.2f}")
 print(f"  Std.Dev:  {avg:.2f}")
 
 fig.subplots_adjust(hspace=0.5)
+print(f"\nPress [Escape] to close figure")
+fig.canvas.mpl_connect('key_press_event', close_figure)
 plt.show()
