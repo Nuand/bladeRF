@@ -77,8 +77,14 @@ print("\nFalling Edge Results:")
 print(f"  Average:  {avg:.2f}")
 print(f"  Variance: {var:.2f}")
 print(f"  Std.Dev:  {avg:.2f}")
+print(f"\nPredicted Timestamp: {mode[0]:.2f} @ {mode_count[0]} periods")
 
-print(f"\n  Predicted Timestamp: {mode[0]:.2f} @ {mode_count[0]} occurrences")
+fill = neg_edge_indexes - pos_edge_indexes
+avg = np.average(fill)
+var = np.var(fill)
+dev = np.std(fill)
+mode, mode_count = st.mode(fill)
+print(f"Fill Prediction:     {mode[0]:.2f} @ {mode_count[0]} rise/fall pairs")
 
 fig.subplots_adjust(hspace=0.5)
 print(f"\nPress [Escape] to close figure")
