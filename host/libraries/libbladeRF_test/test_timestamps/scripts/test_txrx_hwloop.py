@@ -24,11 +24,26 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
+import os
 
 def close_figure(event):
     if event.key == 'escape':
         plt.close()
 
+################################################################
+# Generate Pulse
+################################################################
+fill = 50
+burst = 50e3
+period = 100e3
+binary_file = 'libbladeRF_test_txrx_hwloop'
+output_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(output_dir)
+os.system(f"./{binary_file} --fill {fill} --burst {burst} --period {period} -l")
+
+################################################################
+# RX Data Analysis
+################################################################
 data = pd.read_csv('samples.csv')
 I = data['I'].to_numpy()
 Q = data['Q'].to_numpy()
