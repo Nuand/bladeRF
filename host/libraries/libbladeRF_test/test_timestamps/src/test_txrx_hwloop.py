@@ -50,20 +50,34 @@ ax2.legend()
 
 threshold = 1800
 positive_edge = np.diff(np.sign(amp - threshold)) > 0
-edge_indexes = np.argwhere(positive_edge).flatten()
-for i in edge_indexes:
+pos_edge_indexes = np.argwhere(positive_edge).flatten()
+for i in pos_edge_indexes:
     ax2.plot(i, threshold, 'g_', markersize=10)
 
-time_between_edges = np.diff(edge_indexes)
-mode, mode_count = st.mode(time_between_edges)
-avg = np.average(time_between_edges)
-var = np.var(time_between_edges)
-dev = np.std(time_between_edges)
-
+time_delta_pos_edges = np.diff(pos_edge_indexes)
+mode, mode_count = st.mode(time_delta_pos_edges)
+avg = np.average(time_delta_pos_edges)
+var = np.var(time_delta_pos_edges)
+dev = np.std(time_delta_pos_edges)
 print("\nRising Edge Results:")
 print(f"  Average:  {avg:.2f}")
 print(f"  Variance: {var:.2f}")
 print(f"  Std.Dev:  {avg:.2f}")
+
+negative_edge = np.diff(np.sign(amp - threshold)) < 0
+neg_edge_indexes = np.argwhere(negative_edge).flatten()
+for i in neg_edge_indexes:
+    ax2.plot(i, threshold, 'y_', markersize=10)
+
+time_delta_neg_edges = np.diff(neg_edge_indexes)
+avg = np.average(time_delta_neg_edges)
+var = np.var(time_delta_neg_edges)
+dev = np.std(time_delta_neg_edges)
+print("\nFalling Edge Results:")
+print(f"  Average:  {avg:.2f}")
+print(f"  Variance: {var:.2f}")
+print(f"  Std.Dev:  {avg:.2f}")
+
 print(f"\n  Predicted Timestamp: {mode[0]:.2f} @ {mode_count[0]} occurrences")
 
 fig.subplots_adjust(hspace=0.5)
