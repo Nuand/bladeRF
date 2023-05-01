@@ -73,5 +73,6 @@ set(SRC
 add_executable(libbladeRF_test_txrx_hwloop ${SRC})
 target_link_libraries(libbladeRF_test_txrx_hwloop ${LIBS})
 
-file(COPY src/test_txrx_hwloop.py
-     DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+configure_file(scripts/test_txrx_hwloop.py
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libbladeRF_test_txrx_hwloop.py
+               COPYONLY)
