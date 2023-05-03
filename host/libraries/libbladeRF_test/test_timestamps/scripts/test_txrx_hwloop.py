@@ -25,17 +25,40 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
 import os
+import argparse
 
 def close_figure(event):
     if event.key == 'escape':
         plt.close()
 
-################################################################
-# Generate Pulse
-################################################################
+###############################################################
+# Initialize Parameters
+###############################################################
 fill = 50
 burst = 50e3
 period = 100e3
+
+parser = argparse.ArgumentParser(
+    description='TXRX hardware loop timestamp validation',
+    allow_abbrev=False,
+    add_help=True
+)
+parser.add_argument('-f', '--fill', type=float, help='fill (%)')
+parser.add_argument('-b', '--burst', type=int, help='burst length (in samples)')
+parser.add_argument('-p', '--period', type=int, help='period length (in samples)')
+
+args = parser.parse_args()
+
+if args.fill:
+    fill = args.fill
+if args.burst:
+    burst = args.burst
+if args.period:
+    period = args.period
+
+################################################################
+# Generate Pulse
+################################################################
 binary_file = 'libbladeRF_test_txrx_hwloop'
 output_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(output_dir)
