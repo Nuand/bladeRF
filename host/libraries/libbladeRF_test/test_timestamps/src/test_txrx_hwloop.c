@@ -53,6 +53,7 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     tc->dev_rx_str = "*:serial=96707f3c6ffcba3fcea7f8ae85c04178";
     tc->iterations = 10;
     tc->fill = 50; //percent
+    tc->init_ts_delay = 200000;
 
     memset(p, 0, sizeof(p[0]));
     p->samplerate = 1e6;
@@ -181,7 +182,7 @@ int main(int argc, char *argv[]) {
     }
 
     /** Timestamp to start pulse */
-    meta.timestamp += 200000;
+    meta.timestamp += test.init_ts_delay;
 
     gettimeofday(&start, NULL);
 

@@ -31,6 +31,7 @@ struct test_case {
     unsigned int num_zero_samples;
     unsigned int period;
     unsigned int fill;
+    unsigned int init_ts_delay;
     bladerf_frequency frequency;
     char* dev_tx_str;
     char* dev_rx_str;
@@ -208,7 +209,7 @@ void *rx_task(void *args) {
     FILE *samples_out;
 
     rx_thread_args *rx_args = (rx_thread_args *)args;
-    unsigned int num_rx_samples = rx_args->tc->iterations*rx_args->tc->period;
+    unsigned int num_rx_samples = rx_args->tc->iterations*rx_args->tc->period + rx_args->tc->init_ts_delay;
     samples = calloc(num_rx_samples, 2*sizeof(int16_t));
 
     status = bladerf_sync_rx(rx_args->dev, samples, num_rx_samples, NULL, 1000);
