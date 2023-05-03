@@ -99,7 +99,8 @@ avg = np.average(fill)
 var = np.var(fill)
 dev = np.std(fill)
 mode, mode_count = st.mode(fill)
-print(f"Fill Prediction:     {mode[0]:.2f} @ {mode_count[0]} rise/fall pairs")
+fill_vs_burst = mode[0]*100/burst
+print(f"Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]} rise/fall pairs")
 
 fig.subplots_adjust(hspace=0.5)
 print(f"\nPress [Escape] to close figure")
