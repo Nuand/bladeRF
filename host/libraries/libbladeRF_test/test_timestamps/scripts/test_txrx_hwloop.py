@@ -37,6 +37,7 @@ def close_figure(event):
 fill = 50
 burst = 50e3
 period = 100e3
+iterations = 10
 
 parser = argparse.ArgumentParser(
     description='TXRX hardware loop timestamp validation',
@@ -46,6 +47,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-f', '--fill', type=float, help='fill (%)')
 parser.add_argument('-b', '--burst', type=int, help='burst length (in samples)')
 parser.add_argument('-p', '--period', type=int, help='period length (in samples)')
+parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
 
 args = parser.parse_args()
 
@@ -55,6 +57,8 @@ if args.burst:
     burst = args.burst
 if args.period:
     period = args.period
+if args.iterations:
+    iterations = args.iterations
 
 ################################################################
 # Generate Pulse
@@ -62,7 +66,7 @@ if args.period:
 binary_file = 'libbladeRF_test_txrx_hwloop'
 output_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(output_dir)
-os.system(f"./{binary_file} --fill {fill} --burst {burst} --period {period} -l")
+os.system(f"./{binary_file} --fill {fill} --burst {burst} --period {period} --iterations {iterations} -l")
 
 ################################################################
 # RX Data Analysis
@@ -79,12 +83,12 @@ ax1.plot(Q, label='Q')
 ax1.set_title('I and Q Components')
 ax1.set_xlabel('Sample Index')
 ax1.set_ylabel('Amplitude')
-ax1.legend()
+ax1.legend(loc='upper right')
 ax2.plot(amp, label='Amplitude', color='red')
 ax2.set_title('Amplitude')
 ax2.set_xlabel('Sample Index')
 ax2.set_ylabel('Amplitude')
-ax2.legend()
+ax2.legend(loc='upper right')
 
 threshold = 1800
 positive_edge = np.diff(np.sign(amp - threshold)) > 0
@@ -117,7 +121,7 @@ print(f"  Average: {avg:.2f}")
 print(f"  Variance:{var:.2f}")
 print(f"  Std.Dev: {avg:.2f}")
 print(f"  Edge Count: {len(neg_edge_indexes)}")
-print(f"\nPredicted Timestamp: {mode[0]:.2f} @ {mode_count[0]} periods")
+print(f"\nPredicted Timestamp: {(mode[0]/1e3):.2f}k samples @ {mode_count[0]}/{iterations-1} periods")
 
 fill = neg_edge_indexes - pos_edge_indexes
 avg = np.average(fill)
@@ -125,7 +129,7 @@ var = np.var(fill)
 dev = np.std(fill)
 mode, mode_count = st.mode(fill)
 fill_vs_burst = mode[0]*100/burst
-print(f"Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]} rise/fall pairs")
+print(f"Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]}/{iterations} cycles")
 
 fig.subplots_adjust(hspace=0.5)
 print(f"\nPress [Escape] to close figure")
