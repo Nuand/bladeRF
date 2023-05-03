@@ -38,16 +38,18 @@ fill = 50
 burst = 50e3
 period = 100e3
 iterations = 10
+threshold = 1500
 
 parser = argparse.ArgumentParser(
     description='TXRX hardware loop timestamp validation',
     allow_abbrev=False,
     add_help=True
 )
-parser.add_argument('-f', '--fill', type=float, help='fill (%)')
+parser.add_argument('-f', '--fill', type=float, help='fill (%%)')
 parser.add_argument('-b', '--burst', type=int, help='burst length (in samples)')
 parser.add_argument('-p', '--period', type=int, help='period length (in samples)')
 parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
+parser.add_argument('-t', '--threshold', type=int, help='edge count amplitude threshold')
 
 args = parser.parse_args()
 
@@ -59,6 +61,8 @@ if args.period:
     period = args.period
 if args.iterations:
     iterations = args.iterations
+if args.threshold:
+    threshold = args.threshold
 
 ################################################################
 # Generate Pulse
@@ -90,7 +94,6 @@ ax2.set_xlabel('Sample Index')
 ax2.set_ylabel('Amplitude')
 ax2.legend(loc='upper right')
 
-threshold = 1800
 positive_edge = np.diff(np.sign(amp - threshold)) > 0
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
 for i in pos_edge_indexes:
