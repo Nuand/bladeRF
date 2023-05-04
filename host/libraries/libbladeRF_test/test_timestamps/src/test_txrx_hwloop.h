@@ -120,7 +120,12 @@ static void usage()
     printf("    Generate a pulse using 50%% of a 50k sample burst every 100ms.\n");
     printf("    Note: The sample rate is preset to 1MSPS.\n");
     printf("\n");
-    printf("        ./libbladeRF_test_txrx_hwloop -f 50 -b 50000 -p 100000\n");
+    printf("        ./libbladeRF_test_txrx_hwloop -f 50 -b 50000 -p 100000 --txdev <devstr>\n");
+    printf("\n");
+    printf("    Burst of 1ms, fill 0.9ms, and periodicity is 50ms into the RX\n");
+    printf("    of another bladeRF device.\n");
+    printf("\n");
+    printf("        ./libbladeRF_test_txrx_hwloop --burst 1000 --fill 90 --period 50000 -l --txdev <devstr> --rxdev <devstr>\n");
     printf("\n\n");
 }
 
