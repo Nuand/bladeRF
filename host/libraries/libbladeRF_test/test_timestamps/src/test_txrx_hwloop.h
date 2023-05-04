@@ -39,6 +39,8 @@ struct test_case {
 };
 
 static struct option const long_options[] = {
+    { "txdev", required_argument, NULL, 't' },
+    { "rxdev", required_argument, NULL, 'r' },
     { "burst", required_argument, NULL, 'b' },
     { "period", required_argument, NULL, 'p' },
     { "fill", required_argument, NULL, 'f' },
@@ -81,6 +83,8 @@ static void usage()
     printf("TXRX Hardware Loop Test\n\n");
 
     printf("Test configuration:\n");
+    printf("    -t, --txdev <value>       TX bladeRF device string.\n");
+    printf("    -r, --rxdev <value>       RX bladeRF device string.\n");
     printf("    -b, --burst <value>       Number of samples in a burst.\n");
     printf("    -p, --period <value>      Length between timestamps in samples\n");
     printf("    -f, --fill <value>        %% of burst to fill with [2000,2000]\n");
@@ -126,8 +130,8 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
     /** TX init */
     status = bladerf_open(dev_tx, tc->dev_tx_str);
     if (status != 0) {
-        fprintf(stderr, "Failed to open TX device: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to open TX device: %s\n", bladerf_strerror(status));
+        fprintf(stderr, "↳ Most likely an incorrect device string.\n");
         return status;
     }
 
@@ -160,8 +164,8 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
 
     status = bladerf_open(dev_rx, tc->dev_rx_str);
     if (status != 0) {
-        fprintf(stderr, "Failed to open RX device: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to open RX device: %s\n", bladerf_strerror(status));
+        fprintf(stderr, "↳ Most likely an incorrect device string.\n");
         return status;
     }
 

@@ -49,8 +49,10 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     memset(tc, 0, sizeof(tc[0]));
     tc->just_tx = true;
     tc->frequency = 900e6;
-    tc->dev_tx_str = "*:serial=52f4b4c4e1164ce3a7b89d3e47c8c0e8";
-    tc->dev_rx_str = "*:serial=96707f3c6ffcba3fcea7f8ae85c04178";
+    tc->dev_tx_str = malloc(100);
+    tc->dev_rx_str = malloc(100);
+    strcpy(tc->dev_tx_str, "*:serial=52f4b4c4e1164ce3a7b89d3e47c8c0e8");
+    strcpy(tc->dev_rx_str, "*:serial=96707f3c6ffcba3fcea7f8ae85c04178");
     tc->iterations = 10;
     tc->fill = 50; //percent
     tc->init_ts_delay = 200000;
@@ -94,6 +96,14 @@ int main(int argc, char *argv[]) {
     optstr = getopt_str(long_options);
     while ((c = getopt_long(argc, argv, optstr, long_options, &opt_ind)) >= 0) {
         switch (c) {
+            case 't':
+                strcpy(test.dev_tx_str, optarg);
+                break;
+
+            case 'r':
+                strcpy(test.dev_rx_str, optarg);
+                break;
+
             case 'b':
                 test.burst_len = str2uint(optarg, 0, UINT32_MAX, &ok);
                 if (!ok) {
@@ -252,6 +262,8 @@ out:
 
     status = first_error(status, status_out);
 
+    free(test.dev_tx_str);
+    free(test.dev_rx_str);
     free(samples);
     return status;
 }
