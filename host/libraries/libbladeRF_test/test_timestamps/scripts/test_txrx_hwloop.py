@@ -26,6 +26,7 @@ import numpy as np
 import scipy.stats as st
 import os
 import argparse
+import subprocess
 
 def close_figure(event):
     if event.key == 'escape':
@@ -39,6 +40,8 @@ burst = 50e3
 period = 100e3
 iterations = 10
 threshold = 1500
+devarg_tx = ""
+devarg_rx = ""
 
 parser = argparse.ArgumentParser(
     description='TXRX hardware loop timestamp validation',
@@ -50,6 +53,8 @@ parser.add_argument('-b', '--burst', type=int, help='burst length (in samples)')
 parser.add_argument('-p', '--period', type=int, help='period length (in samples)')
 parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
 parser.add_argument('-t', '--threshold', type=int, help='edge count amplitude threshold')
+parser.add_argument('-tx', '--txdev', type=str, help='TX device string')
+parser.add_argument('-rx', '--rxdev', type=str, help='RX device string')
 
 args = parser.parse_args()
 
@@ -63,6 +68,12 @@ if args.iterations:
     iterations = args.iterations
 if args.threshold:
     threshold = args.threshold
+if args.txdev:
+    dev_tx = args.txdev
+    devarg_tx = f"-t {dev_tx}"
+if args.rxdev:
+    dev_rx = args.rxdev
+    devarg_rx = f"-r {dev_rx}"
 
 ################################################################
 # Generate Pulse
@@ -70,7 +81,12 @@ if args.threshold:
 binary_file = 'libbladeRF_test_txrx_hwloop'
 output_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(output_dir)
-os.system(f"./{binary_file} --fill {fill} --burst {burst} --period {period} --iterations {iterations} -l")
+proc = subprocess.run(f"./{binary_file} --fill {fill} --burst {burst} --period {period} "
+                      f"--iterations {iterations} -l {devarg_tx} {devarg_rx}", shell=True)
+
+if proc.returncode != 0:
+    print("Failed to run hwloop binary")
+    exit(1)
 
 ################################################################
 # RX Data Analysis
