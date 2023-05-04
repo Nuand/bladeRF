@@ -42,6 +42,7 @@ iterations = 10
 threshold = 1500
 devarg_tx = ""
 devarg_rx = ""
+print_stats = False
 
 parser = argparse.ArgumentParser(
     description='TXRX hardware loop timestamp validation',
@@ -55,6 +56,7 @@ parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
 parser.add_argument('-t', '--threshold', type=int, help='edge count amplitude threshold')
 parser.add_argument('-tx', '--txdev', type=str, help='TX device string')
 parser.add_argument('-rx', '--rxdev', type=str, help='RX device string')
+parser.add_argument('-s', '--stats', help='print edge statistics', action="store_true")
 
 args = parser.parse_args()
 
@@ -74,6 +76,8 @@ if args.txdev:
 if args.rxdev:
     dev_rx = args.rxdev
     devarg_rx = f"-r {dev_rx}"
+if args.stats:
+    print_stats = True
 
 ################################################################
 # Generate Pulse
@@ -120,11 +124,12 @@ mode, mode_count = st.mode(time_delta_pos_edges)
 avg = np.average(time_delta_pos_edges)
 var = np.var(time_delta_pos_edges)
 dev = np.std(time_delta_pos_edges)
-print("\nTimestamp Count between Rising Edges:")
-print(f"  Average:  {avg:.2f}")
-print(f"  Variance: {var:.2f}")
-print(f"  Std.Dev:  {avg:.2f}")
-print(f"  Edge Count: {len(pos_edge_indexes)}")
+if print_stats:
+    print("\nTimestamp Count between Rising Edges:")
+    print(f"  Average:  {avg:.2f}")
+    print(f"  Variance: {var:.2f}")
+    print(f"  Std.Dev:  {avg:.2f}")
+    print(f"  Edge Count: {len(pos_edge_indexes)}")
 
 negative_edge = np.diff(np.sign(amp - threshold)) < 0
 neg_edge_indexes = np.argwhere(negative_edge).flatten()
@@ -135,11 +140,13 @@ time_delta_neg_edges = np.diff(neg_edge_indexes)
 avg = np.average(time_delta_neg_edges)
 var = np.var(time_delta_neg_edges)
 dev = np.std(time_delta_neg_edges)
-print("\nTimestamp Count between Falling Edges:")
-print(f"  Average: {avg:.2f}")
-print(f"  Variance:{var:.2f}")
-print(f"  Std.Dev: {avg:.2f}")
-print(f"  Edge Count: {len(neg_edge_indexes)}")
+if print_stats:
+    print("\nTimestamp Count between Falling Edges:")
+    print(f"  Average: {avg:.2f}")
+    print(f"  Variance:{var:.2f}")
+    print(f"  Std.Dev: {avg:.2f}")
+    print(f"  Edge Count: {len(neg_edge_indexes)}")
+
 print(f"\nPredicted Timestamp: {(mode[0]/1e3):.2f}k samples @ {mode_count[0]}/{iterations-1} periods")
 
 fill = neg_edge_indexes - pos_edge_indexes
