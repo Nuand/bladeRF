@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
