@@ -160,6 +160,10 @@ int main(int argc, char *argv[]) {
         }
     }
     test.num_zero_samples = test.burst_len - (test.fill*test.burst_len/100);
+    if (test.burst_len > test.period) {
+        fprintf(stderr, "[ERROR] Burst length must be less than period\n");
+        return -1;
+    }
 
     printf("fill: %u%%\n", test.fill);
     printf("Burst:  %9.3fk samples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
