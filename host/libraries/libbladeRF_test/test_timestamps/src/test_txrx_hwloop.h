@@ -164,11 +164,28 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
     }
 
     /** RX init */
-    if (tc->just_tx) {
-        printf("Mode: TX Only\n");
-        return 0;
-    } else {
+    if (tc->just_tx == false && tc->compare == true) {
+        printf("Mode: TX -> RX (+RF loopback)\n");
+        printf("    +---------------+       +---------------+\n");
+        printf("    | TX Device   TX|---┬-->|RX   RX Device |\n");
+        printf("    |               |   |   |               |\n");
+        printf("    |             RX|<--┘   |               |\n");
+        printf("    +---------------+       +---------------+\n");
+    } else if (tc->just_tx == false && tc->compare == false) {
         printf("Mode: TX -> RX\n");
+        printf("    +---------------+       +---------------+\n");
+        printf("    | TX Device   TX|------>|RX   RX Device |\n");
+        printf("    |               |       |               |\n");
+        printf("    |             RX|       |               |\n");
+        printf("    +---------------+       +---------------+\n");
+    } else {
+        printf("Mode: TX Only\n");
+        printf("    +---------------+   v   +---------------+\n");
+        printf("    | TX Device   TX|---┘   |RX   RX Device |\n");
+        printf("    |               |       |               |\n");
+        printf("    |             RX|       |               |\n");
+        printf("    +---------------+       +---------------+\n");
+        return 0;
     }
 
     status = bladerf_open(dev_rx, tc->dev_rx_str);
