@@ -36,12 +36,14 @@ struct test_case {
     char* dev_tx_str;
     char* dev_rx_str;
     bool just_tx;
+    bool compare;
 };
 
 static struct option const long_options[] = {
     { "txdev", required_argument, NULL, 't' },
     { "rxdev", required_argument, NULL, 'r' },
     { "burst", required_argument, NULL, 'b' },
+    { "compare", no_argument, NULL, 'c' },
     { "period", required_argument, NULL, 'p' },
     { "fill", required_argument, NULL, 'f' },
     { "loop", no_argument, NULL, 'l' },
@@ -90,6 +92,8 @@ static void usage()
     printf("    -f, --fill <value>        %% of burst to fill with [2000,2000]\n");
     printf("                                others set to [0,0]\n");
     printf("    -l, --loop                Enables RX device for TX capture\n");
+    printf("    -c, --compare             Outputs CSV RX capture from TX device\n");
+    printf("                                for multi-device fill comparison\n");
     printf("    -i, --iterations          Number of pulses\n");
     printf("\n");
 

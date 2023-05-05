@@ -48,6 +48,7 @@
 static void init_app_params(struct app_params *p, struct test_case *tc) {
     memset(tc, 0, sizeof(tc[0]));
     tc->just_tx = true;
+    tc->compare = false;
     tc->frequency = 900e6;
     tc->dev_tx_str = malloc(100);
     tc->dev_rx_str = malloc(100);
@@ -132,6 +133,10 @@ int main(int argc, char *argv[]) {
                 test.just_tx = false;
                 break;
 
+            case 'c':
+                test.compare = true;
+                break;
+
             case 'i':
                 test.iterations = str2uint(optarg, 1, UINT32_MAX, &ok);
                 if (!ok) {
@@ -160,8 +165,15 @@ int main(int argc, char *argv[]) {
         }
     }
     test.num_zero_samples = test.burst_len - (test.fill*test.burst_len/100);
+
+    /** Parameter conflict management */
     if (test.burst_len > test.period) {
         fprintf(stderr, "[ERROR] Burst length must be less than period\n");
+        return -1;
+    }
+
+    if (test.compare == true && test.just_tx == true) {
+        fprintf(stderr, "[ERROR] Loop parameter must be passed to enable compare\n");
         return -1;
     }
 
