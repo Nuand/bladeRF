@@ -212,11 +212,17 @@ int main(int argc, char *argv[]) {
 
     gettimeofday(&start, NULL);
 
-    pthread_t thread_id;
+    pthread_t thread_id[2];
     if (!test.just_tx) {
         rx_thread_args rx_args = {dev_rx, &test};
-        pthread_create(&thread_id, NULL, rx_task, &rx_args);
+        pthread_create(&thread_id[0], NULL, rx_task, &rx_args);
     }
+
+    if (test.compare == true) {
+        rx_thread_args rx_args = {dev_tx, &test};
+        pthread_create(&thread_id[1], NULL, rx_task, &rx_args);
+    }
+
     for (i = 0; i < test.iterations && status == 0; i++) {
         meta.flags = BLADERF_META_FLAG_TX_BURST_START;
         samples_left = test.burst_len;
@@ -263,9 +269,12 @@ int main(int argc, char *argv[]) {
     printf("TX finished in %.4f seconds\n", time_passed);
 out:
     if (!test.just_tx) {
-        pthread_join(thread_id, NULL);
+        pthread_join(thread_id[0], NULL);
         bladerf_close(dev_rx);
     }
+
+    if (test.compare)
+        pthread_join(thread_id[1], NULL);
 
     status_out = bladerf_enable_module(dev_tx, BLADERF_MODULE_TX, false);
     if (status_out != 0) {
@@ -278,6 +287,7 @@ out:
 
     status = first_error(status, status_out);
 
+    bladerf_close(dev_tx);
     free(test.dev_tx_str);
     free(test.dev_rx_str);
     free(samples);

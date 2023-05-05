@@ -188,6 +188,14 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return 0;
     }
 
+    if (tc->compare == true) {
+        status = perform_sync_init(*dev_tx, BLADERF_MODULE_RX, 0, p);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set RX sync init on TX device: %s\n", bladerf_strerror(status));
+            return status;
+        }
+    }
+
     status = bladerf_open(dev_rx, tc->dev_rx_str);
     if (status != 0) {
         fprintf(stderr, "Failed to open RX device: %s\n", bladerf_strerror(status));
@@ -232,17 +240,21 @@ typedef struct {
 void *rx_task(void *args) {
     #define ZERO_SAMPLE_THRESHOLD 1500
 
+    struct bladerf_metadata meta;
+    unsigned int num_rx_samples;
     int status;
     int16_t *samples;
     int zero_sample_count = 0;
     int power;
     FILE *samples_out;
 
+    memset(&meta, 0, sizeof(meta));
+    meta.flags = BLADERF_META_FLAG_RX_NOW;
     rx_thread_args *rx_args = (rx_thread_args *)args;
-    unsigned int num_rx_samples = rx_args->tc->iterations*rx_args->tc->period + rx_args->tc->init_ts_delay;
+    num_rx_samples = rx_args->tc->iterations*rx_args->tc->period + rx_args->tc->init_ts_delay;
     samples = calloc(num_rx_samples, 2*sizeof(int16_t));
 
-    status = bladerf_sync_rx(rx_args->dev, samples, num_rx_samples, NULL, 1000);
+    status = bladerf_sync_rx(rx_args->dev, samples, num_rx_samples, &meta, 1000);
     if (status == BLADERF_ERR_TIMEOUT) {
         fprintf(stderr, "RX Timeout: %s\n", bladerf_strerror(status));
         goto cleanup;
