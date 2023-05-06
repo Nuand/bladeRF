@@ -213,14 +213,20 @@ int main(int argc, char *argv[]) {
     gettimeofday(&start, NULL);
 
     pthread_t thread_id[2];
+    rx_thread_args thread_data_compare;
+    rx_thread_args thread_data_loop;
     if (!test.just_tx) {
-        rx_thread_args rx_args = {dev_rx, &test};
-        pthread_create(&thread_id[0], NULL, rx_task, &rx_args);
+        thread_data_loop.is_rx_device = true;
+        thread_data_loop.dev = dev_rx;
+        thread_data_loop.tc  = &test;
+        pthread_create(&thread_id[0], NULL, rx_task, &thread_data_loop);
     }
 
     if (test.compare == true) {
-        rx_thread_args rx_args = {dev_tx, &test};
-        pthread_create(&thread_id[1], NULL, rx_task, &rx_args);
+        thread_data_compare.is_rx_device = false;
+        thread_data_compare.dev = dev_tx;
+        thread_data_compare.tc  = &test;
+        pthread_create(&thread_id[1], NULL, rx_task, &thread_data_compare);
     }
 
     for (i = 0; i < test.iterations && status == 0; i++) {

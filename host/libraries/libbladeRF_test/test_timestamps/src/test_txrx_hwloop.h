@@ -235,10 +235,14 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
 typedef struct {
     struct bladerf *dev;
     struct test_case *tc;
+    bool is_rx_device;
 } rx_thread_args;
 
 void *rx_task(void *args) {
     #define ZERO_SAMPLE_THRESHOLD 1500
+    char* dev_rx_filename = "samples.csv";
+    char* dev_tx_filename = "compare.csv";
+    char* file_out = malloc(strlen(dev_rx_filename) + 1);
 
     struct bladerf_metadata meta;
     unsigned int num_rx_samples;
@@ -264,9 +268,14 @@ void *rx_task(void *args) {
         goto cleanup;
     }
 
-    samples_out = fopen("samples.csv", "w");
+    if (rx_args->is_rx_device == true)
+        strcpy(file_out, dev_rx_filename);
+    else
+        strcpy(file_out, dev_tx_filename);
+
+    samples_out = fopen(file_out, "w");
     if (samples_out == NULL)
-        fprintf(stderr, "Failed to open samples.csv\n");
+        fprintf(stderr, "Failed to open output file: %s\n", file_out);
 
     fprintf(samples_out, "Q,I\n");
     for (unsigned int i = 0; i < 2*num_rx_samples; i+=2) {
@@ -284,10 +293,11 @@ void *rx_task(void *args) {
            zero_sample_count, num_rx_samples, (double)zero_sample_count*100/num_rx_samples);
 
     if (samples_out != NULL)
-        printf("RX samples written to \"samples.csv\"\n");
+        printf("RX samples written to \"%s\"\n", file_out);
 
 cleanup:
     free(samples);
+    free(file_out);
     pthread_exit(NULL);
     fclose(samples_out);
 }
