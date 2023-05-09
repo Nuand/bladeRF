@@ -103,15 +103,15 @@ Q = data['Q'].to_numpy()
 amp = np.abs(I + Q*1j)
 num_samples = range(len(I))
 
-fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 6))
+fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(16, 6))
 ax1.plot(I, label='I')
 ax1.plot(Q, label='Q')
-ax1.set_title('I and Q Components')
+ax1.set_title('RX Board IQ')
 ax1.set_xlabel('Sample Index')
 ax1.set_ylabel('Amplitude')
 ax1.legend(loc='upper right')
 ax2.plot(amp, label='Amplitude', color='red')
-ax2.set_title('Amplitude')
+ax2.set_title('RX Board Magnitude')
 ax2.set_xlabel('Sample Index')
 ax2.set_ylabel('Amplitude')
 ax2.legend(loc='upper right')
@@ -130,7 +130,7 @@ if print_stats:
     print("\nTimestamp Count between Rising Edges:")
     print(f"  Average:  {avg:.2f}")
     print(f"  Variance: {var:.2f}")
-    print(f"  Std.Dev:  {avg:.2f}")
+    print(f"  Std.Dev:  {dev:.2f}")
     print(f"  Edge Count: {len(pos_edge_indexes)}")
 
 negative_edge = np.diff(np.sign(amp - threshold)) < 0
@@ -146,10 +146,11 @@ if print_stats:
     print("\nTimestamp Count between Falling Edges:")
     print(f"  Average: {avg:.2f}")
     print(f"  Variance:{var:.2f}")
-    print(f"  Std.Dev: {avg:.2f}")
+    print(f"  Std.Dev: {dev:.2f}")
     print(f"  Edge Count: {len(neg_edge_indexes)}")
 
-print(f"\nPredicted Timestamp: {(mode[0]/1e3):.2f}k samples @ {mode_count[0]}/{iterations-1} periods")
+print("\nRX Board")
+print(f"  Predicted Timestamp: {(mode[0]/1e3):.2f}k samples @ {mode_count[0]}/{iterations-1} periods")
 
 fill = neg_edge_indexes - pos_edge_indexes
 avg = np.average(fill)
@@ -157,7 +158,72 @@ var = np.var(fill)
 dev = np.std(fill)
 mode, mode_count = st.mode(fill)
 fill_vs_burst = mode[0]*100/burst
-print(f"Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]}/{iterations} cycles")
+print(f"  Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]}/{iterations} cycles")
+
+################################################################
+# TX Loopback Compare
+################################################################
+data = pd.read_csv('compare.csv')
+I = data['I'].to_numpy()
+Q = data['Q'].to_numpy()
+amp = np.abs(I + Q*1j)
+num_samples = range(len(I))
+
+ax3.plot(I, label='I')
+ax3.plot(Q, label='Q')
+ax3.set_title('TX Loopback Compare IQ')
+ax3.set_xlabel('Sample Index')
+ax3.set_ylabel('Amplitude')
+ax3.legend(loc='upper right')
+ax4.plot(amp, label='Amplitude', color='red')
+ax4.set_title('TX Loopback Compare Magnitude')
+ax4.set_xlabel('Sample Index')
+ax4.set_ylabel('Amplitude')
+ax4.legend(loc='upper right')
+
+positive_edge = np.diff(np.sign(amp - threshold)) > 0
+pos_edge_indexes = np.argwhere(positive_edge).flatten()
+for i in pos_edge_indexes:
+    ax4.plot(i, threshold, 'g_', markersize=10)
+
+time_delta_pos_edges = np.diff(pos_edge_indexes)
+mode, mode_count = st.mode(time_delta_pos_edges)
+avg = np.average(time_delta_pos_edges)
+var = np.var(time_delta_pos_edges)
+dev = np.std(time_delta_pos_edges)
+if print_stats:
+    print("\nTimestamp Count between Rising Edges:")
+    print(f"  Average:  {avg:.2f}")
+    print(f"  Variance: {var:.2f}")
+    print(f"  Std.Dev:  {dev:.2f}")
+    print(f"  Edge Count: {len(pos_edge_indexes)}")
+
+negative_edge = np.diff(np.sign(amp - threshold)) < 0
+neg_edge_indexes = np.argwhere(negative_edge).flatten()
+for i in neg_edge_indexes:
+    ax4.plot(i, threshold, 'y_', markersize=10)
+
+time_delta_neg_edges = np.diff(neg_edge_indexes)
+avg = np.average(time_delta_neg_edges)
+var = np.var(time_delta_neg_edges)
+dev = np.std(time_delta_neg_edges)
+if print_stats:
+    print("\nTimestamp Count between Falling Edges:")
+    print(f"  Average: {avg:.2f}")
+    print(f"  Variance:{var:.2f}")
+    print(f"  Std.Dev: {dev:.2f}")
+    print(f"  Edge Count: {len(neg_edge_indexes)}")
+
+print("\nTX Board: loopback compare")
+print(f"  Predicted Timestamp: {(mode[0]/1e3):.2f}k samples @ {mode_count[0]}/{iterations-1} periods")
+
+fill = neg_edge_indexes - pos_edge_indexes
+avg = np.average(fill)
+var = np.var(fill)
+dev = np.std(fill)
+mode, mode_count = st.mode(fill)
+fill_vs_burst = mode[0]*100/burst
+print(f"  Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]}/{iterations} cycles")
 
 fig.subplots_adjust(hspace=0.5)
 print(f"\nPress [Escape] to close figure")
