@@ -24,6 +24,7 @@
  */
 #include <stdio.h>
 #include <getopt.h>
+#include "log.h"
 
 struct test_case {
     unsigned int burst_len;     /* Length of a burst, in samples */
@@ -133,6 +134,41 @@ static void usage()
     printf("\n\n");
 }
 
+int configure_module(struct bladerf *dev, bladerf_channel ch,
+                     struct test_case *test, struct app_params *params, bladerf_format sample_format) {
+    int status;
+
+    status = bladerf_set_frequency(dev, ch, test->frequency);
+    if (status != 0) {
+        log_error("Failed to set ch %d frequency = %" PRIu64 ": %s\n", ch,
+                  test->frequency, bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_set_sample_rate(dev, ch, params->samplerate, NULL);
+    if (status != 0) {
+        log_error("Failed to set ch %d sample rate = %u: %s\n", ch, sample_rate,
+                  bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_sync_config(dev, ch, sample_format,
+                                 params->num_buffers, params->buf_size,
+                                 params->num_xfers, params->timeout_ms);
+    if (status != 0) {
+        fprintf(stderr, "Failed to configure %s sync i/f: %s\n",
+                channel2str(ch), bladerf_strerror(status));
+    } else {
+        status = bladerf_enable_module(dev, ch, true);
+        if (status != 0) {
+        fprintf(stderr, "Failed to enable %s module: %s\n",
+                channel2str(ch), bladerf_strerror(status));
+        }
+    }
+
+    return 0;
+}
+
 int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_params *p, struct test_case *tc) {
     int status;
 
@@ -144,22 +180,10 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return status;
     }
 
-    status = bladerf_set_sample_rate(*dev_tx, BLADERF_MODULE_TX, p->samplerate, NULL);
+    status = configure_module(*dev_tx, BLADERF_MODULE_TX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
     if (status != 0) {
-        fprintf(stderr, "Failed to set TX sample rate: %s\n",
+        fprintf(stderr, "Failed to configure module: %s\n",
                 bladerf_strerror(status));
-        return status;
-    }
-
-    status = perform_sync_init(*dev_tx, BLADERF_MODULE_TX, 0, p);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set TX sync init: %s\n", bladerf_strerror(status));
-        return status;
-    }
-
-    status = bladerf_set_frequency(*dev_tx, BLADERF_MODULE_TX, tc->frequency);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set TX frequency: %s\n", bladerf_strerror(status));
         return status;
     }
 
@@ -188,14 +212,6 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return 0;
     }
 
-    if (tc->compare == true) {
-        status = perform_sync_init(*dev_tx, BLADERF_MODULE_RX, 0, p);
-        if (status != 0) {
-            fprintf(stderr, "Failed to set RX sync init on TX device: %s\n", bladerf_strerror(status));
-            return status;
-        }
-    }
-
     status = bladerf_open(dev_rx, tc->dev_rx_str);
     if (status != 0) {
         fprintf(stderr, "Failed to open RX device: %s\n", bladerf_strerror(status));
@@ -203,29 +219,33 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return status;
     }
 
-    status = bladerf_set_sample_rate(*dev_rx, BLADERF_MODULE_RX, p->samplerate, NULL);
+    status = configure_module(*dev_rx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11);
     if (status != 0) {
-        fprintf(stderr, "Failed to set RX sample rate: %s\n",
+        fprintf(stderr, "Failed to configure RX on RX device: %s\n",
                 bladerf_strerror(status));
-        return status;
-    }
-
-    status = bladerf_set_frequency(*dev_rx, BLADERF_MODULE_RX, tc->frequency);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set RX frequency: %s\n", bladerf_strerror(status));
-        return status;
-    }
-
-    status = bladerf_sync_config(*dev_rx, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11,
-                                 p->num_buffers, p->buf_size, p->num_xfers, p->timeout_ms);
-    if (status != 0) {
-        fprintf(stderr, "Failed to set RX sync config: %s\n", bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_enable_module(*dev_rx, BLADERF_MODULE_RX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable RX module: %s\n", bladerf_strerror(status));
+        fprintf(stderr, "Failed to enable RX on RX device: %s\n", bladerf_strerror(status));
+        return status;
+    }
+
+    if (tc->compare == false)
+        return 0;
+
+    status = configure_module(*dev_tx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
+    if (status != 0) {
+        fprintf(stderr, "Failed to configure RX on TX device: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_enable_module(*dev_tx, BLADERF_MODULE_RX, true);
+    if (status != 0) {
+        fprintf(stderr, "Failed to enable RX on TX device: %s\n",
+                bladerf_strerror(status));
         return status;
     }
 
