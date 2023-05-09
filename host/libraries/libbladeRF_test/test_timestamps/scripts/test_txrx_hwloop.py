@@ -57,7 +57,8 @@ parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
 parser.add_argument('-t', '--threshold', type=int, help='edge count amplitude threshold')
 parser.add_argument('-tx', '--txdev', type=str, help='TX device string')
 parser.add_argument('-rx', '--rxdev', type=str, help='RX device string')
-parser.add_argument('-s', '--stats', help='print edge statistics', action="store_true")
+parser.add_argument('-c', '--compare', help='RF loopback compare', action="store_true", default=False)
+parser.add_argument('-s', '--stats', help='print edge statistics', action="store_true", default=False)
 
 args = parser.parse_args()
 
@@ -87,7 +88,7 @@ binary_file = 'libbladeRF_test_txrx_hwloop'
 output_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(output_dir)
 proc = subprocess.run(f"./{binary_file} --fill {fill} --burst {burst} --period {period} "
-                      f"--iterations {iterations} -l {devarg_tx} {devarg_rx}", shell=True)
+                      f"--iterations {iterations} -l {devarg_tx} {devarg_rx} {args.compare * '-c'}", shell=True)
 
 if proc.returncode != 0:
     print("Failed to run hwloop binary")
