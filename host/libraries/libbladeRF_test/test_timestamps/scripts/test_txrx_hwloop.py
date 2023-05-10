@@ -149,7 +149,6 @@ for i in pos_edge_indexes:
     ax2.plot(i, threshold, 'g_', markersize=10)
 
 time_delta_pos_edges = np.diff(pos_edge_indexes)
-mode, mode_count = st.mode(time_delta_pos_edges)
 avg = np.average(time_delta_pos_edges)
 var = np.var(time_delta_pos_edges)
 dev = np.std(time_delta_pos_edges)
@@ -176,15 +175,14 @@ if print_stats:
     print(f"  Edge Count: {len(neg_edge_indexes)}")
 
 print("\nRX Board")
-print(f"  Predicted Timestamp: {(mode[0]/1e3):.2f}k samples @ {mode_count[0]}/{iterations-1} periods")
+print(f"  Predicted Timestamp: {(avg):.3f} samples")
 
 fill = neg_edge_indexes - pos_edge_indexes
 avg = np.average(fill)
 var = np.var(fill)
 dev = np.std(fill)
-mode, mode_count = st.mode(fill)
-fill_vs_burst = mode[0]*100/burst
-print(f"  Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]}/{iterations} cycles")
+fill_vs_burst = 100 * avg/burst
+print(f"  Predicted Fill:      {fill_vs_burst:.2f}%")
 
 ################################################################
 # TX Loopback Compare
@@ -213,7 +211,6 @@ for i in pos_edge_indexes:
     ax4.plot(i, threshold, 'g_', markersize=10)
 
 time_delta_pos_edges = np.diff(pos_edge_indexes)
-mode, mode_count = st.mode(time_delta_pos_edges)
 avg = np.average(time_delta_pos_edges)
 var = np.var(time_delta_pos_edges)
 dev = np.std(time_delta_pos_edges)
@@ -239,16 +236,15 @@ if print_stats:
     print(f"  Std.Dev: {dev:.2f}")
     print(f"  Edge Count: {len(neg_edge_indexes)}")
 
-print("\nTX Board: loopback compare")
-print(f"  Predicted Timestamp: {(mode[0]/1e3):.2f}k samples @ {mode_count[0]}/{iterations-1} periods")
+    print("\nTX Board: loopback compare")
+    print(f"  Predicted Timestamp: {(avg):.3f} samples")
 
 fill = neg_edge_indexes - pos_edge_indexes
 avg = np.average(fill)
 var = np.var(fill)
 dev = np.std(fill)
-mode, mode_count = st.mode(fill)
-fill_vs_burst = mode[0]*100/burst
-print(f"  Predicted Fill:      {fill_vs_burst:.2f}% @ {mode_count[0]}/{iterations} cycles")
+compare_fill_vs_burst = 100 * avg/burst
+print(f"  Predicted Fill:      {compare_fill_vs_burst:.2f}%")
 
 fig.subplots_adjust(hspace=0.5)
 print(f"\nPress [Escape] to close figure")
