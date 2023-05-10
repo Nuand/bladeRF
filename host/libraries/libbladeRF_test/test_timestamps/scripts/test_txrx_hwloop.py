@@ -33,6 +33,31 @@ def close_figure(event):
     if event.key == 'escape':
         plt.close()
 
+def edge_detector(signal, rising_threshold, falling_threshold, debounce_time):
+    state = 'low'
+    debounce_downcount = debounce_time
+    rising = np.zeros_like(signal, dtype=bool)
+    falling = np.zeros_like(signal, dtype=bool)
+
+    for i in range(len(signal)):
+        if (state == 'low' and signal[i] > rising_threshold):
+            rising[i] = True
+            last_state = state
+            state = 'debounce'
+
+        if (state == 'debounce'):
+            debounce_downcount -= 1
+            if (debounce_downcount == 0):
+                debounce_downcount = debounce_time
+                state = 'high' if (last_state == 'low') else 'low'
+
+        if (state == 'high' and signal[i] < falling_threshold):
+            falling[i] = True
+            last_state = state
+            state = 'debounce'
+
+    return rising, falling
+
 ###############################################################
 # Initialize Parameters
 ###############################################################
@@ -81,6 +106,8 @@ if args.rxdev:
 if args.stats:
     print_stats = True
 
+cycles_to_debounce = 0.25 * burst * fill/100
+
 ################################################################
 # Generate Pulse
 ################################################################
@@ -116,7 +143,7 @@ ax2.set_xlabel('Sample Index')
 ax2.set_ylabel('Amplitude')
 ax2.legend(loc='upper right')
 
-positive_edge = np.diff(np.sign(amp - threshold)) > 0
+positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
 for i in pos_edge_indexes:
     ax2.plot(i, threshold, 'g_', markersize=10)
@@ -133,7 +160,6 @@ if print_stats:
     print(f"  Std.Dev:  {dev:.2f}")
     print(f"  Edge Count: {len(pos_edge_indexes)}")
 
-negative_edge = np.diff(np.sign(amp - threshold)) < 0
 neg_edge_indexes = np.argwhere(negative_edge).flatten()
 for i in neg_edge_indexes:
     ax2.plot(i, threshold, 'y_', markersize=10)
@@ -181,7 +207,7 @@ ax4.set_xlabel('Sample Index')
 ax4.set_ylabel('Amplitude')
 ax4.legend(loc='upper right')
 
-positive_edge = np.diff(np.sign(amp - threshold)) > 0
+positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
 for i in pos_edge_indexes:
     ax4.plot(i, threshold, 'g_', markersize=10)
@@ -198,7 +224,6 @@ if print_stats:
     print(f"  Std.Dev:  {dev:.2f}")
     print(f"  Edge Count: {len(pos_edge_indexes)}")
 
-negative_edge = np.diff(np.sign(amp - threshold)) < 0
 neg_edge_indexes = np.argwhere(negative_edge).flatten()
 for i in neg_edge_indexes:
     ax4.plot(i, threshold, 'y_', markersize=10)
