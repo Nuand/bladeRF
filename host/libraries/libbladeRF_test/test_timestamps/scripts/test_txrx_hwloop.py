@@ -131,17 +131,12 @@ amp = np.abs(I + Q*1j)
 num_samples = range(len(I))
 
 fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(16, 6))
+
+ax1.set_title('RX Board IQ')
 ax1.plot(I, label='I')
 ax1.plot(Q, label='Q')
-ax1.set_title('RX Board IQ')
-ax1.set_xlabel('Sample Index')
-ax1.set_ylabel('Amplitude')
-ax1.legend(loc='upper right')
-ax2.plot(amp, label='Amplitude', color='red')
 ax2.set_title('RX Board Magnitude')
-ax2.set_xlabel('Sample Index')
-ax2.set_ylabel('Amplitude')
-ax2.legend(loc='upper right')
+ax2.plot(amp, label='Amplitude', color='red')
 
 positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
@@ -199,17 +194,11 @@ Q = data['Q'].to_numpy()
 amp = np.abs(I + Q*1j)
 num_samples = range(len(I))
 
+ax3.set_title('TX Loopback Compare IQ')
 ax3.plot(I, label='I')
 ax3.plot(Q, label='Q')
-ax3.set_title('TX Loopback Compare IQ')
-ax3.set_xlabel('Sample Index')
-ax3.set_ylabel('Amplitude')
-ax3.legend(loc='upper right')
-ax4.plot(amp, label='Amplitude', color='red')
 ax4.set_title('TX Loopback Compare Magnitude')
-ax4.set_xlabel('Sample Index')
-ax4.set_ylabel('Amplitude')
-ax4.legend(loc='upper right')
+ax4.plot(amp, label='Amplitude', color='red')
 
 positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
@@ -257,6 +246,19 @@ except ValueError as err:
     fill = None
 
 print(f"  Predicted Fill:      {compare_fill_vs_burst:.2f}%")
+
+# General plot assignments
+axis = (ax1, ax2, ax3, ax4)
+axis_iq = (ax1, ax3)
+axis_amp = (ax2, ax4)
+for ax in axis:
+    ax.legend(loc='upper right')
+    ax.set_ylabel('Amplitude')
+    ax.set_xlabel('Sample Index')
+for ax in axis_amp:
+    ax.set_ylim(bottom=0, top=3000)
+for ax in axis_iq:
+    ax.set_ylim(bottom=-2500, top=2500)
 
 fig.subplots_adjust(hspace=0.5)
 print(f"\nPress [Escape] to close figure")
