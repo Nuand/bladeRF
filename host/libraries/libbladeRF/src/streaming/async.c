@@ -48,12 +48,12 @@ int async_init_stream(struct bladerf_stream **stream,
     int status = 0;
 
     if (num_transfers > num_buffers) {
-        log_debug("num_transfers must be <= num_buffers\n");
+        log_error("num_transfers must be <= num_buffers\n");
         return BLADERF_ERR_INVAL;
     }
 
     if (samples_per_buffer < 1024 || samples_per_buffer % 1024 != 0) {
-        log_debug("samples_per_buffer must be multiples of 1024\n");
+        log_error("samples_per_buffer must be multiples of 1024\n");
         return BLADERF_ERR_INVAL;
     }
 
