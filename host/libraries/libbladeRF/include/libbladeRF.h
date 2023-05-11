@@ -2204,9 +2204,9 @@ typedef enum {
     /**
      * Signed, Complex 8-bit Q8. This is the native format of the DAC data.
      *
-     * Values in the range [-256, 256) are used to represent [-1.0, 1.0).
+     * Values in the range [-128, 128) are used to represent [-1.0, 1.0).
      * Note that the lower bound here is inclusive, and the upper bound is
-     * exclusive. Ensure that provided samples stay within [-256, 255].
+     * exclusive. Ensure that provided samples stay within [-128, 127].
      *
      * Samples consist of interleaved IQ value pairs, with I being the first
      * value in the pair. Each value in the pair is a right-aligned,
