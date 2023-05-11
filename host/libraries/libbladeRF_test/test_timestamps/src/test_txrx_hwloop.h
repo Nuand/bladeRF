@@ -29,7 +29,6 @@
 struct test_case {
     unsigned int burst_len;     /* Length of a burst, in samples */
     unsigned int iterations;
-    unsigned int num_zero_samples;
     unsigned int period;
     unsigned int fill;
     unsigned int init_ts_delay;
@@ -259,7 +258,6 @@ typedef struct {
 } rx_thread_args;
 
 void *rx_task(void *args) {
-    #define ZERO_SAMPLE_THRESHOLD 1500
     char* dev_rx_filename = "samples.csv";
     char* dev_tx_filename = "compare.csv";
     char* file_out = malloc(strlen(dev_rx_filename) + 1);
@@ -268,8 +266,6 @@ void *rx_task(void *args) {
     unsigned int num_rx_samples;
     int status;
     int16_t *samples;
-    int zero_sample_count = 0;
-    int power;
     FILE *samples_out;
 
     memset(&meta, 0, sizeof(meta));
@@ -301,19 +297,10 @@ void *rx_task(void *args) {
     for (unsigned int i = 0; i < 2*num_rx_samples; i+=2) {
         if (samples_out != NULL)
             fprintf(samples_out, "%i,%i\n", samples[i], samples[i+1]);
-
-        power = abs(samples[i]) + abs(samples[i+1]);
-        if (power < ZERO_SAMPLE_THRESHOLD) {
-            zero_sample_count++;
-            // printf("Zeros sample count: %i\n", zero_sample_count);
-            // printf("\033[1A\r\033[K");
-        }
     }
-    printf("\nZero sample count: %i/%i = %.2f%%\n",
-           zero_sample_count, num_rx_samples, (double)zero_sample_count*100/num_rx_samples);
 
     if (samples_out != NULL)
-        printf("RX samples written to \"%s\"\n", file_out);
+        printf("\nRX samples written to \"%s\"\n", file_out);
 
 cleanup:
     free(samples);

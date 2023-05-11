@@ -69,7 +69,6 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     // Interdependencies
     tc->period = p->samplerate;
     tc->burst_len = tc->period/2;
-    tc->num_zero_samples = tc->burst_len - (tc->fill*tc->burst_len/100);
 }
 
 int main(int argc, char *argv[]) {
@@ -164,7 +163,6 @@ int main(int argc, char *argv[]) {
                 break;
         }
     }
-    test.num_zero_samples = test.burst_len - (test.fill*test.burst_len/100);
 
     /** Parameter conflict management */
     if (test.burst_len > test.period) {
