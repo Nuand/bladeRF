@@ -130,7 +130,10 @@ Q = data['Q'].to_numpy()
 amp = np.abs(I + Q*1j)
 num_samples = range(len(I))
 
-fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(16, 6))
+if args.compare == True:
+    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(16, 6))
+else:
+    fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 6))
 
 ax1.set_title('RX Board IQ')
 ax1.plot(I, label='I')
@@ -188,69 +191,76 @@ print(f"  Predicted Fill:      {fill_vs_burst:.2f}%")
 ################################################################
 # TX Loopback Compare
 ################################################################
-data = pd.read_csv('compare.csv')
-I = data['I'].to_numpy()
-Q = data['Q'].to_numpy()
-amp = np.abs(I + Q*1j)
-num_samples = range(len(I))
+if args.compare == True:
+    data = pd.read_csv('compare.csv')
+    I = data['I'].to_numpy()
+    Q = data['Q'].to_numpy()
+    amp = np.abs(I + Q*1j)
+    num_samples = range(len(I))
 
-ax3.set_title('TX Loopback Compare IQ')
-ax3.plot(I, label='I')
-ax3.plot(Q, label='Q')
-ax4.set_title('TX Loopback Compare Magnitude')
-ax4.plot(amp, label='Amplitude', color='red')
+    ax3.set_title('TX Loopback Compare IQ')
+    ax3.plot(I, label='I')
+    ax3.plot(Q, label='Q')
+    ax4.set_title('TX Loopback Compare Magnitude')
+    ax4.plot(amp, label='Amplitude', color='red')
 
-positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
-pos_edge_indexes = np.argwhere(positive_edge).flatten()
-for i in pos_edge_indexes:
-    ax4.plot(i, threshold, 'g_', markersize=10)
+    positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
+    pos_edge_indexes = np.argwhere(positive_edge).flatten()
+    for i in pos_edge_indexes:
+        ax4.plot(i, threshold, 'g_', markersize=10)
 
-time_delta_pos_edges = np.diff(pos_edge_indexes)
-avg = np.average(time_delta_pos_edges)
-var = np.var(time_delta_pos_edges)
-dev = np.std(time_delta_pos_edges)
-if print_stats:
-    print("\nTimestamp Count between Rising Edges:")
-    print(f"  Average:  {avg:.2f}")
-    print(f"  Variance: {var:.2f}")
-    print(f"  Std.Dev:  {dev:.2f}")
-    print(f"  Edge Count: {len(pos_edge_indexes)}")
+    time_delta_pos_edges = np.diff(pos_edge_indexes)
+    avg = np.average(time_delta_pos_edges)
+    var = np.var(time_delta_pos_edges)
+    dev = np.std(time_delta_pos_edges)
+    if print_stats:
+        print("\nTimestamp Count between Rising Edges:")
+        print(f"  Average:  {avg:.2f}")
+        print(f"  Variance: {var:.2f}")
+        print(f"  Std.Dev:  {dev:.2f}")
+        print(f"  Edge Count: {len(pos_edge_indexes)}")
 
-neg_edge_indexes = np.argwhere(negative_edge).flatten()
-for i in neg_edge_indexes:
-    ax4.plot(i, threshold, 'y_', markersize=10)
+    neg_edge_indexes = np.argwhere(negative_edge).flatten()
+    for i in neg_edge_indexes:
+        ax4.plot(i, threshold, 'y_', markersize=10)
 
-time_delta_neg_edges = np.diff(neg_edge_indexes)
-avg = np.average(time_delta_neg_edges)
-var = np.var(time_delta_neg_edges)
-dev = np.std(time_delta_neg_edges)
-if print_stats:
-    print("\nTimestamp Count between Falling Edges:")
-    print(f"  Average: {avg:.2f}")
-    print(f"  Variance:{var:.2f}")
-    print(f"  Std.Dev: {dev:.2f}")
-    print(f"  Edge Count: {len(neg_edge_indexes)}")
+    time_delta_neg_edges = np.diff(neg_edge_indexes)
+    avg = np.average(time_delta_neg_edges)
+    var = np.var(time_delta_neg_edges)
+    dev = np.std(time_delta_neg_edges)
+    if print_stats:
+        print("\nTimestamp Count between Falling Edges:")
+        print(f"  Average: {avg:.2f}")
+        print(f"  Variance:{var:.2f}")
+        print(f"  Std.Dev: {dev:.2f}")
+        print(f"  Edge Count: {len(neg_edge_indexes)}")
 
     print("\nTX Board: loopback compare")
     print(f"  Predicted Timestamp: {(avg):.3f} samples")
 
-try:
-    fill = neg_edge_indexes - pos_edge_indexes
-    avg = np.average(fill)
-    var = np.var(fill)
-    dev = np.std(fill)
-    compare_fill_vs_burst = 100 * avg/burst
-except ValueError as err:
-    print(f"[Error] TX Compare: Edge count imbalanced.\n{err}")
-    print(err)
-    fill = None
+    try:
+        fill = neg_edge_indexes - pos_edge_indexes
+        avg = np.average(fill)
+        var = np.var(fill)
+        dev = np.std(fill)
+        compare_fill_vs_burst = 100 * avg/burst
+    except ValueError as err:
+        print(f"[Error] TX Compare: Edge count imbalanced.\n{err}")
+        print(err)
+        fill = None
 
-print(f"  Predicted Fill:      {compare_fill_vs_burst:.2f}%")
+    print(f"  Predicted Fill:      {compare_fill_vs_burst:.2f}%")
 
 # General plot assignments
-axis = (ax1, ax2, ax3, ax4)
-axis_iq = (ax1, ax3)
-axis_amp = (ax2, ax4)
+if args.compare == True:
+    axis = (ax1, ax2, ax3, ax4)
+    axis_iq = (ax1, ax3)
+    axis_amp = (ax2, ax4)
+else:
+    axis = (ax1, ax2)
+    axis_iq = (ax1,)
+    axis_amp = (ax2,)
+
 for ax in axis:
     ax.legend(loc='upper right')
     ax.set_ylabel('Amplitude')
