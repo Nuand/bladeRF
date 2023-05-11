@@ -177,11 +177,17 @@ if print_stats:
 print("\nRX Board")
 print(f"  Predicted Timestamp: {(avg):.3f} samples")
 
-fill = neg_edge_indexes - pos_edge_indexes
-avg = np.average(fill)
-var = np.var(fill)
-dev = np.std(fill)
-fill_vs_burst = 100 * avg/burst
+try:
+    fill = neg_edge_indexes - pos_edge_indexes
+    avg = np.average(fill)
+    var = np.var(fill)
+    dev = np.std(fill)
+    fill_vs_burst = 100 * avg/burst
+except ValueError as err:
+    print(f"[Error] RX Board: Edge count imbalanced.\n{err}")
+    print(err)
+    fill = None
+
 print(f"  Predicted Fill:      {fill_vs_burst:.2f}%")
 
 ################################################################
@@ -239,11 +245,17 @@ if print_stats:
     print("\nTX Board: loopback compare")
     print(f"  Predicted Timestamp: {(avg):.3f} samples")
 
-fill = neg_edge_indexes - pos_edge_indexes
-avg = np.average(fill)
-var = np.var(fill)
-dev = np.std(fill)
-compare_fill_vs_burst = 100 * avg/burst
+try:
+    fill = neg_edge_indexes - pos_edge_indexes
+    avg = np.average(fill)
+    var = np.var(fill)
+    dev = np.std(fill)
+    compare_fill_vs_burst = 100 * avg/burst
+except ValueError as err:
+    print(f"[Error] TX Compare: Edge count imbalanced.\n{err}")
+    print(err)
+    fill = None
+
 print(f"  Predicted Fill:      {compare_fill_vs_burst:.2f}%")
 
 fig.subplots_adjust(hspace=0.5)
