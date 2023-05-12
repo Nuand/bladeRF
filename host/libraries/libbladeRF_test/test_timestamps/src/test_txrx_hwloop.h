@@ -133,7 +133,7 @@ static void usage()
     printf("\n\n");
 }
 
-int configure_module(struct bladerf *dev, bladerf_channel ch,
+int module_config_enable(struct bladerf *dev, bladerf_channel ch,
                      struct test_case *test, struct app_params *params, bladerf_format sample_format) {
     int status;
 
@@ -157,12 +157,14 @@ int configure_module(struct bladerf *dev, bladerf_channel ch,
     if (status != 0) {
         fprintf(stderr, "Failed to configure %s sync i/f: %s\n",
                 channel2str(ch), bladerf_strerror(status));
-    } else {
-        status = bladerf_enable_module(dev, ch, true);
-        if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_enable_module(dev, ch, true);
+    if (status != 0) {
         fprintf(stderr, "Failed to enable %s module: %s\n",
                 channel2str(ch), bladerf_strerror(status));
-        }
+        return status;
     }
 
     return 0;
@@ -179,7 +181,7 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return status;
     }
 
-    status = configure_module(*dev_tx, BLADERF_MODULE_TX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
+    status = module_config_enable(*dev_tx, BLADERF_MODULE_TX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
     if (status != 0) {
         fprintf(stderr, "Failed to configure module: %s\n",
                 bladerf_strerror(status));
@@ -218,32 +220,19 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return status;
     }
 
-    status = configure_module(*dev_rx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11);
+    status = module_config_enable(*dev_rx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11);
     if (status != 0) {
         fprintf(stderr, "Failed to configure RX on RX device: %s\n",
                 bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_enable_module(*dev_rx, BLADERF_MODULE_RX, true);
-    if (status != 0) {
-        fprintf(stderr, "Failed to enable RX on RX device: %s\n", bladerf_strerror(status));
-        return status;
-    }
-
     if (tc->compare == false)
         return 0;
 
-    status = configure_module(*dev_tx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
+    status = module_config_enable(*dev_tx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
     if (status != 0) {
         fprintf(stderr, "Failed to configure RX on TX device: %s\n",
-                bladerf_strerror(status));
-        return status;
-    }
-
-    status = bladerf_enable_module(*dev_tx, BLADERF_MODULE_RX, true);
-    if (status != 0) {
-        fprintf(stderr, "Failed to enable RX on TX device: %s\n",
                 bladerf_strerror(status));
         return status;
     }
