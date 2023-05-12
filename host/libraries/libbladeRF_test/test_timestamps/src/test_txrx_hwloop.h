@@ -196,6 +196,13 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         printf("    |               |   |   |               |\n");
         printf("    |             RX|<--┘   |               |\n");
         printf("    +---------------+       +---------------+\n");
+    } else if (tc->just_tx == true && tc->compare == true) {
+        printf("Mode: TX -> TX\n");
+        printf("    +---------------+       +---------------+\n");
+        printf("    | TX Device   TX|---┬   |RX   RX Device |\n");
+        printf("    |               |   |   |               |\n");
+        printf("    |             RX|<--┘   |               |\n");
+        printf("    +---------------+       +---------------+\n");
     } else if (tc->just_tx == false && tc->compare == false) {
         printf("Mode: TX -> RX\n");
         printf("    +---------------+       +---------------+\n");
@@ -213,28 +220,30 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         return 0;
     }
 
-    status = bladerf_open(dev_rx, tc->dev_rx_str);
-    if (status != 0) {
-        fprintf(stderr, "Failed to open RX device: %s\n", bladerf_strerror(status));
-        fprintf(stderr, "↳ Most likely an incorrect device string.\n");
-        return status;
+    if (tc->just_tx == false) {
+        status = bladerf_open(dev_rx, tc->dev_rx_str);
+        if (status != 0) {
+            fprintf(stderr, "Failed to open RX device: %s\n", bladerf_strerror(status));
+            fprintf(stderr, "↳ Most likely an incorrect device string.\n");
+            return status;
+        }
+
+        status = module_config_enable(*dev_rx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11);
+        if (status != 0) {
+            fprintf(stderr, "Failed to configure RX on RX device: %s\n",
+                    bladerf_strerror(status));
+            return status;
+        }
     }
 
-    status = module_config_enable(*dev_rx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11);
-    if (status != 0) {
-        fprintf(stderr, "Failed to configure RX on RX device: %s\n",
-                bladerf_strerror(status));
-        return status;
-    }
-
-    if (tc->compare == false)
-        return 0;
-
-    status = module_config_enable(*dev_tx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
-    if (status != 0) {
-        fprintf(stderr, "Failed to configure RX on TX device: %s\n",
-                bladerf_strerror(status));
-        return status;
+    /** Must come after  RX device open to recieve an input*/
+    if (tc->compare == true) {
+        status = module_config_enable(*dev_tx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
+        if (status != 0) {
+            fprintf(stderr, "Failed to configure RX on TX device: %s\n",
+                    bladerf_strerror(status));
+            return status;
+        }
     }
 
     return 0;

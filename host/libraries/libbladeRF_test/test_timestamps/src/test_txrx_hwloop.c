@@ -176,11 +176,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    if (test.compare == true && test.just_tx == true) {
-        fprintf(stderr, "[ERROR] Loop parameter must be passed to enable compare\n");
-        return -1;
-    }
-
     printf("fill: %u%%\n", test.fill);
     printf("Burst:  %9.3fk samples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
     printf("Period: %9.3fk samples || %2.3fs\n", test.period/1e3, (float)test.period/p.samplerate);
