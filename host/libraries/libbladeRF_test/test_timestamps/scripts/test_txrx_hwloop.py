@@ -65,7 +65,7 @@ fill = 50
 burst = 50e3
 period = 100e3
 iterations = 10
-threshold = 1500
+threshold = 3.75e6
 devarg_tx = ""
 devarg_rx = ""
 print_stats = False
@@ -79,7 +79,7 @@ parser.add_argument('-f', '--fill', type=float, help='fill (%%)')
 parser.add_argument('-b', '--burst', type=int, help='burst length (in samples)')
 parser.add_argument('-p', '--period', type=int, help='period length (in samples)')
 parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
-parser.add_argument('-t', '--threshold', type=int, help='edge count amplitude threshold')
+parser.add_argument('-t', '--threshold', type=int, help='edge count power threshold')
 parser.add_argument('-tx', '--txdev', type=str, help='TX device string')
 parser.add_argument('-rx', '--rxdev', type=str, help='RX device string')
 parser.add_argument('-c', '--compare', help='RF loopback compare', action="store_true", default=False)
@@ -127,7 +127,7 @@ if proc.returncode != 0:
 data = pd.read_csv('samples.csv')
 I = data['I'].to_numpy()
 Q = data['Q'].to_numpy()
-amp = np.abs(I + Q*1j)
+power = I**2 + Q**2
 num_samples = range(len(I))
 
 if args.compare == True:
@@ -138,10 +138,10 @@ else:
 ax1.set_title('RX Board IQ')
 ax1.plot(I, label='I')
 ax1.plot(Q, label='Q')
-ax2.set_title('RX Board Magnitude')
-ax2.plot(amp, label='Amplitude', color='red')
+ax2.set_title('RX Board Power')
+ax2.plot(power, label='Power', color='red')
 
-positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
+positive_edge, negative_edge = edge_detector(power, threshold, threshold, cycles_to_debounce)
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
 for i in pos_edge_indexes:
     ax2.plot(i, threshold, 'g_', markersize=10)
@@ -185,6 +185,7 @@ except ValueError as err:
     print(f"[Error] RX Board: Edge count imbalanced.\n{err}")
     print(err)
     fill = None
+    fill_vs_burst = -1
 
 print(f"  Predicted Fill:      {fill_vs_burst:.2f}%")
 
@@ -195,16 +196,16 @@ if args.compare == True:
     data = pd.read_csv('compare.csv')
     I = data['I'].to_numpy()
     Q = data['Q'].to_numpy()
-    amp = np.abs(I + Q*1j)
+    power = I**2 + Q**2
     num_samples = range(len(I))
 
     ax3.set_title('TX Loopback Compare IQ')
     ax3.plot(I, label='I')
     ax3.plot(Q, label='Q')
     ax4.set_title('TX Loopback Compare Magnitude')
-    ax4.plot(amp, label='Amplitude', color='red')
+    ax4.plot(power, label='Power', color='red')
 
-    positive_edge, negative_edge = edge_detector(amp, threshold, threshold, cycles_to_debounce)
+    positive_edge, negative_edge = edge_detector(power, threshold, threshold, cycles_to_debounce)
     pos_edge_indexes = np.argwhere(positive_edge).flatten()
     for i in pos_edge_indexes:
         ax4.plot(i, threshold, 'g_', markersize=10)
@@ -248,6 +249,7 @@ if args.compare == True:
         print(f"[Error] TX Compare: Edge count imbalanced.\n{err}")
         print(err)
         fill = None
+        compare_fill_vs_burst = -1
 
     print(f"  Predicted Fill:      {compare_fill_vs_burst:.2f}%")
 
@@ -255,18 +257,18 @@ if args.compare == True:
 if args.compare == True:
     axis = (ax1, ax2, ax3, ax4)
     axis_iq = (ax1, ax3)
-    axis_amp = (ax2, ax4)
+    axis_power = (ax2, ax4)
 else:
     axis = (ax1, ax2)
     axis_iq = (ax1,)
-    axis_amp = (ax2,)
+    axis_power = (ax2,)
 
 for ax in axis:
     ax.legend(loc='upper right')
-    ax.set_ylabel('Amplitude')
+    ax.set_ylabel('Power')
     ax.set_xlabel('Sample Index')
-for ax in axis_amp:
-    ax.set_ylim(bottom=0, top=3000)
+for ax in axis_power:
+    ax.set_ylim(bottom=-1e6, top=9e6)
 for ax in axis_iq:
     ax.set_ylim(bottom=-2500, top=2500)
 
