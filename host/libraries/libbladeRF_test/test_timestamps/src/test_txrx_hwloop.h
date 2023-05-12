@@ -255,7 +255,7 @@ typedef struct {
     struct bladerf *dev;
     struct test_case *tc;
     bool is_rx_device;
-} rx_thread_args;
+} thread_args;
 
 void *rx_task(void *args) {
     char* dev_rx_filename = "samples.csv";
@@ -270,7 +270,7 @@ void *rx_task(void *args) {
 
     memset(&meta, 0, sizeof(meta));
     meta.flags = BLADERF_META_FLAG_RX_NOW;
-    rx_thread_args *rx_args = (rx_thread_args *)args;
+    thread_args *rx_args = (thread_args *)args;
     num_rx_samples = rx_args->tc->iterations*rx_args->tc->period + rx_args->tc->init_ts_delay;
     samples = calloc(num_rx_samples, 2*sizeof(int16_t));
 

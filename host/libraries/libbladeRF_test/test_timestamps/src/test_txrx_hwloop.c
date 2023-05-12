@@ -90,6 +90,12 @@ int main(int argc, char *argv[]) {
     char c;
     bladerf_log_level log_level;
 
+    /** Threading */
+    pthread_t thread_rx;
+    pthread_t thread_loopcompare;
+    thread_args args_loopbackcompare;
+    thread_args args_rx;
+
     init_app_params(&p, &test);
     memset(&meta, 0, sizeof(meta));
 
@@ -210,21 +216,18 @@ int main(int argc, char *argv[]) {
 
     gettimeofday(&start, NULL);
 
-    pthread_t thread_id[2];
-    rx_thread_args thread_data_compare;
-    rx_thread_args thread_data_loop;
     if (!test.just_tx) {
-        thread_data_loop.is_rx_device = true;
-        thread_data_loop.dev = dev_rx;
-        thread_data_loop.tc  = &test;
-        pthread_create(&thread_id[0], NULL, rx_task, &thread_data_loop);
+        args_rx.is_rx_device = true;
+        args_rx.dev = dev_rx;
+        args_rx.tc  = &test;
+        pthread_create(&thread_rx, NULL, rx_task, &args_rx);
     }
 
     if (test.compare == true) {
-        thread_data_compare.is_rx_device = false;
-        thread_data_compare.dev = dev_tx;
-        thread_data_compare.tc  = &test;
-        pthread_create(&thread_id[1], NULL, rx_task, &thread_data_compare);
+        args_loopbackcompare.is_rx_device = false;
+        args_loopbackcompare.dev = dev_tx;
+        args_loopbackcompare.tc  = &test;
+        pthread_create(&thread_loopcompare, NULL, rx_task, &args_loopbackcompare);
     }
 
     for (i = 0; i < test.iterations && status == 0; i++) {
@@ -273,12 +276,12 @@ int main(int argc, char *argv[]) {
     printf("TX finished in %.4f seconds\n", time_passed);
 out:
     if (!test.just_tx) {
-        pthread_join(thread_id[0], NULL);
+        pthread_join(thread_rx, NULL);
         bladerf_close(dev_rx);
     }
 
     if (test.compare)
-        pthread_join(thread_id[1], NULL);
+        pthread_join(thread_loopcompare, NULL);
 
     status_out = bladerf_enable_module(dev_tx, BLADERF_MODULE_TX, false);
     if (status_out != 0) {
