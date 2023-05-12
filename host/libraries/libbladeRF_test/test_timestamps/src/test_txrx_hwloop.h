@@ -263,16 +263,18 @@ void *rx_task(void *args) {
     char* file_out = malloc(strlen(dev_rx_filename) + 1);
 
     struct bladerf_metadata meta;
-    unsigned int num_rx_samples;
     int status;
-    int16_t *samples;
     FILE *samples_out;
 
     memset(&meta, 0, sizeof(meta));
     meta.flags = BLADERF_META_FLAG_RX_NOW;
+
+    /** Sample Setup */
     thread_args *rx_args = (thread_args *)args;
-    num_rx_samples = rx_args->tc->iterations*rx_args->tc->period + rx_args->tc->init_ts_delay;
-    samples = calloc(num_rx_samples, 2*sizeof(int16_t));
+    unsigned int period = rx_args->tc->iterations*rx_args->tc->period;
+    unsigned int initial_delay = rx_args->tc->init_ts_delay;
+    unsigned int num_rx_samples =  period + initial_delay;
+    int16_t *samples = calloc(num_rx_samples, 2*sizeof(int16_t));
 
     status = bladerf_sync_rx(rx_args->dev, samples, num_rx_samples, &meta, 1000);
     if (status == BLADERF_ERR_TIMEOUT) {
