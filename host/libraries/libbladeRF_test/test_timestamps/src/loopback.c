@@ -38,6 +38,13 @@ int setup_device_loopback(struct loopback_burst_test *t)
 {
     int status;
     struct bladerf *dev = t->dev;
+    const char* board;
+
+    board = bladerf_get_board_name(dev);
+    if (strcmp(board, "bladerf1")) {
+        fprintf(stderr, "[Error] BladeRF1 required for loopback test\n");
+        return BLADERF_ERR_UNSUPPORTED;
+    }
 
     status = bladerf_set_loopback(dev, BLADERF_LB_BB_TXVGA1_RXVGA2);
     if (status != 0) {
