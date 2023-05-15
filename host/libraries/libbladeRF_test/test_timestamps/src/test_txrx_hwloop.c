@@ -57,6 +57,7 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     tc->iterations = 10;
     tc->fill = 50; //percent
     tc->init_ts_delay = 200000;
+    tc->gain = 30;
 
     memset(p, 0, sizeof(p[0]));
     p->samplerate = 1e6;

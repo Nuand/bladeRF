@@ -33,6 +33,7 @@ struct test_case {
     unsigned int fill;
     unsigned int init_ts_delay;
     bladerf_frequency frequency;
+    bladerf_gain gain;
     char* dev_tx_str;
     char* dev_rx_str;
     bool just_tx;
@@ -238,6 +239,18 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
 
     /** Must come after  RX device open to recieve an input*/
     if (tc->compare == true) {
+        status = bladerf_set_gain_mode(*dev_tx, BLADERF_MODULE_RX, BLADERF_GAIN_MGC);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set loopback compare gain mode: %s\n", bladerf_strerror(status));
+            return -1;
+        }
+
+        status = bladerf_set_gain(*dev_tx, BLADERF_MODULE_RX, tc->gain);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set gain loopback compare RX gain: %s\n", bladerf_strerror(status));
+            return -1;
+        }
+
         status = module_config_enable(*dev_tx, BLADERF_MODULE_RX, tc, p, BLADERF_FORMAT_SC16_Q11_META);
         if (status != 0) {
             fprintf(stderr, "Failed to configure RX on TX device: %s\n",
