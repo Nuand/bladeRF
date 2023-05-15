@@ -176,10 +176,12 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    printf("fill: %u%%\n", test.fill);
-    printf("Burst:  %9.3fk samples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
-    printf("Period: %9.3fk samples || %2.3fs\n", test.period/1e3, (float)test.period/p.samplerate);
-    printf("Gap:    %9.3fk samples || %2.3fms\n", (test.period - test.burst_len)/1e3, (test.period - test.burst_len)*1e3/p.samplerate);
+    printf("Fill:   %u%%\n", test.fill);
+    printf("Burst:  %3.3fk samples || %2.3fs\n", test.burst_len/1e3, (float)test.burst_len/p.samplerate);
+    printf("Period: %3.3fk samples || %2.3fs\n", test.period/1e3, (float)test.period/p.samplerate);
+    printf("Gap:    %3.3fk samples || %2.3fms\n", (test.period - test.burst_len)/1e3, (test.period - test.burst_len)*1e3/p.samplerate);
+    printf("Sample Rate: %3.3f MSPS\n", p.samplerate/1e6);
+    printf("\n");
 
     samples = calloc(test.burst_len, 2 * sizeof(int16_t));
     if (samples == NULL) {
