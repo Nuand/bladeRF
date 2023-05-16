@@ -244,18 +244,23 @@ if args.compare == True:
     print(f"  Predicted Timestamp: {(avg):.3f} samples")
 
     try:
-        fill = neg_edge_indexes - pos_edge_indexes
-        avg = np.average(fill)
-        var = np.var(fill)
-        dev = np.std(fill)
-        compare_fill_vs_burst = 100 * avg/burst
+        fill_compare = neg_edge_indexes - pos_edge_indexes
+        avg = np.average(fill_compare)
+        var = np.var(fill_compare)
+        dev = np.std(fill_compare)
+        fill_vs_burst_compare = 100 * avg/burst
     except ValueError as err:
         print(f"[Error] TX Compare: Edge count imbalanced.\n{err}")
         print(err)
-        fill = None
-        compare_fill_vs_burst = -1
+        fill_compare = None
+        fill_vs_burst_compare = -1
 
-    print(f"  Predicted Fill:      {compare_fill_vs_burst:.2f}%")
+    print(f"  Predicted Fill:      {fill_vs_burst_compare:.2f}%")
+
+    print("")
+    print(f"Fill Delta:")
+    fill_delta_avg = 100*(np.average(fill_compare) - np.average(fill))/burst
+    print(f"  Average:  {fill_delta_avg:.2f}%")
 
 # General plot assignments
 if args.compare == True:
