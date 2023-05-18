@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <libbladeRF.h>
+#include <string.h>
 #include "test_timestamps.h"
 
 int perform_sync_init(struct bladerf *dev, bladerf_module module,
@@ -103,5 +104,19 @@ bool counter_data_is_valid(int16_t *samples, size_t n_samples, uint32_t ctr)
     }
 
     return true;
+}
+
+int test_fn_txrx_hwloop(struct bladerf *dev, struct app_params *p)
+{
+    int status = 0;
+    char cwd[256];
+
+    if(getcwd(cwd, sizeof(cwd)) == NULL) {
+        fprintf(stderr, "[Error] Can't get current directory\n");
+        return -1;
+    };
+
+    status = system(strcat(cwd, "/output/libbladeRF_test_txrx_hwloop"));
+    return status;
 }
 

@@ -52,6 +52,7 @@ DECLARE_TEST(rx_scheduled);
 DECLARE_TEST(tx_onoff);
 DECLARE_TEST(tx_onoff_nowsched);
 DECLARE_TEST(tx_gmsk_bursts);
+DECLARE_TEST(txrx_hwloop);
 DECLARE_TEST(loopback_onoff);
 DECLARE_TEST(loopback_onoff_rf);
 DECLARE_TEST(loopback_onoff_zp);
@@ -65,6 +66,7 @@ static const struct test *tests[] = {
     TEST(tx_onoff),
     TEST(tx_onoff_nowsched),
     TEST(tx_gmsk_bursts),
+    TEST(txrx_hwloop),
     TEST(loopback_onoff),
     TEST(loopback_onoff_rf),
     TEST(loopback_onoff_zp),
@@ -136,6 +138,8 @@ static void usage(const char *argv0)
     printf("                                Requires external verification.\n");
     printf("         tx_gmsk_bursts       Transmits GMSK bursts.\n");
     printf("                                Requires external verification.\n");
+    printf("         txrx_hwloop          Generates and measures TX fill\n");
+    printf("                                Requires two bladeRFs and 20dB attenuator.\n");
     printf("         loopback_onoff       Transmits ON-OFF bursts which are verified\n");
     printf("         loopback_onoff_rf    Transmits ON-OFF bursts verified by\n");
     printf("                                looping back from TX1 to RX1 via SMA cable.\n");

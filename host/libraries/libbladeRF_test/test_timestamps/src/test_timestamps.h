@@ -107,3 +107,10 @@ static inline uint32_t extract_counter_val(uint8_t *samples)
 }
 
 #endif
+
+/**
+ * Test function impersonation of txrx_hwloop standalone test
+ *
+ * @return 0 on success, non-zero on failure
+ */
+int test_fn_txrx_hwloop(struct bladerf *dev, struct app_params *p);
