@@ -1003,6 +1003,29 @@ static inline void cancel_all_transfers(struct bladerf_stream *stream)
     int status;
     struct lusb_stream_data *stream_data = stream->backend_data;
 
+#ifdef __APPLE__
+    /* For macOS and iOS, canceling one transfer will cause all transfers
+     * on the same endpoint to be cancelled.
+     */
+    bool have_cancelled = false;
+
+    for (i = 0; i < stream_data->num_transfers; i++) {
+        if (stream_data->transfer_status[i] == TRANSFER_IN_FLIGHT) {
+            if (!have_cancelled) {
+                status = libusb_cancel_transfer(stream_data->transfers[i]);
+                if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
+                    log_error("Error canceling transfer (%d): %s\n",
+                            status, libusb_error_name(status));
+                } else {
+                    stream_data->transfer_status[i] = TRANSFER_CANCEL_PENDING;
+                }
+                have_cancelled = true;
+            } else {
+                stream_data->transfer_status[i] = TRANSFER_CANCEL_PENDING;
+            }
+        }
+    }
+#else
     for (i = 0; i < stream_data->num_transfers; i++) {
         if (stream_data->transfer_status[i] == TRANSFER_IN_FLIGHT) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
@@ -1014,6 +1037,7 @@ static inline void cancel_all_transfers(struct bladerf_stream *stream)
             }
         }
     }
+#endif
 }
 
 static inline size_t transfer_idx(struct lusb_stream_data *stream_data,
