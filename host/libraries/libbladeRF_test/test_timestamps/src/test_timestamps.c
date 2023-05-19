@@ -110,13 +110,54 @@ int test_fn_txrx_hwloop(struct bladerf *dev, struct app_params *p)
 {
     int status = 0;
     char cwd[256];
+    int cmd = 0;
+    size_t i = 0;
+    bool skip_print = false;
+    char *test_cmd = "/output/libbladeRF_test_txrx_hwloop\0";
 
     if(getcwd(cwd, sizeof(cwd)) == NULL) {
         fprintf(stderr, "[Error] Can't get current directory\n");
         return -1;
     };
 
-    status = system(strcat(cwd, "/output/libbladeRF_test_txrx_hwloop"));
+    while (cmd != 'q' && status == 0) {
+        if (!skip_print) {
+            printf("\nTest %u\n", (unsigned int) i + 1);
+            printf("---------------------------------\n");
+            printf("Test setup\n");
+            printf(" t - TX bladeRF device string.\n");
+            printf(" r - RX bladeRF device string.\n");
+            printf(" b - Number of samples in a burst.\n");
+            printf(" p - Length between timestamps in samples.\n");
+            printf(" f - %% of burst to fill with [2000,2000].\n");
+            printf("      others set to [0,0].\n");
+            printf(" l - Enables RX device for TX capture.\n");
+            printf(" c - Outputs CSV RX capture from TX device.\n");
+            printf("       for multi-device fill comparison.\n");
+            printf(" i - Number of pulses.\n");
+            printf(" q - (Q)uit.\n");
+            printf("\n> ");
+        }
+
+        skip_print = false;
+
+        cmd = getchar();
+        switch (cmd) {
+            case 'q':
+                break;
+
+            case '\r':
+            case '\n':
+                skip_print = true;
+                break;
+
+            default:
+                break;
+        }
+
+    }
+
+    status = system(strcat(cwd, test_cmd));
     return status;
 }
 
