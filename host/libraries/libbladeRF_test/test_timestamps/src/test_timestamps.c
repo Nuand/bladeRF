@@ -110,17 +110,20 @@ int test_fn_txrx_hwloop(struct bladerf *dev, struct app_params *p)
 {
     int status = 0;
     char cwd[256];
+    char dev_tx[128] = "\0";
+    char dev_rx[128] = "\0";
+    char test_cmd[256] = "/output/libbladeRF_test_txrx_hwloop\0";
     int cmd = 0;
     size_t i = 0;
     bool skip_print = false;
-    char *test_cmd = "/output/libbladeRF_test_txrx_hwloop\0";
+    bool user_input_complete = false;
 
     if(getcwd(cwd, sizeof(cwd)) == NULL) {
         fprintf(stderr, "[Error] Can't get current directory\n");
         return -1;
     };
 
-    while (cmd != 'q' && status == 0) {
+    while (cmd != 'q' && status == 0 && user_input_complete == false) {
         if (!skip_print) {
             printf("\nTest %u\n", (unsigned int) i + 1);
             printf("---------------------------------\n");
@@ -135,8 +138,13 @@ int test_fn_txrx_hwloop(struct bladerf *dev, struct app_params *p)
             printf(" c - Outputs CSV RX capture from TX device.\n");
             printf("       for multi-device fill comparison.\n");
             printf(" i - Number of pulses.\n");
-            printf(" q - (Q)uit.\n");
-            printf("\n> ");
+            printf(" q - (Q)uit.\n\n");
+            if (strcmp(dev_tx,"\0") == 0 && strcmp(dev_rx,"\0") != 0) {
+                printf("TX device string required\n");
+            } else if (strcmp(dev_rx,"\0") == 0 && strcmp(dev_tx, "\0") != 0) {
+                printf("RX device string required\n");
+            }
+            printf("> ");
         }
 
         skip_print = false;
@@ -145,6 +153,15 @@ int test_fn_txrx_hwloop(struct bladerf *dev, struct app_params *p)
         switch (cmd) {
             case 'q':
                 break;
+
+            case 't':
+                while(scanf("%s", dev_tx) == 0);
+                break;
+
+            case 'r':
+                while(scanf("%s", dev_rx) == 0);
+                break;
+
 
             case '\r':
             case '\n':
@@ -155,9 +172,26 @@ int test_fn_txrx_hwloop(struct bladerf *dev, struct app_params *p)
                 break;
         }
 
+        if (strcmp(dev_tx, "\0") != 0 && strcmp(dev_rx, "\0") != 0) {
+            user_input_complete = true;
+
+            strcat(test_cmd, " -t \"");
+            strcat(test_cmd, dev_tx);
+            strcat(test_cmd, "\"");
+
+            strcat(test_cmd, " -r \"");
+            strcat(test_cmd, dev_rx);
+            strcat(test_cmd, "\"");
+        }
     }
 
     status = system(strcat(cwd, test_cmd));
+    if (status == -1) {
+        fprintf(stderr, "hwloop test failed to run: system err: %i\n", status);
+        status = BLADERF_ERR_UNEXPECTED;
+        return status;
+    }
+
     return status;
 }
 
