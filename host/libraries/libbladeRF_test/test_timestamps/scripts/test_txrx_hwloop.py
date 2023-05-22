@@ -61,11 +61,12 @@ def edge_detector(signal, rising_threshold, falling_threshold, debounce_time):
 ###############################################################
 # Initialize Parameters
 ###############################################################
-fill = 50
-burst = 50e3
-period = 100e3
+fill = 90
+burst = 10e3
+period = 50e3
 iterations = 10
-threshold = 3.75e6
+threshold = 2e6
+cycles_to_debounce = 50
 devarg_tx = ""
 devarg_rx = ""
 devarg_verbosity = ""
@@ -110,7 +111,6 @@ if args.rxdev:
 if args.stats:
     print_stats = True
 
-cycles_to_debounce = 0.25 * burst * fill/100
 
 ################################################################
 # Generate Pulse
