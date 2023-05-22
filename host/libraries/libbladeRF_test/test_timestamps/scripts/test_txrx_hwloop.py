@@ -177,9 +177,10 @@ if print_stats:
     print(f"  Edge Count: {len(neg_edge_indexes)}")
 
 print("\nRX Board")
-print(f"  Predicted Timestamp: {(avg):.3f} samples")
+print(f"  Predicted Timestamp: {(avg):.3f} samples, Error: {(avg-period):.3f} samples")
 
 try:
+    fill_expected = int(burst*fill/100)
     fill = neg_edge_indexes - pos_edge_indexes
     avg = np.average(fill)
     var = np.var(fill)
@@ -191,7 +192,7 @@ except ValueError as err:
     fill = None
     fill_vs_burst = -1
 
-print(f"  Predicted Fill:      {fill_vs_burst:.2f}%")
+print(f"  Predicted Fill:      {fill_vs_burst:.2f}%, Error: {(avg-fill_expected):.2f} samples")
 
 ################################################################
 # TX Loopback Compare
