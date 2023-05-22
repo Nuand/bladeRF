@@ -69,6 +69,7 @@ threshold = 2e6
 cycles_to_debounce = 50
 devarg_tx = ""
 devarg_rx = ""
+samp_rate_arg = ""
 devarg_verbosity = ""
 print_stats = False
 
@@ -79,6 +80,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-f', '--fill', type=float, help='fill (%%)')
 parser.add_argument('-b', '--burst', type=int, help='burst length (in samples)')
+parser.add_argument('-sr', '--samprate', type=int, help='Sample Rate (Hz)', default=1e6)
 parser.add_argument('-p', '--period', type=int, help='period length (in samples)')
 parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
 parser.add_argument('-t', '--threshold', type=int, help='edge count power threshold')
@@ -110,6 +112,8 @@ if args.rxdev:
     devarg_rx = f"-r {dev_rx}"
 if args.stats:
     print_stats = True
+if args.samprate:
+    samp_rate_arg = f"-s {args.samprate}"
 
 
 ################################################################
@@ -119,7 +123,8 @@ binary_file = 'libbladeRF_test_txrx_hwloop'
 output_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(output_dir)
 proc = subprocess.run(f"./{binary_file} --fill {fill} --burst {burst} --period {period} "
-                      f"--iterations {iterations} -l {devarg_tx} {devarg_rx} {args.compare * '-c'} {devarg_verbosity}", shell=True)
+                      f"--iterations {iterations} -l {devarg_tx} {devarg_rx} {args.compare * '-c'} "
+                      f"{devarg_verbosity} {samp_rate_arg}", shell=True)
 
 if proc.returncode != 0:
     print("Failed to run hwloop binary")
@@ -260,8 +265,8 @@ if args.compare == True:
 
     print("")
     print(f"Fill Delta:")
-    fill_delta_avg = 100*(np.average(fill_compare) - np.average(fill))/burst
-    print(f"  Average:  {fill_delta_avg:.2f}%")
+    fill_delta_avg = 1e6*(np.average(fill_compare) - np.average(fill))/burst
+    print(f"  Δ Average:  {fill_delta_avg:.2f}ppm")
 
 # General plot assignments
 if args.compare == True:
