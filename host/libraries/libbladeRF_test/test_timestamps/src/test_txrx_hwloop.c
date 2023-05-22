@@ -111,6 +111,14 @@ int main(int argc, char *argv[]) {
                 strcpy(test.dev_rx_str, optarg);
                 break;
 
+            case 's':
+                p.samplerate = str2uint(optarg, 0, UINT32_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid sample rate: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
             case 'b':
                 test.burst_len = str2uint(optarg, 0, UINT32_MAX, &ok);
                 if (!ok) {

@@ -43,6 +43,7 @@ struct test_case {
 static struct option const long_options[] = {
     { "txdev", required_argument, NULL, 't' },
     { "rxdev", required_argument, NULL, 'r' },
+    { "samprate", required_argument, NULL, 's' },
     { "burst", required_argument, NULL, 'b' },
     { "compare", no_argument, NULL, 'c' },
     { "period", required_argument, NULL, 'p' },
@@ -88,6 +89,7 @@ static void usage()
     printf("Test configuration:\n");
     printf("    -t, --txdev <value>       TX bladeRF device string.\n");
     printf("    -r, --rxdev <value>       RX bladeRF device string.\n");
+    printf("    -s, --samprate <value>    Sample Rate\n");
     printf("    -b, --burst <value>       Number of samples in a burst.\n");
     printf("    -p, --period <value>      Length between timestamps in samples\n");
     printf("    -f, --fill <value>        %% of burst to fill with [2000,2000]\n");
