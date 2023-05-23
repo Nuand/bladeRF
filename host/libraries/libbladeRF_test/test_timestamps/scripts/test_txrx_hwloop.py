@@ -140,9 +140,11 @@ power = I**2 + Q**2
 num_samples = range(len(I))
 
 if args.compare == True:
-    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(16, 6))
+    fig, ((ax1, ax3),
+          (ax2, ax4),
+          (ax5, ax6)) = plt.subplots(nrows=3, ncols=2, figsize=(16, 6))
 else:
-    fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 6))
+    fig, (ax1, ax2, ax5) = plt.subplots(nrows=3, ncols=1, figsize=(8, 6))
 
 ax1.set_title('RX Board IQ')
 ax1.plot(I, label='I')
@@ -196,6 +198,11 @@ except ValueError as err:
     print(err)
     fill = None
     fill_vs_burst = -1
+
+ax5.set_title("Fill Error")
+ax5.set_xlabel("Error (samples)")
+fill_error = fill - fill_expected
+ax5.hist(fill_error, alpha=0.7, bins=30, color=('skyblue'))
 
 print(f"  Predicted Fill:      {fill_vs_burst:.2f}%, Error: {(avg-fill_expected):.2f} samples")
 
@@ -268,6 +275,10 @@ if args.compare == True:
     fill_delta_avg = 1e6*(np.average(fill_compare) - np.average(fill))/burst
     print(f"  Δ Average:  {fill_delta_avg:.2f}ppm")
 
+    ax6.set_title("Fill Error")
+    fill_error = fill_compare - fill_expected
+    ax6.hist(fill_error, alpha=0.7, bins=30, color=('skyblue'))
+
 # General plot assignments
 if args.compare == True:
     axis = (ax1, ax2, ax3, ax4)
@@ -287,7 +298,7 @@ for ax in axis_power:
 for ax in axis_iq:
     ax.set_ylim(bottom=-2500, top=2500)
 
-fig.subplots_adjust(hspace=0.5)
+fig.subplots_adjust(hspace=1)
 print(f"\nPress [Escape] to close figure")
 fig.canvas.mpl_connect('key_press_event', close_figure)
 plt.show()
