@@ -219,7 +219,7 @@ if args.compare == True:
     ax3.set_title('TX Loopback Compare IQ')
     ax3.plot(I, label='I')
     ax3.plot(Q, label='Q')
-    ax4.set_title('TX Loopback Compare Magnitude')
+    ax4.set_title('TX Loopback Compare Power')
     ax4.plot(power, label='Power', color='red')
 
     positive_edge, negative_edge = edge_detector(power, threshold, threshold, cycles_to_debounce)
@@ -268,14 +268,15 @@ if args.compare == True:
         fill_compare = None
         fill_vs_burst_compare = -1
 
-    print(f"  Predicted Fill:      {fill_vs_burst_compare:.2f}%")
+    print(f"  Predicted Fill:      {fill_vs_burst_compare:.2f}%, Error: {(avg-fill_expected):.2f} samples")
 
     print("")
     print(f"Fill Delta:")
-    fill_delta_avg = 1e6*(np.average(fill_compare) - np.average(fill))/burst
-    print(f"  Δ Average:  {fill_delta_avg:.2f}ppm")
+    fill_delta_avg = 100*(np.average(fill_compare) - np.average(fill))/burst
+    print(f"  Average:  {fill_delta_avg:.2f}%")
 
     ax6.set_title("Fill Error")
+    ax6.set_xlabel("Error (samples)")
     fill_error = fill_compare - fill_expected
     ax6.hist(fill_error, alpha=0.7, bins=30, color=('skyblue'))
 
