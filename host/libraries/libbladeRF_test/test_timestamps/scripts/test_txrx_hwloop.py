@@ -115,6 +115,9 @@ if args.stats:
 if args.samprate:
     samp_rate_arg = f"-s {args.samprate}"
 
+threshold_spread  = 1e6
+rising_threshold  = threshold + threshold_spread
+falling_threshold = threshold - threshold_spread
 
 ################################################################
 # Generate Pulse
@@ -152,10 +155,10 @@ ax1.plot(Q, label='Q')
 ax2.set_title('RX Board Power')
 ax2.plot(power, label='Power', color='red')
 
-positive_edge, negative_edge = edge_detector(power, threshold, threshold, cycles_to_debounce)
+positive_edge, negative_edge = edge_detector(power, rising_threshold, falling_threshold, cycles_to_debounce)
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
 for i in pos_edge_indexes:
-    ax2.plot(i, threshold, 'g_', markersize=10)
+    ax2.plot(i, rising_threshold, 'g^', markersize=6)
 
 time_delta_pos_edges = np.diff(pos_edge_indexes)
 avg = np.average(time_delta_pos_edges)
@@ -170,7 +173,7 @@ if print_stats:
 
 neg_edge_indexes = np.argwhere(negative_edge).flatten()
 for i in neg_edge_indexes:
-    ax2.plot(i, threshold, 'y_', markersize=10)
+    ax2.plot(i, falling_threshold, 'yv', markersize=6)
 
 time_delta_neg_edges = np.diff(neg_edge_indexes)
 avg = np.average(time_delta_neg_edges)
@@ -222,10 +225,10 @@ if args.compare == True:
     ax4.set_title('TX Loopback Compare Power')
     ax4.plot(power, label='Power', color='red')
 
-    positive_edge, negative_edge = edge_detector(power, threshold, threshold, cycles_to_debounce)
+    positive_edge, negative_edge = edge_detector(power, rising_threshold, falling_threshold, cycles_to_debounce)
     pos_edge_indexes = np.argwhere(positive_edge).flatten()
     for i in pos_edge_indexes:
-        ax4.plot(i, threshold, 'g_', markersize=10)
+        ax4.plot(i, rising_threshold, 'g^', markersize=6)
 
     time_delta_pos_edges = np.diff(pos_edge_indexes)
     avg = np.average(time_delta_pos_edges)
@@ -240,7 +243,7 @@ if args.compare == True:
 
     neg_edge_indexes = np.argwhere(negative_edge).flatten()
     for i in neg_edge_indexes:
-        ax4.plot(i, threshold, 'y_', markersize=10)
+        ax4.plot(i, falling_threshold, 'yv', markersize=6)
 
     time_delta_neg_edges = np.diff(neg_edge_indexes)
     avg = np.average(time_delta_neg_edges)
