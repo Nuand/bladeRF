@@ -273,11 +273,11 @@ typedef struct {
 void *rx_task(void *args) {
     char* dev_rx_filename = "samples.csv";
     char* dev_tx_filename = "compare.csv";
-    char* file_out = malloc(strlen(dev_rx_filename) + 1);
+    char* file_name = malloc(strlen(dev_rx_filename) + 1);
 
     struct bladerf_metadata meta;
     int status;
-    FILE *samples_out;
+    FILE *file;
 
     memset(&meta, 0, sizeof(meta));
     meta.flags = BLADERF_META_FLAG_RX_NOW;
@@ -300,26 +300,26 @@ void *rx_task(void *args) {
     }
 
     if (rx_args->is_rx_device == true)
-        strcpy(file_out, dev_rx_filename);
+        strcpy(file_name, dev_rx_filename);
     else
-        strcpy(file_out, dev_tx_filename);
+        strcpy(file_name, dev_tx_filename);
 
-    samples_out = fopen(file_out, "w");
-    if (samples_out == NULL)
-        fprintf(stderr, "Failed to open output file: %s\n", file_out);
+    file = fopen(file_name, "w");
+    if (file == NULL)
+        fprintf(stderr, "Failed to open output file: %s\n", file_name);
 
-    fprintf(samples_out, "Q,I\n");
+    fprintf(file, "I,Q\n");
     for (unsigned int i = 0; i < 2*num_rx_samples; i+=2) {
-        if (samples_out != NULL)
-            fprintf(samples_out, "%i,%i\n", samples[i], samples[i+1]);
+        if (file != NULL)
+            fprintf(file, "%i,%i\n", samples[i], samples[i+1]);
     }
 
-    if (samples_out != NULL)
-        printf("\nRX samples written to \"%s\"\n", file_out);
+    if (file != NULL)
+        printf("\nRX samples written to \"%s\"\n", file_name);
 
 cleanup:
     free(samples);
-    free(file_out);
+    free(file_name);
     pthread_exit(NULL);
-    fclose(samples_out);
+    fclose(file);
 }
