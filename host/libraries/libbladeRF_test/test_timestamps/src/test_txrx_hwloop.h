@@ -299,6 +299,12 @@ void *rx_task(void *args) {
         goto cleanup;
     }
 
+    status = bladerf_enable_module(rx_args->dev, BLADERF_MODULE_RX, false);
+    if (status != 0) {
+        fprintf(stderr, "Failed to disable RX module on %s board: %s\n",
+                (rx_args->is_rx_device) ? "RX":"TX", bladerf_strerror(status));
+    }
+
     if (rx_args->is_rx_device == true)
         strcpy(file_name, dev_rx_filename);
     else
