@@ -613,52 +613,8 @@ int bladerf_get_gain_stages(struct bladerf *dev,
 /* Sample Rate */
 /******************************************************************************/
 
-int bladerf_set_sample_rate(struct bladerf *dev,
-                            bladerf_channel ch,
-                            bladerf_sample_rate rate,
-                            bladerf_sample_rate *actual)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->set_sample_rate(dev, ch, rate, actual);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-int bladerf_get_sample_rate(struct bladerf *dev,
-                            bladerf_channel ch,
-                            bladerf_sample_rate *rate)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->get_sample_rate(dev, ch, rate);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-int bladerf_get_sample_rate_range(struct bladerf *dev,
-                                  bladerf_channel ch,
-                                  const struct bladerf_range **range)
-{
-    return dev->board->get_sample_rate_range(dev, ch, range);
-}
-
-int bladerf_set_rational_sample_rate(struct bladerf *dev,
-                                     bladerf_channel ch,
-                                     struct bladerf_rational_rate *rate,
-                                     struct bladerf_rational_rate *actual)
-{
-    int status;
+void bladerf_set_oversample(struct bladerf *dev) {
     bladerf_feature feature = dev->feature;
-
-    MUTEX_LOCK(&dev->lock);
-    status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
-    MUTEX_UNLOCK(&dev->lock);
-
     /*****************************************************
       Register config for OVERSAMPLE operation
 
@@ -704,6 +660,56 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
         // BIST and Data Port Test Config [D1:D0] "Must be 2’b00"
         bladerf_set_rfic_register(dev,0x3f6,0x03);
     }
+}
+
+int bladerf_set_sample_rate(struct bladerf *dev,
+                            bladerf_channel ch,
+                            bladerf_sample_rate rate,
+                            bladerf_sample_rate *actual)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_sample_rate(dev, ch, rate, actual);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    bladerf_set_oversample(dev);
+    return status;
+}
+
+int bladerf_get_sample_rate(struct bladerf *dev,
+                            bladerf_channel ch,
+                            bladerf_sample_rate *rate)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_sample_rate(dev, ch, rate);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_sample_rate_range(struct bladerf *dev,
+                                  bladerf_channel ch,
+                                  const struct bladerf_range **range)
+{
+    return dev->board->get_sample_rate_range(dev, ch, range);
+}
+
+int bladerf_set_rational_sample_rate(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     struct bladerf_rational_rate *rate,
+                                     struct bladerf_rational_rate *actual)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->lock);
+    status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
+    MUTEX_UNLOCK(&dev->lock);
+
+    bladerf_set_oversample(dev);
 
     return status;
 }
