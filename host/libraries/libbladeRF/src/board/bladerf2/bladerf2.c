@@ -912,8 +912,8 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 
     CHECK_STATUS(dev->board->get_gain_range(dev, ch, &range));
 
-    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE && gain > 11) {
-        log_warning("Oversample feature gain limit reached. RF Gain clamped to 11.\n");
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE && (gain > 11 && gain < 39)) {
+        log_warning("Out of oversample feature gain range. RF Gain clamped to 11.\n");
         gain = 11;
     }
 
