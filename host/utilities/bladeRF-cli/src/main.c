@@ -333,7 +333,7 @@ static int open_device(struct rc_config *rc,
             bool update_required = (status == BLADERF_ERR_UPDATE_FPGA) ||
                                    (status == BLADERF_ERR_UPDATE_FW);
 
-            /* Just warn if no device is attached; don't error out */
+            /* Warn if no device is attached */
             if (!rc->device && status == BLADERF_ERR_NODEV) {
                 fprintf(stderr, "\n");
                 fprintf(stderr, "No bladeRF device(s) available.\n");
@@ -343,7 +343,7 @@ static int open_device(struct rc_config *rc,
                 fprintf(stderr, "and that the current user has permission "
                                 "to access it.\n");
                 fprintf(stderr, "\n");
-                status = 0;
+                status = (rc->interactive_mode == true) ? 0 : 1;
             } else if (update_required) {
                 /* Allow users to enter the console so they can perform
                  * an update. */
