@@ -1186,6 +1186,10 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE) {
+        log_warning("bandwidth assignements with oversample feature enabled yields unkown results\n");
+    }
+
     struct bladerf2_board_data *board_data = dev->board_data;
 
     return board_data->rfic->set_bandwidth(dev, ch, bandwidth, actual);
