@@ -52,6 +52,19 @@
 
 
 /******************************************************************************/
+/* Private Function Declarations */
+/******************************************************************************/
+
+/**
+ * Sets up the register configuration for oversample feature.
+ *
+ * @param       dev         Device handle
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int bladerf_set_oversample_register_config(struct bladerf *dev);
+
+/******************************************************************************/
 /* Open / Close */
 /******************************************************************************/
 
@@ -669,40 +682,10 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
             be placed outside of a mutex lock like above.
     *******************************************************/
     if ((feature & BLADERF_FEATURE_OVERSAMPLE)) {
-        bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
-
-        /* TX Register Assignments */
-        bladerf_set_rfic_register(dev,0x02,0xc0);  // TX Enable and Filter Control
-        bladerf_set_rfic_register(dev,0xc2,0x9f);  // TX BBF R1
-        bladerf_set_rfic_register(dev,0xc3,0x9f);  // TX baseband filter R2
-        bladerf_set_rfic_register(dev,0xc4,0x9f);  // TX baseband filter R3
-        bladerf_set_rfic_register(dev,0xc5,0x9f);  // TX baseband filter R4
-        bladerf_set_rfic_register(dev,0xc6,0x9f);  // TX baseband filter real pole word
-        bladerf_set_rfic_register(dev,0xc7,0x00);  // TX baseband filter C1
-        bladerf_set_rfic_register(dev,0xc8,0x00);  // TX baseband filter C2
-        bladerf_set_rfic_register(dev,0xc9,0x00);  // TX baseband filter real pole word
-
-        /* RX Register Assignments */
-        // Gain and calibration
-        bladerf_set_rfic_register(dev,0x1e0,0xBF);
-        bladerf_set_rfic_register(dev,0x1e4,0xFF);
-        bladerf_set_rfic_register(dev,0x1f2,0xFF);
-        // bladerf_set_rfic_register(dev,0x1e6,0x87); // Causes gr-osmosdr to freak out
-
-        // Miller and BBF caps
-        bladerf_set_rfic_register(dev,0x1e7,0x00);
-        bladerf_set_rfic_register(dev,0x1e8,0x00);
-        bladerf_set_rfic_register(dev,0x1e9,0x00);
-        bladerf_set_rfic_register(dev,0x1ea,0x00);
-        bladerf_set_rfic_register(dev,0x1eb,0x00);
-        bladerf_set_rfic_register(dev,0x1ec,0x00);
-        bladerf_set_rfic_register(dev,0x1ed,0x00);
-        bladerf_set_rfic_register(dev,0x1ee,0x00);
-        bladerf_set_rfic_register(dev,0x1ef,0x00);
-        bladerf_set_rfic_register(dev,0x1e0,0xBF);
-
-        // BIST and Data Port Test Config [D1:D0] "Must be 2’b00"
-        bladerf_set_rfic_register(dev,0x3f6,0x03);
+        status = bladerf_set_oversample_register_config(dev);
+        if (status != 0) {
+            log_error("Oversample register config failure\n");
+        }
     }
 
     return status;
@@ -1995,6 +1978,57 @@ int bladerf_get_feature(struct bladerf *dev, bladerf_feature* feature)
     MUTEX_LOCK(&dev->lock);
     *feature = dev->feature;
     MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_set_oversample_register_config(struct bladerf *dev) {
+    const char *board_name;
+    board_name = bladerf_get_board_name(dev);
+
+    if (strcmp(board_name, "bladerf2") != 0) {
+        log_error("Oversample register config only applicable\n"
+                  "for the bladeRF 2.0");
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
+
+    /* TX Register Assignments */
+    bladerf_set_rfic_register(dev,0x02,0xc0);  // TX Enable and Filter Control
+    bladerf_set_rfic_register(dev,0xc2,0x9f);  // TX BBF R1
+    bladerf_set_rfic_register(dev,0xc3,0x9f);  // TX baseband filter R2
+    bladerf_set_rfic_register(dev,0xc4,0x9f);  // TX baseband filter R3
+    bladerf_set_rfic_register(dev,0xc5,0x9f);  // TX baseband filter R4
+    bladerf_set_rfic_register(dev,0xc6,0x9f);  // TX baseband filter real pole word
+    bladerf_set_rfic_register(dev,0xc7,0x00);  // TX baseband filter C1
+    bladerf_set_rfic_register(dev,0xc8,0x00);  // TX baseband filter C2
+    bladerf_set_rfic_register(dev,0xc9,0x00);  // TX baseband filter real pole word
+
+    /* RX Register Assignments */
+    // Gain and calibration
+    bladerf_set_rfic_register(dev,0x1e0,0x00);  // RX1 BBF R1A
+    bladerf_set_rfic_register(dev,0x1e1,0x00);  // RX2 BBF R1A
+    bladerf_set_rfic_register(dev,0x1e2,0x00);  // RX1 tune control
+    bladerf_set_rfic_register(dev,0x1e3,0x00);  // RX2 tune control
+    bladerf_set_rfic_register(dev,0x1e4,0x00);  // RX1 BBF R5
+    bladerf_set_rfic_register(dev,0x1e5,0x00);  // RX2 BBF R5
+    bladerf_set_rfic_register(dev,0x1e6,0x00);  // RX BBF R2346
+
+    // Miller and BBF caps
+    bladerf_set_rfic_register(dev,0x1e7,0x00);  // RX BBF C1 MSB
+    bladerf_set_rfic_register(dev,0x1e8,0x00);  // RX BBF C1 LSB
+    bladerf_set_rfic_register(dev,0x1e9,0x00);  // RX baseband filter real pole word
+    bladerf_set_rfic_register(dev,0x1ea,0x00);
+    bladerf_set_rfic_register(dev,0x1eb,0x00);
+    bladerf_set_rfic_register(dev,0x1ec,0x00);
+    bladerf_set_rfic_register(dev,0x1ed,0x00);
+    bladerf_set_rfic_register(dev,0x1ee,0x00);
+    bladerf_set_rfic_register(dev,0x1ef,0x00);
+
+    // BIST and Data Port Test Config [D1:D0] "Must be 2’b00"
+    bladerf_set_rfic_register(dev,0x3f6,0x03);
 
     return 0;
 }

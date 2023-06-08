@@ -912,11 +912,6 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 
     CHECK_STATUS(dev->board->get_gain_range(dev, ch, &range));
 
-    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE && gain > 11) {
-        log_warning("Oversample feature gain limit reached. RF Gain clamped to 11.\n");
-        gain = 11;
-    }
-
     return board_data->rfic->set_gain(dev, ch, clamp_to_range(range, gain));
 }
 
@@ -1185,6 +1180,10 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
                                   bladerf_bandwidth *actual)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE) {
+        log_warning("bandwidth assignements with oversample feature enabled yields unkown results\n");
+    }
 
     struct bladerf2_board_data *board_data = dev->board_data;
 
