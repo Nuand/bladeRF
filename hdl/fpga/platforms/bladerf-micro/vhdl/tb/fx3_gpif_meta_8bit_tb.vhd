@@ -887,4 +887,37 @@ begin
         end if;
     end process look_for_dropped_rx_samples;
 
+    meta_spacing: process
+        procedure wait_for_gpif_ts( signal clk: in std_logic; signal en: in std_logic ) is
+        begin
+            wait until rising_edge(en);
+            wait until rising_edge(clk);
+            wait until rising_edge(clk);
+        end;
+
+        variable ts_increment   : integer                   := 0;
+        variable last_ts        : unsigned (31 downto 0)    := 32x"BB";     -- First timestamp
+    begin
+
+        wait_for_gpif_ts(fx3_pclk, fx3_gpif.gpif_oe);
+
+        assert fx3_gpif.gpif_out = std_logic_vector(last_ts + ts_increment)
+        report LF&
+               "Unexpected ts: " & to_hstring(fx3_gpif.gpif_out) &LF&
+               "Expected ts:   " & to_hstring(last_ts + ts_increment)
+        severity failure;
+
+        last_ts := unsigned(fx3_gpif.gpif_out);
+
+        -- Allows a 0 increment for the first ts assertion
+        if( ENABLE_CHANNEL_0 = '1' and ENABLE_CHANNEL_1 = '1') then
+            ts_increment := 254 when eight_bit_mode_en = '0'
+                            else 508;
+        else
+            ts_increment := 508 when eight_bit_mode_en = '0'
+                            else 1016;
+        end if;
+
+    end process meta_spacing;
+
 end architecture;
