@@ -287,6 +287,15 @@ begin
                     end if;
                 end if;
 
+                -- Patches the late meta write for MIMO mode
+                if( in_sample_controls(0).enable = '1' and
+                    in_sample_controls(1).enable = '1' and
+                    eight_bit_mode_en = '0' and
+                    meta_current.dma_downcount <= NUM_STREAMS + 2 )
+                then
+                    meta_future.state <= IDLE;
+                end if;
+
             when PACKET_WAIT_EOP =>
 
                 if( packet_control.data_valid = '1' ) then
