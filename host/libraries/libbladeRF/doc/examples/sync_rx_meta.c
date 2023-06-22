@@ -240,6 +240,7 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
 static struct option const long_options[] = {
     { "device", required_argument, NULL, 'd' },
     { "bitmode", required_argument, NULL, 'b' },
+    { "mimo", no_argument, NULL, 'm' },
     { "rxcount", required_argument, NULL, 'c' },
     { "verbosity", required_argument, 0, 'v' },
     { "help", no_argument, NULL, 'h' },
@@ -253,6 +254,7 @@ static void usage(const char *argv0)
     printf("  -b, --bitmode <mode>      Specify 16bit or 8bit mode\n");
     printf("                              <16bit|16> (default)\n");
     printf("                              <8bit|8>\n");
+    printf("  -m, --mimo                Enable MIMO\n");
     printf("  -c, --rxcount <int>       Specify # of RX streams\n");
     printf("  -v, --verbosity <level>   Set test verbosity\n");
     printf("  -h, --help                Show this text.\n");
@@ -277,7 +279,7 @@ int main(int argc, char *argv[])
     int opt = 0;
     int opt_ind = 0;
     while (opt != -1) {
-        opt = getopt_long(argc, argv, "d:b:c:v:h", long_options, &opt_ind);
+        opt = getopt_long(argc, argv, "d:b:mc:v:h", long_options, &opt_ind);
 
         switch (opt) {
             case 'd':
@@ -293,6 +295,9 @@ int main(int argc, char *argv[])
                     printf("Unknown bitmode: %s\n", optarg);
                     return -1;
                 }
+                break;
+
+            case 'm':
                 break;
 
             case 'c':
