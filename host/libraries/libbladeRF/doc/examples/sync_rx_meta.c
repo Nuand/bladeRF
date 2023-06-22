@@ -44,7 +44,8 @@
  * Return sample buffer on success, or NULL on failure.
  */
 
-int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format)
+int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format,
+              bladerf_channel_layout channel_layout)
 {
     int status = -1;
 
@@ -78,7 +79,7 @@ int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format)
 
     /* Configure the device's RX for use with the sync interface.
      * SC16 Q11 samples *with* metadata are used. */
-    status = bladerf_sync_config(dev, BLADERF_RX_X1,
+    status = bladerf_sync_config(dev, channel_layout,
                                  format, num_buffers,
                                  buffer_size, num_transfers, timeout_ms);
     if (status != 0) {
@@ -93,11 +94,18 @@ int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format)
     /* We must always enable the RX front end *after* calling
      * bladerf_sync_config(), and *before* attempting to RX samples via
      * bladerf_sync_rx(). */
-    status = bladerf_enable_module(dev, BLADERF_RX, true);
+    status = bladerf_enable_module(dev, BLADERF_CHANNEL_RX(0), true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable RX: %s\n", bladerf_strerror(status));
-
+        fprintf(stderr, "Failed to enable RX(0): %s\n", bladerf_strerror(status));
         goto error;
+    }
+
+    if (channel_layout == BLADERF_RX_X2) {
+        status = bladerf_enable_module(dev, BLADERF_CHANNEL_RX(1), true);
+        if (status != 0) {
+            fprintf(stderr, "Failed to enable RX(1): %s\n", bladerf_strerror(status));
+            goto error;
+        }
     }
 
     status = 0;
@@ -266,6 +274,7 @@ int main(int argc, char *argv[])
     struct bladerf *dev = NULL;
     const char *devstr  = NULL;
     int16_t *samples    = NULL;
+    bladerf_channel_layout channel_layout = BLADERF_RX_X1;
     bladerf_format fmt  = BLADERF_FORMAT_SC16_Q11_META;
 
     const unsigned int num_samples = 4096;
@@ -298,6 +307,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'm':
+                channel_layout = BLADERF_RX_X2;
                 break;
 
             case 'c':
@@ -334,9 +344,10 @@ int main(int argc, char *argv[])
     else
         printf("SC8_Q7_META\n");
     printf("RX Count: %i\n", rx_count);
+    printf("Mimo: %s\n", (channel_layout == BLADERF_RX_X2) ? "Enabled" : "Disabled");
 
     if (dev) {
-        samples = init(dev, num_samples, fmt);
+        samples = init(dev, num_samples, fmt, channel_layout);
         if (samples != NULL) {
             printf("\nRunning RX meta \"now\" example...\n");
             status = sync_rx_meta_now_example(dev, samples, num_samples,
