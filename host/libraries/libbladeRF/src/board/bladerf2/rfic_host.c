@@ -204,6 +204,7 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     struct controller_fns const *rfic      = board_data->rfic;
     bladerf_direction dir = BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX;
     bladerf_frequency freq = 0;
+    bladerf_channel_layout layout;
     uint32_t reg;       /* RFFE register value */
     uint32_t reg_old;   /* Original RFFE register value */
     int ch_bit;         /* RFFE MIMO channel bit */
@@ -212,6 +213,7 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     bool dir_enable;    /* Direction is enabled */
     bool dir_pending;   /* Requested direction state differs */
     bool backend_clear; /* Backend requires reset */
+    bool mimo_enabled;
 
     /* Look up the RFFE bits affecting this channel */
     ch_bit  = _get_rffe_control_bit_for_ch(ch);
@@ -251,6 +253,32 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
     reg_old    = reg;
     ch_pending = _rffe_ch_enabled(reg, ch) != enable;
+    layout = board_data->sync->stream_config.layout;
+    mimo_enabled = layout == BLADERF_RX_X2 || layout == BLADERF_TX_X2;
+
+    if (layout == BLADERF_TX_X2) {
+        if (enable) {
+            log_debug("Enabling both TX channels. MIMO layout configured.\n");
+            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(0)));
+            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(1)));
+        } else {
+            log_debug("Disabling both TX channels. MIMO layout configured.\n");
+            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(0)));
+            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(1)));
+        }
+    }
+
+    if (layout == BLADERF_RX_X2) {
+        if (enable) {
+            log_debug("Enabling both RX channels. MIMO layout configured.\n");
+            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(0)));
+            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(1)));
+        } else {
+            log_debug("Disabling both RX channels. MIMO layout configured.\n");
+            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(0)));
+            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(1)));
+        }
+    }
 
     /* Channel Setup/Teardown */
     if (ch_pending) {
@@ -293,7 +321,7 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     }
 
     /* Reset FIFO if we are enabling an additional RX channel */
-    backend_clear = enable && !dir_pending && BLADERF_RX == dir;
+    backend_clear = enable && !dir_pending && BLADERF_RX == dir && !mimo_enabled;
 
     /* Write RFFE control register */
     if (reg_old != reg) {
