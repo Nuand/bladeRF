@@ -169,6 +169,14 @@ bladerf_channel str2channel(char const *str)
     return rv;
 }
 
+bladerf_direction channel2direction (bladerf_channel ch) {
+    if (ch == BLADERF_CHANNEL_RX(0) || ch == BLADERF_CHANNEL_RX(1)) {
+        return BLADERF_RX;
+    } else {
+        return BLADERF_TX;
+    }
+}
+
 const char *direction2str(bladerf_direction dir)
 {
     switch (dir) {

@@ -128,6 +128,14 @@ bladerf_channel str2channel(char const *str);
 const char *direction2str(bladerf_direction dir);
 
 /**
+ * Convert a channel enumeration to a direction
+ *
+ * @param   ch          channel
+ * @return  Direction of the channel
+ */
+bladerf_direction channel2direction(bladerf_channel ch);
+
+/**
  * Convert a trigger signal enumeration value to a string
  *
  * @param   trigger     Trigger item
