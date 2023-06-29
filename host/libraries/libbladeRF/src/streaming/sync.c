@@ -221,6 +221,7 @@ int sync_init(struct bladerf_sync *sync,
     sync->meta.msg_size = msg_size;
     sync->meta.msg_per_buf = msg_per_buf(msg_size, buffer_size, bytes_per_sample);
     sync->meta.samples_per_msg = samples_per_msg(msg_size, bytes_per_sample);
+    sync->meta.samples_per_ts = (layout == BLADERF_RX_X2 || layout == BLADERF_TX_X2) ? 2:1;
 
     log_verbose("%s: Buffer size (in bytes): %u\n",
                 __FUNCTION__, buffer_size * bytes_per_sample);
@@ -700,9 +701,8 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             }
 
                         } else {
-                            const uint64_t time_delta =
-                                target_timestamp - s->meta.curr_timestamp;
-
+                            const uint64_t time_delta = target_timestamp - s->meta.curr_timestamp;
+                            uint64_t samples_left = time_delta * s->meta.samples_per_ts;
                             uint64_t left_in_buffer =
                                 (uint64_t) s->meta.samples_per_msg *
                                     (s->meta.msg_per_buf - s->meta.msg_num);
@@ -710,7 +710,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             /* Account for current position in buffer */
                             left_in_buffer -= s->meta.curr_msg_off;
 
-                            if (time_delta >= left_in_buffer) {
+                            if (samples_left >= left_in_buffer) {
                                 /* Discard the remainder of this buffer */
                                 advance_rx_buffer(b);
                                 s->state = SYNC_STATE_WAIT_FOR_BUFFER;
@@ -722,7 +722,8 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             } else if (time_delta <= left_in_msg(s)) {
                                 /* Fast forward within the current message */
                                 assert(time_delta <= SIZE_MAX);
-                                s->meta.curr_msg_off += (size_t) time_delta;
+
+                                s->meta.curr_msg_off += (size_t)samples_left;
                                 s->meta.curr_timestamp += time_delta;
 
                                 log_verbose("%s: Seeking within message (t=%llu)\n",
@@ -730,8 +731,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                                             s->meta.curr_timestamp);
                             } else {
                                 s->meta.state = SYNC_META_STATE_HEADER;
-
-                                s->meta.msg_num += timestamp_to_msg(s, time_delta);
+                                s->meta.msg_num += timestamp_to_msg(s, samples_left);
 
                                 log_verbose("%s: Seeking to message %u.\n",
                                             __FUNCTION__, s->meta.msg_num);

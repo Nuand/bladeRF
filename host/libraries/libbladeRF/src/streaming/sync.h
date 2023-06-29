@@ -115,6 +115,7 @@ struct sync_meta {
     unsigned int msg_num;         /* Which message within the buffer are we in?
                                    * Range is: 0 to msg_per_buf   */
     unsigned int samples_per_msg; /* Number of samples within a message */
+    unsigned int samples_per_ts;  /* Number of samples within a timestamp */
 
     union {
         /* Used only for RX */
