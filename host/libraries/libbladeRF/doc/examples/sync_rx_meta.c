@@ -45,7 +45,7 @@
  */
 
 int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format,
-              bladerf_channel_layout channel_layout)
+              bladerf_channel_layout channel_layout, unsigned int buffer_size)
 {
     int status = -1;
 
@@ -65,7 +65,6 @@ int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format,
      * interface. The "buffer" here refers to those used internally by worker
      * threads, not the `samples` buffer above. */
     const unsigned int num_buffers   = 16;
-    const unsigned int buffer_size   = 8192;
     const unsigned int num_transfers = 8;
     const unsigned int timeout_ms    = 1000;
 
@@ -248,6 +247,7 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
 static struct option const long_options[] = {
     { "device", required_argument, NULL, 'd' },
     { "bitmode", required_argument, NULL, 'b' },
+    { "buflen", required_argument, NULL, 'l' },
     { "mimo", no_argument, NULL, 'm' },
     { "numsamples", required_argument, NULL, 'n' },
     { "rxcount", required_argument, NULL, 'c' },
@@ -263,6 +263,7 @@ static void usage(const char *argv0)
     printf("  -b, --bitmode <mode>      Specify 16bit or 8bit mode\n");
     printf("                              <16bit|16> (default)\n");
     printf("                              <8bit|8>\n");
+    printf("  -l, --buflen              Buffer Size\n");
     printf("  -m, --mimo                Enable MIMO\n");
     printf("  -n, --numsamples          Specify Number of samples\n");
     printf("  -c, --rxcount <int>       Specify RX sync iterations\n");
@@ -281,6 +282,7 @@ int main(int argc, char *argv[])
 
     unsigned int num_samples = 4096;
     unsigned int rx_count    = 15;
+    unsigned int buffer_size = 4096;
     const unsigned int timeout_ms  = 2500;
 
     bladerf_log_level lvl = BLADERF_LOG_LEVEL_SILENT;
@@ -290,7 +292,7 @@ int main(int argc, char *argv[])
     int opt = 0;
     int opt_ind = 0;
     while (opt != -1) {
-        opt = getopt_long(argc, argv, "d:b:mn:c:v:h", long_options, &opt_ind);
+        opt = getopt_long(argc, argv, "d:b:l:mn:c:v:h", long_options, &opt_ind);
 
         switch (opt) {
             case 'd':
@@ -304,6 +306,14 @@ int main(int argc, char *argv[])
                     fmt = BLADERF_FORMAT_SC8_Q7_META;
                 } else {
                     printf("Unknown bitmode: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
+            case 'l':
+                buffer_size = str2int(optarg, 1, INT_MAX, &ok);
+                if (!ok) {
+                    printf("Buffer size invalid: %s\n", optarg);
                     return -1;
                 }
                 break;
@@ -355,9 +365,10 @@ int main(int argc, char *argv[])
         printf("SC8_Q7_META\n");
     printf("RX Count: %i\n", rx_count);
     printf("Mimo: %s\n", (channel_layout == BLADERF_RX_X2) ? "Enabled" : "Disabled");
+    printf("Buffer Size: %i\n", buffer_size);
 
     if (dev) {
-        samples = init(dev, num_samples, fmt, channel_layout);
+        samples = init(dev, num_samples, fmt, channel_layout, buffer_size);
         if (samples != NULL) {
             printf("\nRunning RX meta \"now\" example...\n");
             status = sync_rx_meta_now_example(dev, samples, num_samples,
