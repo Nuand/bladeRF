@@ -249,6 +249,7 @@ static struct option const long_options[] = {
     { "device", required_argument, NULL, 'd' },
     { "bitmode", required_argument, NULL, 'b' },
     { "mimo", no_argument, NULL, 'm' },
+    { "numsamples", required_argument, NULL, 'n' },
     { "rxcount", required_argument, NULL, 'c' },
     { "verbosity", required_argument, 0, 'v' },
     { "help", no_argument, NULL, 'h' },
@@ -263,6 +264,7 @@ static void usage(const char *argv0)
     printf("                              <16bit|16> (default)\n");
     printf("                              <8bit|8>\n");
     printf("  -m, --mimo                Enable MIMO\n");
+    printf("  -n, --numsamples          Specify Number of samples\n");
     printf("  -c, --rxcount <int>       Specify RX sync iterations\n");
     printf("  -v, --verbosity <level>   Set test verbosity\n");
     printf("  -h, --help                Show this text.\n");
@@ -277,7 +279,7 @@ int main(int argc, char *argv[])
     bladerf_channel_layout channel_layout = BLADERF_RX_X1;
     bladerf_format fmt  = BLADERF_FORMAT_SC16_Q11_META;
 
-    const unsigned int num_samples = 4096;
+    unsigned int num_samples = 4096;
     unsigned int rx_count    = 15;
     const unsigned int timeout_ms  = 2500;
 
@@ -288,7 +290,7 @@ int main(int argc, char *argv[])
     int opt = 0;
     int opt_ind = 0;
     while (opt != -1) {
-        opt = getopt_long(argc, argv, "d:b:mc:v:h", long_options, &opt_ind);
+        opt = getopt_long(argc, argv, "d:b:mn:c:v:h", long_options, &opt_ind);
 
         switch (opt) {
             case 'd':
@@ -308,6 +310,14 @@ int main(int argc, char *argv[])
 
             case 'm':
                 channel_layout = BLADERF_RX_X2;
+                break;
+
+            case 'n':
+                num_samples = str2int(optarg, 1, INT_MAX, &ok);
+                if (!ok) {
+                    printf("Number of samples not valid: %s\n", optarg);
+                    return -1;
+                }
                 break;
 
             case 'c':
