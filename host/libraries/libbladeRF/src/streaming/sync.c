@@ -362,6 +362,15 @@ static int wait_for_buffer(struct buffer_mgmt *b,
 #   define SYNC_WORKER_START_TIMEOUT_MS 250
 #endif
 
+/* Returns # of timestamps (or time steps) left in a message */
+static inline unsigned int ts_remaining(struct bladerf_sync *s)
+{
+    size_t ret = s->meta.samples_per_msg / s->meta.samples_per_ts - s->meta.curr_msg_off;
+    assert(ret <= UINT_MAX);
+
+    return (unsigned int) ret;
+}
+
 /* Returns # of samples left in a message (SC16Q11 mode only) */
 static inline unsigned int left_in_msg(struct bladerf_sync *s)
 {
@@ -717,7 +726,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                                 log_verbose("%s: Discarding rest of buffer.\n",
                                             __FUNCTION__);
 
-                            } else if (time_delta <= left_in_msg(s)) {
+                            } else if (time_delta <= ts_remaining(s)) {
                                 /* Fast forward within the current message */
                                 assert(time_delta <= SIZE_MAX);
 
