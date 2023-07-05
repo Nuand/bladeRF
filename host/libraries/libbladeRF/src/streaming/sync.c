@@ -675,10 +675,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                             copied_data = true;
 
-                            if (s->stream_config.layout == BLADERF_RX_X2)
-                               s->meta.curr_timestamp += samples_to_copy / 2;
-                            else
-                               s->meta.curr_timestamp += samples_to_copy;
+                            s->meta.curr_timestamp += samples_to_copy / s->meta.samples_per_ts;
 
                             /* We've begun copying samples, so our target will
                              * just keep tracking the current timestamp. */
