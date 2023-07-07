@@ -263,7 +263,7 @@ static void usage(const char *argv0)
     printf("                              <16bit|16> (default)\n");
     printf("                              <8bit|8>\n");
     printf("  -m, --mimo                Enable MIMO\n");
-    printf("  -c, --rxcount <int>       Specify # of RX streams\n");
+    printf("  -c, --rxcount <int>       Specify RX sync iterations\n");
     printf("  -v, --verbosity <level>   Set test verbosity\n");
     printf("  -h, --help                Show this text.\n");
 }
