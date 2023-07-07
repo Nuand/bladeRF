@@ -418,6 +418,12 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
         return BLADERF_ERR_INVAL;
     }
 
+    if (num_samples % s->meta.samples_per_ts != 0) {
+        log_debug("%s: %u samples %% %u channels != 0\n",
+                  __FUNCTION__, num_samples, s->meta.samples_per_ts);
+        return BLADERF_ERR_INVAL;
+    }
+
     MUTEX_LOCK(&s->lock);
 
     if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META ||
