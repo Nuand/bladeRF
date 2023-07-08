@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.9)
 
 add_subdirectory(test_async)
 add_subdirectory(test_bootloader_recovery)
@@ -23,3 +23,4 @@ add_subdirectory(test_unused_sync)
 add_subdirectory(test_version)
 add_subdirectory(test_digital_loopback)
 add_subdirectory(test_interleaver)
+add_subdirectory(test_general)
