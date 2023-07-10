@@ -32,8 +32,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define TEST_LIBBLADERF libbladeRF
 #define TEST_BLADERF device
 int status = 0;
+
+TEST(TEST_LIBBLADERF, version) {
+    status = std::system("./output/libbladeRF_test_version");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_LIBBLADERF, c) {
+    status = std::system("./output/libbladeRF_test_c");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_LIBBLADERF, cpp) {
+    status = std::system("./output/libbladeRF_test_cpp");
+    ASSERT_EQ(0, status);
+}
 
 TEST(TEST_BLADERF, open) {
     status = std::system("./output/libbladeRF_test_open");
