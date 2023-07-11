@@ -88,6 +88,11 @@ TEST(TEST_BLADERF, quick_retune) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, tune_timing) {
+    status = std::system("./output/libbladeRF_test_tune_timing -i 200");
+    ASSERT_EQ(0, status);
+}
+
 TEST(TEST_BLADERF, rx_discont) {
     status = std::system("./output/libbladeRF_test_rx_discont -b 16 -i 1000");
     ASSERT_EQ(0, status);
