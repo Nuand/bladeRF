@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 
+#include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -205,18 +206,53 @@ out:
     return status;
 }
 
+#define OPTARG "d:v:h"
+static struct option long_options[] = {
+    { "device",     required_argument,  NULL,   'd' },
+    { "verbosity",  required_argument,  NULL,   'v' },
+    { "help",       no_argument,        NULL,   'h' },
+    { NULL,         0,                  NULL,   0   },
+};
+
 int main(int argc, char *argv[])
 {
     int status;
+    int opt = 0;
+    int opt_ind = 0;
+    bool ok;
     struct bladerf *dev = NULL;
+    bladerf_log_level log_level;
     const char *devstr = NULL;
 
-    if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
-        fprintf(stderr, "TX a tone across %d frequencies.\n", NUM_FREQS);
-        fprintf(stderr, "Usage: %s [device string]\n", argv[0]);
-        return 1;
-    } else {
-        devstr = argv[1];
+    while (opt != -1) {
+        opt = getopt_long(argc, argv, OPTARG, long_options, &opt_ind);
+
+        switch (opt) {
+            case 'd':
+                devstr = optarg;
+                printf("devstr: %s\n", devstr);
+                break;
+
+            case 'v':
+                log_level = str2loglevel(optarg, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid log level: %s\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                bladerf_log_set_verbosity(log_level);
+                break;
+
+            case 'h':
+                printf("TX a tone across %d frequencies.\n", NUM_FREQS);
+                printf("  -d, --device <str>    Specify device to open.\n");
+                printf("  -v, --verbosity <l>   Set libbladeRF verbosity level.\n");
+                printf("  -h, --help            Show this text.\n");
+                printf("\n");
+                return EXIT_SUCCESS;
+
+            default:
+                break;
+        }
     }
 
     if (signal(SIGINT, sig_handler) == SIG_ERR) {
