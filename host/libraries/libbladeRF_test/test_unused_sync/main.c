@@ -26,6 +26,8 @@ int main(int argc, char *argv[])
 
     if (status != 0) {
         fprintf(stderr, "Failed to init RX: %s", bladerf_strerror(status));
+        status = EXIT_FAILURE;
+        goto out;
     }
 
     status = bladerf_sync_config(dev, BLADERF_MODULE_TX,
@@ -34,8 +36,11 @@ int main(int argc, char *argv[])
 
     if (status != 0) {
         fprintf(stderr, "Failed to init TX: %s\n", bladerf_strerror(status));
+        status = EXIT_FAILURE;
+        goto out;
     }
 
+out:
     bladerf_close(dev);
     return status;
 }
