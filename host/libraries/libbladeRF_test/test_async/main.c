@@ -95,10 +95,11 @@ void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
             fprintf( my_data->fout, "%d, %d\n", *sample, *(sample+1) );
             sample += 2 ;
         }
-        my_data->samples_left -= num_samples ;
-        if( my_data->samples_left <= 0 ) {
-            shutdown_stream = true ;
-        }
+    }
+
+    my_data->samples_left -= num_samples ;
+    if( my_data->samples_left <= 0 ) {
+        shutdown_stream = true ;
     }
 
     if (shutdown_stream) {
@@ -196,7 +197,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if(test_data.module == BLADERF_MODULE_RX && argc == 5) {
+    test_data.samples_left = 20e3;
+    if(argc == 5) {
         test_data.samples_left = str2int(argv[4], 1, INT_MAX, &conv_ok);
         if(!conv_ok) {
             fprintf(stderr, "Invalid number of samples: %s\n", argv[4]);
@@ -291,7 +293,6 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    /* Start stream and stay there until we kill the stream */
     status = bladerf_stream(stream, test_data.module);
     if (status < 0) {
         fprintf(stderr, "Stream error: %s\n", bladerf_strerror(status));
