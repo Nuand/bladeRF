@@ -58,10 +58,11 @@ static int set_and_check(struct bladerf *dev,
 
 static failure_count sweep_bandwidths(struct bladerf *dev,
                                       bladerf_module m,
+                                      struct app_params *p,
                                       bladerf_bandwidth min,
                                       bladerf_bandwidth max)
 {
-    bladerf_bandwidth const inc = 250000;
+    bladerf_bandwidth const inc = (p->fast_test) ? 2.5e6 : 250000;
 
     bladerf_bandwidth b;
     failure_count failures = 0;
@@ -83,7 +84,7 @@ static failure_count random_bandwidths(struct bladerf *dev,
                                        bladerf_bandwidth min,
                                        bladerf_bandwidth max)
 {
-    size_t const iterations = 1500;
+    size_t const iterations = (p->fast_test) ? 20 : 1500;
 
     bladerf_bandwidth bw;
     size_t i;
@@ -143,7 +144,7 @@ failure_count test_bandwidth(struct bladerf *dev,
 
             PRINT("%s: Sweeping %s bandwidths...\n", __FUNCTION__,
                   direction2str(dir));
-            failures += sweep_bandwidths(dev, ch, min, max);
+            failures += sweep_bandwidths(dev, ch, p, min, max);
 
             PRINT("%s: Applying random %s bandwidths...\n", __FUNCTION__,
                   direction2str(dir));
