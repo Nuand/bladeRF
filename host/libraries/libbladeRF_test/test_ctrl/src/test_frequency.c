@@ -73,12 +73,13 @@ static int set_and_check(struct bladerf *dev,
 
 static failure_count freq_sweep(struct bladerf *dev,
                                 bladerf_module m,
+                                struct app_params *p,
                                 bladerf_frequency min,
                                 bladerf_frequency max,
                                 bool quiet)
 {
-    size_t const repetitions = 3;
-    size_t const inc         = 1000000;
+    size_t const repetitions = (p->fast_test) ? 1    : 3;
+    size_t const inc         = (p->fast_test) ? 10e6 : 1000000;
 
     bladerf_frequency freq      = 0;
     bladerf_frequency prev_freq = 0;
@@ -114,7 +115,7 @@ static failure_count random_tuning(struct bladerf *dev,
                                    bladerf_frequency max,
                                    bool quiet)
 {
-    size_t const num_iterations = 10000;
+    size_t const num_iterations = (p->fast_test) ? 100 : 10000;
 
     bladerf_frequency freq      = 0;
     bladerf_frequency prev_freq = 0;
@@ -187,7 +188,7 @@ failure_count test_frequency(struct bladerf *dev,
 
             PRINT("%s: Performing %s frequency sweep...\n", __FUNCTION__,
                   direction2str(dir));
-            failures += freq_sweep(dev, ch, min, max, quiet);
+            failures += freq_sweep(dev, ch, p, min, max, quiet);
 
             PRINT("%s: Performing random %s tuning...\n", __FUNCTION__,
                   direction2str(dir));
