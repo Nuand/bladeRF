@@ -957,7 +957,11 @@ static int bladerf2_get_sample_rate_range(struct bladerf *dev,
 {
     NULL_CHECK(range);
 
-    *range = &bladerf2_sample_rate_range;
+    *range = &bladerf2_sample_rate_range_base;
+
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE) {
+        *range = &bladerf2_sample_rate_range_oversample;
+    }
 
     return 0;
 }
