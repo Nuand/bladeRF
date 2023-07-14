@@ -126,6 +126,16 @@ TEST(TEST_BLADERF, gain) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, bandwidth) {
+    status = std::system("./output/libbladeRF_test_ctrl -t bandwidth --fast");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_BLADERF, frequency) {
+    status = std::system("./output/libbladeRF_test_ctrl -t frequency --fast");
+    ASSERT_EQ(0, status);
+}
+
 TEST(TEST_XB200, DISABLED_xb200) {
     status = std::system("./output/libbladeRF_test_ctrl --xb200 -t xb200");
     ASSERT_EQ(0, status);
