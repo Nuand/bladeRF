@@ -70,6 +70,7 @@ struct app_params {
     uint64_t randval_seed;
     uint64_t randval_state;
     bool module_enabled;
+    bool fast_test;
 };
 
 
