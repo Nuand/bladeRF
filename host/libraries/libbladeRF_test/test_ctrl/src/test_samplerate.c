@@ -89,12 +89,13 @@ static int set_and_check_rational(struct bladerf *dev,
 }
 
 static failure_count sweep_samplerate(struct bladerf *dev,
+                                      struct app_params *p,
                                       bladerf_channel ch,
                                       bool quiet,
                                       bladerf_sample_rate min,
                                       bladerf_sample_rate max)
 {
-    bladerf_sample_rate const inc = 10000;
+    bladerf_sample_rate const inc = (p->fast_test) ? 10e6 : 10000;
 
     bladerf_sample_rate rate;
     size_t n;
@@ -123,14 +124,14 @@ static failure_count random_samplerates(struct bladerf *dev,
                                         bladerf_sample_rate min,
                                         bladerf_sample_rate max)
 {
-    size_t const interations = 2500;
+    size_t const iterations = (p->fast_test) ? 25 : 2500;
 
     bladerf_sample_rate rate;
     size_t i, n;
     failure_count failures = 0;
     int status;
 
-    for (i = n = 0; i < interations; i++, n++) {
+    for (i = n = 0; i < iterations; i++, n++) {
         bladerf_sample_rate const mod = max - min + 1;
 
         randval_update(&p->randval_state);
@@ -159,7 +160,7 @@ static failure_count random_rational_samplerates(struct bladerf *dev,
                                                  bladerf_sample_rate min,
                                                  bladerf_sample_rate max)
 {
-    size_t const iterations = 2500;
+    size_t const iterations = (p->fast_test) ? 25 : 2500;
 
     struct bladerf_rational_rate rate;
     size_t i, n;
@@ -254,7 +255,7 @@ failure_count test_samplerate(struct bladerf *dev,
 
             PRINT("%s: Sweeping %s sample rates...\n", __FUNCTION__,
                   direction2str(dir));
-            failures += sweep_samplerate(dev, ch, quiet, min, max);
+            failures += sweep_samplerate(dev, p, ch, quiet, min, max);
 
             PRINT("%s: Applying random %s sample rates...\n", __FUNCTION__,
                   direction2str(dir));
