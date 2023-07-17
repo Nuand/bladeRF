@@ -54,7 +54,7 @@ typedef size_t failure_count;
         }                        \
     } while (0)
 
-#define PR_ERROR(...) fprintf(stderr, "\n(!) " __VA_ARGS__)
+#define PR_ERROR(...) fprintf(stderr, "[ERROR] " __VA_ARGS__)
 
 #define DEFAULT_BUF_LEN 16384
 #define DEFAULT_NUM_BUFFERS 16

@@ -33,12 +33,26 @@ static int set_and_check(struct bladerf *dev,
                          bladerf_channel ch,
                          bladerf_sample_rate rate)
 {
+    static bladerf_sample_rate samplerate_hist[5];
+    static const int HIST_LEN = sizeof(samplerate_hist)/sizeof(samplerate_hist[0]);
     bladerf_sample_rate actual, readback;
     int status;
 
+    // Shift the history buffer to the right and
+    // prepend the current rate
+    for (int i = HIST_LEN - 1; i > 0; i--) {
+        samplerate_hist[i] = samplerate_hist[i-1];
+    }
+    samplerate_hist[0] = rate;
+
     status = bladerf_set_sample_rate(dev, ch, rate, &actual);
     if (status != 0) {
-        PR_ERROR("Failed to set sample rate: %s\n", bladerf_strerror(status));
+        PR_ERROR("Failed to set sample rate to %uHz\n", rate);
+        printf("Sample rate history:\n");
+        for (int i = 0; i < HIST_LEN; i++) {
+            printf("[%i] %u\n", i, samplerate_hist[i]);
+        }
+
         return status;
     }
 
