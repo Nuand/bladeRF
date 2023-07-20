@@ -161,6 +161,11 @@ TEST(TEST_BLADERF, print) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, rx_gaps) {
+    status = std::system("./output/libbladeRF_test_timestamps -t rx_gaps -f");
+    ASSERT_EQ(0, status);
+}
+
 TEST(TEST_BLADERF, digital_loopback) {
     std::string command;
     std::string sample_formats[] = {"8", "16"};
