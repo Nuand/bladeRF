@@ -156,6 +156,11 @@ TEST(TEST_BLADERF, tx_onoff_nowsched) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, print) {
+    status = std::system("./output/libbladeRF_test_timestamps -t print -f");
+    ASSERT_EQ(0, status);
+}
+
 TEST(TEST_BLADERF, digital_loopback) {
     std::string command;
     std::string sample_formats[] = {"8", "16"};

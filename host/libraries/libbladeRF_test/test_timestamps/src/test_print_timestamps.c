@@ -39,7 +39,7 @@ int test_fn_print(struct bladerf *dev, struct app_params *p)
     uint64_t ts_rx, ts_tx, diff;
     bool neg;
     unsigned int i;
-    const unsigned int iterations = 60 * 60 * 2; /* Run for ~2 hours */
+    const unsigned int iterations = (p->fast_test) ? 2 : 60*60*2; /* Run for 2 seconds or ~2 hours */
 
     status = bladerf_sync_config(dev, BLADERF_MODULE_RX,
                                  BLADERF_FORMAT_SC16_Q11_META, p->num_buffers,
