@@ -33,7 +33,7 @@
 #include "conversions.h"
 #include "test_timestamps.h"
 
-#define OPTSTR "hd:s:S:t:B:v:n:x:T:"
+#define OPTSTR "hd:s:S:ft:B:v:n:x:T:"
 
 
 #define DECLARE_TEST(name) \
@@ -89,6 +89,7 @@ static const struct option long_options[] = {
 
     /* Test configuration */
     { "test",               required_argument,  0,      't' },
+    { "fast",                     no_argument,  0,      'f' },
 
     /* Verbosity options */
     { "lib-verbosity",      required_argument,  0,      'v' },
@@ -157,6 +158,7 @@ static void usage(const char *argv0)
     printf("\n");
 
     printf("Misc options:\n");
+    printf("    -f, --fast                  Reduces test time for applicable tests\n");
     printf("    -h, --help                  Show this help text\n");
     printf("    -v, --lib-verbosity <level> Set libbladeRF verbosity (Default: warning)\n");
     printf("\n");
@@ -172,6 +174,7 @@ static void init_app_params(struct app_params *p)
     p->num_xfers = 8;
     p->buf_size = 64 * 1024;
     p->timeout_ms = 10000;
+    p->fast_test = false;
 }
 
 static void deinit_app_params(struct app_params *p)
@@ -278,6 +281,10 @@ static int handle_args(int argc, char *argv[], struct app_params *p)
                     perror("strdup");
                     return -1;
                 }
+                break;
+
+            case 'f':
+                p->fast_test = true;
                 break;
 
             case 'S':

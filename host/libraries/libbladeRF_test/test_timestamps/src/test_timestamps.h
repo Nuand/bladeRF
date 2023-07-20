@@ -44,6 +44,7 @@ struct app_params {
     unsigned int num_xfers;
     unsigned int buf_size; // In samples
     unsigned int timeout_ms;
+    bool fast_test;
 };
 
 /**
