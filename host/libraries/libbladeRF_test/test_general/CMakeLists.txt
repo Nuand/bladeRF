@@ -28,6 +28,26 @@ set(SRC
 )
 add_executable(${PROJECT_NAME} ${SRC})
 
+add_custom_target(test_all
+                  COMMAND ${PROJECT_NAME} --gtest_output="json"
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(test_hdl
+                  COMMAND ${PROJECT_NAME} --gtest_filter="hdl*" --gtest_output="json"
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(test_libbladeRF
+                  COMMAND ${PROJECT_NAME} --gtest_filter="libbladeRF*" --gtest_output="json"
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(test_device
+                  COMMAND ${PROJECT_NAME} --gtest_filter="device*" --gtest_output="json"
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
 target_link_libraries(
     ${PROJECT_NAME}
     libbladerf_shared
