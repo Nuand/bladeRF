@@ -25,6 +25,7 @@
 
 #include "conversions.h"
 #include "log.h"
+#include "../include/include.h"
 #include <cstdlib>
 #include <getopt.h>
 #include <gtest/gtest.h>
@@ -268,6 +269,19 @@ class hdl : public ::testing::Test {
 protected:
     char build_dir[PATH_MAX];
     void SetUp() override {
+        std::string home = std::getenv("HOME");
+        fs::path nios2shell_path = "";
+
+        find_file("~/intelFPGA_lite", "nios2_command_shell.sh", &nios2shell_path);
+        if (nios2shell_path.empty()) {
+            std::cout << "Failed to find nios2_command_shell\n";
+        } else if (!fs::exists(fs::path(home) / "intelFPGA_lite/20.1")) {
+            std::cout << "[ERROR] Found the nios2_command_shell.sh in an alternate version of Quartus.\n";
+            std::cout << "[ERROR] Change the NIOS2SHELL directive accordingly.\n\n";
+            std::cout << "    Expected: " << NIOS2SHELL << std::endl;
+            std::cout << "    Found:    " << nios2shell_path.string() << "\n\n";
+        }
+
         if (getcwd(build_dir, PATH_MAX) == NULL) {
             perror("Failed to get current directory\n");
         }

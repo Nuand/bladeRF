@@ -23,6 +23,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(INCLUDES
+    ./include
     ${libbladeRF_SOURCE_DIR}/include
     ${libbladeRF_SOURCE_DIR}/src
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
@@ -70,5 +71,4 @@ gtest_discover_tests(${PROJECT_NAME})
 find_program(NIOS2_COMMAND_SHELL_EXECUTABLE nios2_command_shell.sh
     PATHS ~/intelFPGA_lite/20.1/nios2eds
     NO_CACHE
-    REQUIRED
 )
