@@ -607,6 +607,15 @@ begin
     -- ========================================================================
     -- Verification
     -- ========================================================================
+    print_config: process
+    begin
+        wait until rising_edge(fx3_control.tx_enable);
+        report lf&
+            "[CONFIG] EIGHT_BIT_MODE_EN: " & std_logic'image(EIGHT_BIT_MODE_EN) &lf&
+            "[CONFIG] ENABLE_CHANNEL_0: " & std_logic'image(ENABLE_CHANNEL_0) &lf&
+            "[CONFIG] ENABLE_CHANNEL_1: " & std_logic'image(ENABLE_CHANNEL_1);
+    end process print_config;
+
 
     --
     -- Check for metavalues
