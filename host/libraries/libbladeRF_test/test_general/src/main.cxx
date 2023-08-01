@@ -26,6 +26,9 @@
 #include "conversions.h"
 #include "log.h"
 #include "../include/include.h"
+#include <absl/strings/string_view.h>
+#include <absl/strings/str_cat.h>
+#include <absl/algorithm/container.h>
 #include <cstdlib>
 #include <getopt.h>
 #include <gtest/gtest.h>
@@ -310,6 +313,24 @@ TEST_F(hdl, vsim_version) {
     EXPECT_EQ(status, 0);
 }
 
+class verify : public hdl,
+               public testing::WithParamInterface<std::tuple<bool,bool,bool>> {
+};
+
+INSTANTIATE_TEST_SUITE_P(hdl, verify,
+    testing::Combine(
+        testing::Bool(),
+        testing::Bool(),
+        testing::Bool()),
+    [](const testing::TestParamInfo<verify::ParamType>& info) {
+        std::string name = absl::StrCat(
+            std::get<0>(info.param) ? "8b" : "16b",
+            std::get<1>(info.param),
+            std::get<2>(info.param));
+        absl::c_replace_if(name, [](char c) { return !std::isalnum(c); }, '_');
+        return name;
+    });
+
 TEST_HDL_COMPILE(compile)
 TEST_HDL_COMPILE(fx3_gpif_iq_tb)
 TEST_HDL_COMPILE(fx3_gpif_iq_8bit_tb)
@@ -321,12 +342,22 @@ TEST_HDL_COMPILE(loopback)
 TEST_HDL_COMPILE(rx_counter_8bit_tb)
 TEST_HDL_COMPILE(rx_timestamp_tb)
 
-TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 001, -gEIGHT_BIT_MODE_EN='0' -gENABLE_CHANNEL_0='0' -gENABLE_CHANNEL_1='1', 1000)
-TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 010, -gEIGHT_BIT_MODE_EN='0' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='0', 1000)
-TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 011, -gEIGHT_BIT_MODE_EN='0' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='1', 1000)
-TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 101, -gEIGHT_BIT_MODE_EN='1' -gENABLE_CHANNEL_0='0' -gENABLE_CHANNEL_1='1', 1000)
-TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 110, -gEIGHT_BIT_MODE_EN='1' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='0', 1000)
-TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 111, -gEIGHT_BIT_MODE_EN='1' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='1', 1000)
+TEST_P(verify, fx3_gpif_iq_8bit_tb) {
+    std::string bitmode  = std::get<0>(GetParam()) ? "1" : "0";
+    std::string channel0 = std::get<1>(GetParam()) ? "1" : "0";
+    std::string channel1 = std::get<2>(GetParam()) ? "1" : "0";
+
+    std::string command = NIOS2SHELL;
+    command += " vsim -c -do \"do test.do vsim nuand.fx3_gpif_iq_8bit_tb ";
+    command += "-gEIGHT_BIT_MODE_EN='" + bitmode + "' ";
+    command += "-gENABLE_CHANNEL_0='" + channel0 + "' ";
+    command += "-gENABLE_CHANNEL_1='" + channel1 + "' ";
+    command += "1000\"";
+
+    status = std::system(command.c_str());
+    EXPECT_EQ(status, 0);
+}
+
 
 #define OPTARG "v:h"
 static struct option long_options[] = {
