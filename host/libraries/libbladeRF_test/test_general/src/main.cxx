@@ -362,6 +362,11 @@ TEST_HDL_VERIFY(fx3_gpif_meta_tb, 16b01, -gENABLE_CHANNEL_0='0' -gENABLE_CHANNEL
 TEST_HDL_VERIFY(fx3_gpif_meta_tb, 16b10, -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='0', 1000);
 TEST_HDL_VERIFY(fx3_gpif_meta_tb, 16b11, -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='1', 1000);
 
+TEST_HDL_VERIFY(loopback_tb, 16b00, -gENABLE_CHANNEL_0='0' -gENABLE_CHANNEL_1='0', 1300);
+TEST_HDL_VERIFY(loopback_tb, 16b01, -gENABLE_CHANNEL_0='0' -gENABLE_CHANNEL_1='1', 1300);
+TEST_HDL_VERIFY(loopback_tb, 16b10, -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='0', 1300);
+TEST_HDL_VERIFY(loopback_tb, 16b11, -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='1', 1300);
+
 TEST_P(verify, fx3_gpif_iq_8bit_tb) {
     std::string bitmode  = std::get<0>(GetParam()) ? "1" : "0";
     std::string channel0 = std::get<1>(GetParam()) ? "1" : "0";
