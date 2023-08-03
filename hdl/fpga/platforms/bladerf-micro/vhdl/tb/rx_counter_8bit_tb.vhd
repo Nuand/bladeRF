@@ -683,6 +683,10 @@ begin
 
             rx_val := rx_val + 2;
         end if;
+
+        if (fx3_control.rx_enable = '0') then
+            rx_val := to_unsigned(1, rx_val'length);
+        end if;
     end process look_for_dropped_rx_samples;
 
 end architecture;
