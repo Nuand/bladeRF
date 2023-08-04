@@ -661,31 +661,46 @@ begin
         variable sample1              : std_logic_vector (15 downto 0);
         variable sample0              : std_logic_vector (15 downto 0);
 
-        variable fail_count: natural := 0;
-        variable both_channels_en : std_logic;
+        variable fail_count           : natural     := 0;
+        variable both_channels_en     : std_logic   := ENABLE_CHANNEL_0 and ENABLE_CHANNEL_1;
+        variable delay                : std_logic   := '0';
     begin
         if (rising_edge(fx3_pclk_pll)
             and fx3_gpif.gpif_oe = '1'
             and fx3_control.rx_enable = '1')
         then
-            sample1_expected := std_logic_vector(rx_val + 1);
+            sample1_expected := std_logic_vector(rx_val + 1) when not both_channels_en else std_logic_vector(rx_val);
             sample0_expected := std_logic_vector(rx_val);
             sample1 := fx3_gpif.gpif_out(31 downto 16);
             sample0 := fx3_gpif.gpif_out(15 downto 0);
 
-            assert(sample1 = sample1_expected and sample0 = sample0_expected)
-                report lf&"sample0          " & to_hstring(sample0) &lf&
-                          "sample0_expected " & to_hstring(sample0_expected) &lf&
-                          "sample1          " & to_hstring(sample1) &lf&
-                          "sample1_expected " & to_hstring(sample1_expected)
-                severity failure;
+            if (EIGHT_BIT_MODE_EN = '1') then
+                assert(sample1 = sample1_expected and sample0 = sample0_expected)
+                    report lf&"sample0          " & to_hstring(sample0) &lf&
+                            "sample0_expected " & to_hstring(sample0_expected) &lf&
+                            "sample1          " & to_hstring(sample1) &lf&
+                            "sample1_expected " & to_hstring(sample1_expected)
+                    severity failure;
+                rx_val := rx_val + 1 when both_channels_en else rx_val + 2;
+            else
+                -- the count doesn't spill over 16 bits
+                assert(sample0 = std_logic_vector(rx_val))
+                    report lf&
+                           "sample           " & to_hstring(sample0) &lf&
+                           "sample_expected  " & to_hstring(rx_val)
+                    severity failure;
 
-            rx_val := rx_val + 2;
+                delay  := not delay when both_channels_en else '0';
+                rx_val := rx_val + 1 when delay = '0' else rx_val;
+            end if;
+
         end if;
 
         if (fx3_control.rx_enable = '0') then
             rx_val := to_unsigned(1, rx_val'length);
+            delay := '0';
         end if;
+
     end process look_for_dropped_rx_samples;
 
 end architecture;
