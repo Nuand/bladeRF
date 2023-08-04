@@ -40,7 +40,8 @@ entity rx_timestamp_tb is
         FIFO_READER_READ_THROTTLE   : natural := 0;
 
         ENABLE_CHANNEL_0            : std_logic := '1';
-        ENABLE_CHANNEL_1            : std_logic := '0'
+        ENABLE_CHANNEL_1            : std_logic := '0';
+        EIGHT_BIT_MODE_EN           : std_logic := '1'
     );
 end entity;
 
@@ -142,8 +143,6 @@ architecture arch of rx_timestamp_tb is
     signal trigger_signal_sync_tb      : std_logic;
     signal adc_stream_val_at_rx_enable : signed(15 downto 0) := ( others => '0' );
 
-    signal eight_bit_mode_en    :   std_logic;
-
     function data_gen (count : natural) return std_logic_vector is
         variable msw, lsw : std_logic_vector(15 downto 0);
     begin
@@ -239,7 +238,6 @@ begin
     fx3_control.usb_speed   <= '0';
     fx3_control.meta_enable <= '1';
     fx3_control.packet      <= '0';
-    eight_bit_mode_en       <= '1';
 
     U_pkt_gen : entity nuand.rx_packet_generator
         port map(
@@ -295,7 +293,7 @@ begin
             fx3_rx_meta_en      => meta_en_rx,
             fx3_tx_en           => '1',
             fx3_tx_meta_en      => meta_en_tx,
-            eight_bit_mode_en   => eight_bit_mode_en,
+            eight_bit_mode_en   => EIGHT_BIT_MODE_EN,
             done                => done
         );
 
@@ -356,7 +354,7 @@ begin
             packet_ready         => '1',
 
             -- 8-bit mode
-            eight_bit_mode_en    => eight_bit_mode_en,
+            eight_bit_mode_en    => EIGHT_BIT_MODE_EN,
 
             -- Samples from host via FX3
             sample_fifo_wclock   => fx3_pclk_pll,
@@ -416,7 +414,7 @@ begin
             packet_ready           => rx_packet_ready,
 
             -- 8-bit mode
-            eight_bit_mode_en    => eight_bit_mode_en,
+            eight_bit_mode_en    => EIGHT_BIT_MODE_EN,
 
             -- Samples to host via FX3
             sample_fifo_rclock     => fx3_pclk_pll,
@@ -499,7 +497,7 @@ begin
                         data_req => not adc_controls(i).data_req );
                     if( adc_controls(i).enable = '1') then
                         if( adc_streams(i).data_v = '1' ) then
-                            if( eight_bit_mode_en = '1' ) then
+                            if( EIGHT_BIT_MODE_EN = '1' ) then
                                 adc_streams(i).data_i <= "0000" & to_signed(count, 8)  & SIGMA_DELTA_BITS;
                                 adc_streams(i).data_q <= "0000" & to_signed(-count, 8) & SIGMA_DELTA_BITS;
                                 count := (count + 1) mod 128;
@@ -654,7 +652,7 @@ begin
         -- variable timestamp  : unsigned(63 downto 0) := (others => '0');
     begin
         wait for 1 ns;
-        if( eight_bit_mode_en = '1') then
+        if( EIGHT_BIT_MODE_EN = '1') then
             delta_expected := resize(2*delta_expected, 64);
         end if;
 
