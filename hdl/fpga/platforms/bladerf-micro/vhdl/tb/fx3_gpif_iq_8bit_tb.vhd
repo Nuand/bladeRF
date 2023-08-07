@@ -763,7 +763,8 @@ begin
         variable both_channels_en : std_logic;
     begin
         if( previous_adc_stream_val_at_rx_enable /= adc_stream_val_at_rx_enable ) then
-            rx_val := to_integer(adc_stream_val_at_rx_enable (15 downto 4));
+            rx_val := to_integer(adc_stream_val_at_rx_enable (15 downto 4)) when EIGHT_BIT_MODE_EN else
+                      to_integer(adc_stream_val_at_rx_enable);
             previous_adc_stream_val_at_rx_enable := adc_stream_val_at_rx_enable;
         end if;
 
