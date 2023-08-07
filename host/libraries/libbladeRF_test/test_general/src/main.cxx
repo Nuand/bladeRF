@@ -290,6 +290,15 @@ TEST_F(hdl, vsim_version) {
 }
 
 TEST_HDL_COMPILE(compile)
+TEST_HDL_COMPILE(fx3_gpif_iq_tb)
+TEST_HDL_COMPILE(fx3_gpif_iq_8bit_tb)
+TEST_HDL_COMPILE(fx3_gpif_meta_8bit_tb)
+TEST_HDL_COMPILE(fx3_gpif_meta_tb)
+TEST_HDL_COMPILE(fx3_gpif_packet_tb)
+TEST_HDL_COMPILE(fx3_gpif_tb)
+TEST_HDL_COMPILE(loopback)
+TEST_HDL_COMPILE(rx_counter_8bit_tb)
+TEST_HDL_COMPILE(rx_timestamp_tb)
 
 #define OPTARG "v:h"
 static struct option long_options[] = {
