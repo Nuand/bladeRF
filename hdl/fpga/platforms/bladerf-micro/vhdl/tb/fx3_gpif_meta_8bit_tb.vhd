@@ -895,6 +895,7 @@ begin
 
         variable ts_increment   : integer                   := 0;
         variable last_ts        : unsigned (31 downto 0)    := 32x"BB";     -- First timestamp
+        variable iteration      : natural                   := 1;
     begin
 
         wait_for_gpif_ts(fx3_pclk, fx3_gpif.gpif_oe);
@@ -914,6 +915,13 @@ begin
         else
             ts_increment := 508 when EIGHT_BIT_MODE_EN = '0'
                             else 1016;
+        end if;
+
+        iteration := iteration + 1;
+        if (iteration > 3) then
+            wait_for_gpif_ts(fx3_pclk, fx3_gpif.gpif_oe);
+            last_ts := unsigned(fx3_gpif.gpif_out);
+            iteration := 2;
         end if;
 
     end process meta_spacing;
