@@ -262,11 +262,14 @@ begin
 
             when META_WRITE =>
 
-                if( (meta_fifo_full = '0') and (in_samples(in_samples'low).data_v = '1') ) then
-                    meta_future.meta_write   <= '1';
-                    meta_future.meta_written <= '1';
-                    meta_future.state        <= META_DOWNCOUNT;
-                end if;
+                for i in in_samples'range loop
+                    if (meta_fifo_full = '0') and (in_samples(i).data_v = '1') then
+                        meta_future.meta_write <= '1';
+                        meta_future.meta_written <= '1';
+                        meta_future.state <= META_DOWNCOUNT;
+                        exit; -- Exit loop after first match
+                    end if;
+                end loop;
 
             when META_DOWNCOUNT =>
 
@@ -288,7 +291,8 @@ begin
                 end if;
 
                 -- Patches the late meta write for MIMO mode
-                if( in_sample_controls(0).enable = '1' and
+                if( in_sample_controls'length = 2 and
+                    in_sample_controls(0).enable = '1' and
                     in_sample_controls(1).enable = '1' and
                     eight_bit_mode_en = '0' and
                     meta_current.dma_downcount <= NUM_STREAMS + 2 )
