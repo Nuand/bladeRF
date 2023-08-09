@@ -507,8 +507,8 @@ begin
                                 count := (count + 1) mod 2048;
                            end if;
                         end if;
-                        adc_streams(i).data_v <= not adc_streams(i).data_v;
                     end if;
+                    adc_streams(i).data_v <= not adc_streams(i).data_v;
                 end loop;
             end if;
         end process;
