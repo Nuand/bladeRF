@@ -177,12 +177,11 @@ bool test_csv2int()
 
 int main(int argc, char *argv[])
 {
-    size_t good = 0, bad = 0;
+    size_t bad = 0;
 
     printf("*** testing csv2int ***\n");
     if (test_csv2int()) {
         printf("*** testing csv2int: PASSED ***\n");
-        ++good;
     } else {
         printf("*** testing csv2int: FAILED ***\n");
         ++bad;
