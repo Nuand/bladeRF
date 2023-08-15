@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(libbladeRF_test_quick_retune C)
 
 set(INCLUDES

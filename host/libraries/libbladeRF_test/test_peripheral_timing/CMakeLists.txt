@@ -5,7 +5,7 @@
 # the NIOS II code, it probably won't get much general use, so we'll just
 # leave this as-is for now.
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    cmake_minimum_required(VERSION 2.8.12)
+    cmake_minimum_required(VERSION 3.5)
     project(libbladeRF_test_peripheral_timing C)
 
     set(INCLUDES

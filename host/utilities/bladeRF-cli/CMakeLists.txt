@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(bladeRF-cli C)
 
 ################################################################################
@@ -122,7 +122,7 @@ else()
     add_custom_command(
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in
         OUTPUT src/cmd/doc/cmd_help.h
-        COMMAND ${CMAKE_COMMAND} -E copy 
+        COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in
             ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.h
     )

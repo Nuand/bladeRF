@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(test_dc_calibration C)
 
-set(INCLUDES 
+set(INCLUDES
     ${libbladeRF_SOURCE_DIR}/include
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
 )
@@ -14,7 +14,7 @@ else()
     set(LIBS ${LIBS} m)
 endif()
 
-set(SRC 
+set(SRC
     src/main.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/dc_calibration.c
