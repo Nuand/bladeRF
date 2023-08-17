@@ -622,6 +622,10 @@ begin
             delta_expected := resize(2*delta_expected, 64);
         end if;
 
+        if (ENABLE_CHANNEL_0 and ENABLE_CHANNEL_1) then
+            delta_expected := delta_expected/2;
+        end if;
+
         for j in 0 to 1 loop
             wait until rising_edge(fx3_gpif.gpif_oe);
             for i in 0 to HEADER_LEN-1 loop
