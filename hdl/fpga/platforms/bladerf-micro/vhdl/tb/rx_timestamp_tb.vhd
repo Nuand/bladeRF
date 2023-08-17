@@ -613,14 +613,12 @@ begin
         constant HEADER_LEN     : integer := 4;
         variable timestamp      : timestamp_arr(1 downto 0);
         variable delta          : unsigned(63 downto 0) := (others => '0');
-        variable delta_expected : unsigned(63 downto 0) := to_unsigned(508, 64);
+        variable delta_expected : unsigned(63 downto 0);
         variable iteration      : natural               := 1;
         -- variable timestamp  : unsigned(63 downto 0) := (others => '0');
     begin
         wait for 1 ns;
-        if( EIGHT_BIT_MODE_EN = '1') then
-            delta_expected := resize(2*delta_expected, 64);
-        end if;
+        delta_expected := to_unsigned(508, 64) when not EIGHT_BIT_MODE_EN else to_unsigned(1016, 64);
 
         if (ENABLE_CHANNEL_0 and ENABLE_CHANNEL_1) then
             delta_expected := delta_expected/2;
@@ -645,9 +643,7 @@ begin
         report "Timestamp Delta: " & integer'image(to_integer(delta));
 
         iteration := iteration + 1;
-        if (iteration > 2) then
-            report "Test complete: Meta value deltas passed.";
-        else
+        if (iteration mod 3 /= 0) then
             assert (delta = delta_expected)
                 report lf&"Unexpected Timestamp Delta"&lf&
                     "Expected " & integer'image(to_integer(delta_expected))
@@ -655,6 +651,8 @@ begin
                     "Actual   " & integer'image(to_integer(delta))
                                 &" ("& integer'image(to_integer(timestamp(1))) &")"
                 severity failure;
+        else
+            report "rst timestamp ignored";
         end if;
     end process meta_verify;
 
