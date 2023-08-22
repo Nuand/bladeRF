@@ -1,4 +1,4 @@
-project(libbladeRF_test_general
+project(libbladeRF_test_regression
         VERSION 3.11
         LANGUAGES CXX)
 
