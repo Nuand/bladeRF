@@ -349,7 +349,7 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms,
 
     struct bladerf_rational_rate req;
     struct bladerf_rational_rate abc;
-    uint8_t r_value, r_power;
+    uint8_t r_value;
 
     /* Don't muss with the users data */
     req = *rate;
@@ -363,11 +363,9 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms,
 
     /* Find a suitable R value */
     r_value = 1;
-    r_power = 0;
     while (req.integer < 5000000 && r_value < 32) {
         si5338_rational_double(&req);
         r_value <<= 1;
-        r_power++;
     }
 
     if (r_value == 32 && req.integer < 5000000) {
