@@ -1880,6 +1880,8 @@ struct bladerf_quick_tune {
  *       BLADERF_ERR_QUEUE_FULL will be returned. In this case, it should be
  *       possible to schedule a retune after the timestamp of one of the earlier
  *       requests occurs.
+
+ * @note NULL quick_tune parameters are not supported by the bladeRF 2.0 micro.
  */
 API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
