@@ -1086,6 +1086,11 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
             log_debug("%s: enabling 4x decimation/interpolation filters\n",
                       __FUNCTION__);
 
+            /* Intermidiate sample rate assignment to circumvent rfic->set_filter error */
+            if ((current > 40e6 && rate < 2083334) || (rate > 40e6 && current < 2083334)) {
+                CHECK_STATUS(rfic->set_sample_rate(dev, ch, 30e6));
+            }
+
             status = rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
                                       BLADERF_RFIC_RXFIR_DEC4, 0);
             if (status < 0) {
