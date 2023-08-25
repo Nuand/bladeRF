@@ -632,11 +632,24 @@ int bladerf_set_sample_rate(struct bladerf *dev,
                             bladerf_sample_rate *actual)
 {
     int status;
+    bladerf_feature feature = dev->feature;
+
     MUTEX_LOCK(&dev->lock);
-
     status = dev->board->set_sample_rate(dev, ch, rate, actual);
-
     MUTEX_UNLOCK(&dev->lock);
+
+    /*****************************************************
+      Sample rate assignments clear previous register
+      values. We must reassign oversample register config
+      for every set_samplerate().
+    *******************************************************/
+    if ((feature & BLADERF_FEATURE_OVERSAMPLE)) {
+        status = bladerf_set_oversample_register_config(dev);
+        if (status != 0) {
+            log_error("Oversample register config failure\n");
+        }
+    }
+
     return status;
 }
 
