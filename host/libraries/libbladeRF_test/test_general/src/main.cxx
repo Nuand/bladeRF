@@ -156,6 +156,13 @@ TEST(TEST_BLADERF, digital_loopback) {
     }
 }
 
+TEST(TEST_BLADERF, async) {
+    status = std::system("./output/libbladeRF_test_async tx 2048 16");
+    ASSERT_EQ(0, status);
+    status = std::system("./output/libbladeRF_test_async rx 2048 16");
+    ASSERT_EQ(0, status);
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
