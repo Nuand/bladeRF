@@ -136,6 +136,26 @@ TEST(TEST_BLADERF, tx_onoff_nowsched) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, digital_loopback) {
+    std::string command;
+    std::string sample_formats[] = {"8", "16"};
+    std::string loopback_modes[] = {"fw", "fpga", "rfic"};
+
+    int num_formats = sizeof(sample_formats) / sizeof(sample_formats[0]);
+    int num_loopback_modes = sizeof(loopback_modes) / sizeof(loopback_modes[0]);
+
+    for (int i = 0; i < num_formats; i++) {
+        for (int j = 0; j < num_loopback_modes; j++) {
+            command = "./output/libbladeRF_test_digital_loopback -c 20000000";
+            command += " -b " + sample_formats[i];
+            command += " -l " + loopback_modes[j];
+            std::cout << command << std::endl;
+            status = std::system(command.c_str());
+            ASSERT_EQ(0, status);
+        }
+    }
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
