@@ -47,6 +47,13 @@ int status = 0;
         EXPECT_EQ(status, 0); \
     }
 
+#define TEST_HDL_VERIFY(test_name, test_id, tb_args, run_time_us) \
+    TEST_F(hdl, verify_##test_name##_##test_id) { \
+        status = std::system( \
+            NIOS2SHELL" vsim -c -do \"do test.do vsim nuand." #test_name " " #tb_args " " #run_time_us "\""); \
+        EXPECT_EQ(status, 0); \
+    }
+
 TEST(TEST_LIBBLADERF, version) {
     status = std::system("./output/libbladeRF_test_version");
     ASSERT_EQ(0, status);
@@ -313,6 +320,13 @@ TEST_HDL_COMPILE(fx3_gpif_tb)
 TEST_HDL_COMPILE(loopback)
 TEST_HDL_COMPILE(rx_counter_8bit_tb)
 TEST_HDL_COMPILE(rx_timestamp_tb)
+
+TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 001, -gEIGHT_BIT_MODE_EN='0' -gENABLE_CHANNEL_0='0' -gENABLE_CHANNEL_1='1', 1000)
+TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 010, -gEIGHT_BIT_MODE_EN='0' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='0', 1000)
+TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 011, -gEIGHT_BIT_MODE_EN='0' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='1', 1000)
+TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 101, -gEIGHT_BIT_MODE_EN='1' -gENABLE_CHANNEL_0='0' -gENABLE_CHANNEL_1='1', 1000)
+TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 110, -gEIGHT_BIT_MODE_EN='1' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='0', 1000)
+TEST_HDL_VERIFY(fx3_gpif_iq_8bit_tb, 111, -gEIGHT_BIT_MODE_EN='1' -gENABLE_CHANNEL_0='1' -gENABLE_CHANNEL_1='1', 1000)
 
 #define OPTARG "v:h"
 static struct option long_options[] = {
