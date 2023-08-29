@@ -163,6 +163,26 @@ TEST(TEST_BLADERF, async) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_LIBBLADERF, rx_meta) {
+    std::string command;
+    std::string sample_formats[] = {"8", "16"};
+    std::string mimo_enable[] = {"", "-m"};
+
+    int num_formats = sizeof(sample_formats) / sizeof(sample_formats[0]);
+    int num_mimo_states = sizeof(mimo_enable) / sizeof(mimo_enable[0]);
+
+    for (int i = 0; i < num_formats; i++) {
+        for (int j = 0; j < num_mimo_states; j++) {
+            command = "./output/libbladeRF_test_rx_meta";
+            command += " -b " + sample_formats[i];
+            command += " " + mimo_enable[j];
+            std::cout << command << std::endl;
+            status = std::system(command.c_str());
+            ASSERT_EQ(0, status);
+        }
+    }
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
