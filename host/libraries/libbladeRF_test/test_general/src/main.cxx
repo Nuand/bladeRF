@@ -399,6 +399,22 @@ TEST_P(verify, fx3_gpif_meta_8bit_tb) {
     EXPECT_EQ(status, 0);
 }
 
+TEST_P(verify, rx_counter_8bit_tb) {
+    std::string bitmode  = std::get<0>(GetParam()) ? "1" : "0";
+    std::string channel0 = std::get<1>(GetParam()) ? "1" : "0";
+    std::string channel1 = std::get<2>(GetParam()) ? "1" : "0";
+
+    std::string command = NIOS2SHELL;
+    command += " vsim -c -do \"do test.do vsim nuand.rx_counter_8bit_tb ";
+    command += "-gEIGHT_BIT_MODE_EN='" + bitmode + "' ";
+    command += "-gENABLE_CHANNEL_0='" + channel0 + "' ";
+    command += "-gENABLE_CHANNEL_1='" + channel1 + "' ";
+    command += "1000\"";
+
+    status = std::system(command.c_str());
+    EXPECT_EQ(status, 0);
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
