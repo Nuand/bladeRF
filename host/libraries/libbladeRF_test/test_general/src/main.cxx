@@ -40,6 +40,12 @@
 #define NIOS2SHELL "~/intelFPGA_lite/20.1/nios2eds/nios2_command_shell.sh"
 int status = 0;
 
+#define TEST_HDL_COMPILE(test_name) \
+    TEST_F(hdl, compile_##test_name) { \
+        status = std::system(NIOS2SHELL" vsim -c -do \"do test.do " #test_name ".do\""); \
+        EXPECT_EQ(status, 0); \
+    }
+
 TEST(TEST_LIBBLADERF, version) {
     status = std::system("./output/libbladeRF_test_version");
     ASSERT_EQ(0, status);
@@ -282,6 +288,8 @@ TEST_F(hdl, vsim_version) {
     status = std::system(NIOS2SHELL" vsim -version");
     EXPECT_EQ(status, 0);
 }
+
+TEST_HDL_COMPILE(compile)
 
 #define OPTARG "v:h"
 static struct option long_options[] = {
