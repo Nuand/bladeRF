@@ -83,6 +83,11 @@ TEST(TEST_BLADERF, repeated_stream) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, quick_retune) {
+    status = std::system("./output/libbladeRF_test_quick_retune -i 100");
+    ASSERT_EQ(0, status);
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
