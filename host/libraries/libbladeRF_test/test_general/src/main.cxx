@@ -110,6 +110,21 @@ TEST(TEST_BLADERF, enable_module) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, loopback) {
+    status = std::system("./output/libbladeRF_test_ctrl -t loopback");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_BLADERF, rx_mux) {
+    status = std::system("./output/libbladeRF_test_ctrl -t rx_mux");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_BLADERF, gain) {
+    status = std::system("./output/libbladeRF_test_ctrl -t gain");
+    ASSERT_EQ(0, status);
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
