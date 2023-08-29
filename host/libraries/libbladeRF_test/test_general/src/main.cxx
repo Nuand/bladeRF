@@ -76,6 +76,13 @@ TEST(TEST_BLADERF, peripheral_timing) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, repeated_stream) {
+    status = std::system("./output/libbladeRF_test_repeated_stream --tx -r 10");
+    ASSERT_EQ(0, status);
+    status = std::system("./output/libbladeRF_test_repeated_stream --rx -r 10");
+    ASSERT_EQ(0, status);
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
