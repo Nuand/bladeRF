@@ -63,3 +63,12 @@ target_link_libraries(
 )
 
 gtest_discover_tests(${PROJECT_NAME})
+
+################################################################
+# Find the nios2_command_shell
+################################################################
+find_program(NIOS2_COMMAND_SHELL_EXECUTABLE nios2_command_shell.sh
+    PATHS ~/intelFPGA_lite/20.1/nios2eds
+    NO_CACHE
+    REQUIRED
+)

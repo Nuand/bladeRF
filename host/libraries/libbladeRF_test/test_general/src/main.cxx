@@ -31,10 +31,13 @@
 #include <libbladeRF.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #define TEST_LIBBLADERF libbladeRF
 #define TEST_BLADERF device
 #define TEST_XB200 xb200
+#define BLADERF_MODELSIM_DIR "../../hdl/fpga/platforms/bladerf-micro/modelsim/"
+#define NIOS2SHELL "~/intelFPGA_lite/20.1/nios2eds/nios2_command_shell.sh"
 int status = 0;
 
 TEST(TEST_LIBBLADERF, version) {
@@ -198,6 +201,17 @@ TEST(TEST_BLADERF, async) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, sync) {
+    status = std::system("./output/libbladeRF_test_sync --verbosity debug -o temp.bin -c 5000");
+    ASSERT_EQ(0, status);
+    status = std::system("./output/libbladeRF_test_sync --verbosity debug -i temp.bin -c 5000");
+    ASSERT_EQ(0, status);
+    status = std::system("rm temp.bin");
+    if (status != 0) {
+        printf("Failed to remove temp.bin");
+    }
+}
+
 TEST(TEST_LIBBLADERF, rx_meta) {
     std::string command;
     std::string sample_formats[] = {"8", "16"};
@@ -237,6 +251,36 @@ TEST(TEST_LIBBLADERF, scheduled_retune) {
             ASSERT_EQ(0, status);
         }
     }
+}
+
+
+// ===============================
+// HDL
+// ===============================
+
+class hdl : public ::testing::Test {
+protected:
+    char build_dir[PATH_MAX];
+    void SetUp() override {
+        if (getcwd(build_dir, PATH_MAX) == NULL) {
+            perror("Failed to get current directory\n");
+        }
+
+        if (chdir(BLADERF_MODELSIM_DIR) != 0) {
+            perror("Failed to move to " BLADERF_MODELSIM_DIR "\n");
+        }
+    }
+
+    void TearDown() override {
+        if (chdir(build_dir) != 0) {
+            perror("Failed to move out of " BLADERF_MODELSIM_DIR "\n");
+        }
+    }
+};
+
+TEST_F(hdl, vsim_version) {
+    status = std::system(NIOS2SHELL" vsim -version");
+    EXPECT_EQ(status, 0);
 }
 
 #define OPTARG "v:h"
