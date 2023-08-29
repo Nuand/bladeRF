@@ -51,8 +51,28 @@ TEST(TEST_LIBBLADERF, cpp) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_LIBBLADERF, parse) {
+    status = std::system("./output/libbladeRF_test_parse");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_LIBBLADERF, interleaver) {
+    status = std::system("./output/libbladeRF_test_interleaver");
+    ASSERT_EQ(0, status);
+}
+
 TEST(TEST_BLADERF, open) {
     status = std::system("./output/libbladeRF_test_open");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_BLADERF, frequency_hop) {
+    status = std::system("./output/libbladeRF_test_freq_hop -i 200");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_BLADERF, peripheral_timing) {
+    status = std::system("./output/libbladeRF_test_peripheral_timing");
     ASSERT_EQ(0, status);
 }
 
