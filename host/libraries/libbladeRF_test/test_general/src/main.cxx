@@ -40,6 +40,7 @@
 #define TEST_LIBBLADERF libbladeRF
 #define TEST_BLADERF device
 #define TEST_XB200 xb200
+#define BLADERF_QUARTUS_DIR "../../hdl/quartus/"
 #define BLADERF_MODELSIM_DIR "../../hdl/fpga/platforms/bladerf-micro/modelsim/"
 #define NIOS2SHELL "~/intelFPGA_lite/20.1/nios2eds/nios2_command_shell.sh"
 int status = 0;
@@ -430,6 +431,109 @@ TEST_P(verify, rx_timestamp_tb) {
     status = std::system(command.c_str());
     EXPECT_EQ(status, 0);
 }
+
+// ===============================
+// Synthesis
+// ===============================
+
+const std::vector<std::tuple<std::string, std::string, std::string>> fpga_images_defaults = {
+    {"bladeRF",         "hosted",       "40"},
+    {"bladeRF",         "hosted",       "115"},
+    {"bladeRF-micro",   "hosted",       "A4"},
+    {"bladeRF-micro",   "hosted",       "A9"},
+    {"bladeRF-micro",   "wlan",         "A9"}
+};
+
+const std::vector<std::tuple<std::string, std::string, std::string>> fpga_images_all = {
+    {"bladeRF",         "hosted",       "40"},
+    {"bladeRF",         "hosted",       "115"},
+    {"bladeRF",         "adsb",         "40"},
+    {"bladeRF",         "adsb",         "115"},
+    {"bladeRF",         "atsc_tx",      "40"},
+    {"bladeRF",         "atsc_tx",      "115"},
+    {"bladeRF",         "fsk_bridge",   "40"},
+    {"bladeRF",         "fsk_bridge",   "115"},
+    {"bladeRF",         "headless",     "40"},
+    {"bladeRF",         "headless",     "115"},
+    {"bladeRF",         "qpsk_tx",      "40"},
+    {"bladeRF",         "qpsk_tx",      "115"},
+    {"bladeRF-micro",   "hosted",       "A4"},
+    {"bladeRF-micro",   "hosted",       "A9"},
+    {"bladeRF-micro",   "adsb",         "A4"},
+    {"bladeRF-micro",   "adsb",         "A9"},
+    {"bladeRF-micro",   "foxhunt",      "A4"},
+    {"bladeRF-micro",   "foxhunt",      "A9"},
+    {"bladeRF-micro",   "wlan",         "A9"}
+};
+
+class synth: public ::testing::TestWithParam<std::tuple<std::string, std::string, std::string>> {
+    char build_dir[PATH_MAX];
+    void SetUp() override {
+        std::string home = std::getenv("HOME");
+        fs::path nios2shell_path = "";
+
+        find_file("~/intelFPGA_lite", "nios2_command_shell.sh", &nios2shell_path);
+        if (nios2shell_path.empty()) {
+            std::cout << "Failed to find nios2_command_shell\n";
+        } else if (!fs::exists(fs::path(home) / "intelFPGA_lite/20.1")) {
+            std::cout << "[ERROR] Found the nios2_command_shell.sh in an alternate version of Quartus.\n";
+            std::cout << "[ERROR] Change the NIOS2SHELL directive accordingly.\n\n";
+            std::cout << "    Expected: " << NIOS2SHELL << std::endl;
+            std::cout << "    Found:    " << nios2shell_path.string() << "\n\n";
+        }
+
+        if (getcwd(build_dir, PATH_MAX) == NULL) {
+            perror("Failed to get current directory\n");
+        }
+
+        if (chdir(BLADERF_QUARTUS_DIR) != 0) {
+            perror("Failed to move to " BLADERF_QUARTUS_DIR"\n");
+        }
+    }
+
+    void TearDown() override {
+        if (chdir(build_dir) != 0) {
+            perror("Failed to move out of " BLADERF_QUARTUS_DIR"\n");
+        }
+    }
+};
+
+TEST_P(synth, synthesis) {
+    std::string board    = std::get<0>(GetParam());
+    std::string revision = std::get<1>(GetParam());
+    std::string size     = std::get<2>(GetParam());
+
+    std::string command = NIOS2SHELL;
+    command += " ./build_bladerf.sh ";
+    command += " -b " + board;
+    command += " -r " + revision;
+    command += " -s " + size;
+
+    status = std::system(command.c_str());
+    EXPECT_EQ(status, 0);
+}
+
+INSTANTIATE_TEST_SUITE_P(synthesize_defaults, synth,
+    ::testing::ValuesIn(fpga_images_defaults),
+    [](const testing::TestParamInfo<synth::ParamType>& info) {
+        std::string name = absl::StrCat(
+            std::get<0>(info.param), "_",
+            std::get<1>(info.param), "_",
+            std::get<2>(info.param));
+        absl::c_replace_if(name, [](char c) { return !std::isalnum(c); }, '_');
+        return name;
+    });
+
+INSTANTIATE_TEST_SUITE_P(DISABLED_synthesize_all, synth,
+    ::testing::ValuesIn(fpga_images_all),
+    [](const testing::TestParamInfo<synth::ParamType>& info) {
+        std::string name = absl::StrCat(
+            std::get<0>(info.param), "_",
+            std::get<1>(info.param), "_",
+            std::get<2>(info.param));
+        absl::c_replace_if(name, [](char c) { return !std::isalnum(c); }, '_');
+        return name;
+    });
 
 #define OPTARG "v:h"
 static struct option long_options[] = {
