@@ -29,3 +29,13 @@ option(TEST_REGRESSION "Include regression tests" OFF)
 if(TEST_REGRESSION)
     add_subdirectory(test_regression)
 endif()
+
+configure_file(requirements.txt
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/requirements.txt
+               FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ
+               COPYONLY)
+
+configure_file(setup_env.sh
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/setup_env.sh
+               FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ
+               COPYONLY)
