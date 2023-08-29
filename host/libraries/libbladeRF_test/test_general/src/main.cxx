@@ -105,6 +105,11 @@ TEST(TEST_BLADERF, unused_sync) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, enable_module) {
+    status = std::system("./output/libbladeRF_test_ctrl -t enable_module");
+    ASSERT_EQ(0, status);
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
