@@ -131,6 +131,11 @@ TEST(TEST_XB200, DISABLED_xb200) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_BLADERF, tx_onoff_nowsched) {
+    status = std::system("./output/libbladeRF_test_timestamps -t tx_onoff_nowsched");
+    ASSERT_EQ(0, status);
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
