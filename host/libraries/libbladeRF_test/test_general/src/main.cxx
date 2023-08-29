@@ -34,6 +34,7 @@
 
 #define TEST_LIBBLADERF libbladeRF
 #define TEST_BLADERF device
+#define TEST_XB200 xb200
 int status = 0;
 
 TEST(TEST_LIBBLADERF, version) {
@@ -122,6 +123,11 @@ TEST(TEST_BLADERF, rx_mux) {
 
 TEST(TEST_BLADERF, gain) {
     status = std::system("./output/libbladeRF_test_ctrl -t gain");
+    ASSERT_EQ(0, status);
+}
+
+TEST(TEST_XB200, DISABLED_xb200) {
+    status = std::system("./output/libbladeRF_test_ctrl --xb200 -t xb200");
     ASSERT_EQ(0, status);
 }
 
