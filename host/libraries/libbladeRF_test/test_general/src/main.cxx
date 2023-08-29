@@ -203,6 +203,27 @@ TEST(TEST_LIBBLADERF, rx_meta) {
     }
 }
 
+TEST(TEST_LIBBLADERF, scheduled_retune) {
+    std::string command;
+    std::string direction[] = {"tx", "rx"};
+    std::string speed[] = {"quick"};
+
+    int num_formats = sizeof(direction) / sizeof(direction[0]);
+    int num_mimo_states = sizeof(speed) / sizeof(speed[0]);
+
+    for (int i = 0; i < num_formats; i++) {
+        for (int j = 0; j < num_mimo_states; j++) {
+            command = "./output/libbladeRF_test_scheduled_retune ";
+            command += direction[i] + " ";
+            command += "hop.csv ";
+            command += speed[j];
+            std::cout << command << std::endl;
+            status = std::system(command.c_str());
+            ASSERT_EQ(0, status);
+        }
+    }
+}
+
 #define OPTARG "v:h"
 static struct option long_options[] = {
     { "verbosity",  required_argument,  NULL,   'v' },
