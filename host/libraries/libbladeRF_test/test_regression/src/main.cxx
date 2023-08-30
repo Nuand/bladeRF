@@ -38,7 +38,6 @@
 #include <limits.h>
 
 #define TEST_LIBBLADERF libbladeRF
-#define TEST_BLADERF device
 #define TEST_XB200 xb200
 #define BLADERF_QUARTUS_DIR "../../hdl/quartus/"
 #define BLADERF_MODELSIM_DIR "../../hdl/fpga/platforms/bladerf-micro/modelsim/"
@@ -83,86 +82,86 @@ TEST(TEST_LIBBLADERF, interleaver) {
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, open) {
+TEST(TEST_LIBBLADERF, open) {
     status = std::system("./output/libbladeRF_test_open");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, frequency_hop) {
+TEST(TEST_LIBBLADERF, frequency_hop) {
     status = std::system("./output/libbladeRF_test_freq_hop -i 200");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, peripheral_timing) {
+TEST(TEST_LIBBLADERF, peripheral_timing) {
     status = std::system("./output/libbladeRF_test_peripheral_timing");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, repeated_stream) {
+TEST(TEST_LIBBLADERF, repeated_stream) {
     status = std::system("./output/libbladeRF_test_repeated_stream --tx -r 10");
     ASSERT_EQ(0, status);
     status = std::system("./output/libbladeRF_test_repeated_stream --rx -r 10");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, quick_retune) {
+TEST(TEST_LIBBLADERF, quick_retune) {
     status = std::system("./output/libbladeRF_test_quick_retune -i 100");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, tune_timing) {
+TEST(TEST_LIBBLADERF, tune_timing) {
     status = std::system("./output/libbladeRF_test_tune_timing -i 200");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, rx_discont) {
+TEST(TEST_LIBBLADERF, rx_discont) {
     status = std::system("./output/libbladeRF_test_rx_discont -b 16 -i 1000");
     ASSERT_EQ(0, status);
     status = std::system("./output/libbladeRF_test_rx_discont -b 8 -i 1000");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, unused_sync) {
+TEST(TEST_LIBBLADERF, unused_sync) {
     status = std::system("./output/libbladeRF_test_unused_sync");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, enable_module) {
+TEST(TEST_LIBBLADERF, enable_module) {
     status = std::system("./output/libbladeRF_test_ctrl -t enable_module");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, loopback) {
+TEST(TEST_LIBBLADERF, loopback) {
     status = std::system("./output/libbladeRF_test_ctrl -t loopback");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, rx_mux) {
+TEST(TEST_LIBBLADERF, rx_mux) {
     status = std::system("./output/libbladeRF_test_ctrl -t rx_mux");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, gain) {
+TEST(TEST_LIBBLADERF, gain) {
     status = std::system("./output/libbladeRF_test_ctrl -t gain");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, bandwidth) {
+TEST(TEST_LIBBLADERF, bandwidth) {
     status = std::system("./output/libbladeRF_test_ctrl -t bandwidth --fast");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, frequency) {
+TEST(TEST_LIBBLADERF, frequency) {
     status = std::system("./output/libbladeRF_test_ctrl -t frequency --fast");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, samplerate) {
+TEST(TEST_LIBBLADERF, samplerate) {
     status = std::system("./output/libbladeRF_test_ctrl -t samplerate --fast");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, DISABLED_threads) {
+TEST(TEST_LIBBLADERF, DISABLED_threads) {
     status = std::system("./output/libbladeRF_test_ctrl -t threads --fast");
     ASSERT_EQ(0, status);
 }
@@ -172,27 +171,27 @@ TEST(TEST_XB200, DISABLED_xb200) {
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, tx_onoff_nowsched) {
+TEST(TEST_LIBBLADERF, tx_onoff_nowsched) {
     status = std::system("./output/libbladeRF_test_timestamps -t tx_onoff_nowsched");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, print) {
+TEST(TEST_LIBBLADERF, print) {
     status = std::system("./output/libbladeRF_test_timestamps -t print -f");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, rx_gaps) {
+TEST(TEST_LIBBLADERF, rx_gaps) {
     status = std::system("./output/libbladeRF_test_timestamps -t rx_gaps -f");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, rx_scheduled) {
+TEST(TEST_LIBBLADERF, rx_scheduled) {
     status = std::system("./output/libbladeRF_test_timestamps -t rx_scheduled -f");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, digital_loopback) {
+TEST(TEST_LIBBLADERF, digital_loopback) {
     std::string command;
     std::string sample_formats[] = {"8", "16"};
     std::string loopback_modes[] = {"fw", "fpga", "rfic"};
@@ -212,14 +211,14 @@ TEST(TEST_BLADERF, digital_loopback) {
     }
 }
 
-TEST(TEST_BLADERF, async) {
+TEST(TEST_LIBBLADERF, async) {
     status = std::system("./output/libbladeRF_test_async tx 2048 16");
     ASSERT_EQ(0, status);
     status = std::system("./output/libbladeRF_test_async rx 2048 16");
     ASSERT_EQ(0, status);
 }
 
-TEST(TEST_BLADERF, sync) {
+TEST(TEST_LIBBLADERF, sync) {
     status = std::system("./output/libbladeRF_test_sync --verbosity debug -o temp.bin -c 5000");
     ASSERT_EQ(0, status);
     status = std::system("./output/libbladeRF_test_sync --verbosity debug -i temp.bin -c 5000");
