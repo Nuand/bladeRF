@@ -2209,9 +2209,8 @@ typedef enum {
      * exclusive. Ensure that provided samples stay within [-128, 127].
      *
      * Samples consist of interleaved IQ value pairs, with I being the first
-     * value in the pair. Each value in the pair is a right-aligned,
-     * little-endian int16_t. The FPGA ensures that these values are
-     * sign-extended.
+     * value in the pair. Each value in the pair is a right-aligned int8_t.
+     * The FPGA ensures that these values are sign-extended.
      *
      * <pre>
      *  .--------------.--------------.
