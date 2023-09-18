@@ -525,10 +525,10 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
         } else if (status == 0) {
             if (!strcasecmp("n", argv[i])) {
                 /* Configure number of samples to receive */
-                unsigned int n;
+                uint64_t n;
                 bool ok;
 
-                n = str2uint_suffix(val, 0, UINT_MAX, rxtx_kmg_suffixes,
+                n = str2uint64_suffix(val, 0, UINT64_MAX, rxtx_kmg_suffixes,
                                     (int)rxtx_kmg_suffixes_len, &ok);
 
                 if (ok) {
