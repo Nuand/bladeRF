@@ -47,6 +47,16 @@ set(SRC
 )
 add_executable(${PROJECT_NAME} ${SRC})
 
+add_custom_target(test
+                  COMMAND ${CMAKE_COMMAND} -E echo ""
+                  COMMAND ${CMAKE_COMMAND} -E echo "Available test targets:"
+                  COMMAND ${CMAKE_COMMAND} -E echo "  make test_all        - Run all tests"
+                  COMMAND ${CMAKE_COMMAND} -E echo "  make test_hdl        - Run tests with filter 'hdl*'"
+                  COMMAND ${CMAKE_COMMAND} -E echo "  make test_libbladeRF - Run tests with filter 'libbladeRF*'"
+                  COMMAND ${CMAKE_COMMAND} -E echo "  make test_synthesis  - Run tests with filter 'synthesize*'"
+                  COMMAND ${CMAKE_COMMAND} -E echo ""
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
 add_custom_target(test_all
                   COMMAND ${PROJECT_NAME} --gtest_output="json"
                   DEPENDS ${PROJECT_NAME}
@@ -62,8 +72,8 @@ add_custom_target(test_libbladeRF
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
-add_custom_target(test_device
-                  COMMAND ${PROJECT_NAME} --gtest_filter="device*" --gtest_output="json"
+add_custom_target(test_synthesis
+                  COMMAND ${PROJECT_NAME} --gtest_filter="synthesize*" --gtest_output="json"
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
