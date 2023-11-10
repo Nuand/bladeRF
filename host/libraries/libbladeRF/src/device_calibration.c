@@ -92,6 +92,19 @@ static int gain_cal_tbl_init(struct bladerf_gain_cal_tbl *tbl, uint32_t num_entr
     return 0;
 }
 
+static int normalize_gain_correction(struct bladerf_gain_cal_tbl *tbl, bladerf_gain ref_pwr) {
+    if (tbl->state != BLADERF_GAIN_CAL_LOADED) {
+        log_error("The gain calibration table is not loaded for channel %d\n", tbl->ch);
+        return BLADERF_ERR_MEM;
+    }
+
+    for (size_t i = 0; i < tbl->n_entries; i++) {
+        tbl->entries[i].gain_corr -= (double)ref_pwr;
+    }
+
+    return 0;
+}
+
 int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *binary_path) {
     int num_channels = 4;
     struct bladerf_gain_cal_tbl gain_tbls[num_channels];
@@ -135,6 +148,28 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     gain_tbls[ch].state = BLADERF_GAIN_CAL_LOADED;
     gain_tbls[ch].enabled = true;
     gain_tbls[ch].gain_target = current_gain;
+
+    switch (ch) {
+    /** bladeRF calibration target is -30dBFS for RX */
+    case BLADERF_CHANNEL_RX(0):
+    case BLADERF_CHANNEL_RX(1):
+        status = normalize_gain_correction(&gain_tbls[ch], -30);
+        break;
+
+    /** bladeRF calibration target is 0dBm for TX */
+    case BLADERF_CHANNEL_TX(0):
+    case BLADERF_CHANNEL_TX(1):
+        status = normalize_gain_correction(&gain_tbls[ch], 0);
+        break;
+
+    default:
+        log_error("Channel unknown: ch = %i?\n", ch);
+        status = BLADERF_ERR_UNEXPECTED;
+        goto error;
+    }
+    if (status != 0) {
+        goto error;
+    }
 
     free(dev->gain_tbls[ch].entries);
     dev->gain_tbls[ch] = gain_tbls[ch];
