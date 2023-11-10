@@ -37,6 +37,7 @@
 #include "backend/usb/usb.h"
 #include "board/board.h"
 #include "driver/fx3_fw.h"
+#include "device_calibration.h"
 #include "streaming/async.h"
 #include "version.h"
 
@@ -2147,6 +2148,10 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
 {
     int status = 0;
     const char *board_name;
+    char *full_path = NULL;
+    char *full_path_bin = NULL;
+    char *ext;
+
     log_debug("Loading gain calibration\n");
     MUTEX_LOCK(&dev->lock);
 
@@ -2157,7 +2162,41 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
         goto error;
     }
 
+    full_path = file_find(cal_file_loc);
+    if (full_path == NULL) {
+        status = BLADERF_ERR_NO_FILE;
+        goto error;
+    }
+
+    /** Convert to binary format if CSV */
+    full_path_bin = (char*)malloc(strlen(full_path) + 1);
+    strcpy(full_path_bin, full_path);
+    ext = strstr(full_path_bin, ".csv");
+    if (ext) {
+        log_debug("Converting gain calibration to binary format\n");
+        strcpy(ext, ".tbl");
+        status = gain_cal_csv_to_bin(full_path, full_path_bin);
+        if (status != 0) {
+            log_error("Failed to convert csv to binary: %s -> %s\n",
+                full_path, full_path_bin);
+            status = EXIT_FAILURE;
+            goto error;
+        }
+    }
+
+    status = load_gain_calibration(dev, ch, full_path_bin);
+    if (status != 0) {
+        log_error("Failed to load calibration\n");
+        status = BLADERF_ERR_UNEXPECTED;
+        goto error;
+    }
+
 error:
+    if (full_path)
+        free(full_path);
+    if (full_path_bin)
+        free(full_path_bin);
+
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }

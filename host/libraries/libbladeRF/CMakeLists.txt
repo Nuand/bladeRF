@@ -352,6 +352,7 @@ set(LIBBLADERF_SOURCE
         src/helpers/configfile.c
         src/version.h
         src/devinfo.c
+        src/device_calibration.c
         src/bladerf.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c

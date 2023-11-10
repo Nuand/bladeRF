@@ -19,41 +19,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <stdio.h>
-#include <math.h>
+#include <stdint.h>
 #include <unistd.h>
+#include <string.h>
 #include "libbladeRF.h"
-#include "file_operations.h"
 
-#include "log.h"
-#include "helpers/file.h"
+int read_and_print_binary(const char *binary_path) {
+    uint64_t frequency;
+    float power;
 
-#define CHECK(func_call) do { \
-    status = (func_call); \
-    if (status != 0) { \
-        fprintf(stderr, "Failed at %s: %s\n", #func_call, bladerf_strerror(status)); \
-        status = EXIT_FAILURE; \
-        goto out; \
-    } \
-} while (0)
+    if (access(binary_path, F_OK) == -1) {
+        fprintf(stderr, "Error: file %s does not exist\n", binary_path);
+        return 1;
+    }
 
-int main(int argc, char *argv[]) {
-    int status;
-    struct bladerf *dev;
-    char *devstr = NULL;
-    const char *cal_rx_file_loc_csv = "rx_pwr_cal.csv";
-    const char *cal_rx_file_loc_bin = "./output/rx_pwr_cal.tbl";
-    bladerf_channel ch;
+    FILE *binaryFile = fopen(binary_path, "rb");
+    if (!binaryFile) {
+        fprintf(stderr, "Error opening binary file.\n");
+        return 1;
+    }
 
-    bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_DEBUG);
+    printf("Frequency (Hz),Power (dBm)\n");
+    while (fread(&frequency, sizeof(uint64_t), 1, binaryFile) && fread(&power, sizeof(float), 1, binaryFile)) {
+        printf("%" PRIu64 ",%f\n", frequency, power);
+    }
 
-    CHECK(bladerf_open(&dev, devstr));
-
-    ch = BLADERF_CHANNEL_RX(0);
-    CHECK(bladerf_load_gain_calibration(dev, ch, cal_rx_file_loc_csv));
-    CHECK(read_and_print_binary(cal_rx_file_loc_bin));
-
-out:
-    bladerf_close(dev);
-    return status;
+    fclose(binaryFile);
+    return 0;
 }
-

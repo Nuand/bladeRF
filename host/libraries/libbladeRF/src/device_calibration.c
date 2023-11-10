@@ -71,7 +71,7 @@ error:
     return status;
 }
 
-static int gain_cal_tbl_init(struct gain_cal_tbl *tbl, uint32_t num_entries) {
+static int gain_cal_tbl_init(struct bladerf_gain_cal_tbl *tbl, uint32_t num_entries) {
     if (tbl == NULL) {
         log_error("calibration table is NULL\n");
         return BLADERF_ERR_MEM;
@@ -82,7 +82,7 @@ static int gain_cal_tbl_init(struct gain_cal_tbl *tbl, uint32_t num_entries) {
     tbl->start_freq = 0;
     tbl->stop_freq = 0;
 
-    tbl->entries = malloc(num_entries * sizeof(struct gain_cal_entry));
+    tbl->entries = malloc(num_entries * sizeof(struct bladerf_gain_cal_entry));
     if (tbl->entries == NULL) {
         log_error("failed to allocate memory for calibration table entries\n");
         return BLADERF_ERR_MEM;
@@ -94,7 +94,7 @@ static int gain_cal_tbl_init(struct gain_cal_tbl *tbl, uint32_t num_entries) {
 
 int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *binary_path) {
     int num_channels = 4;
-    struct gain_cal_tbl gain_tbls[num_channels];
+    struct bladerf_gain_cal_tbl gain_tbls[num_channels];
     uint64_t frequency;
     float power;
     int entry_counter;
@@ -126,7 +126,6 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     gain_tbls[ch].n_entries = entry_counter;
     gain_tbls[ch].ch = ch;
     gain_tbls[ch].state = BLADERF_GAIN_CAL_LOADED;
-    gain_tbls[ch].enabled = true;
 
     free(dev->gain_tbls[ch].entries);
     dev->gain_tbls[ch] = gain_tbls[ch];

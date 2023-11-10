@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(libbladeRF_test_gain_calibration C)
 
 set(INCLUDES
+    ./include
     ${libbladeRF_SOURCE_DIR}/include
     ${libbladeRF_SOURCE_DIR}/src
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
@@ -15,6 +16,7 @@ endif()
 
 set(SRC
     src/main.c
+    src/file_operations.c
     ${libbladeRF_SOURCE_DIR}/src/helpers/file.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
