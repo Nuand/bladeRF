@@ -108,6 +108,41 @@ int main(int argc, char *argv[]) {
     }
     printf("\n");
 
+    /**
+     * Monitor calibrated gain over gain assignments
+     */
+    struct bladerf_range const *gain_range = NULL;
+    bladerf_gain min_gain, max_gain;
+    CHECK(bladerf_set_frequency(dev, ch, cal[ch]->entries[0].freq));
+    CHECK(bladerf_get_gain_range(dev, ch, &gain_range));
+    min_gain = gain_range->min * gain_range->scale;
+    max_gain = gain_range->max * gain_range->scale;
+    gain_expected = 0;
+
+    /** Start right below gain range, end right past gain range */
+    for (bladerf_gain g = min_gain-10; g <= max_gain+10; g++) {
+        CHECK(bladerf_set_gain(dev, ch, g));
+        CHECK(bladerf_get_gain(dev, ch, &gain));
+        gain_expected = (int)round(g - cal[ch]->entries[0].gain_corr);
+
+        // Clamp expected gain device's gain range
+        if (gain_expected < min_gain || gain_expected > max_gain) {
+            gain_expected = (gain_expected < min_gain) ? min_gain : max_gain;
+        }
+
+        if (gain != gain_expected) {
+            fprintf(stderr, "[Error] Gain compensation failed gain sweep\n");
+            fprintf(stderr, "   Target gain:     %i\n", g);
+            fprintf(stderr, "   Expected gain:   %i\n", gain_expected);
+            fprintf(stderr, "   Actual gain:     %i\n", gain);
+            goto out;
+        }
+
+        printf("\033[2K\rTarget gain: %i, Expected gain: %i, Actual gain: %i", g, gain_expected, gain);
+        fflush(stdout);
+    }
+    printf("\n");
+
 out:
     bladerf_close(dev);
     return status;

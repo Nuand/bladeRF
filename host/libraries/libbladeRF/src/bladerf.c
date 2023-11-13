@@ -542,6 +542,8 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     int status;
     bladerf_gain_mode gain_mode;
+    bladerf_frequency freq;
+    bladerf_gain assigned_gain = gain;
     MUTEX_LOCK(&dev->lock);
 
     /* Change gain mode to manual if ch = RX */
@@ -564,7 +566,12 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 
     dev->gain_tbls[ch].gain_target = gain;
 
-    status = dev->board->set_gain(dev, ch, gain);
+    if (dev->gain_tbls[ch].enabled == true) {
+        dev->board->get_frequency(dev, ch, &freq);
+        get_gain_correction(dev, freq, ch, &assigned_gain);
+    }
+
+    status = dev->board->set_gain(dev, ch, assigned_gain);
     if (status != 0) {
         log_error("Failed to set gain\n");
         goto error;
