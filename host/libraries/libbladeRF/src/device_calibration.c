@@ -29,6 +29,24 @@
 #include "log.h"
 #include "common.h"
 
+#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
+
+#define RETURN_ERROR_STATUS(_what, _status)                   \
+    do {                                                      \
+        log_error("%s: %s failed: %s\n", __FUNCTION__, _what, \
+                  bladerf_strerror(_status));                 \
+        return _status;                                       \
+    } while (0)
+
+#define CHECK_STATUS(_fn)                  \
+    do {                                   \
+        int _s = _fn;                      \
+        if (_s < 0) {                      \
+            RETURN_ERROR_STATUS(#_fn, _s); \
+        }                                  \
+    } while (0)
+
+
 int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path)
 {
     uint64_t frequency;
