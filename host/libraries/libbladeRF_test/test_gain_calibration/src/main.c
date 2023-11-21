@@ -56,8 +56,8 @@ int main(int argc, char *argv[]) {
     int status;
     struct bladerf *dev;
     char *devstr = NULL;
-    const char *rx_cal_file = "rx_sweep_0.csv";
-    const char *tx_cal_file = "tx_sweep_60_fine.csv";
+    const char *rx_cal_file = "rx_sweep.csv";
+    const char *tx_cal_file = "tx_sweep.csv";
     bladerf_channel ch;
 
     const struct bladerf_range *freq_range;

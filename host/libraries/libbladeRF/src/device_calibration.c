@@ -47,10 +47,18 @@
     } while (0)
 
 
-int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path)
+int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path, bladerf_channel ch)
 {
     uint64_t frequency;
     float power;
+    uint64_t cw_freq;
+    uint8_t chain;
+    bladerf_gain gain;
+    int32_t rssi;
+    float vsg_power;
+    uint64_t signal_freq, bladeRF_PXI_freq;
+
+
     char line[256];
     char current_dir[1000];
     int status = 0;
@@ -76,9 +84,23 @@ int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path)
 
     /** Transfer CSV data to binary */
     while (fgets(line, sizeof(line), csvFile)) {
-        sscanf(line, "%lu,%f", &frequency, &power);
-        fwrite(&frequency, sizeof(uint64_t), 1, binaryFile);
-        fwrite(&power, sizeof(float), 1, binaryFile);
+        if (BLADERF_CHANNEL_IS_TX(ch)) {
+            sscanf(line, "%" SCNu8 ",%" SCNi32 ",%" SCNu64 ",%" SCNu64 ",%f",
+                &chain, &gain, &cw_freq, &frequency, &power);
+
+            if (chain == 0 && gain == 60) {
+                fwrite(&frequency, sizeof(uint64_t), 1, binaryFile);
+                fwrite(&power, sizeof(float), 1, binaryFile);
+            }
+        } else {
+            sscanf(line, "%" SCNu8 ",%" SCNi32 ",%f,%" SCNu64 ",%" SCNu64 ",%" SCNi32 ",%f",
+                &chain, &gain, &vsg_power, &signal_freq, &bladeRF_PXI_freq, &rssi, &power);
+
+            if (chain == 0 && gain == 0) {
+                fwrite(&bladeRF_PXI_freq, sizeof(uint64_t), 1, binaryFile);
+                fwrite(&power, sizeof(float), 1, binaryFile);
+            }
+        }
     }
 
 error:
