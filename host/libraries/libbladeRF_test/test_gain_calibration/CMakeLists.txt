@@ -22,3 +22,23 @@ set(SRC
 include_directories(${INCLUDES})
 add_executable(libbladeRF_test_gain_calibration ${SRC})
 target_link_libraries(libbladeRF_test_gain_calibration libbladerf_shared m)
+
+configure_file(example_measurements/rx_sweep_0.csv
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/rx_sweep_0.csv
+               FILE_PERMISSIONS OWNER_READ
+               COPYONLY)
+
+configure_file(example_measurements/tx_sweep_60.csv
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tx_sweep_60.csv
+               FILE_PERMISSIONS OWNER_READ
+               COPYONLY)
+
+configure_file(example_measurements/tx_sweep_60_fine.csv
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tx_sweep_60_fine.csv
+               FILE_PERMISSIONS OWNER_READ
+               COPYONLY)
+
+configure_file(example_measurements/rx_pwr_cal.csv
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/rx_pwr_cal.csv
+               FILE_PERMISSIONS OWNER_READ
+               COPYONLY)
