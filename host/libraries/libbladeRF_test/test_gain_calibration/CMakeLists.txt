@@ -40,7 +40,12 @@ configure_file(example_measurements/tx_sweep_60_fine.csv
                FILE_PERMISSIONS OWNER_READ
                COPYONLY)
 
-configure_file(example_measurements/rx_pwr_cal.csv
-               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/rx_pwr_cal.csv
+configure_file(example_measurements/rx_sweep.csv
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/rx_sweep.csv
+               FILE_PERMISSIONS OWNER_READ
+               COPYONLY)
+
+configure_file(example_measurements/tx_sweep.csv
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tx_sweep.csv
                FILE_PERMISSIONS OWNER_READ
                COPYONLY)
