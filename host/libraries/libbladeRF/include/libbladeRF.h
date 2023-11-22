@@ -3454,6 +3454,20 @@ API_EXPORT
 int CALL_CONV bladerf_image_print_metadata(const struct bladerf_image *image);
 
 /**
+ * @brief Converts a bladeRF image type to its corresponding string representation.
+ *
+ * This function maps a `bladerf_image_type` enumeration value to a human-readable
+ * string. It is useful for logging, debugging, or displaying the image type
+ * to an end user.
+ *
+ * @param[in] type The `bladerf_image_type` enumeration value to be converted.
+ *
+ * @return A pointer to a string representing the image type. Returns "Unknown Type"
+ *         for any unrecognized or out-of-range values.
+ */
+const char* bladerf_image_type_to_string(bladerf_image_type type);
+
+/**
  * Write a flash image to a file.
  *
  * This function will fill in the checksum field before writing the contents to

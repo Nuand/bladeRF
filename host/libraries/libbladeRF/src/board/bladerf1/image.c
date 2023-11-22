@@ -287,6 +287,7 @@ int bladerf_image_print_metadata(const struct bladerf_image *image) {
     }
 
     printf("Magic: %s\n", image->magic);
+    printf("Type: %s\n", bladerf_image_type_to_string(image->type));
     printf("Version: %d.%d.%d\n",
            image->version.major, image->version.minor, image->version.patch);
     printf("Timestamp: %" PRIx64 "\n", image->timestamp);
@@ -296,6 +297,41 @@ int bladerf_image_print_metadata(const struct bladerf_image *image) {
     fflush(stdout);
 
     return 0;
+}
+
+const char* bladerf_image_type_to_string(bladerf_image_type type) {
+    switch (type) {
+        case BLADERF_IMAGE_TYPE_INVALID:
+            return "Invalid";
+        case BLADERF_IMAGE_TYPE_RAW:
+            return "Raw Data";
+        case BLADERF_IMAGE_TYPE_FIRMWARE:
+            return "Firmware";
+        case BLADERF_IMAGE_TYPE_FPGA_40KLE:
+            return "FPGA 40 KLE Bitstream";
+        case BLADERF_IMAGE_TYPE_FPGA_115KLE:
+            return "FPGA 115 KLE Bitstream";
+        case BLADERF_IMAGE_TYPE_FPGA_A4:
+            return "FPGA A4 Bitstream";
+        case BLADERF_IMAGE_TYPE_FPGA_A9:
+            return "FPGA A9 Bitstream";
+        case BLADERF_IMAGE_TYPE_CALIBRATION:
+            return "Board Calibration";
+        case BLADERF_IMAGE_TYPE_RX_DC_CAL:
+            return "RX DC Offset Calibration Table";
+        case BLADERF_IMAGE_TYPE_TX_DC_CAL:
+            return "TX DC Offset Calibration Table";
+        case BLADERF_IMAGE_TYPE_RX_IQ_CAL:
+            return "RX IQ Balance Calibration Table";
+        case BLADERF_IMAGE_TYPE_TX_IQ_CAL:
+            return "TX IQ Balance Calibration Table";
+        case BLADERF_IMAGE_TYPE_FPGA_A5:
+            return "FPGA A5 Bitstream";
+        case BLADERF_IMAGE_TYPE_GAIN_CAL:
+            return "Gain Calibration";
+        default:
+            return "Unknown Type";
+    }
 }
 
 int bladerf_image_write(struct bladerf *dev,
