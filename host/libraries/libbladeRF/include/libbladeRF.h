@@ -3433,6 +3433,27 @@ API_EXPORT
 void CALL_CONV bladerf_free_image(struct bladerf_image *image);
 
 /**
+ * @brief Prints the metadata of a bladeRF image structure.
+ *
+ * This function displays the metadata of a provided `bladerf_image` structure.
+ * It includes information such as the magic number, version, timestamp, serial number,
+ * address, and length of the image. The function will return an error code if the
+ * provided image pointer is `NULL`.
+ *
+ * @pre The image should have been allocated using bladerf_alloc_image().
+ *
+ * @note This function only prints the metadata of the image and does not
+ *       perform any operations on the image data itself.
+ *
+ * @param[in] image Pointer to the `bladerf_image` structure whose metadata is to be printed.
+ *                  It should not be `NULL`.
+ *
+ * @return 0 on success, BLADERF_ERR_MEM if the image pointer is `NULL`.
+ */
+API_EXPORT
+int CALL_CONV bladerf_image_print_metadata(const struct bladerf_image *image);
+
+/**
  * Write a flash image to a file.
  *
  * This function will fill in the checksum field before writing the contents to

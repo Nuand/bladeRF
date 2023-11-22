@@ -281,6 +281,23 @@ static int unpack_image(struct bladerf_image *img, uint8_t *buf, size_t len)
     return 0;
 }
 
+int bladerf_image_print_metadata(const struct bladerf_image *image) {
+    if (!image) {
+        return BLADERF_ERR_MEM;
+    }
+
+    printf("Magic: %s\n", image->magic);
+    printf("Version: %d.%d.%d\n",
+           image->version.major, image->version.minor, image->version.patch);
+    printf("Timestamp: %" PRIx64 "\n", image->timestamp);
+    printf("Serial: %s\n", image->serial);
+    printf("Address: %x\n", image->address);
+    printf("Length: %u\n", image->length);
+    fflush(stdout);
+
+    return 0;
+}
+
 int bladerf_image_write(struct bladerf *dev,
                         struct bladerf_image *img, const char *file)
 {
