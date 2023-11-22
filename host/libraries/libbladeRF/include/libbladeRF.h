@@ -3371,6 +3371,11 @@ struct bladerf_image {
  * The `address` and `length` fields should be set 0 when reading an image from
  * a file.
  *
+ * @param[in] dev       Device handle
+ * @param[in] type      Image type to be created, represented by `bladerf_image_type`
+ * @param[in] address   Address in flash memory where the image is stored. Use 0xffffffff if not applicable.
+ * @param[in] length    Length of the image data in bytes
+ *
  * @return Pointer to allocated and initialized structure on success,
  *         `NULL` on memory allocation failure or invalid address/length.
  */
