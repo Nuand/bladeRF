@@ -36,7 +36,7 @@
  * @param ch           bladeRF channel
  * @return 0 on success, BLADERF_ERR_* code on failure.
  */
-int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path, bladerf_channel ch);
+int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *binary_path, bladerf_channel ch);
 
 /**
  * @brief Loads gain calibration data from a binary file into a bladeRF device.

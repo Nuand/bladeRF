@@ -2204,7 +2204,7 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
     if (ext) {
         log_debug("Converting gain calibration to binary format\n");
         strcpy(ext, ".tbl");
-        status = gain_cal_csv_to_bin(full_path, full_path_bin, ch);
+        status = gain_cal_csv_to_bin(dev, full_path, full_path_bin, ch);
         if (status != 0) {
             log_error("Failed to convert csv to binary: %s -> %s\n",
                 full_path, full_path_bin);

@@ -46,9 +46,36 @@
         }                                  \
     } while (0)
 
+static size_t count_csv_entries(const char *filename) {
+    char line[1024]; // Adjust buffer size as needed
+    int count = 0;
 
-int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path, bladerf_channel ch)
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return -1;
+    }
+
+    while (fgets(line, sizeof(line), file)) {
+        count++;
+    }
+
+    fclose(file);
+
+    return count - 1;
+}
+
+int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *binary_path, bladerf_channel ch)
 {
+    int status = 0;
+    struct bladerf_image *image;
+    size_t data_size;
+    size_t entry_size;
+    size_t offset = 0;
+
+    char line[256];
+    char current_dir[1000];
+
     uint64_t frequency;
     float power;
     uint64_t cw_freq;
@@ -56,12 +83,7 @@ int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path, bladerf_c
     bladerf_gain gain;
     int32_t rssi;
     float vsg_power;
-    uint64_t signal_freq, bladeRF_PXI_freq;
-
-
-    char line[256];
-    char current_dir[1000];
-    int status = 0;
+    uint64_t signal_freq;
 
     FILE *csvFile = fopen(csv_path, "r");
     FILE *binaryFile = fopen(binary_path, "wb");
@@ -75,33 +97,75 @@ int gain_cal_csv_to_bin(const char *csv_path, const char *binary_path, bladerf_c
         goto error;
     }
 
-    /** Check for empty CSV */
+    size_t num_entries = count_csv_entries(csv_path);
+    if (num_entries == 0) {
+        status = BLADERF_ERR_INVAL;
+        log_error("Error reading header from CSV file or file is empty.\n");
+        goto error;
+    }
+
+    entry_size = (BLADERF_CHANNEL_IS_TX(ch))
+        ? sizeof(chain) + sizeof(gain) + sizeof(cw_freq) + sizeof(frequency) + sizeof(power)
+        : sizeof(chain) + sizeof(gain) + sizeof(vsg_power) + sizeof(signal_freq) + sizeof(frequency) + sizeof(rssi) + sizeof(power);
+
+    data_size = num_entries * entry_size;
+
+    image = bladerf_alloc_image(dev, BLADERF_IMAGE_TYPE_GAIN_CAL, 0xffffffff, data_size);
+    if (image == NULL) {
+        log_error("Failed to allocate image\n");
+        status = BLADERF_ERR_MEM;
+        goto error;
+    }
+
     if (!fgets(line, sizeof(line), csvFile)) {
         status = BLADERF_ERR_INVAL;
         log_error("Error reading header from CSV file or file is empty.\n");
         goto error;
     }
 
-    /** Transfer CSV data to binary */
-    while (fgets(line, sizeof(line), csvFile)) {
+    for (size_t i = 0; i < num_entries; i++) {
+        if (!fgets(line, sizeof(line), csvFile)) {
+            break;
+        }
+
         if (BLADERF_CHANNEL_IS_TX(ch)) {
             sscanf(line, "%" SCNu8 ",%" SCNi32 ",%" SCNu64 ",%" SCNu64 ",%f",
                 &chain, &gain, &cw_freq, &frequency, &power);
 
-            if (chain == 0 && gain == 60) {
-                fwrite(&frequency, sizeof(uint64_t), 1, binaryFile);
-                fwrite(&power, sizeof(float), 1, binaryFile);
-            }
+            memcpy(&image->data[offset], &chain, sizeof(chain));
+            offset += sizeof(chain);
+            memcpy(&image->data[offset], &gain, sizeof(gain));
+            offset += sizeof(gain);
+            memcpy(&image->data[offset], &cw_freq, sizeof(cw_freq));
+            offset += sizeof(cw_freq);
+            memcpy(&image->data[offset], &frequency, sizeof(frequency));
+            offset += sizeof(frequency);
+            memcpy(&image->data[offset], &power, sizeof(power));
+            offset += sizeof(power);
         } else {
             sscanf(line, "%" SCNu8 ",%" SCNi32 ",%f,%" SCNu64 ",%" SCNu64 ",%" SCNi32 ",%f",
-                &chain, &gain, &vsg_power, &signal_freq, &bladeRF_PXI_freq, &rssi, &power);
+                &chain, &gain, &vsg_power, &signal_freq, &frequency, &rssi, &power);
 
-            if (chain == 0 && gain == 0) {
-                fwrite(&bladeRF_PXI_freq, sizeof(uint64_t), 1, binaryFile);
-                fwrite(&power, sizeof(float), 1, binaryFile);
-            }
+            memcpy(&image->data[offset], &chain, sizeof(chain));
+            offset += sizeof(chain);
+            memcpy(&image->data[offset], &gain, sizeof(gain));
+            offset += sizeof(gain);
+            memcpy(&image->data[offset], &vsg_power, sizeof(vsg_power));
+            offset += sizeof(vsg_power);
+            memcpy(&image->data[offset], &signal_freq, sizeof(signal_freq));
+            offset += sizeof(signal_freq);
+            memcpy(&image->data[offset], &frequency, sizeof(frequency));
+            offset += sizeof(frequency);
+            memcpy(&image->data[offset], &rssi, sizeof(rssi));
+            offset += sizeof(rssi);
+            memcpy(&image->data[offset], &power, sizeof(power));
+            offset += sizeof(power);
         }
     }
+
+    log_debug("Writing image to file: %s\n", binary_path);
+    bladerf_image_write(dev, image, binary_path);
+    bladerf_free_image(image);
 
 error:
     if (csvFile)
@@ -132,27 +196,26 @@ static int gain_cal_tbl_init(struct bladerf_gain_cal_tbl *tbl, uint32_t num_entr
     return 0;
 }
 
-static int normalize_gain_correction(struct bladerf_gain_cal_tbl *tbl, bladerf_gain ref_pwr) {
-    if (tbl->state != BLADERF_GAIN_CAL_LOADED) {
-        log_error("The gain calibration table is not loaded for channel %d\n", tbl->ch);
-        return BLADERF_ERR_MEM;
-    }
-
-    for (size_t i = 0; i < tbl->n_entries; i++) {
-        tbl->entries[i].gain_corr -= (double)ref_pwr;
-    }
-
-    return 0;
-}
-
 int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *binary_path) {
     int num_channels = 4;
     struct bladerf_gain_cal_tbl gain_tbls[num_channels];
     bladerf_gain current_gain;
     uint64_t frequency;
     float power;
-    int entry_counter;
+    size_t entry_counter;
+    size_t offset;
     int status = 0;
+
+    uint64_t cw_freq;
+    uint8_t chain;
+    bladerf_gain gain;
+    int32_t rssi;
+    float vsg_power;
+    bladerf_frequency signal_freq;
+
+    struct bladerf_image *image = NULL;
+    size_t entry_size;
+    size_t num_entries;
 
     FILE *binaryFile = fopen(binary_path, "rb");
     if (!binaryFile) {
@@ -174,11 +237,61 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
         goto error;
     }
 
+    entry_size = (BLADERF_CHANNEL_IS_TX(ch))
+        ? sizeof(chain) + sizeof(gain) + sizeof(cw_freq) + sizeof(frequency) + sizeof(power)
+        : sizeof(chain) + sizeof(gain) + sizeof(vsg_power) + sizeof(signal_freq) + sizeof(frequency) + sizeof(rssi) + sizeof(power);
+
+    image = bladerf_alloc_image(dev, BLADERF_IMAGE_TYPE_GAIN_CAL, 0, 0);
+    status = bladerf_image_read(image, binary_path);
+    if (status != 0) {
+        log_error("Failed to read image: %s\n", bladerf_strerror(status));
+        goto error;
+    }
+
+    num_entries = image->length / entry_size;
+
+    offset = 0;
     entry_counter = 0;
-    while (fread(&frequency, sizeof(uint64_t), 1, binaryFile) && fread(&power, sizeof(float), 1, binaryFile)) {
-        gain_tbls[ch].entries[entry_counter].freq = frequency;
-        gain_tbls[ch].entries[entry_counter].gain_corr = power;
-        entry_counter++;
+    for (uint64_t i = 0; i < num_entries; i++) {
+        if (BLADERF_CHANNEL_IS_TX(ch)) {
+            memcpy(&chain, &image->data[offset], sizeof(chain));
+            offset += sizeof(chain);
+            memcpy(&gain, &image->data[offset], sizeof(gain));
+            offset += sizeof(gain);
+            memcpy(&cw_freq, &image->data[offset], sizeof(cw_freq));
+            offset += sizeof(cw_freq);
+            memcpy(&frequency, &image->data[offset], sizeof(frequency));
+            offset += sizeof(frequency);
+            memcpy(&power, &image->data[offset], sizeof(power));
+            offset += sizeof(power);
+        } else {
+            memcpy(&chain, &image->data[offset], sizeof(chain));
+            offset += sizeof(chain);
+            memcpy(&gain, &image->data[offset], sizeof(gain));
+            offset += sizeof(gain);
+            memcpy(&vsg_power, &image->data[offset], sizeof(vsg_power));
+            offset += sizeof(vsg_power);
+            memcpy(&signal_freq, &image->data[offset], sizeof(signal_freq));
+            offset += sizeof(signal_freq);
+            memcpy(&frequency, &image->data[offset], sizeof(frequency));
+            offset += sizeof(frequency);
+            memcpy(&rssi, &image->data[offset], sizeof(rssi));
+            offset += sizeof(rssi);
+            memcpy(&power, &image->data[offset], sizeof(power));
+            offset += sizeof(power);
+        }
+
+        if (BLADERF_CHANNEL_IS_TX(ch) && chain == 0 && gain == 60) {
+            gain_tbls[ch].entries[entry_counter].freq = frequency;
+            gain_tbls[ch].entries[entry_counter].gain_corr = power;
+            entry_counter++;
+        }
+
+        if (!BLADERF_CHANNEL_IS_TX(ch) && chain == 0 && gain == 0) {
+            gain_tbls[ch].entries[entry_counter].freq = frequency;
+            gain_tbls[ch].entries[entry_counter].gain_corr = power - vsg_power;
+            entry_counter++;
+        }
     }
 
     gain_tbls[ch].start_freq = gain_tbls[ch].entries[0].freq;
@@ -189,34 +302,14 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     gain_tbls[ch].enabled = true;
     gain_tbls[ch].gain_target = current_gain;
 
-    switch (ch) {
-    /** bladeRF calibration target is -30dBFS for RX */
-    case BLADERF_CHANNEL_RX(0):
-    case BLADERF_CHANNEL_RX(1):
-        status = normalize_gain_correction(&gain_tbls[ch], -30);
-        break;
-
-    /** bladeRF calibration target is 0dBm for TX */
-    case BLADERF_CHANNEL_TX(0):
-    case BLADERF_CHANNEL_TX(1):
-        status = normalize_gain_correction(&gain_tbls[ch], 0);
-        break;
-
-    default:
-        log_error("Channel unknown: ch = %i?\n", ch);
-        status = BLADERF_ERR_UNEXPECTED;
-        goto error;
-    }
-    if (status != 0) {
-        goto error;
-    }
-
     free(dev->gain_tbls[ch].entries);
     dev->gain_tbls[ch] = gain_tbls[ch];
 
 error:
     if (binaryFile)
         fclose(binaryFile);
+    if (image)
+        bladerf_free_image(image);
     return status;
 }
 
