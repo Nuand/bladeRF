@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     int opt_ind = 0;
     bool ok;
     char* optstr;
-    char c;
+    int c;
     bladerf_log_level log_level;
 
     /** Threading */
