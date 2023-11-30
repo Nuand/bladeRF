@@ -30,13 +30,18 @@
 #include <limits.h>
 #include <inttypes.h>
 #include <libbladeRF.h>
-#include <sys/time.h>
 #include <getopt.h>
 #include <pthread.h>
 #include "conversions.h"
 #include "test_timestamps.h"
 #include "test_txrx_hwloop.h"
 #include "minmax.h"
+
+#ifdef _WIN32
+#include "gettimeofday.h"
+#else
+#include <sys/time.h>
+#endif
 
 /* This test requires external verification via a spectrum analyzer.
  * It simply transmits ON/OFF bursts, and is more intended to ensure the API

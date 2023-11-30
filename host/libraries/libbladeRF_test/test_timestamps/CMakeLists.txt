@@ -60,6 +60,11 @@ set(SRC
     ../common/src/test_common.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
+if(MSVC)
+    set(SRC ${SRC}
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/gettimeofday.c
+    )
+endif(MSVC)
 add_executable(libbladeRF_test_tx_pulse ${SRC})
 target_link_libraries(libbladeRF_test_tx_pulse ${LIBS})
 
@@ -70,6 +75,12 @@ set(SRC
     ../common/src/test_common.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
+if(MSVC)
+    set(SRC ${SRC}
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/gettimeofday.c
+    )
+endif(MSVC)
 add_executable(libbladeRF_test_txrx_hwloop ${SRC})
 target_link_libraries(libbladeRF_test_txrx_hwloop ${LIBS})
 
