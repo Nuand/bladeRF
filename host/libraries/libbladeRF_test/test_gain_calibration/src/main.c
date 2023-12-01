@@ -44,6 +44,10 @@ static int init_sync(struct bladerf *dev)
     const unsigned int num_transfers = 64;
     const unsigned int timeout_ms    = 3500;
 
+    CHECK(bladerf_sync_config(dev, BLADERF_RX_X1, BLADERF_FORMAT_SC16_Q11,
+                              num_buffers, buffer_size, num_transfers,
+                              timeout_ms));
+
     CHECK(bladerf_sync_config(dev, BLADERF_TX_X1, BLADERF_FORMAT_SC16_Q11,
                               num_buffers, buffer_size, num_transfers,
                               timeout_ms));
@@ -104,6 +108,29 @@ int main(int argc, char *argv[]) {
         }
 
         printf("\033[2K\rTX Frequency: %0.0f MHz, Gain: %i", cal[ch]->entries[entry_idx].freq/1e6, gain);
+        fflush(stdout);
+    }
+    printf("\n");
+
+    ch = BLADERF_CHANNEL_RX(0);
+    bladerf_get_frequency_range(dev, ch, &freq_range);
+    CHECK(bladerf_set_gain(dev, ch, TARGET_GAIN));
+    CHECK(bladerf_enable_module(dev, ch, true));
+    for (size_t entry_idx = 0; entry_idx < cal[ch]->n_entries; entry_idx++) {
+        CHECK(bladerf_set_frequency(dev, ch, cal[ch]->entries[entry_idx].freq));
+        CHECK(bladerf_get_gain(dev, ch, &gain));
+        gain_expected = (int)round(TARGET_GAIN - cal[ch]->entries[entry_idx].gain_corr);
+
+        if (gain != gain_expected) {
+            fprintf(stderr, "[Error] Gain compensation failed RX frequency sweep\n");
+            fprintf(stderr, "   Frequency:       %" PRIu64 "\n", cal[ch]->entries[entry_idx].freq);
+            fprintf(stderr, "   Target gain:     %i\n", TARGET_GAIN);
+            fprintf(stderr, "   Gain correction: %f\n", cal[ch]->entries[entry_idx].gain_corr);
+            fprintf(stderr, "   Expected gain:   %i\n", gain_expected);
+            goto out;
+        }
+
+        printf("\033[2K\rRX Frequency: %0.0f MHz, Gain: %i", cal[ch]->entries[entry_idx].freq/1e6, gain);
         fflush(stdout);
     }
     printf("\n");
