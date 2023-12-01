@@ -1195,6 +1195,7 @@ int bladerf_sync_tx(struct bladerf *dev,
                     struct bladerf_metadata *metadata,
                     unsigned int timeout_ms)
 {
+    CHECK_NULL(samples);
     return dev->board->sync_tx(dev, samples, num_samples, metadata, timeout_ms);
 }
 
