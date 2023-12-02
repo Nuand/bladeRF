@@ -134,6 +134,9 @@ if(MSVC)
     if(MSVC_VERSION LESS 1800)
         set(MSVC_C99_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/common/include/windows/c99)
     endif()
+
+    # MSVC ships with its own timespec
+    add_definitions(-DHAVE_STRUCT_TIMESPEC)
 endif(MSVC)
 
 ################################################################################
