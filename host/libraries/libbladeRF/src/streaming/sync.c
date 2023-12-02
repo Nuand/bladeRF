@@ -257,7 +257,7 @@ int sync_init(struct bladerf_sync *sync,
                 __FUNCTION__, sync->meta.samples_per_msg);
 
     MUTEX_INIT(&sync->buf_mgmt.lock);
-    pthread_cond_init(&sync->buf_mgmt.buf_ready, NULL);
+    COND_INIT(&sync->buf_mgmt.buf_ready);
 
     sync->buf_mgmt.status = (sync_buffer_status*) malloc(num_buffers * sizeof(sync_buffer_status));
     if (sync->buf_mgmt.status == NULL) {
@@ -358,13 +358,13 @@ static int wait_for_buffer(struct buffer_mgmt *b,
     if (timeout_ms == 0) {
         log_verbose("%s: Infinite wait for buffer[%d] (status: %d).\n",
                     dbg_name, dbg_idx, b->status[dbg_idx]);
-        status = pthread_cond_wait(&b->buf_ready, &b->lock);
+        status = COND_WAIT(&b->buf_ready, &b->lock);
     } else {
         log_verbose("%s: Timed wait for buffer[%d] (status: %d).\n", dbg_name,
                     dbg_idx, b->status[dbg_idx]);
         status = populate_abs_timeout(&timeout, timeout_ms);
         if (status == 0) {
-            status = pthread_cond_timedwait(&b->buf_ready, &b->lock, &timeout);
+            status = COND_TIMED_WAIT(&b->buf_ready, &b->lock, &timeout);
         }
     }
 

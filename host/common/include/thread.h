@@ -32,11 +32,18 @@
 /* Currently, only pthreads is supported. In the future, native windows threads
  * may be used; one of the objectives of this file is to ease that transistion.
  */
-#include <pthread.h>
 #include "rel_assert.h"
 
-#define MUTEX pthread_mutex_t
+#define USE_PTHREADS
+#ifdef USE_PTHREADS
 
+/* Use pthreads */
+
+#include <pthread.h>
+
+#define THREAD pthread_t
+#define MUTEX pthread_mutex_t
+#define COND pthread_cond_t
 #ifdef ENABLE_LOCK_CHECKS
 #   define MUTEX_INIT(m) do { \
         int status; \
@@ -64,11 +71,76 @@
         int status = pthread_mutex_destroy(m); \
         assert(status == 0 && "Mutex destroy failure");\
     } while (0)
-#else
+#else /* ENABLE_LOCK_CHECKS */
+#   define THREAD_CREATE(x,y,z) pthread_create(x, NULL, y, z)
+#   define THREAD_SUCCESS 0
+#   define THREAD_TIMEOUT ETIMEDOUT
+#   define THREAD_CANCEL(m) pthread_cancel(m)
+#   define THREAD_JOIN(t, s) pthread_join(t, s)
+
+#   define COND_INIT(m) pthread_cond_init(m, NULL)
+#   define COND_SIGNAL(m) pthread_cond_signal(m)
+#   define COND_TIMED_WAIT(c, m, t) pthread_cond_timedwait(c, m, t)
+#   define COND_WAIT(c, m) pthread_cond_wait(c, m)
+
 #   define MUTEX_INIT(m) pthread_mutex_init(m, NULL)
 #   define MUTEX_LOCK(m) pthread_mutex_lock(m)
 #   define MUTEX_UNLOCK(m) pthread_mutex_unlock(m)
 #   define MUTEX_DESTROY(m) pthread_mutex_destroy(m)
-#endif
+#endif  /* ENABLE_LOCK_CHECKS */
+
+#else /* USE_PTHREADS */
+
+/* Use C11 threads */
+#include <threads.h>
+
+#define THREAD thrd_t
+#define MUTEX mtx_t
+#define COND cnd_t
+
+#ifdef ENABLE_LOCK_CHECKS
+#   define MUTEX_INIT(m) do { \
+        int status; \
+        status = mtx_init(m, mtx_plain | mtx_recursive); \
+        assert(status == thrd_success && "Mutex init failure"); \
+    } while (0)
+
+#   define MUTEX_LOCK(m) do { \
+        int status = mtx_lock(m); \
+        assert(status == thrd_success && "Mutex lock failure");\
+    } while (0)
+
+#   define MUTEX_UNLOCK(m) do { \
+        int status = mtx_unlock(m); \
+        assert(status == thrd_success && "Mutex unlock failure");\
+    } while (0)
+
+#   define MUTEX_DESTROY(m) do { \
+        mtx_destroy(m); \
+    } while (0)
+#else /* ENABLE_LOCK_CHECKS */
+
+#   define THREAD_CREATE(x,y,z) thrd_create(x,y,z)
+#   define THREAD_SUCCESS thrd_success
+#   define THREAD_TIMEOUT thrd_timeout
+#   define THREAD_CANCEL(m) /* No-op */
+#   define THREAD_JOIN(t, s) thrd_join(t, s)
+
+
+#   define COND_INIT(m) ({ \
+            *m = (cnd_t)CONDITION_VARIABLE_INIT; \
+            0; /* Return 0 */ \
+        })
+#   define COND_SIGNAL(m) cnd_signal(m)
+#   define COND_TIMED_WAIT(c, m, t) cnd_timedwait(c, m, t)
+#   define COND_WAIT(c, m) cnd_wait(c, m)
+
+#   define MUTEX_INIT(m) (void)mtx_init(m, mtx_plain)
+#   define MUTEX_LOCK(m) (void)mtx_lock(m)
+#   define MUTEX_UNLOCK(m) (void)mtx_unlock(m)
+#   define MUTEX_DESTROY(m) mtx_destroy(m)
+#endif /* ENABLE_LOCK_CHECKS */
+
+#endif /* USE_PTHREADS */
 
 #endif

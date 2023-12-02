@@ -22,7 +22,7 @@
 #include "host_config.h"
 #include "sync.h"
 #include <libbladeRF.h>
-#include <pthread.h>
+#include "thread.h"
 
 #if BLADERF_OS_WINDOWS || BLADERF_OS_OSX
 #include "clock_gettime.h"
@@ -49,7 +49,7 @@ typedef enum {
 } sync_worker_state;
 
 struct sync_worker {
-    pthread_t thread;
+    THREAD thread;
 
     struct bladerf_stream *stream;
     bladerf_stream_cb cb;
@@ -58,7 +58,7 @@ struct sync_worker {
     sync_worker_state state;
     int err_code;
     MUTEX state_lock;
-    pthread_cond_t state_changed; /* Worker thread uses this to inform a
+    COND state_changed;           /* Worker thread uses this to inform a
                                    * waiting main thread about a state
                                    * change */
 
@@ -66,7 +66,7 @@ struct sync_worker {
      * the sync->buf_mgmt.lock
      */
     unsigned int requests;
-    pthread_cond_t requests_pending;
+    COND requests_pending;
     MUTEX request_lock;
 };
 
@@ -90,8 +90,8 @@ int sync_worker_init(struct bladerf_sync *s);
  *                      workers.
  */
 void sync_worker_deinit(struct sync_worker *w,
-                        pthread_mutex_t *lock,
-                        pthread_cond_t *cond);
+                        MUTEX *lock,
+                        COND *cond);
 
 /**
  * Wait for state change with optional timeout

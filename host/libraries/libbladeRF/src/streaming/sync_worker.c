@@ -83,7 +83,7 @@ static void *rx_callback(struct bladerf *dev,
             /* This buffer is now ready for the consumer */
             b->status[samples_idx] = SYNC_BUFFER_FULL;
             b->actual_lengths[samples_idx] = num_samples;
-            pthread_cond_signal(&b->buf_ready);
+            COND_SIGNAL(&b->buf_ready);
 
             /* Update the state of the buffer being submitted next */
             next_idx = b->prod_i;
@@ -155,7 +155,7 @@ static void *tx_callback(struct bladerf *dev,
         completed_idx = sync_buf2idx(b, samples);
         assert(b->status[completed_idx] == SYNC_BUFFER_IN_FLIGHT);
         b->status[completed_idx] = SYNC_BUFFER_EMPTY;
-        pthread_cond_signal(&b->buf_ready);
+        COND_SIGNAL(&b->buf_ready);
 
         /* If the callback is assigned to be the submitter, there are
          * buffers pending submission */
@@ -230,25 +230,25 @@ int sync_worker_init(struct bladerf_sync *s)
     MUTEX_INIT(&s->worker->state_lock);
     MUTEX_INIT(&s->worker->request_lock);
 
-    status = pthread_cond_init(&s->worker->state_changed, NULL);
-    if (status != 0) {
-        log_debug("%s worker: pthread_cond_init(state_changed) failed: %d\n",
+    status = COND_INIT(&s->worker->state_changed);
+    if (status != THREAD_SUCCESS) {
+        log_debug("%s worker: cond_init(state_changed) failed: %d\n",
                   worker2str(s), status);
         status = BLADERF_ERR_UNEXPECTED;
         goto worker_init_out;
     }
 
-    status = pthread_cond_init(&s->worker->requests_pending, NULL);
-    if (status != 0) {
-        log_debug("%s worker: pthread_cond_init(requests_pending) failed: %d\n",
+    status = COND_INIT(&s->worker->requests_pending);
+    if (status != THREAD_SUCCESS) {
+        log_debug("%s worker: cond_init(requests_pending) failed: %d\n",
                   worker2str(s), status);
         status = BLADERF_ERR_UNEXPECTED;
         goto worker_init_out;
     }
 
-    status = pthread_create(&s->worker->thread, NULL, sync_worker_task, s);
-    if (status != 0) {
-        log_debug("%s worker: pthread_create failed: %d\n", worker2str(s),
+    status = THREAD_CREATE(&s->worker->thread, sync_worker_task, s);
+    if (status != THREAD_SUCCESS) {
+        log_debug("%s worker: create failed: %d\n", worker2str(s),
                   status);
         status = BLADERF_ERR_UNEXPECTED;
         goto worker_init_out;
@@ -274,7 +274,7 @@ worker_init_out:
 }
 
 void sync_worker_deinit(struct sync_worker *w,
-                        pthread_mutex_t *lock, pthread_cond_t *cond)
+                        MUTEX *lock, COND *cond)
 {
     int status;
 
@@ -289,7 +289,7 @@ void sync_worker_deinit(struct sync_worker *w,
 
     if (lock != NULL && cond != NULL) {
         MUTEX_LOCK(lock);
-        pthread_cond_signal(cond);
+        COND_SIGNAL(cond);
         MUTEX_UNLOCK(lock);
     }
 
@@ -297,10 +297,10 @@ void sync_worker_deinit(struct sync_worker *w,
 
     if (status != 0) {
         log_warning("Timed out while stopping worker. Canceling thread.\n");
-        pthread_cancel(w->thread);
+        THREAD_CANCEL(w->thread);
     }
 
-    pthread_join(w->thread, NULL);
+    THREAD_JOIN(w->thread, NULL);
     log_verbose("%s: Worker joined.\n", __FUNCTION__);
 
     async_deinit_stream(w->stream);
@@ -312,7 +312,7 @@ void sync_worker_submit_request(struct sync_worker *w, unsigned int request)
 {
     MUTEX_LOCK(&w->request_lock);
     w->requests |= request;
-    pthread_cond_signal(&w->requests_pending);
+    COND_SIGNAL(&w->requests_pending);
     MUTEX_UNLOCK(&w->request_lock);
 }
 
@@ -341,8 +341,8 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
 
         MUTEX_LOCK(&w->state_lock);
         status = 0;
-        while (w->state != state && status == 0) {
-            status = pthread_cond_timedwait(&w->state_changed,
+        while (w->state != state && status == THREAD_SUCCESS) {
+            status = COND_TIMED_WAIT(&w->state_changed,
                                             &w->state_lock,
                                             &timeout_abs);
         }
@@ -352,7 +352,7 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
         MUTEX_LOCK(&w->state_lock);
         while (w->state != state) {
             log_verbose(": Waiting for state change, current = %d\n", w->state);
-            status = pthread_cond_wait(&w->state_changed,
+            status = COND_WAIT(&w->state_changed,
                                        &w->state_lock);
         }
         MUTEX_UNLOCK(&w->state_lock);
@@ -392,7 +392,7 @@ static void set_state(struct sync_worker *w, sync_worker_state state)
 {
     MUTEX_LOCK(&w->state_lock);
     w->state = state;
-    pthread_cond_signal(&w->state_changed);
+    COND_SIGNAL(&w->state_changed);
     MUTEX_UNLOCK(&w->state_lock);
 }
 
@@ -408,7 +408,7 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
     while (s->worker->requests == 0) {
         log_verbose("%s worker: Waiting for pending requests\n", worker2str(s));
 
-        pthread_cond_wait(&s->worker->requests_pending,
+        COND_WAIT(&s->worker->requests_pending,
                           &s->worker->request_lock);
     }
 
@@ -434,7 +434,7 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
                 }
             }
 
-            pthread_cond_signal(&s->buf_mgmt.buf_ready);
+            COND_SIGNAL(&s->buf_mgmt.buf_ready);
         } else {
             s->buf_mgmt.prod_i = s->stream_config.num_xfers;
 
@@ -477,7 +477,7 @@ static void exec_running_state(struct bladerf_sync *s)
      * the stream error code back to the API caller */
     if (status != 0) {
         MUTEX_LOCK(&s->buf_mgmt.lock);
-        pthread_cond_signal(&s->buf_mgmt.buf_ready);
+        COND_SIGNAL(&s->buf_mgmt.buf_ready);
         MUTEX_UNLOCK(&s->buf_mgmt.lock);
     }
 }

@@ -23,7 +23,6 @@
 #define STREAMING_SYNC_H_
 
 #include <limits.h>
-#include <pthread.h>
 
 #include <libbladeRF.h>
 
@@ -88,7 +87,7 @@ struct buffer_mgmt {
 
 
     MUTEX lock;
-    pthread_cond_t buf_ready; /**< Buffer produced by RX callback, or
+    COND buf_ready;           /**< Buffer produced by RX callback, or
                                *   buffer emptied by TX callback */
 };
 
