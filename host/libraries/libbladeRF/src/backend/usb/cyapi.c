@@ -805,7 +805,7 @@ int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         }
     }
 
-    if (status == ETIMEDOUT) {
+    if (status == THREAD_TIMEOUT) {
         return BLADERF_ERR_TIMEOUT;
     } else if (status != 0) {
         return BLADERF_ERR_UNEXPECTED;

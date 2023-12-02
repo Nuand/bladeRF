@@ -320,31 +320,15 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
                                unsigned int timeout_ms)
 {
     int status = 0;
-    struct timespec timeout_abs;
     const int nsec_per_sec = 1000 * 1000 * 1000;
 
     if (timeout_ms != 0) {
-        const unsigned int timeout_sec = timeout_ms / 1000;
-
-        status = clock_gettime(CLOCK_REALTIME, &timeout_abs);
-        if (status != 0) {
-            return BLADERF_ERR_UNEXPECTED;
-        }
-
-        timeout_abs.tv_sec += timeout_sec;
-        timeout_abs.tv_nsec += (timeout_ms % 1000) * 1000 * 1000;
-
-        if (timeout_abs.tv_nsec >= nsec_per_sec) {
-            timeout_abs.tv_sec += timeout_abs.tv_nsec / nsec_per_sec;
-            timeout_abs.tv_nsec %= nsec_per_sec;
-        }
-
         MUTEX_LOCK(&w->state_lock);
         status = 0;
         while (w->state != state && status == THREAD_SUCCESS) {
             status = COND_TIMED_WAIT(&w->state_changed,
                                             &w->state_lock,
-                                            &timeout_abs);
+                                            timeout_ms);
         }
         MUTEX_UNLOCK(&w->state_lock);
 
@@ -362,7 +346,7 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
         log_debug("%s: Wait on state change failed: %s\n",
                    __FUNCTION__, strerror(status));
 
-        if (status == ETIMEDOUT) {
+        if (status == THREAD_TIMEOUT) {
             status = BLADERF_ERR_TIMEOUT;
         } else {
             status = BLADERF_ERR_UNEXPECTED;

@@ -353,7 +353,6 @@ static int wait_for_buffer(struct buffer_mgmt *b,
                            unsigned int dbg_idx)
 {
     int status;
-    struct timespec timeout;
 
     if (timeout_ms == 0) {
         log_verbose("%s: Infinite wait for buffer[%d] (status: %d).\n",
@@ -362,13 +361,10 @@ static int wait_for_buffer(struct buffer_mgmt *b,
     } else {
         log_verbose("%s: Timed wait for buffer[%d] (status: %d).\n", dbg_name,
                     dbg_idx, b->status[dbg_idx]);
-        status = populate_abs_timeout(&timeout, timeout_ms);
-        if (status == 0) {
-            status = COND_TIMED_WAIT(&b->buf_ready, &b->lock, &timeout);
-        }
+        status = COND_TIMED_WAIT(&b->buf_ready, &b->lock, timeout_ms);
     }
 
-    if (status == ETIMEDOUT) {
+    if (status == THREAD_TIMEOUT) {
         log_error("%s: Timed out waiting for buf_ready after %d ms\n",
                   __FUNCTION__, timeout_ms);
         status = BLADERF_ERR_TIMEOUT;

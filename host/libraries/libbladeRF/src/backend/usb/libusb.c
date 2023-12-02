@@ -1410,7 +1410,6 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
 {
     int status = 0;
     struct lusb_stream_data *stream_data = stream->backend_data;
-    struct timespec timeout_abs;
 
     if (buffer == BLADERF_STREAM_SHUTDOWN) {
         if (stream_data->num_avail == stream_data->num_transfers) {
@@ -1431,15 +1430,10 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         }
 
         if (timeout_ms != 0) {
-            status = populate_abs_timeout(&timeout_abs, timeout_ms);
-            if (status != 0) {
-                return BLADERF_ERR_UNEXPECTED;
-            }
-
             while (stream_data->num_avail == 0 && status == THREAD_SUCCESS) {
                 status = COND_TIMED_WAIT(&stream->can_submit_buffer,
                         &stream->lock,
-                        &timeout_abs);
+                        timeout_ms);
             }
         } else {
             while (stream_data->num_avail == 0 && status == THREAD_SUCCESS) {
@@ -1449,7 +1443,7 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         }
     }
 
-    if (status == ETIMEDOUT) {
+    if (status == THREAD_TIMEOUT) {
         log_debug("%s: Timed out waiting for a transfer to become available.\n",
                   __FUNCTION__);
         return BLADERF_ERR_TIMEOUT;

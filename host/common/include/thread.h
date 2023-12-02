@@ -34,12 +34,15 @@
  */
 #include "rel_assert.h"
 
-#define USE_PTHREADS
+
+//#define USE_PTHREADS
 #ifdef USE_PTHREADS
 
 /* Use pthreads */
 
 #include <pthread.h>
+#include <time.h>
+#define CLOCK_REALTIME 0
 
 #define THREAD pthread_t
 #define MUTEX pthread_mutex_t
@@ -80,8 +83,24 @@
 
 #   define COND_INIT(m) pthread_cond_init(m, NULL)
 #   define COND_SIGNAL(m) pthread_cond_signal(m)
-#   define COND_TIMED_WAIT(c, m, t) pthread_cond_timedwait(c, m, t)
-#   define COND_WAIT(c, m) pthread_cond_wait(c, m)
+// POSIX implementation as a function
+static inline int posix_cond_timedwait(pthread_cond_t *c,
+                                       pthread_mutex_t *m,
+                                       unsigned int t)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    ts.tv_sec += t / 1000;
+    ts.tv_nsec += (t % 1000) * 1000000;
+    if (ts.tv_nsec >= 1000000000) {
+        ts.tv_sec++;
+        ts.tv_nsec -= 1000000000;
+    }
+    return pthread_cond_timedwait(c, m, &ts) == ETIMEDOUT ? -1 : 0;
+}
+#define COND_TIMED_WAIT(c, m, t) posix_cond_timedwait(c, m, t)
+
+#define COND_WAIT(c, m) pthread_cond_wait(c, m)
 
 #   define MUTEX_INIT(m) pthread_mutex_init(m, NULL)
 #   define MUTEX_LOCK(m) pthread_mutex_lock(m)
@@ -92,11 +111,12 @@
 #else /* USE_PTHREADS */
 
 /* Use C11 threads */
-#include <threads.h>
+//#include <threads.h>
 
-#define THREAD thrd_t
-#define MUTEX mtx_t
-#define COND cnd_t
+#define THREAD HANDLE            // For thread handles
+#define MUTEX CRITICAL_SECTION   // For mutexes
+#define COND CONDITION_VARIABLE  // For condition variables
+
 
 #ifdef ENABLE_LOCK_CHECKS
 #   define MUTEX_INIT(m) do { \
@@ -120,25 +140,26 @@
     } while (0)
 #else /* ENABLE_LOCK_CHECKS */
 
-#   define THREAD_CREATE(x,y,z) thrd_create(x,y,z)
-#   define THREAD_SUCCESS thrd_success
-#   define THREAD_TIMEOUT thrd_timeout
-#   define THREAD_CANCEL(m) /* No-op */
-#   define THREAD_JOIN(t, s) thrd_join(t, s)
+#include <windows.h>
 
+#   define THREAD_CREATE(x, y, z) \
+        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)y, z, 0, x)
+#   define THREAD_SUCCESS 0
+#   define THREAD_TIMEOUT WAIT_TIMEOUT
+#   define THREAD_CANCEL(m) TerminateThread(m, 0)
+#   define THREAD_JOIN(t, s) WaitForSingleObject(t, INFINITE)
 
-#   define COND_INIT(m) ({ \
-            *m = (cnd_t)CONDITION_VARIABLE_INIT; \
-            0; /* Return 0 */ \
-        })
-#   define COND_SIGNAL(m) cnd_signal(m)
-#   define COND_TIMED_WAIT(c, m, t) cnd_timedwait(c, m, t)
-#   define COND_WAIT(c, m) cnd_wait(c, m)
+#   define COND_INIT(m) (InitializeConditionVariable(m), 0)
+#   define COND_SIGNAL(m) WakeConditionVariable(m)
+#   define COND_TIMED_WAIT(c, m, t) \
+        (SleepConditionVariableCS(c, m, t) ? 0 : GetLastError())
+#   define COND_WAIT(c, m) SleepConditionVariableCS(c, m, INFINITE)
 
-#   define MUTEX_INIT(m) (void)mtx_init(m, mtx_plain)
-#   define MUTEX_LOCK(m) (void)mtx_lock(m)
-#   define MUTEX_UNLOCK(m) (void)mtx_unlock(m)
-#   define MUTEX_DESTROY(m) mtx_destroy(m)
+#   define MUTEX_INIT(m) InitializeCriticalSection(m)
+#   define MUTEX_LOCK(m) EnterCriticalSection(m)
+#   define MUTEX_UNLOCK(m) LeaveCriticalSection(m)
+#   define MUTEX_DESTROY(m) DeleteCriticalSection(m)
+
 #endif /* ENABLE_LOCK_CHECKS */
 
 #endif /* USE_PTHREADS */

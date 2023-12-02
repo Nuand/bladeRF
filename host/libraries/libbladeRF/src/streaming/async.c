@@ -218,19 +218,10 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
                                bool nonblock)
 {
     int status = 0;
-    struct timespec timeout_abs;
 
     MUTEX_LOCK(&stream->lock);
 
     if (buffer != BLADERF_STREAM_SHUTDOWN) {
-        if (stream->state != STREAM_RUNNING && timeout_ms != 0) {
-            status = populate_abs_timeout(&timeout_abs, timeout_ms);
-            if (status != 0) {
-                log_debug("Failed to populate timeout value\n");
-                goto error;
-            }
-        }
-
         while (stream->state != STREAM_RUNNING) {
             log_debug("Buffer submitted while stream's not running. "
                     "Waiting for stream to start.\n");
@@ -240,7 +231,7 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
                                            &stream->lock);
             } else {
                 status = COND_TIMED_WAIT(&stream->stream_started,
-                        &stream->lock, &timeout_abs);
+                        &stream->lock, timeout_ms);
             }
 
             if (status == THREAD_TIMEOUT) {
