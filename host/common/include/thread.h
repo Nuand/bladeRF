@@ -48,7 +48,7 @@
 
 /* Use pthreads */
 
-#include <pthread.h>
+#include "thread.h"
 #include <time.h>
 #define CLOCK_REALTIME 0
 

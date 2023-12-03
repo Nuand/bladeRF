@@ -41,7 +41,7 @@
 #include <stdbool.h>
 #include <libbladeRF.h>
 #include <string.h>
-#include <pthread.h>
+#include "thread.h"
 #include <errno.h>
 #include <math.h>
 

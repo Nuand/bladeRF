@@ -33,7 +33,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <pthread.h>
+#include "thread.h"
 #include <time.h>
 #include <errno.h>
 #include <libbladeRF.h>

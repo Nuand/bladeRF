@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <pthread.h>
+#include "thread.h"
 #include <math.h>
 #include <libbladeRF.h>
 #include "host_config.h"
