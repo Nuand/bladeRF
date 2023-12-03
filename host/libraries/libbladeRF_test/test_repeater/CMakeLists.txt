@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.10...3.27)
 project(libbladeRF_test_repeater C)
 
-if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-else(MSVC)
+if(NOT MSVC)
 	find_package(Threads REQUIRED)
 endif(MSVC)
 

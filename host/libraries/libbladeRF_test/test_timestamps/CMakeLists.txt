@@ -14,11 +14,7 @@ endif()
 
 set(LIBS libbladerf_shared)
 
-if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-else()
+if(NOT MSVC)
     find_package(Threads REQUIRED)
     set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif(MSVC)

@@ -11,9 +11,6 @@ set(LIBS libbladerf_shared)
 
 if(MSVC)
     set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
-    find_package(LibPThreadsWin32 REQUIRED)
-    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
 endif()
 
 set(SRC

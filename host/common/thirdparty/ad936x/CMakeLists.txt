@@ -94,16 +94,7 @@ target_include_directories(ad936x PUBLIC
 if(MSVC)
     add_definitions(-DHAVE_STRUCT_TIMESPEC)
     target_include_directories(ad936x PUBLIC ${MSVC_C99_INCLUDES})
-
-    find_package(LibPThreadsWin32 REQUIRED)
-    if(LIBPTHREADSWIN32_FOUND)
-        set(HAVE_THREADS true)
-        target_include_directories(ad936x PUBLIC ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-        set(LIBAD936X_LIBS
-            ${LIBAD936X_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-    else()
-        set(HAVE_THREADS false)
-    endif()
+    set(HAVE_THREADS true)
 else(MSVC)
     find_package(Threads REQUIRED)
     if(Threads_FOUND)

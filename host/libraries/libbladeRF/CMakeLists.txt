@@ -199,16 +199,7 @@ set(LIBBLADERF_INCLUDES
 if(MSVC)
     set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${MSVC_C99_INCLUDES})
 
-    find_package(LibPThreadsWin32 REQUIRED)
-    if(LIBPTHREADSWIN32_FOUND)
-        set(HAVE_THREADS true)
-        set(LIBBLADERF_INCLUDES
-            ${LIBBLADERF_INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-        set(LIBBLADERF_LIBS
-            ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-    else()
-        set(HAVE_THREADS false)
-    endif()
+    set(HAVE_THREADS true)
 else(MSVC)
     find_package(Threads REQUIRED)
     if(Threads_FOUND)
@@ -441,9 +432,7 @@ add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 # Build configuration
 ################################################################################
 
-if(MSVC)
-    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-else()
+if(NOT MSVC)
     set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif(MSVC)
 
