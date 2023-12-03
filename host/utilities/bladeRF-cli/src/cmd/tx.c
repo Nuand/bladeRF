@@ -19,7 +19,6 @@
  */
 #include <errno.h>
 #include <limits.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,6 +30,7 @@
 #include "minmax.h"
 #include "parse.h"
 #include "rel_assert.h"
+#include "thread.h"
 #include "rxtx_impl.h"
 
 /* The DAC range is [-2048, 2047] */

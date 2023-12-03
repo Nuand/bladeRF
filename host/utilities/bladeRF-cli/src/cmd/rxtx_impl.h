@@ -102,16 +102,16 @@ struct file_mgmt {
 
 /* Task and thread management */
 struct task_mgmt {
-    pthread_t thread; /* Handle to thread in which the task runs */
+    THREAD thread;    /* Handle to thread in which the task runs */
     bool started;     /* Has the thread been started? */
 
     enum rxtx_state state;      /* Task state */
     uint8_t req;                /* Requests for state change. See
                                  *   RXTX_TASK_REQ_* bitmasks */
     MUTEX lock;                 /* Must be held to access 'req' or 'state' */
-    pthread_cond_t signal_req;  /* Signal when a request has been made */
-    pthread_cond_t signal_done; /* Signal when task finishes work */
-    pthread_cond_t signal_state_change; /* Signal after state change */
+    COND signal_req;            /* Signal when a request has been made */
+    COND signal_done;           /* Signal when task finishes work */
+    COND signal_state_change;   /* Signal after state change */
     bool main_task_waiting;             /* Main task is blocked waiting */
 };
 

@@ -23,7 +23,6 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <pthread.h>
 #include <string.h>
 #include <libbladeRF.h>
 #include "input/input.h"
@@ -32,6 +31,7 @@
 #include "common.h"
 #include "cmd.h"
 #include "version.h"
+#include "thread.h"
 
 #if BLADERF_OS_WINDOWS
 #include "setenv.h"
