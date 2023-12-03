@@ -28,8 +28,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <pthread.h>
 #include <libbladeRF.h>
+#include "thread.h"
 
 #define LOOPBACK_TX_MAGNITUDE    2000
 #define LOOPBACK_RX_POWER_THRESH (256 * 256)
@@ -40,7 +40,7 @@ struct loopback_burst_test {
     struct loopback_burst *bursts;
     unsigned int num_bursts;
 
-    pthread_mutex_t lock;
+    MUTEX lock;
     bool stop;
     bool rx_ready;
     bladerf_frequency frequency;

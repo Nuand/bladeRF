@@ -32,12 +32,12 @@
 #include <string.h>
 #include <getopt.h>
 #include <limits.h>
-#include <pthread.h>
 #include <libbladeRF.h>
 
 #include "devcfg.h"
 #include "conversions.h"
 #include "minmax.h"
+#include "thread.h"
 
 
 #define OPTIONS DEVCFG_OPTIONS_BASE "r:S:"
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
     int status = EXIT_FAILURE;
     struct option *options = NULL;
     struct app_params params;
-    pthread_t rx_thread, tx_thread;
+    THREAD rx_thread, tx_thread;
     bool rx_launched = false;
     bool tx_launched = false;
 
@@ -266,8 +266,8 @@ int main(int argc, char *argv[])
     }
 
     if (params.rx) {
-        status = pthread_create(&rx_thread, NULL, rx_task, &params);
-        if (status != 0) {
+        status = THREAD_CREATE(&rx_thread, rx_task, &params);
+        if (status != THREAD_SUCCESS) {
             fprintf(stderr, "Failed to launch RX thread: %s\n", strerror(status));
             params.rx = false;
         } else {
@@ -276,8 +276,8 @@ int main(int argc, char *argv[])
     }
 
     if (params.tx) {
-        status = pthread_create(&tx_thread, NULL, tx_task, &params);
-        if (status != 0) {
+        status = THREAD_CREATE(&tx_thread, tx_task, &params);
+        if (status != THREAD_SUCCESS) {
             fprintf(stderr, "Failed to launch TX thread: %s\n", strerror(status));
             params.tx = false;
         } else {
@@ -286,11 +286,11 @@ int main(int argc, char *argv[])
     }
 
     if (rx_launched) {
-        pthread_join(rx_thread, NULL);
+        THREAD_JOIN(rx_thread, NULL);
     }
 
     if (tx_launched) {
-        pthread_join(tx_thread, NULL);
+        THREAD_JOIN(tx_thread, NULL);
     }
 
 out:

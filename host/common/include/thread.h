@@ -80,6 +80,7 @@
 #   define THREAD_TIMEOUT ETIMEDOUT
 #   define THREAD_CANCEL(m) pthread_cancel(m)
 #   define THREAD_JOIN(t, s) pthread_join(t, s)
+#   define THREAD_EXIT(s) pthread_exit(s)
 
 #   define COND_INIT(m) pthread_cond_init(m, NULL)
 #   define COND_SIGNAL(m) pthread_cond_signal(m)
@@ -148,6 +149,7 @@ static inline int posix_cond_timedwait(pthread_cond_t *c,
 #   define THREAD_TIMEOUT WAIT_TIMEOUT
 #   define THREAD_CANCEL(m) TerminateThread(m, 0)
 #   define THREAD_JOIN(t, s) WaitForSingleObject(t, INFINITE)
+#   define THREAD_EXIT(s) ExitThread(s)
 
 #   define COND_INIT(m) (InitializeConditionVariable(m), 0)
 #   define COND_SIGNAL(m) WakeConditionVariable(m)

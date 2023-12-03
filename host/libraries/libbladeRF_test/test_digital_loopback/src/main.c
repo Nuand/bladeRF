@@ -29,13 +29,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <pthread.h>
-
 #include "conversions.h"
 #include "log.h"
 #include "test_common.h"
 #include <libbladeRF.h>
 #include "async.h"
+#include "thread.h"
 
 /******************************************************************************
  * Type definitions
@@ -453,7 +452,7 @@ int main(int argc, char *argv[])
     struct rx_buffer_state rx_state;
     struct tx_buffer_state tx_state;
     struct bladerf_stream *rx_stream, *tx_stream;
-    pthread_t rx_thread, tx_thread;
+    THREAD rx_thread, tx_thread;
     bladerf_log_level level;
     int status;
     bool ok;
@@ -716,9 +715,9 @@ int main(int argc, char *argv[])
         goto error;
     }
 
-    status = pthread_create(&tx_thread, NULL, tx_streamer, tx_stream);
-    if (status < 0) {
-        log_error("pthread_create(TX): %s\n", strerror(status));
+    status = THREAD_CREATE(&tx_thread, tx_streamer, tx_stream);
+    if (status != THREAD_SUCCESS) {
+        log_error("THREAD_CREATE(TX): %s\n", strerror(status));
         goto error;
     }
 
@@ -728,16 +727,16 @@ int main(int argc, char *argv[])
         goto error;
     }
 
-    status = pthread_create(&rx_thread, NULL, rx_streamer, rx_stream);
-    if (status < 0) {
-        log_error("pthread_create(RX): %s\n", strerror(status));
+    status = THREAD_CREATE(&rx_thread, rx_streamer, rx_stream);
+    if (status != THREAD_SUCCESS) {
+        log_error("THREAD_CREATE(RX): %s\n", strerror(status));
         goto error;
     }
 
     log_info("Loopback test running. Press Ctrl-C to exit...\n");
 
-    pthread_join(tx_thread, NULL);
-    pthread_join(rx_thread, NULL);
+    THREAD_JOIN(tx_thread, NULL);
+    THREAD_JOIN(rx_thread, NULL);
 
     log_info("IQ Matches: %zu / %zu (%.1f%%)\n", good_count,
              good_count + bad_count,
