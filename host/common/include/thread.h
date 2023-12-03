@@ -34,9 +34,17 @@
  */
 #include "rel_assert.h"
 
+#if (defined(_WIN32) || defined(USE_NATIVE_THREADS)) && \
+    !defined(DO_NOT_USE_PTHREADS)
+// Do not use pthreads on Windows
+#undef USE_PTHREADS
+#else
+// Use pthreads on non-Windows platforms
+#define USE_PTHREADS
+#endif
 
-//#define USE_PTHREADS
 #ifdef USE_PTHREADS
+#error "Pthreads are not supported at this time"
 
 /* Use pthreads */
 
@@ -75,6 +83,14 @@
         assert(status == 0 && "Mutex destroy failure");\
     } while (0)
 #else /* ENABLE_LOCK_CHECKS */
+
+#define MUTEX_INIT(m) pthread_mutex_init(m, NULL)
+#define MUTEX_LOCK(m) pthread_mutex_lock(m)
+#define MUTEX_UNLOCK(m) pthread_mutex_unlock(m)
+#define MUTEX_DESTROY(m) pthread_mutex_destroy(m)
+
+#endif /* ENABLE_LOCK_CHECKS */
+
 #   define THREAD_CREATE(x,y,z) pthread_create(x, NULL, y, z)
 #   define THREAD_SUCCESS 0
 #   define THREAD_TIMEOUT ETIMEDOUT
@@ -103,13 +119,9 @@ static inline int posix_cond_timedwait(pthread_cond_t *c,
 
 #define COND_WAIT(c, m) pthread_cond_wait(c, m)
 
-#   define MUTEX_INIT(m) pthread_mutex_init(m, NULL)
-#   define MUTEX_LOCK(m) pthread_mutex_lock(m)
-#   define MUTEX_UNLOCK(m) pthread_mutex_unlock(m)
-#   define MUTEX_DESTROY(m) pthread_mutex_destroy(m)
-#endif  /* ENABLE_LOCK_CHECKS */
 
 #else /* USE_PTHREADS */
+#include <windows.h>
 
 /* Use C11 threads */
 //#include <threads.h>
@@ -117,7 +129,6 @@ static inline int posix_cond_timedwait(pthread_cond_t *c,
 #define THREAD HANDLE            // For thread handles
 #define MUTEX CRITICAL_SECTION   // For mutexes
 #define COND CONDITION_VARIABLE  // For condition variables
-
 
 #ifdef ENABLE_LOCK_CHECKS
 #   define MUTEX_INIT(m) do { \
@@ -141,10 +152,19 @@ static inline int posix_cond_timedwait(pthread_cond_t *c,
     } while (0)
 #else /* ENABLE_LOCK_CHECKS */
 
-#include <windows.h>
+#define MUTEX_INIT(m) InitializeCriticalSection(m)
+#define MUTEX_LOCK(m) EnterCriticalSection(m)
+#define MUTEX_UNLOCK(m) LeaveCriticalSection(m)
+#define MUTEX_DESTROY(m) DeleteCriticalSection(m)
 
-#   define THREAD_CREATE(x, y, z) \
-        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)y, z, 0, x)
+#endif /* ENABLE_LOCK_CHECKS */
+
+
+#   define THREAD_CREATE(handle, func, arg) \
+        ((*(handle) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)(func), \
+        (LPVOID)(arg), 0, NULL)) == NULL ? GetLastError() : 0)
+
+
 #   define THREAD_SUCCESS 0
 #   define THREAD_TIMEOUT WAIT_TIMEOUT
 #   define THREAD_CANCEL(m) TerminateThread(m, 0)
@@ -155,14 +175,8 @@ static inline int posix_cond_timedwait(pthread_cond_t *c,
 #   define COND_SIGNAL(m) WakeConditionVariable(m)
 #   define COND_TIMED_WAIT(c, m, t) \
         (SleepConditionVariableCS(c, m, t) ? 0 : GetLastError())
-#   define COND_WAIT(c, m) SleepConditionVariableCS(c, m, INFINITE)
+#   define COND_WAIT(c, m) (!SleepConditionVariableCS(c, m, INFINITE))
 
-#   define MUTEX_INIT(m) InitializeCriticalSection(m)
-#   define MUTEX_LOCK(m) EnterCriticalSection(m)
-#   define MUTEX_UNLOCK(m) LeaveCriticalSection(m)
-#   define MUTEX_DESTROY(m) DeleteCriticalSection(m)
-
-#endif /* ENABLE_LOCK_CHECKS */
 
 #endif /* USE_PTHREADS */
 
