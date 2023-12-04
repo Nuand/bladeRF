@@ -35,7 +35,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <inttypes.h>
-#include <pthread.h>
+#include "thread.h"
 #include <assert.h>
 #include <libbladeRF.h>
 #include "test_timestamps.h"
@@ -284,9 +284,9 @@ static void * tx_task(void *args)
         status = tx_samples(t, samples, &meta, t->bursts[i].duration, i);
 
         if (status != 0) {
-            pthread_mutex_lock(&t->lock);
+            MUTEX_LOCK(&t->lock);
             stop = t->stop = true;
-            pthread_mutex_unlock(&t->lock);
+            MUTEX_UNLOCK(&t->lock);
         } else {
             meta.flags = BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP;
 
@@ -296,9 +296,9 @@ static void * tx_task(void *args)
             }
 
 
-            pthread_mutex_lock(&t->lock);
+            MUTEX_LOCK(&t->lock);
             stop = t->stop;
-            pthread_mutex_unlock(&t->lock);
+            MUTEX_UNLOCK(&t->lock);
         }
     }
 
@@ -341,10 +341,10 @@ int test_fn_loopback_onoff_zp(struct bladerf *dev, struct app_params *p)
 {
     int status = 0;
     struct loopback_burst_test test;
-    pthread_t tx_thread;
+    THREAD tx_thread;
     bool tx_started = false;
 
-    pthread_t rx_thread;
+    THREAD rx_thread;
     bool rx_started = false;
     bool rx_ready = false;
 
@@ -354,7 +354,7 @@ int test_fn_loopback_onoff_zp(struct bladerf *dev, struct app_params *p)
     test.stop = false;
     test.rx_ready = false;
 
-    pthread_mutex_init(&test.lock, NULL);
+    MUTEX_INIT(&test.lock);
 
     test.bursts = (struct loopback_burst *) malloc(test.num_bursts * sizeof(test.bursts[0]));
     if (test.bursts == NULL) {
@@ -371,8 +371,8 @@ int test_fn_loopback_onoff_zp(struct bladerf *dev, struct app_params *p)
 
     printf("Starting bursts...\n");
 
-    status = pthread_create(&rx_thread, NULL, loopback_burst_rx_task, &test);
-    if (status != 0) {
+    status = THREAD_CREATE(&rx_thread, loopback_burst_rx_task, &test);
+    if (status != THREAD_SUCCESS) {
         fprintf(stderr, "Failed to start RX thread: %s\n", strerror(status));
         goto out;
     } else {
@@ -381,13 +381,13 @@ int test_fn_loopback_onoff_zp(struct bladerf *dev, struct app_params *p)
 
     while (!rx_ready) {
         usleep(10000);
-        pthread_mutex_lock(&test.lock);
+        MUTEX_LOCK(&test.lock);
         rx_ready = test.rx_ready;
-        pthread_mutex_unlock(&test.lock);
+        MUTEX_UNLOCK(&test.lock);
     }
 
-    status = pthread_create(&tx_thread, NULL, tx_task, &test);
-    if (status != 0) {
+    status = THREAD_CREATE(&tx_thread, tx_task, &test);
+    if (status != THREAD_SUCCESS) {
         fprintf(stderr, "Failed to start TX thread: %s\n", strerror(status));
         goto out;
     } else {
@@ -396,11 +396,11 @@ int test_fn_loopback_onoff_zp(struct bladerf *dev, struct app_params *p)
 
 out:
     if (tx_started) {
-        pthread_join(tx_thread, NULL);
+        THREAD_JOIN(tx_thread, NULL);
     }
 
     if (rx_started) {
-        pthread_join(rx_thread, NULL);
+        THREAD_JOIN(rx_thread, NULL);
     }
 
     free(test.bursts);

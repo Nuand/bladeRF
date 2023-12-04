@@ -34,20 +34,14 @@ set(SRC
 set(TEST_CONFIG_FILE_LIBS libbladerf_shared)
 
 if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
     set(TEST_CONFIG_FILE_INCLUDES
         ${TEST_CONFIG_FILE_INCLUDES}
         ${MSVC_C99_INCLUDES}
-        ${LIBPTHREADSWIN32_INCLUDE_DIRS}
     )
     set(SRC
         ${SRC}
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/mkdtemp.c
-    )
-    set(TEST_CONFIG_FILE_LIBS
-        ${TEST_CONFIG_FILE_LIBS}
-        ${LIBPTHREADSWIN32_LIBRARIES}
     )
 endif()
 

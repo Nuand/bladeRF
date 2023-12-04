@@ -15,9 +15,7 @@ set(SRC
 set(LIBS libbladerf_shared)
 
 if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS} ${MSVC_C99_INCLUDES})
-    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
+    set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
     set(SRC ${SRC} ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c)
 else(MSVC)
     find_package(Threads REQUIRED)

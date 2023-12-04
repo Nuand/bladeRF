@@ -12,14 +12,10 @@ endif()
 
 set(TEST_SYNC_LIBS libbladerf_shared)
 
-if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-    set(TEST_SYNC_INCLUDES ${TEST_SYNC_INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-    set(TEST_SYNC_LIBS ${TEST_SYNC_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-else(MSVC)
+if(NOT MSVC)
     find_package(Threads REQUIRED)
     set(TEST_SYNC_LIBS ${TEST_SYNC_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-endif(MSVC)
+endif(NOT MSVC)
 
 add_definitions(-DLOGGING_ENABLED=1)
 

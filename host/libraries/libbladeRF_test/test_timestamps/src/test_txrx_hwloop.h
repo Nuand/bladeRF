@@ -24,6 +24,7 @@
  */
 #include <stdio.h>
 #include <getopt.h>
+#include "thread.h"
 #include "log.h"
 
 struct test_case {
@@ -326,6 +327,6 @@ void *rx_task(void *args) {
 cleanup:
     free(samples);
     free(file_name);
-    pthread_exit(NULL);
+    THREAD_EXIT(NULL);
     fclose(file);
 }

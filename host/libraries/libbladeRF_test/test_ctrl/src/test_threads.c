@@ -27,15 +27,15 @@
  * while concurrently runing full duplex streams via the sync interface */
 
 #include "test_ctrl.h"
-#include <pthread.h>
+#include "thread.h"
 
 DECLARE_TEST_CASE(threads);
 
 struct sync_task {
     struct bladerf *dev;
     bladerf_direction direction;
-    pthread_t thread;
-    pthread_mutex_t lock;
+    THREAD thread;
+    MUTEX lock;
     bool launched;
     bool run;
     int status;
@@ -53,7 +53,7 @@ struct thread_state {
     struct app_params *p;
     failure_count failures;
     struct thread_test_case const *tc;
-    pthread_t thread;
+    THREAD thread;
 };
 
 static const struct thread_test_case tc[] = {
@@ -69,9 +69,9 @@ static const struct thread_test_case tc[] = {
 
 static inline void get_sync_task_state(struct sync_task *t, bool *run)
 {
-    pthread_mutex_lock(&t->lock);
+    MUTEX_LOCK(&t->lock);
     *run = t->run;
-    pthread_mutex_unlock(&t->lock);
+    MUTEX_UNLOCK(&t->lock);
 }
 
 static void *stream_task(void *arg)
@@ -129,9 +129,9 @@ out:
     }
 
     free(samples);
-    pthread_mutex_lock(&t->lock);
+    MUTEX_LOCK(&t->lock);
     t->status = status;
-    pthread_mutex_unlock(&t->lock);
+    MUTEX_UNLOCK(&t->lock);
     return NULL;
 }
 
@@ -144,15 +144,15 @@ static void init_task(struct sync_task *t,
     t->run       = true;
     t->status    = 0;
     t->direction = dir;
-    pthread_mutex_init(&t->lock, NULL);
+    MUTEX_INIT(&t->lock);
 }
 
 static int launch_task(struct sync_task *t)
 {
     int status;
 
-    status = pthread_create(&t->thread, NULL, stream_task, t);
-    if (0 == status) {
+    status = THREAD_CREATE(&t->thread, stream_task, t);
+    if (THREAD_SUCCESS == status) {
         t->launched = true;
     }
 
@@ -162,10 +162,10 @@ static int launch_task(struct sync_task *t)
 static inline int deinit_task(struct sync_task *t)
 {
     if (t->launched) {
-        pthread_mutex_lock(&t->lock);
+        MUTEX_LOCK(&t->lock);
         t->run = false;
-        pthread_mutex_unlock(&t->lock);
-        pthread_join(t->thread, NULL);
+        MUTEX_UNLOCK(&t->lock);
+        THREAD_JOIN(t->thread, NULL);
         return t->status;
     } else {
         return 0;
@@ -257,9 +257,9 @@ failure_count test_threads(struct bladerf *dev, struct app_params *p, bool quiet
         }
 
         status =
-            pthread_create(&threads[i].thread, NULL, run_test_fn, &threads[i]);
+            THREAD_CREATE(&threads[i].thread, run_test_fn, &threads[i]);
 
-        if (0 == status) {
+        if (THREAD_SUCCESS == status) {
             PRINT("  Started test_%s thread...\n", threads[i].tc->test->name);
             threads[i].launched = true;
         } else {
@@ -271,7 +271,7 @@ failure_count test_threads(struct bladerf *dev, struct app_params *p, bool quiet
 
     for (i = 0; i < num_threads; i++) {
         if (threads[i].launched) {
-            pthread_join(threads[i].thread, NULL);
+            THREAD_JOIN(threads[i].thread, NULL);
             PRINT("\n  Joined test_%s thread.\n", threads[i].tc->test->name);
             failures += threads[i].failures;
         }

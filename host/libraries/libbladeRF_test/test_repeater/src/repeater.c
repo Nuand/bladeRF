@@ -64,10 +64,10 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
-#include <pthread.h>
 #include <libbladeRF.h>
 #include "rel_assert.h"
 
+#include "thread.h"
 #include "repeater.h"
 #include "minmax.h"
 
@@ -152,9 +152,9 @@ static char get_key()
 
 /* Thread-safe wrapper around fprintf(stderr, ...) */
 #define print_error(repeater_, ...) do { \
-    pthread_mutex_lock(&repeater_->stderr_lock); \
+    MUTEX_LOCK(&repeater_->stderr_lock); \
     fprintf(stderr, __VA_ARGS__); \
-    pthread_mutex_unlock(&repeater_->stderr_lock); \
+    MUTEX_UNLOCK(&repeater_->stderr_lock); \
 } while (0)
 
 #define GAIN_TXVGA1_MIN     -35
@@ -189,22 +189,22 @@ struct buf_mgmt
     size_t num_buffers;     /* # of sample buffers */
 
     /* Used to signal the TX thread when a few samplse have been buffered up */
-    pthread_cond_t  samples_available;
+    COND  samples_available;
 
-    pthread_mutex_t lock;
+    MUTEX lock;
 };
 
 struct repeater
 {
     struct bladerf *device;
 
-    pthread_t rx_task;
+    THREAD rx_task;
     struct bladerf_stream *rx_stream;
 
-    pthread_t tx_task;
+    THREAD tx_task;
     struct bladerf_stream *tx_stream;
 
-    pthread_mutex_t stderr_lock;
+    MUTEX stderr_lock;
 
     struct buf_mgmt buf_mgmt;
 
@@ -247,7 +247,7 @@ static void *tx_stream_callback(struct bladerf *dev,
     void *ret;
     struct repeater *repeater = (struct repeater *)user_data;
 
-    pthread_mutex_lock(&repeater->buf_mgmt.lock);
+    MUTEX_LOCK(&repeater->buf_mgmt.lock);
 
     if (repeater->buf_mgmt.tx_idx < 0) {
         ret = NULL;
@@ -271,7 +271,7 @@ static void *tx_stream_callback(struct bladerf *dev,
         }
     }
 
-    pthread_mutex_unlock(&repeater->buf_mgmt.lock);
+    MUTEX_UNLOCK(&repeater->buf_mgmt.lock);
 
     return ret;
 }
@@ -284,21 +284,21 @@ void * tx_task_run(void *repeater_)
 
     /* Wait for RX task to buffer up some samples before we begin
      * consuming them */
-    pthread_mutex_lock(&repeater->buf_mgmt.lock);
+    MUTEX_LOCK(&repeater->buf_mgmt.lock);
     while(repeater->buf_mgmt.num_filled < repeater->buf_mgmt.prefill_count &&
           repeater->buf_mgmt.tx_idx >= 0) {
 
-        status = pthread_cond_wait(&repeater->buf_mgmt.samples_available,
+        status = COND_WAIT(&repeater->buf_mgmt.samples_available,
                           &repeater->buf_mgmt.lock);
 
-        if (status != 0) {
+        if (status != THREAD_SUCCESS) {
             print_error(repeater, "TX startup wait failed (%d)\n", status);
             exit_early = true;
         }
     }
 
     exit_early |= repeater->buf_mgmt.tx_idx < 0;
-    pthread_mutex_unlock(&repeater->buf_mgmt.lock);
+    MUTEX_UNLOCK(&repeater->buf_mgmt.lock);
 
     if (!exit_early) {
         /* Call stream */
@@ -325,7 +325,7 @@ static void *rx_stream_callback(struct bladerf *dev,
     struct repeater *repeater = (struct repeater *)user_data;
     void *ret;
 
-    pthread_mutex_lock(&repeater->buf_mgmt.lock);
+    MUTEX_LOCK(&repeater->buf_mgmt.lock);
 
     if (repeater->buf_mgmt.rx_idx < 0) {
         ret = NULL;
@@ -346,10 +346,10 @@ static void *rx_stream_callback(struct bladerf *dev,
         } else {
             repeater->buf_mgmt.num_filled++;
         }
-        pthread_cond_signal(&repeater->buf_mgmt.samples_available);
+        COND_SIGNAL(&repeater->buf_mgmt.samples_available);
     }
 
-    pthread_mutex_unlock(&repeater->buf_mgmt.lock);
+    MUTEX_UNLOCK(&repeater->buf_mgmt.lock);
 
     return ret;
 }
@@ -372,9 +372,9 @@ static inline void repeater_init(struct repeater *repeater,
 {
     memset(repeater, 0, sizeof(*repeater));
 
-    pthread_mutex_init(&repeater->stderr_lock, NULL);
-    pthread_mutex_init(&repeater->buf_mgmt.lock, NULL);
-    pthread_cond_init(&repeater->buf_mgmt.samples_available, NULL);
+    MUTEX_INIT(&repeater->stderr_lock);
+    MUTEX_INIT(&repeater->buf_mgmt.lock);
+    COND_INIT(&repeater->buf_mgmt.samples_available);
 
     repeater->buf_mgmt.num_filled = 0;
     repeater->buf_mgmt.num_buffers = config->num_buffers;
@@ -607,15 +607,15 @@ static int start_tasks(struct repeater *repeater)
 {
     int status;
 
-    status = pthread_create(&repeater->rx_task, NULL, rx_task_run, repeater);
-    if (status < 0) {
+    status = THREAD_CREATE(&repeater->rx_task, rx_task_run, repeater);
+    if (status != THREAD_SUCCESS) {
         return -1;
     }
 
-    status = pthread_create(&repeater->tx_task, NULL, tx_task_run, repeater);
-    if (status < 0) {
-        pthread_cancel(repeater->rx_task);
-        pthread_join(repeater->rx_task, NULL);
+    status = THREAD_CREATE(&repeater->tx_task, tx_task_run, repeater);
+    if (status != THREAD_SUCCESS) {
+        THREAD_CANCEL(repeater->rx_task);
+        THREAD_JOIN(repeater->rx_task, NULL);
         return -1;
     }
 
@@ -625,18 +625,18 @@ static int start_tasks(struct repeater *repeater)
 static void stop_tasks(struct repeater *repeater)
 {
     print_error(repeater, "Stoppping RX and tasks...\r\n");
-    pthread_mutex_lock(&repeater->buf_mgmt.lock);
+    MUTEX_LOCK(&repeater->buf_mgmt.lock);
     repeater->buf_mgmt.tx_idx = -1;
     repeater->buf_mgmt.rx_idx = -1;
-    pthread_mutex_unlock(&repeater->buf_mgmt.lock);
-    pthread_join(repeater->rx_task, NULL);
+    MUTEX_UNLOCK(&repeater->buf_mgmt.lock);
+    THREAD_JOIN(repeater->rx_task, NULL);
 
     /* Fire off the "samples available" signal to the TX thread, in case
      * it is still awaiting for the prefill completion */
-    pthread_mutex_lock(&repeater->buf_mgmt.lock);
-    pthread_cond_signal(&repeater->buf_mgmt.samples_available);
-    pthread_mutex_unlock(&repeater->buf_mgmt.lock);
-    pthread_join(repeater->tx_task, NULL);
+    MUTEX_LOCK(&repeater->buf_mgmt.lock);
+    COND_SIGNAL(&repeater->buf_mgmt.samples_available);
+    MUTEX_UNLOCK(&repeater->buf_mgmt.lock);
+    THREAD_JOIN(repeater->tx_task, NULL);
 
 }
 
