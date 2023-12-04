@@ -122,6 +122,7 @@ static inline int posix_cond_timedwait(pthread_cond_t *c,
 
 #else /* USE_PTHREADS */
 #include <windows.h>
+#include <time.h>
 
 /* Use C11 threads */
 //#include <threads.h>
