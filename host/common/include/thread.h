@@ -40,15 +40,16 @@
 #undef USE_PTHREADS
 #else
 // Use pthreads on non-Windows platforms
+#undef USE_PTHREADS
 #define USE_PTHREADS
 #endif
 
 #ifdef USE_PTHREADS
-#error "Pthreads are not supported at this time"
 
 /* Use pthreads */
 
-#include "thread.h"
+#include <pthread.h>
+#include <errno.h>
 #include <time.h>
 #define CLOCK_REALTIME 0
 

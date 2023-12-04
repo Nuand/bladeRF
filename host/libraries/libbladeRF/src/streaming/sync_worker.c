@@ -320,7 +320,6 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
                                unsigned int timeout_ms)
 {
     int status = 0;
-    const int nsec_per_sec = 1000 * 1000 * 1000;
 
     if (timeout_ms != 0) {
         MUTEX_LOCK(&w->state_lock);

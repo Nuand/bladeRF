@@ -822,8 +822,6 @@ int rxtx_handle_wait(struct cli_state *s,
     MUTEX_UNLOCK(&s->dev_lock);
 
     if (timeout_ms != 0) {
-        const unsigned int timeout_sec = timeout_ms / 1000;
-
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         rxtx->task_mgmt.main_task_waiting = true;
         while (rxtx->task_mgmt.main_task_waiting) {
@@ -846,7 +844,6 @@ int rxtx_handle_wait(struct cli_state *s,
         MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
     }
 
-out:
     /* Re-acquire the device control lock, as the top-level command handler
      * will be unlocking this when it's done */
     MUTEX_LOCK(&s->dev_lock);
@@ -883,8 +880,6 @@ int rxtx_wait_for_state(struct rxtx_data *rxtx,
     int status = 0;
 
     if (timeout_ms != 0) {
-        const unsigned int timeout_sec = timeout_ms / 1000;
-
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         while (rxtx->task_mgmt.state != req_state && status == THREAD_SUCCESS) {
             status = COND_TIMED_WAIT(&rxtx->task_mgmt.signal_state_change,
