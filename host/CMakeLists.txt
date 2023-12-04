@@ -230,29 +230,6 @@ add_custom_target(uninstall
 # Windows-only, Post build: Copy libraries to our build output directory
 ################################################################################
 if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
-    find_package(LibPThreadsWin32)
-    if(LIBPTHREADSWIN32_FOUND)
-        set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll")
-
-        add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${LIBPTHREADSWIN32_LIB_COPYING}"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
-            COMMENT "Copying pthreads-win32 license to output directory..."
-        )
-
-        add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${LIBPTHREADSWIN32_DLL}"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
-            COMMENT "Copying pthreadVC2.dll to output directory..."
-        )
-    endif(LIBPTHREADSWIN32_FOUND)
-
     if(LIBUSB_FOUND)
         set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/libusb/COPYING"
