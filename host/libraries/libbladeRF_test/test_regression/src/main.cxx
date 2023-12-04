@@ -270,6 +270,10 @@ TEST(TEST_LIBBLADERF, scheduled_retune) {
     }
 }
 
+TEST(TEST_LIBBLADERF, gain_calibration) {
+    status = std::system("./output/libbladeRF_test_gain_calibration");
+    ASSERT_EQ(0, status);
+}
 
 // ===============================
 // HDL
