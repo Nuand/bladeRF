@@ -17,7 +17,7 @@ set(LIBS libbladerf_shared)
 if(NOT MSVC)
     find_package(Threads REQUIRED)
     set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-endif(MSVC)
+endif(NOT MSVC)
 
 add_definitions(-DLOGGING_ENABLED=1)
 

@@ -3,7 +3,7 @@ project(libbladeRF_test_repeater C)
 
 if(NOT MSVC)
 	find_package(Threads REQUIRED)
-endif(MSVC)
+endif(NOT MSVC)
 
 set(TEST_REPEATER_SRC
         src/main.c
@@ -26,7 +26,6 @@ set(TEST_REPEATER_INCLUDE
 if(MSVC)
     set(TEST_REPEATER_INCLUDE ${TEST_REPEATER_INCLUDE}
         ${BLADERF_HOST_COMMON_INCLUDE_DIRS}/windows
-        ${LIBPTHREADSWIN32_INCLUDE_DIRS}
         ${MSVC_C99_INCLUDES}
     )
 endif()
@@ -38,11 +37,6 @@ add_executable(libbladeRF_test_repeater ${TEST_REPEATER_SRC})
 set(TEST_REPEATER_LIBS
         libbladerf_shared
         ${CMAKE_THREAD_LIBS_INIT})
-
-
-if(LIBPTHREADSWIN32_FOUND)
-    set(TEST_REPEATER_LIBS ${TEST_REPEATER_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-endif()
 
 target_link_libraries(libbladeRF_test_repeater
     ${TEST_REPEATER_LIBS})

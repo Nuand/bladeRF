@@ -28,11 +28,9 @@ configure_file(
 find_package(LibTecla)
 find_package(LibEdit)
 
-if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-else(MSVC)
+if(NOT MSVC)
 	find_package(Threads REQUIRED)
-endif(MSVC)
+endif(NOT MSVC)
 
 find_program(PANDOC_EXECUTABLE pandoc)
 find_program(BASH_EXECUTABLE bash)
@@ -265,7 +263,7 @@ set(CLI_LINK_LIBRARIES
 
 if(NOT MSVC)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} m)
-endif()
+endif(NOT MSVC)
 
 if(ENABLE_LIBTECLA)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES})
