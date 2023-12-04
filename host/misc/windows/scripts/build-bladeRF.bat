@@ -117,7 +117,7 @@ mkdir %BUILDDIR64%
 pushd %BUILDDIR64%
 echo ====================== Configuring 64-bit build ======================
 cmake -G %CMAKE_GENERATOR_64% -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-      -DLIBUSB_PATH=%LIBUSB% -DLIBPTHREADSWIN32_PATH=%PTHREADS% ^
+      -DLIBUSB_PATH=%LIBUSB% ^
       ..\bladeRF\host ^
         || goto EXIT_FAILURE
 
@@ -138,7 +138,7 @@ echo[
 echo[
 echo ====================== Configuring 32-bit build ======================
 cmake -G %CMAKE_GENERATOR_32% -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-      -DLIBUSB_PATH=%LIBUSB% -DLIBPTHREADSWIN32_PATH=%PTHREADS% ^
+      -DLIBUSB_PATH=%LIBUSB% ^
       ..\bladeRF\host ^
         || goto EXIT_FAILURE
 
