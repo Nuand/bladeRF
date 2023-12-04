@@ -26,7 +26,7 @@
 
 extern "C" {
 #include <stdlib.h>
-#include <pthread.h>
+#include "thread.h"
 #include <errno.h>
 #include "bladeRF.h"    /* Firmware interface */
 
@@ -707,7 +707,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         data->transfers[i].buffer = NULL;
         data->transfers[i].handle = NULL;
         data->num_avail++;
-        pthread_cond_signal(&stream->can_submit_buffer);
+        COND_SIGNAL(&stream->can_submit_buffer);
 
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
             done = true;
@@ -792,20 +792,20 @@ int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
                 return BLADERF_ERR_UNEXPECTED;
             }
 
-            while (data->num_avail == 0 && status == 0) {
-                status = pthread_cond_timedwait(&stream->can_submit_buffer,
+            while (data->num_avail == 0 && status == THREAD_SUCCESS) {
+                status = COND_TIMED_WAIT(&stream->can_submit_buffer,
                                                 &stream->lock,
                                                 &timeout_abs);
             }
         } else {
-            while (data->num_avail == 0 && status == 0) {
-                status = pthread_cond_wait(&stream->can_submit_buffer,
+            while (data->num_avail == 0 && status == THREAD_SUCCESS) {
+                status = COND_WAIT(&stream->can_submit_buffer,
                                            &stream->lock);
             }
         }
     }
 
-    if (status == ETIMEDOUT) {
+    if (status == THREAD_TIMEOUT) {
         return BLADERF_ERR_TIMEOUT;
     } else if (status != 0) {
         return BLADERF_ERR_UNEXPECTED;

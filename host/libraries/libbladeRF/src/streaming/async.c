@@ -66,12 +66,12 @@ int async_init_stream(struct bladerf_stream **stream,
 
     MUTEX_INIT(&lstream->lock);
 
-    if (pthread_cond_init(&lstream->can_submit_buffer, NULL) != 0) {
+    if (COND_INIT(&lstream->can_submit_buffer) != THREAD_SUCCESS) {
         free(lstream);
         return BLADERF_ERR_UNEXPECTED;
     }
 
-    if (pthread_cond_init(&lstream->stream_started, NULL) != 0) {
+    if (COND_INIT(&lstream->stream_started) != THREAD_SUCCESS) {
         free(lstream);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -203,7 +203,7 @@ int async_run_stream(struct bladerf_stream *stream, bladerf_channel_layout layou
     MUTEX_LOCK(&stream->lock);
     stream->layout = layout;
     stream->state = STREAM_RUNNING;
-    pthread_cond_signal(&stream->stream_started);
+    COND_SIGNAL(&stream->stream_started);
     MUTEX_UNLOCK(&stream->lock);
 
     status = dev->backend->stream(stream, layout);
@@ -218,32 +218,23 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
                                bool nonblock)
 {
     int status = 0;
-    struct timespec timeout_abs;
 
     MUTEX_LOCK(&stream->lock);
 
     if (buffer != BLADERF_STREAM_SHUTDOWN) {
-        if (stream->state != STREAM_RUNNING && timeout_ms != 0) {
-            status = populate_abs_timeout(&timeout_abs, timeout_ms);
-            if (status != 0) {
-                log_debug("Failed to populate timeout value\n");
-                goto error;
-            }
-        }
-
         while (stream->state != STREAM_RUNNING) {
             log_debug("Buffer submitted while stream's not running. "
                     "Waiting for stream to start.\n");
 
             if (timeout_ms == 0) {
-                status = pthread_cond_wait(&stream->stream_started,
+                status = COND_WAIT(&stream->stream_started,
                                            &stream->lock);
             } else {
-                status = pthread_cond_timedwait(&stream->stream_started,
-                        &stream->lock, &timeout_abs);
+                status = COND_TIMED_WAIT(&stream->stream_started,
+                        &stream->lock, timeout_ms);
             }
 
-            if (status == ETIMEDOUT) {
+            if (status == THREAD_TIMEOUT) {
                 status = BLADERF_ERR_TIMEOUT;
                 log_debug("%s: %u ms timeout expired",
                           __FUNCTION__, timeout_ms);

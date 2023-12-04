@@ -22,7 +22,7 @@
 #include "host_config.h"
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
+#include "thread.h"
 #include <errno.h>
 #include <libusb.h>
 #if 1 == BLADERF_OS_FREEBSD  
@@ -1054,7 +1054,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     } else {
         stream_data->transfer_status[transfer_i] = TRANSFER_AVAIL;
         stream_data->num_avail++;
-        pthread_cond_signal(&stream->can_submit_buffer);
+        COND_SIGNAL(&stream->can_submit_buffer);
     }
 
     /* Check to see if the transfer has been cancelled or errored */
@@ -1409,7 +1409,6 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
 {
     int status = 0;
     struct lusb_stream_data *stream_data = stream->backend_data;
-    struct timespec timeout_abs;
 
     if (buffer == BLADERF_STREAM_SHUTDOWN) {
         if (stream_data->num_avail == stream_data->num_transfers) {
@@ -1430,25 +1429,20 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         }
 
         if (timeout_ms != 0) {
-            status = populate_abs_timeout(&timeout_abs, timeout_ms);
-            if (status != 0) {
-                return BLADERF_ERR_UNEXPECTED;
-            }
-
-            while (stream_data->num_avail == 0 && status == 0) {
-                status = pthread_cond_timedwait(&stream->can_submit_buffer,
+            while (stream_data->num_avail == 0 && status == THREAD_SUCCESS) {
+                status = COND_TIMED_WAIT(&stream->can_submit_buffer,
                         &stream->lock,
-                        &timeout_abs);
+                        timeout_ms);
             }
         } else {
-            while (stream_data->num_avail == 0 && status == 0) {
-                status = pthread_cond_wait(&stream->can_submit_buffer,
+            while (stream_data->num_avail == 0 && status == THREAD_SUCCESS) {
+                status = COND_WAIT(&stream->can_submit_buffer,
                         &stream->lock);
             }
         }
     }
 
-    if (status == ETIMEDOUT) {
+    if (status == THREAD_TIMEOUT) {
         log_debug("%s: Timed out waiting for a transfer to become available.\n",
                   __FUNCTION__);
         return BLADERF_ERR_TIMEOUT;

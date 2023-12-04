@@ -25,7 +25,7 @@
 #ifndef WIN_CLOCK_GETTIME_H_
 #define WIN_CLOCK_GETTIME_H_
 
-#include <pthread.h>
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {

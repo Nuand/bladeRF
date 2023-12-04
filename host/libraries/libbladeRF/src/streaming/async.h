@@ -22,8 +22,6 @@
 #ifndef STREAMING_ASYNC_H_
 #define STREAMING_ASYNC_H_
 
-#include <pthread.h>
-
 #include <libbladeRF.h>
 
 #include "thread.h"
@@ -58,8 +56,8 @@ struct bladerf_stream {
     /* The following items must be accessed atomically */
     int error_code;
     bladerf_stream_state state;
-    pthread_cond_t can_submit_buffer;
-    pthread_cond_t stream_started;
+    COND can_submit_buffer;
+    COND stream_started;
     void *backend_data;
 };
 
