@@ -20,7 +20,6 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <pthread.h>
 #include <string.h>
 
 #include "host_config.h"
@@ -112,7 +111,7 @@ void rxtx_set_state(struct rxtx_data *rxtx, enum rxtx_state state)
 {
     MUTEX_LOCK(&rxtx->task_mgmt.lock);
     rxtx->task_mgmt.state = state;
-    pthread_cond_signal(&rxtx->task_mgmt.signal_state_change);
+    COND_SIGNAL(&rxtx->task_mgmt.signal_state_change);
     MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 }
 
@@ -158,7 +157,7 @@ void rxtx_submit_request(struct rxtx_data *rxtx, unsigned char req)
 {
     MUTEX_LOCK(&rxtx->task_mgmt.lock);
     rxtx->task_mgmt.req |= req;
-    pthread_cond_signal(&rxtx->task_mgmt.signal_req);
+    COND_SIGNAL(&rxtx->task_mgmt.signal_req);
     MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 }
 
@@ -415,9 +414,9 @@ struct rxtx_data *rxtx_data_alloc(bladerf_direction dir)
     ret->task_mgmt.state   = RXTX_STATE_IDLE;
     ret->task_mgmt.req     = 0;
     MUTEX_INIT(&ret->task_mgmt.lock);
-    pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
-    pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
-    pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
+    COND_INIT(&ret->task_mgmt.signal_req);
+    COND_INIT(&ret->task_mgmt.signal_done);
+    COND_INIT(&ret->task_mgmt.signal_state_change);
     ret->task_mgmt.main_task_waiting = false;
 
     /* Initialize error management */
@@ -434,9 +433,9 @@ int rxtx_startup(struct cli_state *s, bladerf_direction dir)
 
     if (rxtx_is_tx(dir)) {
         rxtx_set_state(s->tx, RXTX_STATE_INIT);
-        status = pthread_create(&s->tx->task_mgmt.thread, NULL, tx_task, s);
+        status = THREAD_CREATE(&s->tx->task_mgmt.thread, tx_task, s);
 
-        if (status < 0) {
+        if (status != THREAD_SUCCESS) {
             rxtx_set_state(s->tx, RXTX_STATE_FAIL);
         } else {
             status = rxtx_wait_for_state(s->tx, RXTX_STATE_IDLE, 0);
@@ -446,9 +445,8 @@ int rxtx_startup(struct cli_state *s, bladerf_direction dir)
         }
     } else {
         rxtx_set_state(s->rx, RXTX_STATE_INIT);
-        status = pthread_create(&s->rx->task_mgmt.thread, NULL, rx_task, s);
-
-        if (status < 0) {
+        status = THREAD_CREATE(&s->rx->task_mgmt.thread, rx_task, s);
+        if (status != THREAD_SUCCESS) {
             rxtx_set_state(s->rx, RXTX_STATE_FAIL);
         } else {
             status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 0);
@@ -478,7 +476,7 @@ void rxtx_shutdown(struct cli_state *s, struct rxtx_data *rxtx)
 
     if (rxtx->task_mgmt.started && rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_SHUTDOWN);
-        pthread_join(rxtx->task_mgmt.thread, NULL);
+        THREAD_JOIN(rxtx->task_mgmt.thread, NULL);
     }
 
     free(rxtx->file_mgmt.path);
@@ -741,7 +739,7 @@ void rxtx_task_exec_idle(struct rxtx_data *rxtx, unsigned char *requests)
     /* Wait until we're asked to start or shutdown */
     while (!(*requests & (RXTX_TASK_REQ_START | RXTX_TASK_REQ_SHUTDOWN))) {
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
-        pthread_cond_wait(&rxtx->task_mgmt.signal_req, &rxtx->task_mgmt.lock);
+        COND_WAIT(&rxtx->task_mgmt.signal_req, &rxtx->task_mgmt.lock);
         *requests = rxtx->task_mgmt.req;
         MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
     }
@@ -791,7 +789,6 @@ int rxtx_handle_wait(struct cli_state *s,
     int status = CLI_RET_UNKNOWN;
     bool ok;
     unsigned int timeout_ms = 0;
-    struct timespec timeout_abs;
     enum rxtx_state state;
 
     static const struct numeric_suffix times[] = {
@@ -825,29 +822,13 @@ int rxtx_handle_wait(struct cli_state *s,
     MUTEX_UNLOCK(&s->dev_lock);
 
     if (timeout_ms != 0) {
-        const unsigned int timeout_sec = timeout_ms / 1000;
-
-        status = clock_gettime(CLOCK_REALTIME, &timeout_abs);
-        if (status != 0) {
-            goto out;
-        }
-
-        timeout_abs.tv_sec += timeout_sec;
-        timeout_abs.tv_nsec += (timeout_ms % 1000) * 1000 * 1000;
-
-        if (timeout_abs.tv_nsec >= NSEC_PER_SEC) {
-            timeout_abs.tv_sec += timeout_abs.tv_nsec / NSEC_PER_SEC;
-            timeout_abs.tv_nsec %= NSEC_PER_SEC;
-        }
-
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         rxtx->task_mgmt.main_task_waiting = true;
         while (rxtx->task_mgmt.main_task_waiting) {
-            status =
-                pthread_cond_timedwait(&rxtx->task_mgmt.signal_done,
-                                       &rxtx->task_mgmt.lock, &timeout_abs);
+            status = COND_TIMED_WAIT(&rxtx->task_mgmt.signal_done,
+                                    &rxtx->task_mgmt.lock, timeout_ms);
 
-            if (status == ETIMEDOUT) {
+            if (status == THREAD_TIMEOUT) {
                 rxtx->task_mgmt.main_task_waiting = false;
             }
         }
@@ -857,19 +838,18 @@ int rxtx_handle_wait(struct cli_state *s,
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         rxtx->task_mgmt.main_task_waiting = true;
         while (rxtx->task_mgmt.main_task_waiting) {
-            status = pthread_cond_wait(&rxtx->task_mgmt.signal_done,
+            status = COND_WAIT(&rxtx->task_mgmt.signal_done,
                                        &rxtx->task_mgmt.lock);
         }
         MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
     }
 
-out:
     /* Re-acquire the device control lock, as the top-level command handler
      * will be unlocking this when it's done */
     MUTEX_LOCK(&s->dev_lock);
 
     /* Expected and OK condition */
-    if (status == ETIMEDOUT) {
+    if (status == THREAD_TIMEOUT) {
         status = 0;
     }
 
@@ -887,7 +867,7 @@ bool rxtx_release_wait(struct rxtx_data *rxtx)
     MUTEX_LOCK(&rxtx->task_mgmt.lock);
     was_waiting                       = rxtx->task_mgmt.main_task_waiting;
     rxtx->task_mgmt.main_task_waiting = false;
-    pthread_cond_signal(&rxtx->task_mgmt.signal_done);
+    COND_SIGNAL(&rxtx->task_mgmt.signal_done);
     MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
     return was_waiting;
@@ -898,36 +878,19 @@ int rxtx_wait_for_state(struct rxtx_data *rxtx,
                         unsigned int timeout_ms)
 {
     int status = 0;
-    struct timespec timeout_abs;
 
     if (timeout_ms != 0) {
-        const unsigned int timeout_sec = timeout_ms / 1000;
-
-        status = clock_gettime(CLOCK_REALTIME, &timeout_abs);
-        if (status != 0) {
-            return -1;
-        }
-
-        timeout_abs.tv_sec += timeout_sec;
-        timeout_abs.tv_nsec += (timeout_ms % 1000) * 1000 * 1000;
-
-        if (timeout_abs.tv_nsec >= NSEC_PER_SEC) {
-            timeout_abs.tv_sec += timeout_abs.tv_nsec / NSEC_PER_SEC;
-            timeout_abs.tv_nsec %= NSEC_PER_SEC;
-        }
-
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
-        while (rxtx->task_mgmt.state != req_state && status == 0) {
-            status =
-                pthread_cond_timedwait(&rxtx->task_mgmt.signal_state_change,
-                                       &rxtx->task_mgmt.lock, &timeout_abs);
+        while (rxtx->task_mgmt.state != req_state && status == THREAD_SUCCESS) {
+            status = COND_TIMED_WAIT(&rxtx->task_mgmt.signal_state_change,
+                                     &rxtx->task_mgmt.lock, timeout_ms);
         }
         MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
     } else {
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         while (rxtx->task_mgmt.state != req_state) {
-            status = pthread_cond_wait(&rxtx->task_mgmt.signal_state_change,
+            status = COND_WAIT(&rxtx->task_mgmt.signal_state_change,
                                        &rxtx->task_mgmt.lock);
         }
         MUTEX_UNLOCK(&rxtx->task_mgmt.lock);

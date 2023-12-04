@@ -19,7 +19,6 @@
  */
 #include <errno.h>
 #include <limits.h>
-#include <pthread.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -31,6 +30,7 @@
 #include "cmd/rxtx.h"
 #include "input.h"
 #include "script.h"
+#include "thread.h"
 
 /* There's currently only ever 1 active cli_state */
 static struct cli_state *cli_state;
@@ -105,7 +105,7 @@ struct cli_state *cli_state_create()
         cli_state->dev_info.is_bladerf_x40_x115 = false;
         cli_state->dev_info.is_bladerf_micro    = false;
 
-        pthread_mutex_init(&cli_state->dev_lock, NULL);
+        MUTEX_INIT(&cli_state->dev_lock);
 
         cli_state->rx = rxtx_data_alloc(BLADERF_RX);
         if (!cli_state->rx) {
@@ -305,25 +305,25 @@ const char *cli_strerror(int error, int lib_error)
 
 void cli_error_init(struct cli_error *e)
 {
-    pthread_mutex_init(&e->lock, NULL);
+    MUTEX_INIT(&e->lock);
     e->type  = ETYPE_CLI;
     e->value = 0;
 }
 
 void set_last_error(struct cli_error *e, enum error_type type, int error)
 {
-    pthread_mutex_lock(&e->lock);
+    MUTEX_LOCK(&e->lock);
     e->type  = type;
     e->value = error;
-    pthread_mutex_unlock(&e->lock);
+    MUTEX_UNLOCK(&e->lock);
 }
 
 void get_last_error(struct cli_error *e, enum error_type *type, int *error)
 {
-    pthread_mutex_lock(&e->lock);
+    MUTEX_LOCK(&e->lock);
     *type  = e->type;
     *error = e->value;
-    pthread_mutex_unlock(&e->lock);
+    MUTEX_UNLOCK(&e->lock);
 }
 
 int expand_and_open(const char *filename, const char *mode, FILE **file)

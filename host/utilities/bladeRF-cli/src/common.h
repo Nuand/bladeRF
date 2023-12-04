@@ -26,7 +26,7 @@
 #include "host_config.h"
 #include "str_queue.h"
 #include <libbladeRF.h>
-#include <pthread.h>
+#include "thread.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -88,7 +88,7 @@ enum error_type {
 struct cli_error {
     int value;            /**< Last command error */
     enum error_type type; /**< Type/source of last error */
-    pthread_mutex_t lock;
+    MUTEX lock;
 };
 
 /**
@@ -106,7 +106,7 @@ struct cli_dev_info {
 struct cli_state {
     struct bladerf *dev;      /**< Device currently in use */
     struct cli_dev_info dev_info; /**< Cached device information */
-    pthread_mutex_t dev_lock; /**< Should be held when performing
+    MUTEX dev_lock;           /**< Should be held when performing
                                *   any "device conrol" calls */
 
     int last_lib_error; /**< Last libbladeRF error */
