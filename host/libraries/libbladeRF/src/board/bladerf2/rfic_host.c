@@ -360,6 +360,13 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     lastrun = nsec;
 #endif
 
+    /** Force rerun frequency calibration */
+    if (enable) {
+        bladerf_frequency current_frequency;
+        CHECK_STATUS(dev->board->get_frequency(dev, ch, &current_frequency));
+        CHECK_STATUS(dev->board->set_frequency(dev, ch, current_frequency));
+    }
+
     return 0;
 }
 
