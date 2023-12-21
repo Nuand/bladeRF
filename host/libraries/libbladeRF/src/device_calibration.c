@@ -25,9 +25,17 @@
 #include <unistd.h>
 #include "libbladeRF.h"
 #include "board/board.h"
+#include "helpers/version.h"
 #include "device_calibration.h"
 #include "log.h"
 #include "common.h"
+
+#define GAIN_CAL_VERSION (struct bladerf_version) { \
+    .describe = "gain calibration table", \
+    .major = 1, \
+    .minor = 0, \
+    .patch = 0, \
+}
 
 #define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
 
@@ -122,6 +130,8 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
         log_error("Error reading header from CSV file or file is empty.\n");
         goto error;
     }
+
+    image->version = GAIN_CAL_VERSION;
 
     for (size_t i = 0; i < num_entries; i++) {
         if (!fgets(line, sizeof(line), csvFile)) {
@@ -248,6 +258,15 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
         goto error;
     }
 
+    if (version_equal(&image->version, &GAIN_CAL_VERSION) == false) {
+        log_error("Expected gain calibration table: v%i.%i.%i\n",
+            GAIN_CAL_VERSION.major, GAIN_CAL_VERSION.minor, GAIN_CAL_VERSION.patch);
+        log_error("Imported gain calibration table: v%i.%i.%i\n",
+            image->version.major, image->version.minor, image->version.patch);
+        status = BLADERF_ERR_INVAL;
+        goto error;
+    }
+
     num_entries = image->length / entry_size;
 
     offset = 0;
@@ -294,6 +313,7 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
         }
     }
 
+    gain_tbls[ch].version = image->version;
     gain_tbls[ch].start_freq = gain_tbls[ch].entries[0].freq;
     gain_tbls[ch].stop_freq = gain_tbls[ch].entries[entry_counter-1].freq;
     gain_tbls[ch].n_entries = entry_counter;
