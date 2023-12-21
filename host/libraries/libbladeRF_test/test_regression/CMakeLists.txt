@@ -87,8 +87,6 @@ target_link_libraries(
     absl::strings
 )
 
-gtest_discover_tests(${PROJECT_NAME})
-
 ################################################################
 # Find the nios2_command_shell
 ################################################################
