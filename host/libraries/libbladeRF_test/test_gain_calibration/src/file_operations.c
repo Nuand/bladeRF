@@ -47,3 +47,46 @@ int read_and_print_binary(const char *binary_path) {
     fclose(binaryFile);
     return 0;
 }
+
+int test_serial_based_autoload(struct bladerf *dev, bladerf_channel ch) {
+    int status = 0;
+    char new_filename[255];
+    char old_filename[255];
+    const char *output_dir = "./output/";
+    char *cal_bin = (char *)malloc(255);
+    char *serial = (char *)malloc(255);
+    if (serial == NULL || cal_bin == NULL) {
+        status = BLADERF_ERR_MEM;
+        goto out;
+    }
+
+    status = bladerf_get_serial(dev, serial);
+    if (status != 0) {
+        goto out;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        strncpy(cal_bin, "tx_sweep.tbl", 255);
+        snprintf(new_filename, sizeof(new_filename), "%s%s_tx_gain_cal.tbl", output_dir, serial);
+    } else {
+        strncpy(cal_bin, "rx_sweep.tbl", 255);
+        snprintf(new_filename, sizeof(new_filename), "%s%s_rx_gain_cal.tbl", output_dir, serial);
+    }
+
+    snprintf(old_filename, sizeof(old_filename), "%s%s", output_dir, cal_bin);
+
+    if (rename(old_filename, new_filename) != 0) {
+        status = BLADERF_ERR_IO;
+        goto out;
+    }
+
+    status = bladerf_load_gain_calibration(dev, ch, NULL);
+    if (status != 0) {
+        goto out;
+    }
+
+out:
+    free(serial);
+    free(cal_bin);
+    return status;
+}

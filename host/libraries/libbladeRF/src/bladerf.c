@@ -2181,6 +2181,10 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
     char *full_path_bin = NULL;
     char *ext;
 
+    size_t filename_len = PATH_MAX;
+    char *filename = (char *)calloc(1, filename_len + 1);
+    CHECK_NULL(filename);
+
     log_debug("Loading gain calibration\n");
     MUTEX_LOCK(&dev->lock);
 
@@ -2191,8 +2195,22 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
         goto error;
     }
 
-    full_path = file_find(cal_file_loc);
+    if (cal_file_loc != NULL) {
+        strcpy(filename, cal_file_loc);
+    } else {
+        log_debug("No calibration file specified, using serial number\n");
+        strcpy(filename, dev->ident.serial);
+        filename_len -= strlen(filename);
+
+        if (BLADERF_CHANNEL_IS_TX(ch))
+            strncat(filename, "_tx_gain_cal.tbl", filename_len);
+        else
+            strncat(filename, "_rx_gain_cal.tbl", filename_len);
+    }
+
+    full_path = file_find(filename);
     if (full_path == NULL) {
+        log_error("Failed to find gain calibration file: %s\n", filename);
         status = BLADERF_ERR_NO_FILE;
         goto error;
     }
@@ -2225,6 +2243,8 @@ error:
         free(full_path);
     if (full_path_bin)
         free(full_path_bin);
+    if (filename)
+        free(filename);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;

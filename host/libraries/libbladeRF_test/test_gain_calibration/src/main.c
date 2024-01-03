@@ -77,10 +77,12 @@ int main(int argc, char *argv[]) {
     ch = BLADERF_CHANNEL_RX(0);
     CHECK(bladerf_load_gain_calibration(dev, ch, rx_cal_file));
     CHECK(bladerf_get_gain_calibration(dev, ch, &cal[ch]));
+    CHECK(test_serial_based_autoload(dev, ch));
 
     ch = BLADERF_CHANNEL_TX(0);
     CHECK(bladerf_load_gain_calibration(dev, ch, tx_cal_file));
     CHECK(bladerf_get_gain_calibration(dev, ch, &cal[ch]));
+    CHECK(test_serial_based_autoload(dev, ch));
 
     for (int i = 0; i < 4; i++) {
         CHECK(bladerf_print_gain_calibration(dev, i, false));

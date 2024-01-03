@@ -21,6 +21,8 @@
 #ifndef FILE_OPERATIONS_H_
 #define FILE_OPERATIONS_H_
 
+#include "libbladeRF.h"
+
 /**
  * @brief Read frequency-power data from a binary file and print it.
  *
@@ -31,5 +33,24 @@
  * @return Returns 0 on success, and 1 if there's an error opening the file.
  */
 int read_and_print_binary(const char *binary_path);
+
+/**
+ * @brief Renames a calibration file based on the serial number of a BladeRF device and loads gain calibration.
+ *
+ * This function first retrieves the serial number of the specified BladeRF device. It then constructs a new filename
+ * for the calibration file by appending the serial number to the original filename. After renaming the file, it
+ * proceeds to load the gain calibration for the specified channel. If any step fails, the function returns an error.
+ *
+ * @param dev Pointer to a bladerf structure representing an open BladeRF device.
+ * @param ch  Specifies the BladeRF channel for which the gain calibration is to be loaded.
+ *
+ * @return Returns 0 on successful execution and renaming of the file and loading of gain calibration.
+ *         If an error occurs at any step (memory allocation failure, failure to get the serial number,
+ *         failure in renaming the file, or failure in loading the gain calibration), the function returns -1.
+ *
+ * @note The function assumes the presence of "./output/" directory and "rx_sweep.bin" file in it.
+ *       The memory allocated for the serial number is freed before the function returns.
+ */
+int test_serial_based_autoload(struct bladerf *dev, bladerf_channel ch);
 
 #endif
