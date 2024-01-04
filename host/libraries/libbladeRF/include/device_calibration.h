@@ -110,4 +110,19 @@ int get_gain_cal_entry(const struct bladerf_gain_cal_tbl *tbl,
  */
 int apply_gain_correction(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency);
 
+/**
+ * @brief Frees the resources of a gain calibration table and resets its fields.
+ *
+ * This function frees the dynamically allocated memory for the 'entries' and 'file_path'
+ * fields of the bladerf_gain_cal_tbl structure. After freeing these resources, it resets all fields
+ * of the structure to their default values, ensuring the structure is clean and can be
+ * reused or safely deallocated. The function logs a verbose message upon starting the
+ * freeing process.
+ *
+ * @param tbl Pointer to the bladerf_gain_cal_tbl structure. If this pointer is NULL,
+ *            the function returns immediately without performing any operations.
+ *            It is assumed that the caller ensures the validity of this pointer.
+ */
+void gain_cal_tbl_free(struct bladerf_gain_cal_tbl *tbl);
+
 #endif

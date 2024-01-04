@@ -214,6 +214,30 @@ static int gain_cal_tbl_init(struct bladerf_gain_cal_tbl *tbl, uint32_t num_entr
     return 0;
 }
 
+void gain_cal_tbl_free(struct bladerf_gain_cal_tbl *tbl) {
+    log_verbose("Freeing gain calibration table\n");
+
+    if (tbl->entries != NULL) {
+        free(tbl->entries);
+        tbl->entries = NULL;
+    }
+
+    if (tbl->file_path != NULL) {
+        free(tbl->file_path);
+        tbl->file_path = NULL;
+    }
+
+    tbl->version = (struct bladerf_version){0, 0, 0, NULL};
+    tbl->enabled = false;
+    tbl->ch = 0;
+    tbl->n_entries = 0;
+    tbl->start_freq = 0;
+    tbl->stop_freq = 0;
+    tbl->gain_target = 0;
+    tbl->file_path_len = 0;
+    tbl->state = BLADERF_GAIN_CAL_UNLOADED;
+}
+
 int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *binary_path) {
     int num_channels = 4;
     struct bladerf_gain_cal_tbl gain_tbls[num_channels];
@@ -331,8 +355,7 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     gain_tbls[ch].gain_target = current_gain;
     strncpy(gain_tbls[ch].file_path, binary_path, gain_tbls[ch].file_path_len);
 
-    free(dev->gain_tbls[ch].entries);
-    free(dev->gain_tbls[ch].file_path);
+    gain_cal_tbl_free(&dev->gain_tbls[ch]);
     dev->gain_tbls[ch] = gain_tbls[ch];
 
 error:

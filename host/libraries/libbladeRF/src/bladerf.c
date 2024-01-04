@@ -212,10 +212,7 @@ void bladerf_close(struct bladerf *dev)
 
         /** Free gain table entries */
         for (int i = 0; i < NUM_GAIN_CAL_TBLS; i++) {
-            if (dev->gain_tbls[i].state != BLADERF_GAIN_CAL_UNINITIALIZED) {
-                log_debug("Freeing gain table entries for ch[%s]\n", channel2str(i));
-                free(dev->gain_tbls[i].entries);
-            }
+            gain_cal_tbl_free(&dev->gain_tbls[i]);
         }
 
         MUTEX_UNLOCK(&dev->lock);
