@@ -4201,6 +4201,8 @@ struct bladerf_gain_cal_tbl {
     bladerf_frequency stop_freq;            /**< Stop frequency (Hz) */
     struct bladerf_gain_cal_entry *entries; /**< Sorted calibration entries */
     bladerf_gain gain_target;               /**< Compensated gain */
+    size_t file_path_len;                   /**< Length of the file path string. */
+    char *file_path;                        /**< Path to the file from which the table was loaded. */
     enum gain_cal_state {
         BLADERF_GAIN_CAL_UNINITIALIZED,
         BLADERF_GAIN_CAL_LOADED,

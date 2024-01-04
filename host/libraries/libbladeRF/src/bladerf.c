@@ -2290,6 +2290,7 @@ int bladerf_print_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool
     printf("  Number of Entries: %u\n", gain_tbls[ch].n_entries);
     printf("  Start Frequency: %" PRIu64 " Hz\n", gain_tbls[ch].start_freq);
     printf("  Stop Frequency: %" PRIu64 " Hz\n", gain_tbls[ch].stop_freq);
+    printf("  File Path: %s\n", gain_tbls[ch].file_path);
 
     if (with_entries) {
         for (size_t i = 0; i < gain_tbls[ch].n_entries; i++) {

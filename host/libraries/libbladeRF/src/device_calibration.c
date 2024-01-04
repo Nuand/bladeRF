@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h>
 #include "libbladeRF.h"
 #include "board/board.h"
 #include "helpers/version.h"
@@ -195,10 +196,17 @@ static int gain_cal_tbl_init(struct bladerf_gain_cal_tbl *tbl, uint32_t num_entr
     tbl->n_entries = num_entries;
     tbl->start_freq = 0;
     tbl->stop_freq = 0;
+    tbl->file_path_len = PATH_MAX;
 
     tbl->entries = malloc(num_entries * sizeof(struct bladerf_gain_cal_entry));
     if (tbl->entries == NULL) {
         log_error("failed to allocate memory for calibration table entries\n");
+        return BLADERF_ERR_MEM;
+    }
+
+    tbl->file_path = malloc(tbl->file_path_len + 1);
+    if (tbl->file_path == NULL) {
+        log_error("failed to allocate memory for calibration table file path\n");
         return BLADERF_ERR_MEM;
     }
 
@@ -321,11 +329,17 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     gain_tbls[ch].state = BLADERF_GAIN_CAL_LOADED;
     gain_tbls[ch].enabled = true;
     gain_tbls[ch].gain_target = current_gain;
+    strncpy(gain_tbls[ch].file_path, binary_path, gain_tbls[ch].file_path_len);
 
     free(dev->gain_tbls[ch].entries);
+    free(dev->gain_tbls[ch].file_path);
     dev->gain_tbls[ch] = gain_tbls[ch];
 
 error:
+    if (status != 0) {
+        log_error("binary_path: %s\n", binary_path);
+    }
+
     if (binaryFile)
         fclose(binaryFile);
     if (image)
