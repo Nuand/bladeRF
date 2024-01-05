@@ -24,6 +24,7 @@ add_subdirectory(test_version)
 add_subdirectory(test_digital_loopback)
 add_subdirectory(test_interleaver)
 add_subdirectory(test_rx_meta)
+add_subdirectory(test_fpga_load)
 
 option(TEST_REGRESSION "Include regression tests" OFF)
 if(TEST_REGRESSION)
