@@ -2249,7 +2249,13 @@ error:
 
 int bladerf_enable_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool en)
 {
+    CHECK_NULL(dev);
     int status = 0;
+
+    if (dev->gain_tbls[ch].state == BLADERF_GAIN_CAL_UNINITIALIZED) {
+        log_warning("%s: Gain calibration not loaded\n", __FUNCTION__);
+        return 0;
+    }
 
     dev->gain_tbls[ch].enabled = en;
     status = bladerf_set_gain(dev, ch, dev->gain_tbls[ch].gain_target);
