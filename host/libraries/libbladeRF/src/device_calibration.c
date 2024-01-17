@@ -31,6 +31,9 @@
 #include "log.h"
 #include "common.h"
 
+#define GAIN_CAL_HEADER_RX "RX Chain,RX Gain,VSG Power into bladeRF RX (dBm),Frequency of signal (Hz),Frequency of bladeRF+PXI (Hz),AD9361 RSSI register value,Power of Signal from Full Scale (dBFS)\0"
+#define GAIN_CAL_HEADER_TX "TX Chain,TX Gain,Frequency of Signal (Hz),Frequency of bladeRF+PXI (Hz),VSA Measured Power (dBm)\0"
+
 #define GAIN_CAL_VERSION (struct bladerf_version) { \
     .describe = "gain calibration table", \
     .major = 1, \
@@ -84,6 +87,7 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
 
     char line[256];
     char current_dir[1000];
+    char expected_header[1024];
 
     uint64_t frequency;
     float power;
@@ -129,6 +133,13 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
     if (!fgets(line, sizeof(line), csvFile)) {
         status = BLADERF_ERR_INVAL;
         log_error("Error reading header from CSV file or file is empty.\n");
+        goto error;
+    }
+
+    strncpy(expected_header, (BLADERF_CHANNEL_IS_TX(ch)) ? GAIN_CAL_HEADER_TX : GAIN_CAL_HEADER_RX, sizeof(expected_header));
+    if (strncmp(line, expected_header, strlen(expected_header)) != 0) {
+        status = BLADERF_ERR_INVAL;
+        log_error("CSV format does not match expected %s headers\n", (BLADERF_CHANNEL_IS_TX(ch)) ? "TX" : "RX");
         goto error;
     }
 
