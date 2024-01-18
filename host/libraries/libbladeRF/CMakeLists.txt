@@ -9,6 +9,9 @@ project(libbladeRF C)
 set(VERSION_INFO_MAJOR  2)
 set(VERSION_INFO_MINOR  5)
 set(VERSION_INFO_PATCH  0)
+set(LIBBLADERF_VERSION
+  ${VERSION_INFO_MAJOR}.${VERSION_INFO_MINOR}.${VERSION_INFO_PATCH})
+
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
     set(VERSION_INFO_EXTRA "git")
@@ -522,6 +525,26 @@ install(TARGETS libbladerf_shared
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR} # .dll
 )
 
+# ###############################################################################
+# CMake Config Files
+# ###############################################################################
+configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/libbladeRFConfigVersion.cmake.in
+    ${PROJECT_BINARY_DIR}/bladeRFConfigVersion.cmake @ONLY)
+
+configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/libbladeRFConfig.cmake.in
+    ${PROJECT_BINARY_DIR}/bladeRFConfig.cmake @ONLY)
+
+set(cmake_files
+    ${PROJECT_BINARY_DIR}/bladeRFConfig.cmake
+    ${PROJECT_BINARY_DIR}/bladeRFConfigVersion.cmake)
+
+if(UNIX)
+    install(FILES ${cmake_files} DESTINATION share/cmake/bladeRF)
+elseif(WIN32)
+    install(FILES ${cmake_files} DESTINATION cmake)
+endif()
 
 ################################################################################
 # Informational output
