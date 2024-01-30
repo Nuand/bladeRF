@@ -60,6 +60,16 @@
     } \
 } while (0)
 
+#define CHECK_STATUS(fn)                                \
+    do {                                                \
+        status = fn;                                    \
+        if (status != 0) {                              \
+            log_error("%s: %s %s\n", __FUNCTION__, #fn, \
+                      bladerf_strerror(status));        \
+            goto error;                                 \
+        }                                               \
+    } while (0)
+
 
 /******************************************************************************/
 /* Private Function Declarations */
