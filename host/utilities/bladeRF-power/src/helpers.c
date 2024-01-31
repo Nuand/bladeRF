@@ -32,6 +32,7 @@
 #include "helpers.h"
 #include "libbladeRF.h"
 #include "log.h"
+#include "filter.h"
 
 #define INT12_MAX 2047
 
@@ -76,18 +77,31 @@ bladerf_direction ask_direction() {
     }
 }
 
-static int calculate_power(const int16_t *samples, size_t num_samples, double *power) {
-    CHECK_NULL(samples, power);
-
+static int calculate_power(struct bladerf *dev, const int16_t *samples, size_t num_samples, double *power) {
+    CHECK_NULL(dev, samples, power);
+    int status = 0;
     double sum = 0;
+    int16_t *samples_filtered = NULL;
+
+    samples_filtered = malloc(2 * num_samples * sizeof(int16_t));
+    CHECK_NULL(samples_filtered);
+
+    CHECK(flatten_noise_figure(dev, samples, num_samples, samples_filtered));
+
     for (size_t i = 0; i < num_samples; i++) {
-        sum += (samples[2*i] * samples[2*i]) + (samples[2*i+1] * samples[2*i+1]);
+        sum += (samples_filtered[2*i] * samples_filtered[2*i]) + (samples_filtered[2*i+1] * samples_filtered[2*i+1]);
     }
+
     const double avg_power = sum / num_samples;
     const double max_power = INT12_MAX * INT12_MAX;
     const double avg_power_dbfs = 10 * log10(avg_power / max_power);
     *power = avg_power_dbfs;
-    return 0;
+
+error:
+    if (samples_filtered != NULL)
+        free(samples_filtered);
+
+    return status;
 }
 
 int start_streaming(struct bladerf *dev, struct test_params *test) {
@@ -175,7 +189,7 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
 
         if (test->direction == BLADERF_RX) {
             CHECK(bladerf_sync_rx(dev, samples, num_samples, NULL, 1000));
-            CHECK(calculate_power(samples, num_samples, &test->rx_power));
+            CHECK(calculate_power(dev, samples, num_samples, &test->rx_power));
         } else {
             CHECK(bladerf_sync_tx(dev, samples, num_samples, NULL, 1000));
         }

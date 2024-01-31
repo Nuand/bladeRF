@@ -13,6 +13,7 @@ add_executable(${PROJECT_NAME}
     src/init.c
     src/helpers.c
     src/window.c
+    src/filter.c
     src/main.c)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
