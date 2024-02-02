@@ -2258,3 +2258,20 @@ int bladerf_print_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool
 error:
     return status;
 }
+
+int bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_cal_tbl **tbl)
+{
+    CHECK_NULL(dev);
+    MUTEX_LOCK(&dev->lock);
+
+    if (dev->gain_tbls == NULL) {
+        log_error("Gain calibration not loaded\n");
+        MUTEX_UNLOCK(&dev->lock);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    *tbl = &(dev->gain_tbls[ch]);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return 0;
+}

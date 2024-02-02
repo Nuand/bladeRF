@@ -4245,6 +4245,23 @@ int CALL_CONV bladerf_enable_gain_calibration(struct bladerf *dev,
                                     bladerf_channel ch,
                                     bool en);
 
+/**
+ * @brief Provides read-only access to a channel's gain calibration table.
+ *
+ * Returns a read-only pointer to a specified channel's gain calibration table,
+ * preventing modification. Access is thread-safe, protected by device mutexes.
+ *
+ * @param[in]  dev Non-NULL pointer to a BladeRF device structure.
+ * @param[in]  ch  Channel to retrieve the gain calibration table for.
+ * @param[out] tbl On success, updated to point to the read-only gain
+ * calibration table.
+ *
+ * @return 0 on success, BLADERF_ERR_UNEXPECTED if the table is not loaded, or
+ * BLADERF_ERR_INVAL for invalid inputs.
+ */
+API_EXPORT
+int bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_cal_tbl **tbl);
+
 /** @} (End of FN_CAL) */
 
 /**
