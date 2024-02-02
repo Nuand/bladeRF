@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
     struct bladerf *dev;
     char *devstr = NULL;
     const char *cal_rx_file_loc_csv = "rx_pwr_cal.csv";
-    const char *cal_rx_file_loc_bin = "./output/rx_pwr_cal.tbl";
     bladerf_channel ch;
 
     bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_DEBUG);
@@ -50,10 +49,13 @@ int main(int argc, char *argv[]) {
 
     ch = BLADERF_CHANNEL_RX(0);
     CHECK(bladerf_load_gain_calibration(dev, ch, cal_rx_file_loc_csv));
-    CHECK(read_and_print_binary(cal_rx_file_loc_bin));
 
     ch = BLADERF_CHANNEL_TX(0);
     CHECK(bladerf_load_gain_calibration(dev, ch, cal_rx_file_loc_csv));
+
+    for (int i = 0; i < 4; i++) {
+        CHECK(bladerf_print_gain_calibration(dev, i, false));
+    }
 
 out:
     bladerf_close(dev);

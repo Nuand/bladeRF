@@ -36,6 +36,7 @@
 #include "backend/backend.h"
 #include "backend/usb/usb.h"
 #include "board/board.h"
+#include "conversions.h"
 #include "driver/fx3_fw.h"
 #include "device_calibration.h"
 #include "streaming/async.h"
@@ -2221,3 +2222,39 @@ int bladerf_enable_gain_calibration(struct bladerf *dev, bladerf_channel ch, boo
     return status;
 }
 
+int bladerf_print_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool with_entries)
+{
+    CHECK_NULL(dev);
+    int status = 0;
+    const char *board_name;
+    struct bladerf_gain_cal_tbl *gain_tbls = dev->gain_tbls;
+
+    board_name = bladerf_get_board_name(dev);
+    if (strcmp(board_name, "bladerf2") != 0) {
+        log_error("Gain calibration unsupported on this device: %s\n", board_name);
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto error;
+    }
+
+    if (gain_tbls[ch].state == BLADERF_GAIN_CAL_UNINITIALIZED) {
+        printf("Gain Calibration [%s]: uninitialized\n", channel2str(ch));
+        return 0;
+    }
+
+    printf("Gain Calibration [%s]: loaded\n", channel2str(ch));
+    printf("  Status: %s\n", (gain_tbls[ch].enabled) ? "enabled" : "disabled");
+    printf("  Version: %i.%i.%i\n",
+        gain_tbls[ch].version.major, gain_tbls[ch].version.minor, gain_tbls[ch].version.patch);
+    printf("  Number of Entries: %u\n", gain_tbls[ch].n_entries);
+    printf("  Start Frequency: %" PRIu64 " Hz\n", gain_tbls[ch].start_freq);
+    printf("  Stop Frequency: %" PRIu64 " Hz\n", gain_tbls[ch].stop_freq);
+
+    if (with_entries) {
+        for (size_t i = 0; i < gain_tbls[ch].n_entries; i++) {
+            printf("%" PRIu64 ",%f\n", gain_tbls[ch].entries[i].freq, gain_tbls[ch].entries[i].gain_corr);
+        }
+    }
+
+error:
+    return status;
+}

@@ -4200,6 +4200,28 @@ int CALL_CONV bladerf_load_gain_calibration(struct bladerf *dev,
                                             const char* cal_file_loc);
 
 /**
+ * @brief Displays gain calibration details for a specified channel.
+ *
+ * Outputs the gain calibration information to the console. The level of detail
+ * is adjustable via `with_entries`.
+ *
+ * @note This operation is thread-safe.
+ *
+ * @param[in] dev          Non-NULL pointer to a bladeRF device.
+ * @param[in] ch           Channel to display gain calibration for. Use
+ * `bladerf_channel`.
+ * @param[in] with_entries Set to `true` to print all calibration entries, or
+ * `false` for a summary only.
+ *
+ * @return 0 on success, BLADERF_ERR_UNSUPPORTED if calibration is not supported
+ * on the device, or other BLADERF_ERR_* codes for different failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_print_gain_calibration(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   bool with_entries);
+
+/**
  * @brief Toggles gain calibration for a specified channel.
  *
  * Enables or disables automatic gain adjustment based on a preloaded
