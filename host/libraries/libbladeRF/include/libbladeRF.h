@@ -4298,7 +4298,30 @@ int CALL_CONV bladerf_enable_gain_calibration(struct bladerf *dev,
  * BLADERF_ERR_INVAL for invalid inputs.
  */
 API_EXPORT
-int bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_cal_tbl **tbl);
+int CALL_CONV bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_cal_tbl **tbl);
+
+/**
+ * @brief Computes the gain target for a specified channel, incorporating
+ * calibration corrections.
+ *
+ * For a channel, this calculates the target gain considering the current gain
+ * setting and calibration corrections, if available. In MGC mode, it returns
+ * the target gain from the calibration table. In AGC mode, it adjusts the
+ * target based on the calibration correction for the current frequency.
+ *
+ * @note Access to device and calibration data is thread-safe.
+ *
+ * @param[in]  dev         Non-NULL pointer to a BladeRF device.
+ * @param[in]  ch          Channel (RX/TX) for querying the gain target.
+ * @param[out] gain_target Where to store the computed gain target. Reflects
+ * current gain and calibration corrections.
+ *
+ * @return 0 if successful, with `gain_target` updated. On failure, returns
+ * BLADERF_ERR_UNEXPECTED if calibration is uninitialized, or other error codes
+ * for different failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_target(struct bladerf *dev, bladerf_channel ch, int *gain_target);
 
 /** @} (End of FN_CAL) */
 

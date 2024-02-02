@@ -2330,3 +2330,43 @@ int bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const 
     MUTEX_UNLOCK(&dev->lock);
     return 0;
 }
+
+int bladerf_get_gain_target(struct bladerf *dev, bladerf_channel ch, int *gain_target)
+{
+    int status = 0;
+    CHECK_NULL(dev);
+    MUTEX_LOCK(&dev->lock);
+    bladerf_frequency current_frequency;
+    struct bladerf_gain_cal_tbl *cal_table = &dev->gain_tbls[ch];
+    struct bladerf_gain_cal_entry current_entry;
+    bladerf_gain current_gain;
+    bladerf_gain_mode gain_mode;
+
+
+    if (dev->gain_tbls[ch].state == BLADERF_GAIN_CAL_UNINITIALIZED) {
+        log_error("Gain calibration not loaded\n");
+        status = BLADERF_ERR_UNEXPECTED;
+        goto error;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch) == true) {
+        *gain_target = cal_table->gain_target;
+        goto error;
+    }
+
+    dev->board->get_gain_mode(dev, ch, &gain_mode);
+
+    if (gain_mode == BLADERF_GAIN_MGC) {
+        *gain_target = cal_table->gain_target;
+        goto error;
+    }
+
+    CHECK_STATUS(dev->board->get_gain(dev, ch, &current_gain));
+    CHECK_STATUS(dev->board->get_frequency(dev, ch, &current_frequency));
+    CHECK_STATUS(get_gain_cal_entry(cal_table, current_frequency, &current_entry));
+    *gain_target = current_gain + current_entry.gain_corr;
+
+error:
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
