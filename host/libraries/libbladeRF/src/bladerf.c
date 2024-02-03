@@ -2200,3 +2200,12 @@ error:
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
+
+int bladerf_enable_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool en)
+{
+
+    dev->gain_tbls[ch].enabled = en;
+
+    return 0;
+}
+

@@ -4159,6 +4159,7 @@ struct bladerf_gain_cal_entry {
 struct bladerf_gain_cal_tbl {
     struct bladerf_version version;         /**< Table format version */
     bladerf_channel ch;                     /**< Channel */
+    bool enabled;                           /**< Whether gain calibration is enabled. */
     uint32_t n_entries;                     /**< Number of entries */
     bladerf_frequency start_freq;           /**< Start frequency (Hz) */
     bladerf_frequency stop_freq;            /**< Stop frequency (Hz) */
@@ -4197,6 +4198,30 @@ API_EXPORT
 int CALL_CONV bladerf_load_gain_calibration(struct bladerf *dev,
                                             bladerf_channel ch,
                                             const char* cal_file_loc);
+
+/**
+ * @brief Toggles gain calibration for a specified channel.
+ *
+ * Enables or disables automatic gain adjustment based on a preloaded
+ * calibration table for the specified channel. This operation is thread-safe.
+
+ *
+ * @note Gain calibration mode persists until device reset or power cycle.
+ * Ensure a calibration table is loaded before enabling.
+
+ *
+ * @param[in] dev  Non-NULL pointer to the bladeRF device.
+ * @param[in] ch   Channel (`BLADERF_CHANNEL_RX(0)`, `BLADERF_CHANNEL_TX(0)`,
+ * etc.) to set gain calibration for.
+ * @param[in] en   `true` to enable or `false` to disable gain calibration.
+ *
+ * @return 0 on success, or a `BLADERF_ERR_*` code on failure (e.g., if
+ * calibration table is not initialized).
+ */
+API_EXPORT
+int CALL_CONV bladerf_enable_gain_calibration(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    bool en);
 
 /** @} (End of FN_CAL) */
 

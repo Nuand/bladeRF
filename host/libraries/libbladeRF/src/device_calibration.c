@@ -126,6 +126,7 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     gain_tbls[ch].n_entries = entry_counter;
     gain_tbls[ch].ch = ch;
     gain_tbls[ch].state = BLADERF_GAIN_CAL_LOADED;
+    gain_tbls[ch].enabled = true;
 
     free(dev->gain_tbls[ch].entries);
     dev->gain_tbls[ch] = gain_tbls[ch];
