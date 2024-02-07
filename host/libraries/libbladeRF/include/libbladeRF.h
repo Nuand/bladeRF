@@ -1931,6 +1931,25 @@ int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
                                      bladerf_channel ch,
                                      struct bladerf_quick_tune *quick_tune);
 
+/**
+ * @brief Prints the quick retune parameters for a bladeRF device.
+ *
+ * Outputs the current quick retune parameters of a bladeRF device
+ * to standard output. It is useful for debugging and verifying the
+ * configuration of quick tune settings.
+ *
+ * @note supported devices: bladeRF1, bladeRF2
+ *
+ * @param[in]   dev         Device handle. Must not be NULL.
+ * @param[in]   qt          Pointer to the `bladerf_quick_tune` structure containing
+ *                          the quick retune parameters. Must not be NULL.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int bladerf_print_quick_tune(struct bladerf *dev,
+                             const struct bladerf_quick_tune *qt);
+
 /** @} (End of FN_SCHEDULED_TUNING) */
 
 /**

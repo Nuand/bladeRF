@@ -876,6 +876,39 @@ int bladerf_get_quick_tune(struct bladerf *dev,
     return status;
 }
 
+int bladerf_print_quick_tune(struct bladerf *dev, const struct bladerf_quick_tune *qt) {
+    if (dev == NULL || qt == NULL) {
+        log_error("Device handle or quick tune structure is NULL.\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    const char *board_name = bladerf_get_board_name(dev);
+    if (board_name == NULL) {
+        log_error("Failed to get board name.\n");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    printf("board: %s\n", board_name);
+    if (strcmp(board_name, "bladerf1") == 0) {
+        printf("freqsel: %u\n", qt->freqsel);
+        printf("vcocap: %u\n", qt->vcocap);
+        printf("nint: %u\n", qt->nint);
+        printf("nfrac: %u\n", qt->nfrac);
+        printf("flags: %u\n", qt->flags);
+        printf("xb_gpio: %u\n", qt->xb_gpio);
+    } else if (strcmp(board_name, "bladerf2") == 0) {
+        printf("nios_profile: %u\n", qt->nios_profile);
+        printf("rffe_profile: %u\n", qt->rffe_profile);
+        printf("port: %u\n", qt->port);
+        printf("spdt: %u\n", qt->spdt);
+    } else {
+        log_error("Unknown bladeRF board name: %s\n", board_name);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    return 0;
+}
+
 int bladerf_schedule_retune(struct bladerf *dev,
                             bladerf_channel ch,
                             bladerf_timestamp timestamp,
