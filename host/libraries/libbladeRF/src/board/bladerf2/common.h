@@ -124,6 +124,11 @@ struct controller_fns {
                                   bladerf_channel ch,
                                   uint32_t profile);
 
+    int (*save_fastlock_profile)(struct bladerf *dev,
+                                 bladerf_channel ch,
+                                 uint32_t profile,
+                                 uint8_t *values);
+
     enum bladerf2_rfic_command_mode const command_mode;
 };
 
