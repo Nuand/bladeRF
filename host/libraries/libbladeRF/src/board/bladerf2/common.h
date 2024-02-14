@@ -344,6 +344,23 @@ extern char const *bladerf2_state_to_string[4];
     } while (0)
 
 /**
+ * @brief   Call a function and goto error if it fails
+ *
+ * @param   _fn   The function
+ *
+ * @note    `int status` must be declared in the including scope
+ */
+#define CHECK_STATUS_GOTO(_fn)                             \
+    do {                                                   \
+        status = _fn;                                      \
+        if (status < 0) {                                  \
+            log_error("%s: %i failed: %s\n", #_fn, status, \
+                      bladerf_strerror(status));           \
+            goto error;                                    \
+        }                                                  \
+    } while (0)
+
+/**
  * @brief   Call a function and, if it fails, unlock the mutex and return
  *
  * @param   _fn   The function
