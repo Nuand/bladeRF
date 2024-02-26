@@ -281,6 +281,7 @@ int sync_init(struct bladerf_sync *sync,
                 sync->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
             }
 
+            sync->meta.msg_timestamp = 0;
             sync->meta.in_burst = false;
             sync->meta.now = false;
             break;
