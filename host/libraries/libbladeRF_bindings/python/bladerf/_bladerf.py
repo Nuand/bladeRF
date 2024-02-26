@@ -291,6 +291,38 @@ class Serial(collections.namedtuple("Serial", ["serial"])):
     def __str__(self):
         return self.serial
 
+class MetadataFlags(enum.IntEnum):
+    BLADERF_META_STATUS_OVERRUN = (1 << 0)
+    BLADERF_META_STATUS_UNDERRUN = (1 << 1)
+    BLADERF_META_FLAG_TX_BURST_START = (1 << 0)
+    BLADERF_META_FLAG_TX_BURST_END = (1 << 1)
+    BLADERF_META_FLAG_TX_NOW = (1 << 2)
+    BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP = (1 << 3)
+    BLADERF_META_FLAG_RX_NOW = (1 << 31)
+    BLADERF_META_FLAG_RX_HW_UNDERFLOW = (1 << 0)
+    BLADERF_META_FLAG_RX_HW_MINIEXP1 = (1 << 16)
+    BLADERF_META_FLAG_RX_HW_MINIEXP2 = (1 << 17)
+
+
+class Metadata(collections.namedtuple("Metadata", [
+            "timestamp", "flags", "status", "actual_count"])):
+    @staticmethod
+    def from_struct(metadata):
+        return Metadata(metadata.timestamp,
+                        metadata.flags,
+                        metadata.status,
+                        metadata.actual_count)
+
+    def to_struct(self):
+        return ffi.new("struct bladerf_metadata *", [
+                        ffi.cast("uint64_t", self.timestamp),
+                        ffi.cast("uint32_t", self.flags),
+                        ffi.cast("uint32_t", self.status),
+                        ffi.cast("unsigned int", self.actual_count)
+                        ])
+
+    struct = property(to_struct)
+
 
 ###############################################################################
 
@@ -607,6 +639,12 @@ class BladeRF:
         ret = libbladeRF.bladerf_enable_module(self.dev[0], ch, bool(enable))
         _check_error(ret)
 
+    def get_timestamp(self, dir: Direction):
+        timestamp = ffi.new("uint64_t *")
+        ret = libbladeRF.bladerf_get_timestamp(self.dev[0], dir.value, timestamp)
+        _check_error(ret)
+        return timestamp[0]
+
     # Gain
 
     def set_gain(self, ch, gain):
@@ -862,20 +900,29 @@ class BladeRF:
         _check_error(ret)
 
     def sync_tx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
+
+        if type(meta) == Metadata:
+            meta_struct = meta.struct
+        else:
+            meta_struct = ffi.cast("struct bladerf_metadata *", meta)
+
         ret = libbladeRF.bladerf_sync_tx(self.dev[0],
                                          ffi.from_buffer(buf),
                                          num_samples,
-                                         ffi.cast("struct bladerf_metadata *", meta),
+                                         meta_struct,
                                          timeout_ms or 0)
         _check_error(ret)
 
     def sync_rx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
+        meta_struct = meta.struct if type(meta) == Metadata else meta
         ret = libbladeRF.bladerf_sync_rx(self.dev[0],
                                          ffi.from_buffer(buf),
                                          num_samples,
-                                         meta,
+                                         meta_struct,
                                          timeout_ms or 0)
         _check_error(ret)
+        meta = Metadata.from_struct(meta_struct[0]) if type(meta) == Metadata else meta_struct
+        return meta
 
     # FPGA/Firmware Loading/Flashing
 
