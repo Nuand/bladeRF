@@ -1,14 +1,70 @@
 #ifndef TEST_COMMON_H_
 #define TEST_COMMON_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
+#include "libbladeRF.h"
 #include "host_config.h"
 #include "rel_assert.h"
 
 #if BLADERF_OS_WINDOWS
 #   include "clock_gettime.h"
 #endif
+
+/**
+ * @brief Checks if any of the provided arguments are NULL.
+ *
+ * This macro iterates over each argument provided to it and checks if it is NULL.
+ * If a NULL argument is found, it logs an error message indicating the argument
+ * position that is NULL and returns a `BLADERF_ERR_INVAL` error code to indicate
+ * an invalid parameter was passed.
+ *
+ * @param[in] __VA_ARGS__ A list of pointers to check for NULL. This list must be
+ *                        terminated by a NULL pointer.
+ */
+#define CHECK_NULL(...) do { \
+    const void* _args[] = { __VA_ARGS__, NULL }; \
+    for (size_t _i = 0; _args[_i] != NULL; ++_i) { \
+        if (_args[_i] == NULL) { \
+            log_error("%s:%d: Argument %zu is a NULL pointer\n", __FILE__, __LINE__, _i + 1); \
+            return BLADERF_ERR_INVAL; \
+        } \
+    } \
+} while (0)
+
+/**
+ * @brief Checks the status returned by a function and logs an error if it indicates failure.
+ *
+ * This macro invokes a function and checks its return value. If the return value
+ * indicates a failure (non-zero), it logs an error message including the file name,
+ * line number, function name, and a string describing the error based on the status code.
+ * After logging the error, it jumps to a label `error` for error handling.
+ *
+ * @param[in] fn The function to invoke, which should return an integer status code.
+ */
+#define CHECK_STATUS(fn) do {                                            \
+        status = fn;                                                     \
+        if (status != 0) {                                               \
+            log_error("%s:%d: %s failed: %s\n", __FILE__, __LINE__, #fn, \
+                      bladerf_strerror(status));                         \
+            goto error;                                                  \
+        }                                                                \
+    } while (0)
+
+/**
+ * @brief Converts bytes to double words.
+ *
+ * Calculates the number of 32-bit double words (DWORDs) required to hold a given number of bytes.
+ * It assumes that 1 DWORD is equivalent to 4 bytes (32 bits).
+ *
+ * @param bytes The number of bytes to convert to DWORDs. The value should be non-negative.
+ *
+ * @return The minimum number of DWORDs required to hold the specified number of bytes.
+ */
+static inline size_t bytes_to_dwords(int bytes) {
+    return (bytes + 3) / 4;
+}
 
 /**
  * Initialize a seed for use with randval_update
