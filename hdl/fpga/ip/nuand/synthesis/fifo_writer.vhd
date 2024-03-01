@@ -41,7 +41,7 @@ entity fifo_writer is
         usb_speed           :   in      std_logic;
         meta_en             :   in      std_logic;
         packet_en           :   in      std_logic;
-        eight_bit_mode_en   :   in      std_logic;
+        eight_bit_mode_en   :   in      std_logic := '0';
         timestamp           :   in      unsigned(63 downto 0);
         mini_exp            :   in      std_logic_vector(1 downto 0);
 
