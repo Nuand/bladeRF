@@ -3,6 +3,8 @@ project(libbladeRF_test_regression
         VERSION 3.11
         LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+
 include(GoogleTest)
 include(FetchContent)
 enable_testing()
