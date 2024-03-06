@@ -700,7 +700,7 @@ begin
 
             -- Change the iq values based on blocks received
             -- See tx_sample_stream's encoding scheme in fx3_model.vhd
-            if( iq_value(7 downto 0) = tx_packet_len ) then
+            if( iq_value(7 downto 0) = tx_packet_len - 1 ) then
                 iq_value  := x"0000";
                 if( current_block_count <= BLOCKS_PER_ITERATION ) then
                     current_block_count := current_block_count + 1;

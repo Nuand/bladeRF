@@ -211,7 +211,8 @@ begin
 
     -- Meta FIFO combinatorial process
     meta_fsm_comb : process( all )
-        variable  meta_time : unsigned(63 downto 0);
+        variable  meta_time     : unsigned(63 downto 0);
+        variable  packet_len    : integer;
     begin
 
         meta_future <= meta_current;
@@ -254,7 +255,8 @@ begin
             when META_WAIT =>
 
                 if( packet_en = '1' ) then
-                   meta_future.dma_downcount <= to_integer(unsigned(meta_current.meta_cache(15 downto 0)));
+                   packet_len := to_integer(unsigned(meta_current.meta_cache(15 downto 0)));
+                   meta_future.dma_downcount <= packet_len - 1;
                 else
                    meta_future.dma_downcount <= dma_buf_size - 4;
                 end if;
