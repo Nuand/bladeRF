@@ -725,6 +725,8 @@ static int bladerf2_enable_module(struct bladerf *dev,
 
     struct bladerf2_board_data *board_data = dev->board_data;
 
+    WITH_MUTEX(&board_data->sync[channel2direction(ch)].lock,
+               { board_data->sync[channel2direction(ch)].meta.msg_timestamp = 0; });
     return board_data->rfic->enable_module(dev, ch, enable);
 }
 
