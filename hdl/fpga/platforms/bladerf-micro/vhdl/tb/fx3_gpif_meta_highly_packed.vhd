@@ -40,8 +40,9 @@ entity fx3_gpif_meta_highly_packed is
         FIFO_READER_READ_THROTTLE   : natural := 0;
 
         ENABLE_CHANNEL_0            : std_logic := '1';
-        ENABLE_CHANNEL_1            : std_logic := '1';
-        EIGHT_BIT_MODE_EN           : std_logic := '0'
+        ENABLE_CHANNEL_1            : std_logic := '0';
+        EIGHT_BIT_MODE_EN           : std_logic := '0';
+        HIGHLY_PACKED_EN            : std_logic := '1'
     );
 end entity;
 
@@ -414,7 +415,8 @@ begin
             packet_ready           => rx_packet_ready,
 
             -- 8-bit mode
-            EIGHT_BIT_MODE_EN    => EIGHT_BIT_MODE_EN,
+            EIGHT_BIT_MODE_EN      => EIGHT_BIT_MODE_EN,
+            highly_packed_mode_en  => HIGHLY_PACKED_EN,
 
             -- Samples to host via FX3
             sample_fifo_rclock     => fx3_pclk_pll,

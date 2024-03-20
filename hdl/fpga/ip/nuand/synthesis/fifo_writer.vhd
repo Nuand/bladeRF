@@ -34,37 +34,38 @@ entity fifo_writer is
         META_FIFO_DATA_WIDTH  : natural := 128
     );
     port (
-        clock               :   in      std_logic;
-        reset               :   in      std_logic;
-        enable              :   in      std_logic;
+        clock                   :   in      std_logic;
+        reset                   :   in      std_logic;
+        enable                  :   in      std_logic;
 
-        usb_speed           :   in      std_logic;
-        meta_en             :   in      std_logic;
-        packet_en           :   in      std_logic;
-        eight_bit_mode_en   :   in      std_logic := '0';
-        timestamp           :   in      unsigned(63 downto 0);
-        mini_exp            :   in      std_logic_vector(1 downto 0);
+        usb_speed               :   in      std_logic;
+        meta_en                 :   in      std_logic;
+        packet_en               :   in      std_logic;
+        eight_bit_mode_en       :   in      std_logic := '0';
+        highly_packed_mode_en   :   in      std_logic := '0';
+        timestamp               :   in      unsigned(63 downto 0);
+        mini_exp                :   in      std_logic_vector(1 downto 0);
 
-        in_sample_controls  :   in      sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
-        in_samples          :   in      sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE);
+        in_sample_controls      :   in      sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
+        in_samples              :   in      sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE);
 
-        fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
-        fifo_clear          :   buffer  std_logic;
-        fifo_write          :   buffer  std_logic := '0';
-        fifo_full           :   in      std_logic;
-        fifo_data           :   out     std_logic_vector(FIFO_DATA_WIDTH-1 downto 0) := (others => '0');
+        fifo_usedw              :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
+        fifo_clear              :   buffer  std_logic;
+        fifo_write              :   buffer  std_logic := '0';
+        fifo_full               :   in      std_logic;
+        fifo_data               :   out     std_logic_vector(FIFO_DATA_WIDTH-1 downto 0) := (others => '0');
 
-        packet_control      :   in      packet_control_t;
-        packet_ready        :   out     std_logic;
+        packet_control          :   in      packet_control_t;
+        packet_ready            :   out     std_logic;
 
-        meta_fifo_full      :   in     std_logic;
-        meta_fifo_usedw     :   in     std_logic_vector(META_FIFO_USEDW_WIDTH-1 downto 0);
-        meta_fifo_data      :   out    std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0) := (others => '0');
-        meta_fifo_write     :   out    std_logic := '0';
+        meta_fifo_full          :   in     std_logic;
+        meta_fifo_usedw         :   in     std_logic_vector(META_FIFO_USEDW_WIDTH-1 downto 0);
+        meta_fifo_data          :   out    std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0) := (others => '0');
+        meta_fifo_write         :   out    std_logic := '0';
 
-        overflow_led        :   buffer  std_logic;
-        overflow_count      :   buffer  unsigned(63 downto 0);
-        overflow_duration   :   in      unsigned(15 downto 0)
+        overflow_led            :   buffer  std_logic;
+        overflow_count          :   buffer  unsigned(63 downto 0);
+        overflow_duration       :   in      unsigned(15 downto 0)
     );
 end entity;
 

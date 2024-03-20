@@ -291,6 +291,7 @@ begin
             packet_enable       =>  packet_en_pclk,
             rx_enable           =>  rx_enable_pclk,
             tx_enable           =>  tx_enable_pclk,
+            highly_packed_mode  =>  highly_packed_en_pclk,
 
             gpif_in             =>  fx3_gpif_in,
             gpif_out            =>  fx3_gpif_out,
@@ -643,6 +644,7 @@ begin
 
             -- Eightbit mode
             eight_bit_mode_en      => eightbit_en_rx,
+            highly_packed_mode_en  => highly_packed_en_rx,
 
             -- Packet FIFO
             packet_en              => packet_en_rx,
