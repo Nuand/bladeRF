@@ -44,6 +44,7 @@ entity fx3_gpif is
     rx_enable           :   out std_logic;
     meta_enable         :   in  std_logic;
     packet_enable       :   in  std_logic;
+    highly_packed_mode  :   in  std_logic := '0';
 
     -- TX FIFO
     tx_fifo_write       :   out std_logic;
@@ -498,6 +499,11 @@ begin
                 -- of a TX underrun condition, and is sent back to the host
                 -- as part of RX metadata.
                 future.underrun_clr     <= '1';
+
+                if (highly_packed_mode = '1' and current.dma_downcount < 4) then
+                    future.gpif_mode <= RX_IGNORE;
+                    future.rx_fifo_rd <= '0';
+                end if;
 
                 if (packet_enable = '1' and current.dma_downcount = 0 and current.meta_dword(0) = '1') then
                     future.gpif_mode        <= IDLE;

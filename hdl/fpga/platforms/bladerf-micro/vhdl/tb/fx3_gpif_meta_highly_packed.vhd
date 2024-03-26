@@ -212,6 +212,7 @@ begin
             rx_enable           => fx3_control.rx_enable,
             meta_enable         => fx3_control.meta_enable,
             packet_enable       => fx3_control.packet,
+            highly_packed_mode  => HIGHLY_PACKED_EN,
             tx_fifo_write       => tx_sample_fifo.wreq,
             tx_fifo_full        => tx_sample_fifo.wfull,
             tx_fifo_empty       => tx_sample_fifo.wempty,
