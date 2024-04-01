@@ -2240,9 +2240,11 @@ static int bladerf2_load_fpga(struct bladerf *dev,
         RETURN_INVAL("fpga file", "incorrect file size");
     }
 
-    CHECK_STATUS(dev->backend->load_fpga(dev, buf, length));
+    if (dev->backend->is_fpga_configured(dev)) {
+        CHECK_STATUS(board_data->rfic->standby(dev));
+    }
 
-    /* Update device state */
+    CHECK_STATUS(dev->backend->load_fpga(dev, buf, length));
     board_data->state = STATE_FPGA_LOADED;
 
     CHECK_STATUS(_bladerf2_initialize(dev));
