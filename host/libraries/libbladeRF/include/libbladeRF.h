@@ -3590,18 +3590,14 @@ int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
 /**
  * Frequency tuning modes
  *
- * ::BLADERF_TUNING_MODE_HOST is the default if either of the following
- * conditions are true:
- *   - libbladeRF < v1.3.0
- *   - FPGA       < v0.2.0
+ * The default tuning mode, `BLADERF_TUNING_MODE_HOST`, can be overridden by
+ * setting a BLADERF_DEFAULT_TUNING_MODE environment variable to `host` or `fpga`.
  *
- * ::BLADERF_TUNING_MODE_FPGA is the default if both of the following
- * conditions are true:
+ * ::BLADERF_TUNING_MODE_HOST is the default tuning mode.
+ *
+ * ::BLADERF_TUNING_MODE_FPGA requirements:
  *  - libbladeRF >= v1.3.0
  *  - FPGA       >= v0.2.0
- *
- * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
- * environment variable to `host` or `fpga`.
  *
  * @note Overriding this value with a mode not supported by the FPGA will result
  *       in failures or unexpected behavior.
