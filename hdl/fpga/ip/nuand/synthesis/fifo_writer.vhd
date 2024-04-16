@@ -136,6 +136,9 @@ architecture simple of fifo_writer is
 
     signal sync_mini_exp: std_logic_vector(1 downto 0);
 
+    signal meta_fifo_used_v_r : unsigned(meta_fifo_usedw'length downto 0) := (others => '0');
+    signal fifo_used_v_r      : unsigned(fifo_usedw'length downto 0) := (others => '0');
+
 begin
 
     -- Throw an error if port widths don't make sense
@@ -167,11 +170,21 @@ begin
         if( reset = '1' ) then
             fifo_enough <= false;
             fifo_used_v := (others => '0');
+            meta_fifo_used_v_r <= (others => '0');
+            fifo_used_v_r <= (others => '0');
         elsif( rising_edge(clock) ) then
+            -- the outputs of the dcfifo are not registered so give the long combinatorial
+            -- data path, let's register the values. one extra clock cycle will not change
+            -- the fidelity of the result. the meta_fifo represents at minimum 204 timestamps.
+            -- there is no way for an off by 1 clock cycle timing to overflow the meta fifo
+            -- when the buffer leaves 4 full meta buffers empty
             fifo_used_v := unsigned(fifo_full & fifo_usedw);
+            fifo_used_v_r <= fifo_used_v;
             meta_fifo_used_v := unsigned(meta_fifo_full & meta_fifo_usedw);
-            if( fifo_full = '0' and ((FIFO_MAX - fifo_used_v) > ( dma_buf_size * 4 )) and
-                 ( ( meta_en = '1' and meta_fifo_full = '0' and ( META_MAX - 4 ) > meta_fifo_used_v )
+            meta_fifo_used_v_r <= meta_fifo_used_v;
+
+            if( fifo_full = '0' and ((FIFO_MAX - fifo_used_v_r) > ( dma_buf_size * 4 )) and
+                ( ( meta_en = '1' and meta_fifo_full = '0' and ( META_MAX - 4 ) > meta_fifo_used_v_r )
                    or (meta_en = '0') ) ) then
                 fifo_enough <= true;
             else
@@ -263,11 +276,10 @@ begin
             when META_WRITE =>
 
                 for i in in_samples'range loop
-                    if (meta_fifo_full = '0') and (in_samples(i).data_v = '1') then
+                    if (meta_fifo_full = '0' and in_samples(i).data_v = '1') then
                         meta_future.meta_write <= '1';
                         meta_future.meta_written <= '1';
                         meta_future.state <= META_DOWNCOUNT;
-                        exit; -- Exit loop after first match
                     end if;
                 end loop;
 

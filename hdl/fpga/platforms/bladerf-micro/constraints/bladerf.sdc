@@ -71,7 +71,7 @@ set_false_path -from exp_present   -to *
 set_false_path -from pwr_status    -to *
 
 # JTAG settings
-create_clock -name {altera_reserved_tck} -period 10 [get_ports {altera_reserved_tck}]
+create_clock -name {altera_reserved_tck} -period 100 [get_ports {altera_reserved_tck}]
 set_clock_groups -asynchronous -group {altera_reserved_tck}
 set_false_path -from [get_ports {altera_reserved_tms}]
 set_false_path -from [get_ports {altera_reserved_tdi}]
