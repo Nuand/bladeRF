@@ -109,7 +109,7 @@ architecture simple of fifo_reader is
         meta_p_time     => (others => '-'),
         meta_p_time_r   => (others => '-'),
         meta_time_go    => '0',
-        meta_fifo_empty => '0',
+        meta_fifo_empty => '1',
         meta_fifo_data  => (others => '0')
     );
 
