@@ -119,6 +119,8 @@ architecture simple of fifo_writer is
         fifo_write          : std_logic;
         fifo_data           : unsigned(fifo_data'range);
         samples_left        : natural range 0 to in_sample_controls'length;
+        in_sample_controls_r: sample_controls_t(0 to NUM_STREAMS-1);
+        in_samples_r        : sample_streams_t(0 to NUM_STREAMS-1);
         eight_bit_delay     : std_logic;
     end record;
 
@@ -128,6 +130,8 @@ architecture simple of fifo_writer is
         fifo_write          => '0',
         fifo_data           => (others => '-'),
         samples_left        => 0,
+        in_sample_controls_r=> (others => SAMPLE_CONTROL_DISABLE),
+        in_samples_r        => (others => ZERO_SAMPLE),
         eight_bit_delay     => '0'
     );
 
@@ -426,6 +430,48 @@ begin
             return rv;
         end function;
 
+        procedure handle_fifo_write(
+            signal fifo_current : in fifo_fsm_t;
+            signal meta_current : in meta_fsm_t;
+            signal meta_en : in std_logic;
+            signal eight_bit_mode_en : in std_logic;
+            variable write_req : out std_logic;
+            signal fifo_future : out fifo_fsm_t
+        ) is
+            variable in_sample_controls : sample_controls_t(0 to NUM_STREAMS-1);
+            variable in_samples         : sample_streams_t(0 to NUM_STREAMS-1);
+        begin
+            in_sample_controls  := fifo_current.in_sample_controls_r;
+            in_samples          := fifo_current.in_samples_r;
+
+            if( ((meta_current.meta_written = '1') or (meta_en = '0')) ) then
+                -- Check for valid data
+                write_req := '0';
+                for i in in_sample_controls'range loop
+                    if( in_sample_controls(i).enable = '1' ) then
+                        write_req := write_req or in_samples(i).data_v;
+                    end if;
+                end loop;
+
+                -- Received valid data
+                if( write_req = '1' ) then
+                    if( fifo_current.samples_left = 0 ) then
+                        fifo_future.samples_left <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
+                        if( eight_bit_mode_en = '1' ) then
+                            fifo_future.fifo_write <= write_req and fifo_current.eight_bit_delay;
+                            fifo_future.eight_bit_delay <= not fifo_current.eight_bit_delay;
+                        else
+                            fifo_future.fifo_write <= write_req;
+                        end if;
+                    else
+                        -- MIMO PACKER: STEP 3 of 3
+                        fifo_future.samples_left <= fifo_current.samples_left - 1;
+                    end if;
+                end if;
+            else
+                fifo_future.fifo_write <= '0';
+            end if;
+        end;
 
         variable write_req : std_logic := '0';
 
@@ -436,12 +482,19 @@ begin
         fifo_future.fifo_clear <= '0';
         fifo_future.fifo_write <= '0';
 
+        fifo_future.in_samples_r <= in_samples;
+        fifo_future.in_sample_controls_r <= in_sample_controls;
+
         -- MIMO PACKER: STEP 1 of 3
         if( packet_en = '0' ) then
             if( eight_bit_mode_en = '1' ) then
-                fifo_future.fifo_data <= pack_eight_bit_mode(in_sample_controls, in_samples, fifo_current.fifo_data);
+                fifo_future.fifo_data <= pack_eight_bit_mode(fifo_current.in_sample_controls_r,
+                                                             fifo_current.in_samples_r,
+                                                             fifo_current.fifo_data);
             else
-                fifo_future.fifo_data  <= pack(in_sample_controls, in_samples, fifo_current.fifo_data);
+                fifo_future.fifo_data  <= pack(fifo_current.in_sample_controls_r,
+                                               fifo_current.in_samples_r,
+                                               fifo_current.fifo_data);
             end if;
         end if;
 
@@ -511,34 +564,14 @@ begin
 
             when WRITE_SAMPLES =>
 
-                if( ((meta_current.meta_written = '1') or (meta_en = '0')) ) then
-
-                    -- Check for valid data
-                    write_req := '0';
-                    for i in in_sample_controls'range loop
-                        if( in_sample_controls(i).enable = '1' ) then
-                            write_req := write_req or in_samples(i).data_v;
-                        end if;
-                    end loop;
-
-                    -- Received valid data
-                    if( write_req = '1' ) then
-                        if( fifo_current.samples_left = 0 ) then
-                            fifo_future.samples_left <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
-                            if( eight_bit_mode_en = '1' ) then
-                                fifo_future.fifo_write <= write_req and fifo_current.eight_bit_delay;
-                                fifo_future.eight_bit_delay <= not fifo_current.eight_bit_delay;
-                            else
-                                fifo_future.fifo_write <= write_req;
-                            end if;
-                        else
-                            -- MIMO PACKER: STEP 3 of 3
-                            fifo_future.samples_left <= fifo_current.samples_left - 1;
-                        end if;
-                    end if;
-                else
-                    fifo_future.fifo_write <= '0';
-                end if;
+                handle_fifo_write(
+                    fifo_current       => fifo_current,
+                    meta_current       => meta_current,
+                    meta_en            => meta_en,
+                    eight_bit_mode_en  => eight_bit_mode_en,
+                    write_req          => write_req,
+                    fifo_future        => fifo_future
+                );
 
                 if( fifo_full = '1' or ( meta_current.meta_written = '0' and meta_en = '1') ) then
                     fifo_future.fifo_write <= '0';
@@ -549,6 +582,16 @@ begin
 
                 if( fifo_enough ) then
                     fifo_future.state <= WRITE_SAMPLES;
+
+                    handle_fifo_write(
+                        fifo_current       => fifo_current,
+                        meta_current       => meta_current,
+                        meta_en            => meta_en,
+                        eight_bit_mode_en  => eight_bit_mode_en,
+                        write_req          => write_req,
+                        fifo_future        => fifo_future
+                    );
+
                 end if;
 
             when others =>
