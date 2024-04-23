@@ -438,6 +438,8 @@ int nios_config_write(struct bladerf *dev, uint32_t val)
 
     if (status == 0) {
         log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, val);
+    } else {
+        log_error("%s: Failed to write 0x%08x\n", __FUNCTION__, val);
     }
 
     return status;
