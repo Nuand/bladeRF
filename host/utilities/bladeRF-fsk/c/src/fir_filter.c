@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
         goto out;
     }
 
-    outbuf = calloc(sizeof(struct complex_sample), chunk_size);
+    outbuf = calloc(chunk_size, sizeof(struct complex_sample));
     if (!outbuf) {
         perror("calloc");
         goto out;
