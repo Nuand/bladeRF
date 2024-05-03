@@ -27,6 +27,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "system.h"
 #include "altera_avalon_spi.h"
@@ -41,7 +42,23 @@ static inline uint32_t control_reg_read(void)
 
 static inline void control_reg_write(uint32_t value)
 {
+    const size_t CFG_GPIO_CLOCK_SELECT = 18; // Refer to bladerf2_common.h
+    const uint32_t CLK_SEL_MASK = (1 << CFG_GPIO_CLOCK_SELECT);
+    uint32_t current_clock_select, requested_clock_select;
+    bool delay_nios_response = false;
+
+    current_clock_select = control_reg_read() & CLK_SEL_MASK;
+    requested_clock_select = value & CLK_SEL_MASK;
+    delay_nios_response = current_clock_select != requested_clock_select;
+
     IOWR_ALTERA_AVALON_PIO_DATA(CONTROL_BASE, value);
+
+    // Adding a delay to allow the Nios and FX3 Plls
+    // to stabilize before we send back the Nios response.
+    if (delay_nios_response) {
+        DBG("__resp_delay__");
+        usleep(5);
+    }
 }
 
 static inline uint32_t rffe_csr_read(void)
