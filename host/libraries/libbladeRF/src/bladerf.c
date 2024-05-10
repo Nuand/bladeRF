@@ -1175,6 +1175,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
 
     status = file_read_buffer(fpga_file, &buf, &buf_size);
     if (status != 0) {
+        log_error("Failed to read FPGA image: %s\n", bladerf_strerror(status));
         goto exit;
     }
 
