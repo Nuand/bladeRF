@@ -39,10 +39,12 @@ architecture hosted_bladerf of bladerf is
     signal sys_reset           : std_logic;
 
     signal sys_clock           : std_logic;
+    signal sys_clock_out       : std_logic;
     signal sys_pll_locked      : std_logic;
     signal sys_pll_reset       : std_logic;
 
     signal fx3_pclk_pll        : std_logic;
+    signal fx3_pclk_pll_out    : std_logic;
     signal fx3_pclk_pll_locked : std_logic;
     signal fx3_pclk_pll_reset  : std_logic;
 
@@ -202,8 +204,15 @@ begin
         port map (
             refclk   => c5_clock2,
             rst      => sys_pll_reset,
-            outclk_0 => sys_clock,
+            outclk_0 => sys_clock_out,
             locked   => sys_pll_locked
+        );
+
+    U_system_pll_ctrl : component clk_ctrl
+        port map (
+            inclk   => sys_clock_out,
+            ena     => sys_pll_locked,
+            outclk  => sys_clock
         );
 
     U_pll_reset_pll : entity work.pll_reset
@@ -223,8 +232,15 @@ begin
         port map (
             refclk   =>  fx3_pclk,
             rst      =>  fx3_pclk_pll_reset,
-            outclk_0 =>  fx3_pclk_pll,
+            outclk_0 =>  fx3_pclk_pll_out,
             locked   =>  fx3_pclk_pll_locked
+        );
+
+    U_fx3_pll_ctrl : component clk_ctrl
+        port map (
+            inclk   => fx3_pclk_pll_out,
+            ena     => fx3_pclk_pll_locked,
+            outclk  => fx3_pclk_pll
         );
 
     U_pll_reset_fx3_pll : entity work.pll_reset
