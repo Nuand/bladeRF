@@ -8,6 +8,7 @@ set opencores_ip [file normalize [file join $here ../../ip/opencores]]
 
 # Altera IP
 set_global_assignment -name VHDL_FILE    [file normalize [file join $altera_ip common_dcfifo/common_dcfifo.vhd]]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $altera_ip clk_ctrl/clk_ctrl.vhd]]
 set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/tx_fifo.vhd]]
 set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/tx_meta_fifo.vhd]]
 set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/rx_fifo.vhd]]
