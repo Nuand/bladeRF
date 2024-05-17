@@ -118,6 +118,33 @@
 #define NIOS_PKT_8x32_FLAG_WRITE      (1 << 0)
 #define NIOS_PKT_8x32_FLAG_SUCCESS    (1 << 1)
 
+/* Function to convert target ID to string */
+static inline const char* target2str(uint8_t target_id) {
+    switch (target_id) {
+        case NIOS_PKT_8x32_TARGET_VERSION:
+            return "FPGA Version";
+        case NIOS_PKT_8x32_TARGET_CONTROL:
+            return "FPGA Control/Config Register";
+        case NIOS_PKT_8x32_TARGET_ADF4351:
+            return "XB-200 ADF4351 Register (Write-Only)";
+        case NIOS_PKT_8x32_TARGET_RFFE_CSR:
+            return "RFFE Control & Status GPIO";
+        case NIOS_PKT_8x32_TARGET_ADF400X:
+            return "ADF400x Config";
+        case NIOS_PKT_8x32_TARGET_FASTLOCK:
+            return "AD9361 Fast Lock Profile";
+
+        /* Reserved for user customizations */
+        case NIOS_PKT_8x32_TARGET_USR1:
+            return "User Defined 1";
+        case NIOS_PKT_8x32_TARGET_USR128:
+            return "User Defined 128";
+
+        default:
+            return "Unknown Target ID";
+    }
+}
+
 /* Pack the request buffer */
 static inline void nios_pkt_8x32_pack(uint8_t *buf, uint8_t target, bool write,
                                       uint8_t addr, uint32_t data)
