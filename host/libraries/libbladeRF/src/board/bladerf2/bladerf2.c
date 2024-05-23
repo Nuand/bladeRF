@@ -3574,6 +3574,10 @@ int bladerf_set_clock_select(struct bladerf *dev, bladerf_clock_select sel)
     CHECK_BOARD_IS_BLADERF2(dev);
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
+    if (bladerf_device_speed(dev) == BLADERF_DEVICE_SPEED_HIGH) {
+        log_warning("USB 3.0 recommended for reliable clock select assignment.\n");
+    }
+
     WITH_MUTEX(&dev->lock, {
         uint32_t gpio;
 
