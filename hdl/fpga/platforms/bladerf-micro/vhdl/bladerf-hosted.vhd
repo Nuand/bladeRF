@@ -527,7 +527,7 @@ begin
     nios_gpio.i.pwr_status <= pwr_status;
 
     -- SI53304 controls / clock output enables
-    si_clock_sel <= nios_gpio.o.si_clock_sel;
+    si_clock_sel <= '1'; -- si_clock_sel <= nios_gpio.o.si_clock_sel;
     c5_clock2_oe <= '1';
     exp_clock_oe <= exp_present and exp_clock_req;
     ufl_clock_oe <= nios_gpio.o.ufl_clock_oe;
