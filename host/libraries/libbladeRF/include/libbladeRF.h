@@ -4171,6 +4171,33 @@ struct bladerf_gain_cal_tbl {
     } state; /**< Calibration state */
 };
 
+
+/**
+ * @brief Loads and applies gain calibration for a specified channel from a
+ * file.
+ *
+ * This function adjusts the specified channel's gain settings on the bladeRF
+ * device using calibration data from the provided file path. It supports
+ * calibration files in CSV format, automatically converting them to binary
+ * format as required by the device. This ensures the device operates with
+ * optimized gain settings across its frequency range. The operation is
+ * protected by mutex locks to maintain thread safety.
+ *
+ * @param[in] dev          Pointer to the initialized bladeRF device.
+ * @param[in] ch           The target channel (RX or TX) for gain calibration.
+ * @param[in] cal_file_loc Path to the calibration file, either in CSV or binary
+ * format. CSV files are converted to binary format during the process.
+ *
+ * @return 0 on success, indicating that the calibration data was successfully
+ * applied to the channel. Returns BLADERF_ERR_UNSUPPORTED if the device or
+ * channel does not support gain calibration. Other BLADERF_ERR_* error codes
+ * indicate specific failures, such as file access issues or conversion errors.
+ */
+API_EXPORT
+int CALL_CONV bladerf_load_gain_calibration(struct bladerf *dev,
+                                            bladerf_channel ch,
+                                            const char* cal_file_loc);
+
 /** @} (End of FN_CAL) */
 
 /**

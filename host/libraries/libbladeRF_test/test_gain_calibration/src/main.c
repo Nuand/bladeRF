@@ -38,10 +38,15 @@ int main(int argc, char *argv[]) {
     int status;
     struct bladerf *dev;
     char *devstr = NULL;
+    const char *cal_rx_file_loc = "rx_pwr_cal.bin";
+    bladerf_channel ch;
 
     bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_DEBUG);
 
     CHECK(bladerf_open(&dev, devstr));
+
+    ch = BLADERF_CHANNEL_RX(0);
+    CHECK(bladerf_load_gain_calibration(dev, ch, cal_rx_file_loc));
 
 out:
     bladerf_close(dev);

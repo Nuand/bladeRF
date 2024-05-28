@@ -2138,3 +2138,26 @@ int bladerf_set_oversample_register_config(struct bladerf *dev) {
 
     return 0;
 }
+
+/******************************************************************************/
+/* Calibration */
+/******************************************************************************/
+
+int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char* cal_file_loc)
+{
+    int status = 0;
+    const char *board_name;
+    log_debug("Loading gain calibration\n");
+    MUTEX_LOCK(&dev->lock);
+
+    board_name = bladerf_get_board_name(dev);
+    if (strcmp(board_name, "bladerf2") != 0) {
+        log_error("Gain calibration unsupported on this device: %s\n", board_name);
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto error;
+    }
+
+error:
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
