@@ -50,6 +50,16 @@
 #include "helpers/have_cap.h"
 #include "helpers/interleave.h"
 
+#define CHECK_NULL(...) do { \
+    const void* _args[] = { __VA_ARGS__, NULL }; \
+    for (size_t _i = 0; _args[_i] != NULL; ++_i) { \
+        if (_args[_i] == NULL) { \
+            log_error("%s:%d: Argument %zu is a NULL pointer\n", __FILE__, __LINE__, _i + 1); \
+            return BLADERF_ERR_INVAL; \
+        } \
+    } \
+} while (0)
+
 
 /******************************************************************************/
 /* Private Function Declarations */
