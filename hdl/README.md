@@ -27,7 +27,7 @@ We use an [Intel (Altera)][intel] [Cyclone IV E FPGA][cive].  The size of the FP
 [cive]: https://www.altera.com/products/fpga/cyclone-series/cyclone-iv/overview.html
 
 ## HDL Structure ##
-Since the FPGA is connected and soldered down to the board, it makes sense to have a single top level which defines where the pins go, their IO levels and their genera directionality.  We use a single `bladerf.vhd` top level to define a VHDL entity called `bladerf` that defines these pins.
+Since the FPGA is connected and soldered down to the board, it makes sense to have a single top level which defines where the pins go, their IO levels and their general directionality.  We use a single `bladerf.vhd` top level to define a VHDL entity called `bladerf` that defines these pins.
 
 We realize people will want to change the internal guts of the FPGA for their own programmable logic reasons.  Because of this, we decided to differentiate the implementations using a feature of the Quartus Prime project file called Revisions.  Revisions can take a base design (top level entity, a part and pins) and duplicate that project, recording any source level changes you wish to make to the project.  This way, a user must only create their own architecture that is the new implementation of the `bladerf` top level.
 
