@@ -786,8 +786,6 @@ static int bladerf2_get_gain_modes(struct bladerf *dev,
                                    bladerf_channel ch,
                                    struct bladerf_gain_modes const **modes)
 {
-    NULL_CHECK(modes);
-
     struct bladerf_gain_modes const *mode_infos;
     unsigned int mode_infos_len;
 
@@ -799,7 +797,9 @@ static int bladerf2_get_gain_modes(struct bladerf *dev,
         mode_infos_len = ARRAY_SIZE(bladerf2_rx_gain_modes);
     }
 
-    *modes = mode_infos;
+    if (modes != NULL) {
+        *modes = mode_infos;
+    }
 
     return mode_infos_len;
 }
