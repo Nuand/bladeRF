@@ -262,6 +262,8 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
         FOR_EACH_CHANNEL(dir, bladerf_get_channel_count(dev, dir), i, ch)
         {
             bladerf_gain_mode old_mode;
+            const struct bladerf_gain_modes *modes;
+            int num_gain_modes = 0;
             int status;
 
             /* NOTE: This is a workaround for a bug in fpga v0.10.2 on bladerf2,
@@ -274,7 +276,27 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
                 return status;
             }
 
+            num_gain_modes = bladerf_get_gain_modes(dev, ch, NULL);
+            if (num_gain_modes < 0) {
+                PR_ERROR("Failed to get gain modes on channel %s: %s\n",
+                            channel2str(ch), bladerf_strerror(num_gain_modes));
+                failures += 1;
+            }
+
+            printf("Channel %s has %d gain modes\n", channel2str(ch), num_gain_modes);
+
+            status = bladerf_get_gain_modes(dev, ch, &modes);
+            if (status < 0) {
+                PR_ERROR("Failed to get gain modes on channel %s: %s\n",
+                            channel2str(ch), bladerf_strerror(status));
+                failures += 1;
+            }
+
             if (!BLADERF_CHANNEL_IS_TX(ch)) {
+                for (int mode_idx = 0; mode_idx < num_gain_modes; mode_idx++) {
+                    printf("Gain mode %d: %s\n", mode_idx, modes[mode_idx].name);
+                }
+
                 /* Switch to manual gain control */
                 status = bladerf_get_gain_mode(dev, ch, &old_mode);
                 if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
