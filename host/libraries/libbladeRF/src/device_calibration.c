@@ -356,6 +356,12 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
         }
     }
 
+    if (entry_counter == 0) {
+        log_error("No valid entries found: %s\n", binary_path);
+        status = BLADERF_ERR_UNEXPECTED;
+        goto error;
+    }
+
     gain_tbls[ch].version = image->version;
     gain_tbls[ch].start_freq = gain_tbls[ch].entries[0].freq;
     gain_tbls[ch].stop_freq = gain_tbls[ch].entries[entry_counter-1].freq;
