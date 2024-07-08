@@ -1,3 +1,4 @@
+Serial: 52f4b4c4e1164ce3a7b89d3e47c8c0e8
 RX Chain,RX Gain,VSG Power into bladeRF RX (dBm),Frequency of signal (Hz),Frequency of bladeRF+PXI (Hz),AD9361 RSSI register value,Power of Signal from Full Scale (dBFS)
 0,0,-30.000000,75000000,70000000,-48,-24.911830
 0,0,-30.000000,80000000,75000000,-48,-24.952046

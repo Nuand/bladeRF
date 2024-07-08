@@ -1,3 +1,4 @@
+Serial: 52f4b4c4e1164ce3a7b89d3e47c8c0e8
 TX Chain,TX Gain,Frequency of Signal (Hz),Frequency of bladeRF+PXI (Hz),VSA Measured Power (dBm)
 0,60,70000000,65000000,4.100207
 0,60,75000000,70000000,4.117410

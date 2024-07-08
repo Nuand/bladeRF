@@ -74,7 +74,7 @@ static size_t count_csv_entries(const char *filename) {
 
     fclose(file);
 
-    return count - 1;
+    return count - 2; // Subtract 2 to account for the serial number and header lines
 }
 
 int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *binary_path, bladerf_channel ch)
@@ -88,6 +88,8 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
     char line[256];
     char current_dir[1000];
     char expected_header[1024];
+    char device_serial[BLADERF_SERIAL_LENGTH];
+    char csv_serial[BLADERF_SERIAL_LENGTH];
 
     uint64_t frequency;
     float power;
@@ -110,6 +112,20 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
         goto error;
     }
 
+    strncpy(device_serial, dev->ident.serial, BLADERF_SERIAL_LENGTH);
+    device_serial[BLADERF_SERIAL_LENGTH - 1] = '\0';
+
+    if (!fgets(line, sizeof(line), csvFile)) {
+        status = BLADERF_ERR_INVAL;
+        log_error("Error reading serial number from CSV file or file is empty.\n");
+        goto error;
+    }
+
+    sscanf(line, "Serial: %s", csv_serial);
+    if (strcmp(device_serial, csv_serial) != 0) {
+        log_warning("Gain calibration file serial (%s) does not match device serial (%s)\n", csv_serial, device_serial);
+    }
+
     size_t num_entries = count_csv_entries(csv_path);
     if (num_entries == 0) {
         status = BLADERF_ERR_INVAL;
@@ -121,7 +137,7 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
         ? sizeof(chain) + sizeof(gain) + sizeof(cw_freq) + sizeof(frequency) + sizeof(power)
         : sizeof(chain) + sizeof(gain) + sizeof(vsg_power) + sizeof(signal_freq) + sizeof(frequency) + sizeof(rssi) + sizeof(power);
 
-    data_size = num_entries * entry_size;
+    data_size = num_entries * entry_size + BLADERF_SERIAL_LENGTH;
 
     image = bladerf_alloc_image(dev, BLADERF_IMAGE_TYPE_GAIN_CAL, 0xffffffff, data_size);
     if (image == NULL) {
@@ -144,6 +160,9 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
     }
 
     image->version = GAIN_CAL_VERSION;
+
+    memcpy(&image->data[offset], device_serial, BLADERF_SERIAL_LENGTH);
+    offset += BLADERF_SERIAL_LENGTH;
 
     for (size_t i = 0; i < num_entries; i++) {
         if (!fgets(line, sizeof(line), csvFile)) {
@@ -269,6 +288,8 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     struct bladerf_image *image = NULL;
     size_t entry_size;
     size_t num_entries;
+    char device_serial[BLADERF_SERIAL_LENGTH];
+    char file_serial[BLADERF_SERIAL_LENGTH];
 
     FILE *binaryFile = fopen(binary_path, "rb");
     if (!binaryFile) {
@@ -310,10 +331,18 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
         goto error;
     }
 
-    num_entries = image->length / entry_size;
+    strncpy(device_serial, dev->ident.serial, BLADERF_SERIAL_LENGTH);
+    device_serial[BLADERF_SERIAL_LENGTH - 1] = '\0';
+    memcpy(file_serial, image->data, BLADERF_SERIAL_LENGTH);
+    file_serial[BLADERF_SERIAL_LENGTH - 1] = '\0';
 
-    offset = 0;
+    if (strcmp(device_serial, file_serial) != 0) {
+        log_warning("Calibration file serial (%s) does not match device serial (%s)\n", file_serial, device_serial);
+    }
+
+    offset = BLADERF_SERIAL_LENGTH;
     entry_counter = 0;
+    num_entries = (image->length - BLADERF_SERIAL_LENGTH) / entry_size;
     for (uint64_t i = 0; i < num_entries; i++) {
         if (BLADERF_CHANNEL_IS_TX(ch)) {
             memcpy(&chain, &image->data[offset], sizeof(chain));
