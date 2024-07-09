@@ -77,7 +77,8 @@ int main(int argc, char *argv[])
                 break;
 
             case 'f':
-                test.frequency = str2uint64(optarg, 1, UINT64_MAX, &ok);
+                test.frequency = str2uint64_suffix(optarg, 0, UINT64_MAX, freq_suffixes,
+                    NUM_FREQ_SUFFIXES, &ok);
                 printf("Frequency: %" PRIu64 "\n", test.frequency);
                 break;
 

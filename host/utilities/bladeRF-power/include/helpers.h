@@ -30,8 +30,12 @@
 
 #include "libbladeRF.h"
 #include "init.h"
+#include "conversions.h"
 
 #define DIRECTION_UNSET 3
+#define NUM_FREQ_SUFFIXES 6
+
+extern const struct numeric_suffix freq_suffixes[NUM_FREQ_SUFFIXES];
 
 /**
  * @brief  Ask the user for TX or RX operation.
