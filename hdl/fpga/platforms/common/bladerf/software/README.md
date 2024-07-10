@@ -88,6 +88,12 @@ It is possible to build, load, and debug the Nios software over JTAG using the I
 
 (***Linux Users: Ensure you've installed udev rules for your JTAG debugger***)
 
+On Ubuntu 20.04 or similar, you will need these extra dependencies:
+
+```bash
+sudo apt install -y libncursesw5
+```
+
 Command-Line Debugging with GDB
 ============================
 
@@ -176,6 +182,31 @@ To increase the Nios RAM size:
 - Find the `get_qsys_ram` function, and change the return value to be the nearest power of 2 larger than the required memory size from the above. Sometimes simply doubling the existing return value is good enough.
 - Rebuild the FPGA in its entirety. This is required because the FPGA needs to instantiate more block RAMs to fit the larger Nios, and it will need to re-fit the surrounding logic.
 
+Install Eclipse
+=====================
+Before Eclipse can be used, it must be installed. This step is a new change as of recent Quartus versions, and is required for Quartus 20.1.
+
+These steps will download eclipse, get a new jdk, and replace the jdk. Edit the first line if needed for your install path and version.
+
+```bash
+export QUARTUS_INSTALL_DIR=~/intelFPGA_lite/20.1/
+
+sudo apt install -y openjdk-8-jdk
+cd $QUARTUS_INSTALL_DIR/nios2eds/bin/
+wget https://archive.eclipse.org/technology/epp/downloads/release/mars/2/eclipse-cpp-mars-2-linux-gtk-x86_64.tar.gz
+tar -xf eclipse-cpp-mars-2-linux-gtk-x86_64.tar.gz
+mv eclipse eclipse_nios2
+tar -xf eclipse_nios2_plugins.tar.gz
+mv jre64 jre64_old
+ln -svf /lib/jvm/java-8-openjdk-amd64/jre/ jre64
+```
+
+This will install eclipse, however you must launch eclipse using our script, located at `hdl/quartus/launch_eclipse.sh`
+
+These two pages are reference for this section:
+* https://www.intel.com/content/www/us/en/support/programmable/articles/000086893.html
+* https://community.intel.com/t5/Intel-Quartus-Prime-Software/Nios-Eclipse-crashes-free-invalid-pointer/m-p/1215921#M66524
+
 Eclipse GUI Debugging
 =====================
 
@@ -194,13 +225,17 @@ $ build_bladerf.sh -b <board> -s <size> -r <rev>
 
 - Load the FPGA with the resulting image using the bladeRF-cli.  The NIOS II will be loaded and reset in a following step.  This is required to ensure the PCLK from the FX3 is provided to the NIOS II core.
 
-- Launch the Eclipse version provided with Quartus II 15.0, contained located at: `$QUARTUS_INSTALL_DIR/nios2eds/bin/eclipse-nios2`. Create a workspace wherever you see fit.
+- Launch the Eclipse with our provided script. When prompted, create a workspace wherever you see fit.
+```bash
+cd $BLADERF_DIR
+./hdl/quartus/launch_eclipse.sh hdl/quartus/work/<platform>-<size>-<rev>
+```
 
 - Import the bladeRF_nios_bsp project:
-  - From the project explorer, right click and select *Import...*
+  - From the project explorer pane, right click and select *Import...*
   - Select *General --> Existing projects into Workspace*
-  - Select *Root Directory*
-  - Select this directory. You should see a project labeled `bladeRF_nios_bsp` checked in the *Projects* pane.
+  - Click *Browse...* next to *Root Directory*, and select `hdl/fpga/platforms/common/bladerf/software/bladeRF_nios_bsp`
+  - You should see a project labeled `bladeRF_nios_bsp` checked in the *Projects* pane.
   - Click Finish
 
 - Import the bladeRF_nios projects:
@@ -231,22 +266,36 @@ $ build_bladerf.sh -b <board> -s <size> -r <rev>
     - `<size>` is the FPGA size (e.g. 40, 115, A4, A9)
     - `<rev>` is the project revision (typically 'hosted')
   - Click *OK*
-  - The `bladeRF_nios` project should now build successfully.
   - **Remember to update this variable if targeting a different platform later!**
 
-- Create a debug target:
-  - Click *Debug Configurations...*
-  - Create a new *NIOS II Hardware v2 (beta)* target
-  - For *Project*, select bladeRF_nios
-  - For *ELF:*, select bladeRF_nios.elf
-  - Under *Connections* -> *Processor*, click *Browse...*.  It should detect the NIOS II via the JTAG device and display a string describing its location in the scan chain.
-  - *Optional*  Repeat the above for the *JTAG UART* field, if you wish to use have a console over JTAG. Be careful when using this, as it will significantly affect execution time.
-  - Uncheck *Check Unique ID* and *Check timestamp*.
+- You need to build the BSP once, then the project.
+  - Right click "bladeRF_nios_bsp" and select "Nios II" -> "Generate BSP"
+  - Right click "bladeRF_nios" in the Project Explorer pane, and select "Build Project"
+  - The `bladeRF_nios` project should now build successfully.
+    - Subsequent changes to the project only require a rebuild of the Project, not the BSP.
+
+- Create a debug target (see alternative method below):
+  - Right click "bladeRF_nios" in the Project Explorer pane, and select "Debug As" -> "Debug Configurations..."
+  - Right click "Nios II Hardware" and select "New"
+  - On the "Project" tab
+    - Click "Enable browse for filesystem ELF File
+    - Click "..." And browse to `hdl/quartus/work/<board>-<size>-<rev>/bladeRF_nios/bladeRF_nios.elf`
+  - On the "Target Connection" tab
+    - check "Ignore mismatched system ID" and "Ignore mismatched system timestamp"
+    - Find USB-Blaster in "Connections". (Click "Refresh Connections" if it does not show up)
+    - click apply
+    - "Debug" button should be clickable
   - If you wish to download code to the device, reset, and run it...
     - Check *Download ELF*, *Reset Processor*, and *Start Processor*
   - If you only wish to inspect the state of the NIOS after observing an issue on the host side...
     - Ensure all of the aforementioned items are unchecked
- - At this point, you may apply the settings and start a debug session.
+- Create a debug target V2 (Beta):
+  - Right click "bladeRF_nios" in the Project Explorer pane, and select "Debug As" -> "Debug Configurations..."
+  - Right click "Nios II Hardware v2 (beta)" and select "New"
+  - On the "Main" tab
+    - For *ELF:*, select `hdl/quartus/work/<board>-<size>-<rev>/bladeRF_nios/bladeRF_nios.elf`
+  - Under *Connections* -> *Processor*, click *Browse...*.  It should detect the NIOS II via the JTAG device and display a string describing its location in the scan chain.
+  - *Optional*  Repeat the above for the *JTAG UART* field, if you wish to use have a console over JTAG. Be careful when using this, as it will significantly affect execution time.
 
 **Note:** You may have to repeat the step(s) where you browse for the device after unplugging and re-connecting the JTAG debugger.
 
