@@ -133,6 +133,7 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
 
     int cmd = 0;
     init_curses(&main_win);
+    bool show_calibration_info = false;
     while (status == 0 && cmd != 'q') {
         cmd = getch();
 
@@ -178,6 +179,10 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
             CHECK(bladerf_get_gain_mode(dev, ch, &test->gain_mode));
         }
 
+        if (cmd == 'i') {
+            show_calibration_info = !show_calibration_info;
+        }
+
         if (BLADERF_CHANNEL_IS_TX(ch) == false) {
             CHECK(bladerf_get_gain_mode(dev, ch, &test->gain_mode));
         }
@@ -186,6 +191,12 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
         CHECK(bladerf_get_gain_target(dev, ch, &test->gain));
 
         update_window(main_win, test);
+
+        if (show_calibration_info) {
+            const struct bladerf_gain_cal_tbl *cal_tbl = NULL;
+            CHECK(bladerf_get_gain_calibration(dev, ch, &cal_tbl));
+            display_overlay(main_win, cal_tbl);
+        }
 
         if (test->direction == BLADERF_RX) {
             CHECK(bladerf_sync_rx(dev, samples, num_samples, NULL, 1000));

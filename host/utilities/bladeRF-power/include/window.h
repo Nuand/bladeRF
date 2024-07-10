@@ -54,4 +54,6 @@ void init_curses(WINDOW **win);
  */
 void update_window(WINDOW *win, struct test_params *test);
 
+void display_overlay(WINDOW *main_win, const struct bladerf_gain_cal_tbl *cal_tbl);
+
 #endif // HELPERS_H_

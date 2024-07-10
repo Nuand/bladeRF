@@ -108,8 +108,67 @@ void update_window(WINDOW *win, struct test_params *test) {
         mvwprintw(win, start_y++, 1, "Avg Power:   %0.2fdBFS", test->rx_power);
     }
 
-    wprintw(win, "\n");
-    mvwprintw(win, maxy-2, 1, "Keys: [h/l] Frequency, [j/k] Gain, [c] Toggle Calibration, [a] Toggle AGC, [q] Quit\n");
+    mvwprintw(win, maxy-2, 1, "Keys: [h/l] Frequency, [j/k] Gain, [c] Toggle Calibration, [a] Toggle AGC, [i] Cal info [q], Quit\n");
     box(win, 0, 0);
     wrefresh(win);
+}
+
+static char* truncate_path(const char* path, size_t max_width) {
+    static char truncated[256];  // Adjust size as needed
+    if (strlen(path) <= max_width) {
+        return (char*)path;
+    }
+
+    int prefix_len = (max_width - 3) / 2;
+    int suffix_len = max_width - 3 - prefix_len;
+
+    snprintf(truncated, sizeof(truncated), "%.*s...%s",
+             prefix_len, path, path + strlen(path) - suffix_len);
+    return truncated;
+}
+
+void display_overlay(WINDOW *main_win, const struct bladerf_gain_cal_tbl *cal_tbl) {
+    int main_height, main_width;
+    getmaxyx(main_win, main_height, main_width);
+    size_t overlay_width = main_width / 2;
+    size_t overlay_height = main_height - 3;
+
+    WINDOW *overlay_win = newwin(overlay_height, overlay_width, 1, main_width / 4);
+
+    size_t start_y = 3;
+    mvwprintw(overlay_win, 1, 2, "Gain Calibration Table Info");
+    mvwprintw(overlay_win, start_y++, 2, "File: %s",
+              truncate_path(cal_tbl->file_path, overlay_width - 10));
+    mvwprintw(overlay_win, start_y++, 2, "Version: %u.%u.%u",
+              cal_tbl->version.major, cal_tbl->version.minor, cal_tbl->version.patch);
+    mvwprintw(overlay_win, start_y++, 2, "Channel: %s",
+              cal_tbl->ch == BLADERF_CHANNEL_RX(0) ? "RX1" :
+              cal_tbl->ch == BLADERF_CHANNEL_TX(0) ? "TX1" :
+              cal_tbl->ch == BLADERF_CHANNEL_RX(1) ? "RX2" :
+              cal_tbl->ch == BLADERF_CHANNEL_TX(1) ? "TX2" : "Unknown");
+    mvwprintw(overlay_win, start_y++, 2, "Num. Entries: %u", cal_tbl->n_entries);
+    mvwprintw(overlay_win, start_y++, 2, "First Freq: %.3f MHz",
+              (double)cal_tbl->start_freq / 1e6);
+    mvwprintw(overlay_win, start_y++, 2, "Last Freq: %.3f MHz",
+              (double)cal_tbl->stop_freq / 1e6);
+    mvwprintw(overlay_win, start_y++, 2, "Enabled: %s", cal_tbl->enabled ? "Yes" : "No");
+    mvwprintw(overlay_win, start_y++, 2, "Gain Target: %d dB", cal_tbl->gain_target);
+    mvwprintw(overlay_win, start_y++, 2, "State: %s",
+              cal_tbl->state == BLADERF_GAIN_CAL_UNINITIALIZED ? "Uninitialized" :
+              cal_tbl->state == BLADERF_GAIN_CAL_LOADED ? "Loaded" :
+              cal_tbl->state == BLADERF_GAIN_CAL_UNLOADED ? "Unloaded" : "Unknown");
+
+
+    box(overlay_win, 0, 0);
+
+    if (overlay_height < start_y + 2) {
+        const char* WIN_HEIGHT_WARNING = "[Warning] Increase terminal window height to see more info\0";
+        int warning_length = strlen(WIN_HEIGHT_WARNING);
+        int start_x = (getmaxx(overlay_win) - warning_length) / 2;
+        mvwprintw(overlay_win, 0, start_x, "%s", WIN_HEIGHT_WARNING);
+    }
+
+    mvwprintw(overlay_win, main_height - 5, 2, "Press any key to close");
+    wnoutrefresh(overlay_win);
+    doupdate();
 }
