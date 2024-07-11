@@ -46,6 +46,8 @@ struct test_params {
     double rx_power;
     bool gain_cal_enabled;
     char *gain_cal_file;
+    bool show_messages;
+    char message_buffer[4096];  // Adjust size as needed
 };
 
 /**

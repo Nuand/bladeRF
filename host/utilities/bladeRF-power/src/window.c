@@ -110,7 +110,26 @@ void update_window(WINDOW *win, struct test_params *test) {
         mvwprintw(win, start_y++, 1, "Avg Power:   %0.2fdBFS", test->rx_power);
     }
 
-    mvwprintw(win, maxy-2, 1, "Keys: [h/l] Frequency, [j/k] Gain, [c] Toggle Calibration, [a] Toggle AGC, [i] Cal info [q], Quit\n");
+    if (test->show_messages) {
+        int message_start_y = 10;
+        mvwprintw(win, message_start_y, 1, "Messages:");
+
+        // Leave space for the box and key instructions
+        int available_lines = maxy - message_start_y - 3;
+
+        char *line_start = test->message_buffer;
+        char *line_end;
+        int line_count = 0;
+        while ((line_end = strchr(line_start, '\n')) && line_count < available_lines) {
+            *line_end = '\0';  // Temporarily replace newline with null terminator
+            mvwprintw(win, message_start_y + 1 + line_count, 1, "%.*s", (int)(maxx - 2), line_start);
+            *line_end = '\n';  // Restore newline
+            line_start = line_end + 1;
+            line_count++;
+        }
+    }
+
+    mvwprintw(win, maxy-2, 1, "Keys: [q] Quit, [h/l] Frequency, [j/k] Gain, [c] Toggle Calibration, [a] Toggle AGC, [i] Cal info, [m] Toggle messages\n");
     box(win, 0, 0);
 
     if (maxy < MIN_LINES) {
@@ -120,7 +139,8 @@ void update_window(WINDOW *win, struct test_params *test) {
         mvwprintw(win, 0, start_x, "%s", WIN_HEIGHT_WARNING);
     }
 
-    wrefresh(win);
+    wnoutrefresh(win);
+    doupdate();
 }
 
 static char* truncate_path(const char* path, size_t max_width) {

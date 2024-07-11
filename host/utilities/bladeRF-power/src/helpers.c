@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <math.h>
+#include <fcntl.h>
 #include "window.h"
 #include "helpers.h"
 #include "libbladeRF.h"
@@ -111,6 +112,17 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
     const size_t num_samples = test->samp_rate / 30; // 30Hz
     const struct bladerf_gain_cal_tbl *gain_tbl = NULL;
 
+    // Set up stderr redirection
+    int pipefd[2];
+    int stderr_copy = dup(STDERR_FILENO);
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        return -1;
+    }
+    dup2(pipefd[1], STDERR_FILENO);
+    close(pipefd[1]);
+    fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
+
     int16_t *samples = malloc(2 * num_samples * sizeof(int16_t));
     if (samples == NULL) {
         fprintf(stderr, "Error allocating memory for samples. Exiting...\n");
@@ -134,6 +146,8 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
     int cmd = 0;
     init_curses(&main_win);
     bool show_calibration_info = false;
+    test->show_messages = false;
+    memset(test->message_buffer, 0, sizeof(test->message_buffer));
     while (status == 0 && cmd != 'q') {
         cmd = getch();
 
@@ -142,6 +156,24 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
             test->frequency = (next_freq > test->freq_max) ? test->freq_max : next_freq;
             CHECK(bladerf_set_frequency(dev, ch, test->frequency));
             CHECK(bladerf_get_frequency(dev, ch, &test->frequency_actual));
+        }
+
+        if (cmd == 'm') {
+            test->show_messages = !test->show_messages;
+        }
+
+        // Read from stderr pipe
+        char temp_buffer[1024];
+        ssize_t bytes_read;
+        while ((bytes_read = read(pipefd[0], temp_buffer, sizeof(temp_buffer) - 1)) > 0) {
+            temp_buffer[bytes_read] = '\0';
+            strncat(test->message_buffer, temp_buffer, sizeof(test->message_buffer) - strlen(test->message_buffer) - 1);
+        }
+
+        // Truncate message buffer if it gets too long
+        if (strlen(test->message_buffer) > sizeof(test->message_buffer) / 2) {
+            memmove(test->message_buffer, test->message_buffer + strlen(test->message_buffer) / 2, strlen(test->message_buffer) / 2);
+            test->message_buffer[strlen(test->message_buffer) / 2] = '\0';
         }
 
         if (cmd == 'h' || cmd == KEY_LEFT) {
@@ -210,6 +242,12 @@ error:
     free(samples);
     delwin(main_win);
     endwin();
+
+    // Restore original stderr
+    dup2(stderr_copy, STDERR_FILENO);
+    close(stderr_copy);
+    close(pipefd[0]);
+
     return status;
 }
 
