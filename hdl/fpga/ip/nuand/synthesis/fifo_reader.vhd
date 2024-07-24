@@ -493,7 +493,11 @@ begin
                 --   still need to be processed (not including the first). This becomes the number of clock
                 --   cycles to wait before asserting the FIFO read request to get a new batch of samples.
                 fifo_future.samples_left_init <= NUM_STREAMS - fifo_current.enabled_channels;
-                fifo_future.samples_left      <= NUM_STREAMS - fifo_current.enabled_channels;
+
+                if (fifo_current.samples_left = FIFO_FSM_RESET_VALUE.samples_left) then
+                    fifo_future.samples_left <= NUM_STREAMS - fifo_current.enabled_channels;
+                    fifo_future.ch_shift     <= 0;
+                end if;
 
                 if( packet_en = '1' ) then
                     fifo_future.state <= READ_PACKET;
