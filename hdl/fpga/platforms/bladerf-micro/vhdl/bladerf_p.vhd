@@ -168,11 +168,11 @@ package bladerf_p is
 
     constant TX_FIFO_WWIDTH         : natural := 32;    -- write side data width
     constant TX_FIFO_RWIDTH         : natural := 64;    -- read side data width
-    constant TX_FIFO_LENGTH         : natural := 16384; -- samples
+    constant TX_FIFO_LENGTH         : natural := 8192;  -- samples
 
     constant RX_FIFO_WWIDTH         : natural := 64;    -- write side data width
     constant RX_FIFO_RWIDTH         : natural := 32;    -- read side data width
-    constant RX_FIFO_LENGTH         : natural := 4096;  -- samples
+    constant RX_FIFO_LENGTH         : natural := 8192;  -- samples
 
     constant ADSB_FIFO_WWIDTH       : natural := 128;   -- write side data width
     constant ADSB_FIFO_RWIDTH       : natural := 32;    -- read side data width
@@ -184,11 +184,11 @@ package bladerf_p is
 
     constant META_FIFO_TX_WWIDTH    : natural := 32;    -- write side data width
     constant META_FIFO_TX_RWIDTH    : natural := 128;   -- read side data width
-    constant META_FIFO_TX_LENGTH    : natural := 512;   -- 32-bit words
+    constant META_FIFO_TX_LENGTH    : natural := 2048;  -- 32-bit words
 
     constant META_FIFO_RX_WWIDTH    : natural := 128;   -- write side data width
     constant META_FIFO_RX_RWIDTH    : natural := 32;    -- read side data width
-    constant META_FIFO_RX_LENGTH    : natural := 512;   -- 32-bit words
+    constant META_FIFO_RX_LENGTH    : natural := 2048;  -- 32-bit words
 
     type tx_fifo_t is record
         aclr    :   std_logic;
