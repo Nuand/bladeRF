@@ -187,7 +187,7 @@ begin
             meta_fifo_used_v := unsigned(meta_fifo_full & meta_fifo_usedw);
             meta_fifo_used_v_r <= meta_fifo_used_v;
 
-            if( fifo_full = '0' and ((FIFO_MAX - fifo_used_v_r) > ( dma_buf_size * 4 )) and
+            if( fifo_full = '0' and ((FIFO_MAX - fifo_used_v_r) > ( dma_buf_size )) and
                 ( ( meta_en = '1' and meta_fifo_full = '0' and ( META_MAX - 4 ) > meta_fifo_used_v_r )
                    or (meta_en = '0') ) ) then
                 fifo_enough <= true;
