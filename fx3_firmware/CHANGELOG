@@ -6,6 +6,11 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 
+v2.5.0 (2024-07-30)
+--------------------------------
+ * Bumped GPIF DMA buffer size to 8192 bytes
+ * Reduced the number of GPIF DMA buffers to 11 per channel
+
 v2.4.0 (2020-08-01)
 --------------------------------
  * Add ability to send short packets to FX3 from FPGA
