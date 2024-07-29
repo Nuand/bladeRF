@@ -22,6 +22,9 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
+library nuand;
+    use nuand.fx3_gpif_p.all;
+
 entity fx3_gpif is
   port (
     -- FX3 control signals
@@ -116,10 +119,6 @@ architecture sample_shuffler of fx3_gpif is
     constant ACK_DOWNCOUNT_WRITE    :   natural := 4;
     constant META_DOWNCOUNT_RESET   :   natural := 4;
     constant FINI_DOWNCOUNT_RESET   :   natural := 10;
-
-    -- GPIF buf sizes for USB high-speed and super-speed
-    constant GPIF_BUF_SIZE_HS       :   natural := 256;
-    constant GPIF_BUF_SIZE_SS       :   natural := 512;
 
     type dma_handshake_t is record
         rx0             :   std_logic;
