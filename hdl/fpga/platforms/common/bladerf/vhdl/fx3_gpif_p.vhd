@@ -22,6 +22,6 @@ use ieee.std_logic_1164.all;
 
 package fx3_gpif_p is
     -- GPIF buf sizes for USB high-speed and super-speed
-    constant GPIF_BUF_SIZE_HS : natural := 256;
-    constant GPIF_BUF_SIZE_SS : natural := 512;
+    constant GPIF_BUF_SIZE_HS : natural := 1024;
+    constant GPIF_BUF_SIZE_SS : natural := 2048;
 end package fx3_gpif_p;
