@@ -290,8 +290,8 @@ static void NuandRFLinkStart(void)
     }
 
     CyU3PMemSet((uint8_t *)&dmaCfg, 0, sizeof(dmaCfg));
-    dmaCfg.size  = size * 2;
-    dmaCfg.count = 22;
+    dmaCfg.size  = size * 8;
+    dmaCfg.count = 11;
     dmaCfg.prodSckId = BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET;
     dmaCfg.consSckId = CY_U3P_PIB_SOCKET_3;
     dmaCfg.dmaMode = CY_U3P_DMA_MODE_BYTE;
