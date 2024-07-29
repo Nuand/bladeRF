@@ -24,6 +24,7 @@ library ieee;
 
 library work;
     use work.fifo_readwrite_p.all;
+    use work.fx3_gpif_p.all;
 
 entity fifo_writer is
     generic (
@@ -70,8 +71,8 @@ end entity;
 
 architecture simple of fifo_writer is
 
-    constant DMA_BUF_SIZE_SS   : natural   := 512;
-    constant DMA_BUF_SIZE_HS   : natural   := 256;
+    constant DMA_BUF_SIZE_SS   : natural   := GPIF_BUF_SIZE_SS;
+    constant DMA_BUF_SIZE_HS   : natural   := GPIF_BUF_SIZE_HS;
 
     signal dma_buf_size        : natural range DMA_BUF_SIZE_HS to DMA_BUF_SIZE_SS := DMA_BUF_SIZE_SS;
 
