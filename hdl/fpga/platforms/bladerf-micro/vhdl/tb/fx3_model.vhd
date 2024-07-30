@@ -26,6 +26,7 @@ library ieee;
 
 library work;
     use work.util.all;
+    use work.fx3_gpif_p.all;
 
 architecture micro_dma of fx3_model is
 
@@ -98,7 +99,7 @@ begin
     done <= rx_done and tx_done;
 
     rx_sample_stream : process
-        constant BLOCK_SIZE     : natural := 512;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable req_time       : time;
     begin
@@ -151,8 +152,8 @@ begin
     end process;
 
     tx_sample_stream : process
-        constant TIME_BETWEEN_ITERATIONS : natural := 4593;
-        constant BLOCK_SIZE     : natural := 512;
+        constant TIME_BETWEEN_ITERATIONS : natural := 7000;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable timestamp_cntr : natural := 400;
         variable header_len     : natural := 0;
@@ -242,7 +243,7 @@ begin
                 nop(fx3_pclk, 10);
             end loop;
 
-            wait for 1 ms;
+            wait for 1.5 ms;
             dma_tx_enable <= '0';
             wait for 10 us;
         end loop;
@@ -333,7 +334,7 @@ begin
     done <= rx_done and tx_done;
 
     rx_sample_stream : process
-        constant BLOCK_SIZE     : natural := 512;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable req_time       : time;
     begin
@@ -387,7 +388,7 @@ begin
 
     tx_sample_stream : process
         constant TIME_BETWEEN_ITERATIONS : natural := 4556;
-        constant BLOCK_SIZE     : natural := 512;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable timestamp_cntr : natural := 250;
         variable header_len     : natural := 0;
