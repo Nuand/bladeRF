@@ -746,8 +746,8 @@ available parameters.
                        `bitmode` state
 
 `samples`       Number of samples per buffer to use in the
-                asynchronous stream.  Must be divisible by 1024 and
-                >= 1024.
+                asynchronous stream.  Must be divisible by 2048 and
+                >= 2048.
 
 `buffers`       Number of sample buffers to use in the asynchronous
                 stream. The min value is 4.
@@ -935,8 +935,8 @@ available parameters.
                 retransmitting file contents. 0 implies no delay.
 
 `samples`       Number of samples per buffer to use in the
-                asynchronous stream. Must be divisible by 1024 and
-                >= 1024.
+                asynchronous stream. Must be divisible by 2048 and
+                >= 2048.
 
 `buffers`       Number of sample buffers to use in the asynchronous
                 stream. The min value is 4.
