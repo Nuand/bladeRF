@@ -67,7 +67,7 @@ static int init_sync(struct bladerf *dev)
      * received.
      */
     const unsigned int num_buffers   = 16;
-    const unsigned int buffer_size   = 8192; /* Must be a multiple of 1024 */
+    const unsigned int buffer_size   = 8192; /* Must be a multiple of 2048 */
     const unsigned int num_transfers = 8;
     const unsigned int timeout_ms    = 3500;
 
