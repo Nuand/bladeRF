@@ -28,6 +28,7 @@ library nuand ;
     use nuand.fifo_readwrite_p.all;
     use nuand.common_dcfifo_p.all;
     use nuand.bladerf_p.all;
+    use nuand.fx3_gpif_p.all;
 
 library std ;
     use std.env.all ;
@@ -435,8 +436,8 @@ begin
             wait until reset = '0' ;
         end if ;
         while true loop
-            wait until rising_edge(fx3_clock) and unsigned(rx_sample_fifo.rused) > 512 ;
-            for i in 1 to 512 loop
+            wait until rising_edge(fx3_clock) and unsigned(rx_sample_fifo.rused) > GPIF_BUF_SIZE_SS;
+            for i in 1 to GPIF_BUF_SIZE_SS loop
                 rx_sample_fifo.rreq <= '1' ;
                 nop( fx3_clock, 1 ) ;
                 if( CHECK_OVERFLOW ) then

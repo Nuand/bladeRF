@@ -32,6 +32,7 @@ library nuand;
     use nuand.fifo_readwrite_p.all;
     use nuand.common_dcfifo_p.all;
     use nuand.bladerf_p.all;
+    use nuand.fx3_gpif_p.all;
 
 entity fx3_gpif_meta_8bit_tb is
     generic (
@@ -910,11 +911,11 @@ begin
 
         -- Allows a 0 increment for the first ts assertion
         if( ENABLE_CHANNEL_0 = '1' and ENABLE_CHANNEL_1 = '1') then
-            ts_increment := 254 when EIGHT_BIT_MODE_EN = '0'
-                            else 508;
+            ts_increment := (GPIF_BUF_SIZE_SS-4)/2 when EIGHT_BIT_MODE_EN = '0'
+                            else (GPIF_BUF_SIZE_SS-4);
         else
-            ts_increment := 508 when EIGHT_BIT_MODE_EN = '0'
-                            else 1016;
+            ts_increment := (GPIF_BUF_SIZE_SS -4) when EIGHT_BIT_MODE_EN = '0'
+                            else 2*(GPIF_BUF_SIZE_SS -4);
         end if;
 
         iteration := iteration + 1;
