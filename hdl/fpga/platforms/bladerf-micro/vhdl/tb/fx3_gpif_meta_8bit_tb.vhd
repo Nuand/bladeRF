@@ -697,7 +697,8 @@ begin
     look_for_dropped_tx_samples : process(tx_clock) is
         constant MESSAGES_PER_ITERATION   : natural := 3; --Provided in fx3_model
         constant SIGMA_DELTA_BITS         : signed (3 downto 0) := "0000";
-        variable dac_stream_back_to_0     : natural := 0;
+        constant HEADER_LEN               : natural := 4; -- In clk cycles
+        variable valid_sample_count        : natural := 0;
         variable current_message_count    : natural := 1;
         variable iq_value                 : signed (15 downto 0) := x"0000";
         variable expected_sample_i        : signed (15 downto 0);
@@ -710,6 +711,7 @@ begin
                 and dac_streams(i).data_v  = '1'
                 and fx3_control.tx_enable  = '1' )
             then
+                valid_sample_count := valid_sample_count + 1;
                 if( EIGHT_BIT_MODE_EN = '1' ) then
                     expected_sample_i := iq_value (11 downto 0) & SIGMA_DELTA_BITS;
                     expected_sample_q := iq_value (11 downto 0) + 1 & SIGMA_DELTA_BITS;
@@ -730,9 +732,16 @@ begin
                         end if;
                     end if;
 
-                    dac_stream_back_to_0 := dac_stream_back_to_0 + 1 when iq_value = 0;
-                    iq_value := (iq_value + 2) mod 128 when dac_stream_back_to_0 mod 16 /= 0 else
-                                (iq_value + 2) mod 112;
+                    if( valid_sample_count mod (2*GPIF_BUF_SIZE_SS - 8) = 0 ) then
+                        iq_value  := x"0000";
+                        if( current_message_count < MESSAGES_PER_ITERATION ) then
+                            current_message_count := current_message_count + 1;
+                        else
+                            current_message_count := 1;
+                        end if;
+                    else
+                        iq_value := (iq_value + 2) mod 128;
+                    end if;
                 else
                     expected_sample_i := iq_value;
                     expected_sample_q := to_signed(current_message_count, 8) & (iq_value(7 downto 0) + 1);
@@ -748,7 +757,7 @@ begin
 
                     -- Set iq values based on blocks received
                     -- See tx_sample_stream's encoding scheme in fx3_model.vhd
-                    if( iq_value = x"03F6" ) then
+                    if( valid_sample_count mod (GPIF_BUF_SIZE_SS - HEADER_LEN) = 0 ) then
                         iq_value  := x"0000";
                         if( current_message_count < MESSAGES_PER_ITERATION ) then
                             current_message_count := current_message_count + 1;
