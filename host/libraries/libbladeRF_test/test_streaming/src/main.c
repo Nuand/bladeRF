@@ -90,7 +90,7 @@ void print_help() {
     printf("  -e, --meta                    Enable META test\n");
     printf("  -s, --samplerate  <rate>      Specify the sample rate\n");
     printf("  -n, --num-samples <count>     Specify the number of samples\n");
-    printf("  -b, --buffer-size <size>      Specify the buffer size (multiple of 1024)\n");
+    printf("  -b, --buffer-size <size>      Specify the buffer size (multiple of 2048)\n");
     printf("  -h, --help                    Display this help message\n");
     printf("\n");
 
