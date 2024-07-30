@@ -26,6 +26,8 @@ library ieee;
 
 library work;
     use work.util.all;
+    use work.fx3_gpif_p.all;
+
 
 entity fx3_model is
   port (
@@ -102,7 +104,7 @@ begin
     done <= rx_done and tx_done;
 
     rx_sample_stream : process
-        constant BLOCK_SIZE     : natural := 512;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable req_time       : time;
     begin
@@ -155,7 +157,7 @@ begin
     end process;
 
     tx_sample_stream : process
-        constant BLOCK_SIZE     : natural := 512;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable timestamp_cntr : natural := 80;
         variable header_len     : natural := 0;
@@ -201,7 +203,7 @@ begin
                                 data_out := x"12341234";
                             when 2 =>
                                 data_out(31 downto 0) := std_logic_vector(to_signed(timestamp_cntr, 32));
-                                timestamp_cntr := timestamp_cntr + 508 * 2;
+                                timestamp_cntr := timestamp_cntr + (GPIF_BUF_SIZE_SS-4) * 2;
                             when 3 =>
                                 data_out := (others => '0');
                             when 4 =>

@@ -10,6 +10,7 @@ vcom -work nuand -2008 ../../../ip/altera/rx_meta_fifo/rx_meta_fifo.vhd
 
 vcom -work nuand -2008 ../vhdl/tb/nios_system.vhd
 
+vcom -work nuand -2008 ../vhdl/fx3_gpif_p.vhd
 vcom -work nuand -2008 ../vhdl/fx3_gpif.vhd
 
 vcom -work nuand -2008 ../vhdl/bladerf.vhd
