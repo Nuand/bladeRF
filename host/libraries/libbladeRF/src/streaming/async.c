@@ -52,8 +52,8 @@ int async_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_INVAL;
     }
 
-    if (samples_per_buffer < 1024 || samples_per_buffer % 1024 != 0) {
-        log_error("samples_per_buffer must be multiples of 1024\n");
+    if (samples_per_buffer < 2048 || samples_per_buffer % 2048 != 0) {
+        log_error("samples_per_buffer must be multiples of 2048\n");
         return BLADERF_ERR_INVAL;
     }
 

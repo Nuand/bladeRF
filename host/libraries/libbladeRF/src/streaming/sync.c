@@ -185,6 +185,12 @@ int sync_init(struct bladerf_sync *sync,
             return BLADERF_ERR_INVAL;
     }
 
+    if (buffer_size < 2048) {
+        log_warning("Requested samples per buffer (%zu) is less than 2048. "
+            "Clamping to 2048.\n", buffer_size);
+        buffer_size = 2048;
+    }
+
     /* bladeRF GPIF DMA requirement */
     if ((bytes_per_sample * buffer_size) % 4096 != 0) {
         assert(!"Invalid buffer size");
