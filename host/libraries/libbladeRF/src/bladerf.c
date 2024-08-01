@@ -539,10 +539,30 @@ int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch, bool enable)
 int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     int status;
+    bladerf_gain_mode gain_mode;
     MUTEX_LOCK(&dev->lock);
+
+    /* Change gain mode to manual if ch = RX */
+    if (BLADERF_CHANNEL_IS_TX(ch) == false) {
+        status = dev->board->get_gain_mode(dev, ch, &gain_mode);
+        if (status != 0) {
+            log_error("Failed to get gain mode\n");
+            goto error;
+        }
+
+        if (gain_mode != BLADERF_GAIN_MGC) {
+            log_warning("Setting gain mode to manual\n");
+            status = dev->board->set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
+            if (status != 0) {
+                log_error("Failed to set gain mode\n");
+                goto error;
+            }
+        }
+    }
 
     status = dev->board->set_gain(dev, ch, gain);
 
+error:
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
