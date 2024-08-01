@@ -95,6 +95,7 @@ static int gain_cal_tbl_init(struct bladerf_gain_cal_tbl *tbl, uint32_t num_entr
 int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *binary_path) {
     int num_channels = 4;
     struct bladerf_gain_cal_tbl gain_tbls[num_channels];
+    bladerf_gain current_gain;
     uint64_t frequency;
     float power;
     int entry_counter;
@@ -104,6 +105,12 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     if (!binaryFile) {
         log_error("Error opening binary file.\n");
         status = BLADERF_ERR_NO_FILE;
+        goto error;
+    }
+
+    status = dev->board->get_gain(dev, ch, &current_gain);
+    if (status != 0) {
+        log_error("Failed to get gain: %s\n", bladerf_strerror(status));
         goto error;
     }
 
@@ -127,6 +134,7 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     gain_tbls[ch].ch = ch;
     gain_tbls[ch].state = BLADERF_GAIN_CAL_LOADED;
     gain_tbls[ch].enabled = true;
+    gain_tbls[ch].gain_target = current_gain;
 
     free(dev->gain_tbls[ch].entries);
     dev->gain_tbls[ch] = gain_tbls[ch];

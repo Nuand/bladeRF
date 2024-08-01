@@ -561,7 +561,13 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         }
     }
 
+    dev->gain_tbls[ch].gain_target = gain;
+
     status = dev->board->set_gain(dev, ch, gain);
+    if (status != 0) {
+        log_error("Failed to set gain\n");
+        goto error;
+    }
 
 error:
     MUTEX_UNLOCK(&dev->lock);
@@ -2203,9 +2209,15 @@ error:
 
 int bladerf_enable_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool en)
 {
+    int status = 0;
 
     dev->gain_tbls[ch].enabled = en;
+    status = bladerf_set_gain(dev, ch, dev->gain_tbls[ch].gain_target);
+    if (status != 0) {
+        log_error("%s: Failed to reset gain.\n", __FUNCTION__);
+        return status;
+    }
 
-    return 0;
+    return status;
 }
 

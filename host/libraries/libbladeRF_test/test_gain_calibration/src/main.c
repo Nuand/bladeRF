@@ -52,6 +52,9 @@ int main(int argc, char *argv[]) {
     CHECK(bladerf_load_gain_calibration(dev, ch, cal_rx_file_loc_csv));
     CHECK(read_and_print_binary(cal_rx_file_loc_bin));
 
+    ch = BLADERF_CHANNEL_TX(0);
+    CHECK(bladerf_load_gain_calibration(dev, ch, cal_rx_file_loc_csv));
+
 out:
     bladerf_close(dev);
     return status;
