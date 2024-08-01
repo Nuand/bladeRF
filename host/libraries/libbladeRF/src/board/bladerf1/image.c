@@ -320,7 +320,7 @@ int bladerf_image_write(struct bladerf *dev,
 
     /* If the type is RAW, we should only allow erase-block aligned
      * addresses and lengths */
-    if (img->type == BLADERF_IMAGE_TYPE_RAW) {
+    if (img->type == BLADERF_IMAGE_TYPE_RAW && img->address != 0xffffffff) {
         if (img->address % dev->flash_arch->ebsize_bytes != 0) {
             log_debug("Image address must be erase block-aligned for RAW.\n");
             rv = BLADERF_ERR_INVAL;
