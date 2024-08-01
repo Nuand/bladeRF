@@ -3289,6 +3289,7 @@ typedef enum {
     BLADERF_IMAGE_TYPE_RX_IQ_CAL,    /**< RX IQ balance calibration table */
     BLADERF_IMAGE_TYPE_TX_IQ_CAL,    /**< TX IQ balance calibration table */
     BLADERF_IMAGE_TYPE_FPGA_A5,      /**< FPGA bitstream for A5 device */
+    BLADERF_IMAGE_TYPE_GAIN_CAL,     /**< Gain calibration */
 } bladerf_image_type;
 
 /** Size of the magic signature at the beginning of bladeRF image files */

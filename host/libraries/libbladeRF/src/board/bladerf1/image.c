@@ -140,6 +140,7 @@ static bool image_type_is_valid(bladerf_image_type type) {
         case BLADERF_IMAGE_TYPE_TX_DC_CAL:
         case BLADERF_IMAGE_TYPE_RX_IQ_CAL:
         case BLADERF_IMAGE_TYPE_TX_IQ_CAL:
+        case BLADERF_IMAGE_TYPE_GAIN_CAL:
             return true;
 
         default:
