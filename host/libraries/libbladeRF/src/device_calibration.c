@@ -197,3 +197,108 @@ error:
         fclose(binaryFile);
     return status;
 }
+
+static void find_floor_ceil_entries_by_frequency(const struct bladerf_gain_cal_tbl *tbl, bladerf_frequency freq,
+                                                 struct bladerf_gain_cal_entry **floor, struct bladerf_gain_cal_entry **ceil) {
+    int mid = 0;
+    *floor = NULL;
+    *ceil = NULL;
+
+    if (tbl == NULL || tbl->entries == NULL || tbl->n_entries == 0) {
+        return;
+    }
+
+    int32_t low = 0;
+    int32_t high = tbl->n_entries - 1;
+
+    /* Binary search for the entry with the closest frequency to 'freq' */
+    while (low <= high && high >= 0) {
+        mid = (low + high) / 2;
+        if (tbl->entries[mid].freq == freq) {
+            *floor = &tbl->entries[mid];
+            *ceil = &tbl->entries[mid];
+            return;
+        } else if (tbl->entries[mid].freq < freq) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+
+    /* At this point, 'low' points to the first entry greater than 'freq',
+       and 'high' points to the last entry less than 'freq'. */
+    if ((uint32_t)low < tbl->n_entries) {
+        *ceil = &tbl->entries[low];
+    }
+
+    /* If 'high' is negative, then there are no entries less than 'freq' */
+    *floor = (high >= 0) ? &tbl->entries[high] : &tbl->entries[0];
+}
+
+int get_gain_cal_entry(const struct bladerf_gain_cal_tbl *tbl, bladerf_frequency freq, struct bladerf_gain_cal_entry *result) {
+    struct bladerf_gain_cal_entry *floor_entry, *ceil_entry;
+
+    if (tbl == NULL || result == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    find_floor_ceil_entries_by_frequency(tbl, freq, &floor_entry, &ceil_entry);
+    if (!floor_entry || !ceil_entry) {
+        log_error("Could not find ceil or floor entries in the calibration table\n");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    if (floor_entry->freq == ceil_entry->freq) {
+        result->freq = freq;
+        result->gain_corr = floor_entry->gain_corr;
+        return 0;
+    }
+
+    double interpolated_gain_corr = floor_entry->gain_corr +
+                                    (freq - floor_entry->freq) *
+                                    (ceil_entry->gain_corr - floor_entry->gain_corr) /
+                                    (ceil_entry->freq - floor_entry->freq);
+
+    result->freq = freq;
+    result->gain_corr = interpolated_gain_corr;
+    return 0;
+}
+
+int get_gain_correction(struct bladerf *dev, bladerf_frequency freq, bladerf_channel ch, bladerf_gain *compensated_gain) {
+    int status = 0;
+    struct bladerf_gain_cal_tbl *cal_table = &dev->gain_tbls[ch];
+    struct bladerf_gain_cal_entry entry_next;
+
+    CHECK_STATUS(get_gain_cal_entry(cal_table, freq, &entry_next));
+
+    *compensated_gain = __round_int(cal_table->gain_target - entry_next.gain_corr);
+
+    log_verbose("Target gain:  %i, Compen. gain: %i\n", dev->gain_tbls[ch].gain_target, *compensated_gain);
+    return status;
+}
+
+int apply_gain_correction(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency) {
+    struct bladerf_range const *gain_range = NULL;
+    bladerf_frequency current_frequency;
+    bladerf_gain gain_compensated;
+
+    if (dev->gain_tbls[ch].enabled == false) {
+        log_error("Gain compensation disabled. Can't apply gain correction.\n");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    CHECK_STATUS(dev->board->get_gain_range(dev, ch, &gain_range));
+    CHECK_STATUS(dev->board->get_frequency(dev, ch, &current_frequency));
+    CHECK_STATUS(get_gain_correction(dev, frequency, ch, &gain_compensated));
+
+    if (gain_compensated > gain_range->max || gain_compensated < gain_range->min) {
+        log_warning("Power compensated gain out of range [%i:%i]: %i\n",
+            gain_range->min, gain_range->max, gain_compensated);
+        gain_compensated = (gain_compensated > gain_range->max) ? gain_range->max : gain_range->min;
+        log_warning("Gain clamped to: %i\n", gain_compensated);
+    }
+
+    CHECK_STATUS(dev->board->set_gain(dev, ch, gain_compensated););
+
+    return 0;
+}
