@@ -82,7 +82,9 @@ void init_curses(WINDOW **win) {
 }
 
 void update_window(WINDOW *win, struct test_params *test) {
+    const size_t MIN_LINES = 9;
     size_t maxy = getmaxy(win);
+    size_t maxx = getmaxx(win);
     size_t start_y = 1;
 
     werase(win);
@@ -110,6 +112,14 @@ void update_window(WINDOW *win, struct test_params *test) {
 
     mvwprintw(win, maxy-2, 1, "Keys: [h/l] Frequency, [j/k] Gain, [c] Toggle Calibration, [a] Toggle AGC, [i] Cal info [q], Quit\n");
     box(win, 0, 0);
+
+    if (maxy < MIN_LINES) {
+        const char* WIN_HEIGHT_WARNING = "[Warning] Increase terminal window height to see more info\0";
+        int warning_length = strlen(WIN_HEIGHT_WARNING);
+        int start_x = (maxx - warning_length) / 2;
+        mvwprintw(win, 0, start_x, "%s", WIN_HEIGHT_WARNING);
+    }
+
     wrefresh(win);
 }
 
