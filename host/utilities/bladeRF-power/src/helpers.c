@@ -196,9 +196,7 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
     }
 
 error:
-    bladerf_enable_module(dev, ch, false);
     free(samples);
-
     delwin(main_win);
     endwin();
     return status;
