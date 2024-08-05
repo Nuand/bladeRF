@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(bladeRF-power LANGUAGES C)
 
+set (CURSES_NEED_NCURSES TRUE)
+set (CURSES_NEED_WIDE TRUE)
 find_package(Curses REQUIRED)
 
 include_directories(
@@ -14,6 +16,7 @@ add_executable(${PROJECT_NAME}
     src/helpers.c
     src/window.c
     src/filter.c
+    src/text.c
     src/main.c)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)

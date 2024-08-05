@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <window.h>
+#include <locale.h>
+#include "text.h"
 #include "helpers.h"
 #include "libbladeRF.h"
 
@@ -68,6 +70,7 @@ static double rx_power_dbfs_to_dbm(double power_dbfs, bladerf_gain target_gain) 
 }
 
 void init_curses(WINDOW **win) {
+    setlocale(LC_ALL, "");  // Set locale for wide character support
     initscr();    // Start curses mode
     noecho();     // Don't echo input characters
     timeout(0);   // Non-blocking getch() returns ERR if no input is waiting
@@ -103,11 +106,15 @@ void update_window(WINDOW *win, struct test_params *test) {
     if (test->gain_cal_enabled && test->direction == BLADERF_TX) {
         mvwprintw(win, start_y++, 1, "Output Pwr:  %" PRIi32 "dBm, range: [%" PRIi32 ", %" PRIi32 "]\n",
             test->gain-60, test->gain_min-60, test->gain_max-60);
+        display_double(win, test->gain-60, start_y+=2, 1, POWER_SUFFIX_DBM);
     } else if (test->gain_cal_enabled && test->direction == BLADERF_RX) {
         mvwprintw(win, start_y++, 1, "Avg Power:   %0.2fdBFS, %0.2fdBm",
             test->rx_power, rx_power_dbfs_to_dbm(test->rx_power, test->gain));
+        display_double(win, rx_power_dbfs_to_dbm(test->rx_power, test->gain),
+            start_y+=2, 1, POWER_SUFFIX_DBM);
     } else if (test->direction == BLADERF_RX) {
         mvwprintw(win, start_y++, 1, "Avg Power:   %0.2fdBFS", test->rx_power);
+        display_double(win, test->rx_power, start_y+=2, 1, POWER_SUFFIX_DBFS);
     }
 
     if (test->show_messages) {
