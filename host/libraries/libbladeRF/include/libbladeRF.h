@@ -4135,6 +4135,45 @@ int CALL_CONV bladerf_get_feature(struct bladerf *dev,
 /** @} (End of FN_SF) */
 
 /**
+ * @defgroup FN_CAL Gain Calibration
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * @brief Individual gain calibration entry. Each entry associates a frequency
+ * with a corresponding gain correction factor.
+ */
+struct bladerf_gain_cal_entry {
+    bladerf_frequency freq;   /**< Frequency (Hz) */
+    double gain_corr;         /**< Gain correction factor */
+};
+
+/**
+ * @brief Gain calibration table. The table contains a series of
+ * entries, each associating a frequency with a gain correction factor. Entries
+ * are sorted by frequency, from start_freq to stop_freq.
+ */
+struct bladerf_gain_cal_tbl {
+    struct bladerf_version version;         /**< Table format version */
+    bladerf_channel ch;                     /**< Channel */
+    uint32_t n_entries;                     /**< Number of entries */
+    bladerf_frequency start_freq;           /**< Start frequency (Hz) */
+    bladerf_frequency stop_freq;            /**< Stop frequency (Hz) */
+    struct bladerf_gain_cal_entry *entries; /**< Sorted calibration entries */
+    bladerf_gain gain_target;               /**< Compensated gain */
+    enum gain_cal_state {
+        BLADERF_GAIN_CAL_UNINITIALIZED,
+        BLADERF_GAIN_CAL_LOADED,
+        BLADERF_GAIN_CAL_UNLOADED
+    } state; /**< Calibration state */
+};
+
+/** @} (End of FN_CAL) */
+
+/**
  * @defgroup    FN_XB   Expansion board support
  *
  * This group of functions provides the ability to attach and detach expansion
