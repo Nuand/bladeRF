@@ -108,9 +108,12 @@ error:
 int start_streaming(struct bladerf *dev, struct test_params *test) {
     int status = 0;
     WINDOW *main_win = NULL;
-    bladerf_channel ch = (test->direction == BLADERF_TX) ? BLADERF_CHANNEL_TX(0) : BLADERF_CHANNEL_RX(0);
     const size_t num_samples = test->samp_rate / 30; // 30Hz
     const struct bladerf_gain_cal_tbl *gain_tbl = NULL;
+
+    bladerf_channel ch = (test->direction == BLADERF_TX)
+        ? BLADERF_CHANNEL_TX(test->channel)
+        : BLADERF_CHANNEL_RX(test->channel);
 
     // Set up stderr redirection
     int pipefd[2];

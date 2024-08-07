@@ -40,6 +40,7 @@
 } while (0)
 
 void init_params(struct test_params *test) {
+    test->channel          = 0;
     test->frequency        = 1e9;
     test->frequency_actual = test->frequency;
     test->freq_min         = 65e6;
@@ -64,14 +65,16 @@ int dev_init(struct bladerf *dev, bladerf_direction dir, struct test_params *tes
     int status = 0;
     const struct bladerf_range *freq_range;
     const struct bladerf_range *gain_range;
-    bladerf_channel ch = (dir == BLADERF_TX) ? BLADERF_CHANNEL_TX(0) : BLADERF_CHANNEL_RX(0);
-
     bladerf_channel_layout layout = (dir == BLADERF_TX) ? BLADERF_TX_X1 : BLADERF_RX_X1;
     bladerf_format format = BLADERF_FORMAT_SC16_Q11;
     size_t num_buffers = 512;
     size_t buffer_size = 16*1024;
     size_t num_transfers = 32;
     size_t stream_timeout = 1000; //ms
+
+    bladerf_channel ch = (dir == BLADERF_TX)
+        ? BLADERF_CHANNEL_TX(test->channel)
+        : BLADERF_CHANNEL_RX(test->channel);
 
     CHECK(bladerf_set_gain(dev, ch, test->gain));
     CHECK(bladerf_set_sample_rate(dev, ch, test->samp_rate, NULL));

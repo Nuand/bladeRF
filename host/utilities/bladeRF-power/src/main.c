@@ -41,9 +41,10 @@
     } \
 } while (0)
 
-#define OPTSTR "d:l:trf:v:h"
+#define OPTSTR "d:c:l:trf:v:h"
 struct option long_options[] = {
     { "device",     required_argument,  NULL,   'd' },
+    { "channel",    required_argument,  NULL,   'c' },
     { "load",       required_argument,  NULL,   'l' },
     { "tx",         no_argument,        NULL,   't' },
     { "rx",         no_argument,        NULL,   'r' },
@@ -74,6 +75,14 @@ int main(int argc, char *argv[])
         switch (opt) {
             case 'd':
                 devstr = optarg;
+                break;
+
+            case 'c':
+                test.channel = str2int(optarg, 0, INT32_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid channel: %s\n", optarg);
+                    return -1;
+                }
                 break;
 
             case 'f':
@@ -107,6 +116,7 @@ int main(int argc, char *argv[])
             case 'h':
                 printf("Usage: %s [options]\n", argv[0]);
                 printf("  -d, --device <str>        Specify the device to open.\n");
+                printf("  -c, --channel <num>       Specify the channel to use.\n");
                 printf("  -l, --load <file>         Load a specified gain cal file (.csv or .tbl).\n");
                 printf("  -t, --tx                  Transmit mode. Can't be combined with --rx.\n");
                 printf("  -r, --rx                  Receive mode. Can't be combined with --tx.\n");

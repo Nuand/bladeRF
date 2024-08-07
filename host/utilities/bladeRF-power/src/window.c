@@ -85,13 +85,15 @@ void init_curses(WINDOW **win) {
 }
 
 void update_window(WINDOW *win, struct test_params *test) {
-    const size_t MIN_LINES = 9;
+    const size_t MIN_LINES = 10;
     size_t maxy = getmaxy(win);
     size_t maxx = getmaxx(win);
     size_t start_y = 1;
 
     werase(win);
 
+    mvwprintw(win, start_y++, 1, "Channel:    %s(%i)\n",
+        test->direction == BLADERF_TX ? "TX" : "RX", test->channel);
     mvwprintw(win, start_y++, 1, "Gain Calibration: %s\n", test->gain_cal_enabled ? "enabled" : "disabled");
     mvwprintw(win, start_y++, 1, "Automatic Gain Control: %s\n", test->gain_mode == BLADERF_GAIN_MGC ? "disabled" : "enabled");
     mvwprintw(win, start_y++, 1, "Bandwidth:  %7.3f %sHz\n",

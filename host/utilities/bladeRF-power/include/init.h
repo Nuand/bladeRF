@@ -31,6 +31,7 @@
 #include "libbladeRF.h"
 
 struct test_params {
+    bladerf_channel channel;
     bladerf_frequency frequency;
     bladerf_frequency frequency_actual;
     bladerf_frequency freq_min;
