@@ -115,6 +115,9 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
         ? BLADERF_CHANNEL_TX(test->channel)
         : BLADERF_CHANNEL_RX(test->channel);
 
+    if (test->direction == BLADERF_TX)
+        test->gain_mode = BLADERF_GAIN_MGC;
+
     // Set up stderr redirection
     int pipefd[2];
     int stderr_copy = dup(STDERR_FILENO);
