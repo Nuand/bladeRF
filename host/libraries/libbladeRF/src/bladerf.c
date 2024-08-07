@@ -2235,6 +2235,15 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
         goto error;
     }
 
+    MUTEX_UNLOCK(&dev->lock);
+
+    /* Reset gain to ensure calibration adjustment is applied after loading */
+    status = bladerf_set_gain(dev, ch, dev->gain_tbls[ch].gain_target);
+    if (status != 0) {
+        log_error("%s: Failed to reset gain.\n", __FUNCTION__);
+        goto error;
+    }
+
 error:
     if (full_path)
         free(full_path);
