@@ -2182,6 +2182,8 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
     char *filename = (char *)calloc(1, filename_len + 1);
     CHECK_NULL(filename);
 
+    bladerf_gain_mode gain_mode_before_gain_reset;
+
     log_debug("Loading gain calibration\n");
     MUTEX_LOCK(&dev->lock);
 
@@ -2237,11 +2239,24 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
 
     MUTEX_UNLOCK(&dev->lock);
 
+    /* Save current gain mode before gain reset */
+    if (BLADERF_CHANNEL_IS_TX(ch) == false)
+        dev->board->get_gain_mode(dev, ch, &gain_mode_before_gain_reset);
+
     /* Reset gain to ensure calibration adjustment is applied after loading */
     status = bladerf_set_gain(dev, ch, dev->gain_tbls[ch].gain_target);
     if (status != 0) {
         log_error("%s: Failed to reset gain.\n", __FUNCTION__);
         goto error;
+    }
+
+    /** Restore previous gain mode */
+    if (BLADERF_CHANNEL_IS_TX(ch) == false) {
+        status = bladerf_set_gain_mode(dev, ch, gain_mode_before_gain_reset);
+        if (status != 0) {
+            log_error("%s: Failed to reset gain mode.\n", __FUNCTION__);
+            goto error;
+        }
     }
 
 error:
