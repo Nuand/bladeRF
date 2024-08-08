@@ -41,7 +41,7 @@
     } \
 } while (0)
 
-#define OPTSTR "d:c:l:trf:v:h"
+#define OPTSTR "d:c:l:trf:s:v:h"
 struct option long_options[] = {
     { "device",     required_argument,  NULL,   'd' },
     { "channel",    required_argument,  NULL,   'c' },
@@ -49,6 +49,7 @@ struct option long_options[] = {
     { "tx",         no_argument,        NULL,   't' },
     { "rx",         no_argument,        NULL,   'r' },
     { "frequency",  required_argument,  NULL,   'f' },
+    { "sample-rate",required_argument,  NULL,   's' },
     { "verbosity",  optional_argument,  NULL,   'v' },
     { "help",       no_argument,        NULL,   'h' },
     { NULL,         0,                  NULL,   0   },
@@ -105,6 +106,12 @@ int main(int argc, char *argv[])
                 test.gain_cal_file = optarg;
                 break;
 
+            case 's':
+                test.samp_rate = str2uint_suffix(optarg, 0, UINT32_MAX, freq_suffixes,
+                    NUM_FREQ_SUFFIXES, &ok);
+                printf("Sample rate: %i\nHz", test.samp_rate);
+                break;
+
             case 'v':
                 log_level = str2loglevel(optarg, &ok);
                 if (!ok) {
@@ -121,6 +128,7 @@ int main(int argc, char *argv[])
                 printf("  -t, --tx                  Transmit mode. Can't be combined with --rx.\n");
                 printf("  -r, --rx                  Receive mode. Can't be combined with --tx.\n");
                 printf("  -f, --frequency <freq>    Set the initial frequency (in Hz).\n");
+                printf("  -s, --sample-rate <rate>  Set the initial sample rate (in Hz).\n");
                 printf("  -v, --verbosity <level>   Set the libbladeRF verbosity level (e.g., verbose, debug).\n");
                 printf("  -h, --help                Display this help text and exit.\n");
                 printf("\n");
