@@ -97,7 +97,7 @@ add_subdirectory(common/thirdparty/ad936x)
 option(ENABLE_GDB_EXTENSIONS "Build with -ggdb3 instead of -g" OFF)
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
-   ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+   ${CMAKE_C_COMPILER_ID} MATCHES  ".*Clang")
 
     # Personal preference - as much debug info as possible with GDB
     if(${ENABLE_GDB_EXTENSIONS})
@@ -119,7 +119,7 @@ if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
     endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 
 endif(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
-      ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+      ${CMAKE_C_COMPILER_ID} MATCHES  ".*Clang")
 
 ###############################
 # MS Visual Studio
