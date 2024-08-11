@@ -2334,8 +2334,8 @@ int bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const 
     CHECK_NULL(dev);
     MUTEX_LOCK(&dev->lock);
 
-    if (dev->gain_tbls == NULL) {
-        log_error("Gain calibration not loaded\n");
+    if (dev->gain_tbls[ch].state != BLADERF_GAIN_CAL_LOADED) {
+        log_error("%s: Gain calibration not loaded\n", __FUNCTION__);
         MUTEX_UNLOCK(&dev->lock);
         return BLADERF_ERR_UNEXPECTED;
     }
