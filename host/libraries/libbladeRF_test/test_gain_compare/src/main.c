@@ -39,7 +39,7 @@ out:
 
 int main(int argc, char *argv[]) {
     int status;
-    struct bladerf *dev;
+    struct bladerf *dev = NULL;
     char *devstr = NULL;
     bladerf_sample_rate samp_rate = 2e6;
 
