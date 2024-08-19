@@ -462,6 +462,18 @@ if [[ ${flow} == "full" ]]; then
     sha256sum $RBF > $RBF.sha256sum
     MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
     SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
+
+    GIT_HASH=$(git rev-parse --short HEAD)
+    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    GIT_DIRTY=$(git diff --quiet && echo "clean" || echo "dirty")
+
+    cat << EOF > git_info.txt
+Git Information:
+Commit Hash: $GIT_HASH
+Branch: $GIT_BRANCH
+Working Directory: $GIT_DIRTY
+EOF
+
     popd
 
     echo ""
@@ -472,6 +484,10 @@ if [[ ${flow} == "full" ]]; then
     echo " $RBF checksums:"
     echo "  MD5:    $MD5SUM"
     echo "  SHA256: $SHA256SUM"
+    echo ""
+    echo " Git Information:"
+    echo "  Commit: $GIT_HASH ($GIT_DIRTY)"
+    echo "  Branch: $GIT_BRANCH"
     echo ""
     cat "$BUILD_OUTPUT_DIR/$BUILD_NAME.fit.summary" | sed -e 's/^\(.\)/ \1/g'
     echo "##########################################################################"
