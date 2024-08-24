@@ -689,7 +689,8 @@ begin
         for i in adc_controls'range loop
             adc_controls(i).enable   <= (ad9361.ch(i).adc.i.enable or ad9361.ch(i).adc.q.enable) and mimo_rx_enables(i);
             adc_controls(i).data_req <= '1';
-            adc_streams(i).data_i    <= signed(ad9361.ch(i).adc.i.data);
+            -- Combine mini_exp1 as MSB with the 15 MSBs of ad9361.ch(i).adc.i.data
+            adc_streams(i).data_i    <= signed(mini_exp1 & ad9361.ch(i).adc.i.data(14 downto 0));
             adc_streams(i).data_q    <= signed(ad9361.ch(i).adc.q.data);
             adc_streams(i).data_v    <= (ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid) and not adc_streams_last_v(i);
         end loop;
