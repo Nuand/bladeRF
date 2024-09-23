@@ -2141,6 +2141,13 @@ typedef enum {
     BLADERF_FORMAT_SC16_Q11,
 
     /**
+     * @brief int12_t sample format
+     *
+     * TODO: Add description
+     */
+    BLADERF_FORMAT_SC16_Q11_PACKED,
+
+    /**
      * This format is the same as the ::BLADERF_FORMAT_SC16_Q11 format, except
      * the first 4 samples in every <i>block*</i> of samples are replaced with
      * metadata organized as follows. All fields are little-endian byte order.

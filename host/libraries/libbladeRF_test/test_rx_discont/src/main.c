@@ -80,9 +80,10 @@ static void print_usage(const char *argv0)
     printf("libbladerf_test_discont: Test for discontinuities.\n");
     printf("\n");
     printf("Options:\n");
-    printf("    -b, --bitmode <mode>        Specify 16bit or 8bit mode\n");
+    printf("    -b, --bitmode <mode>        Specify 16bit, 8bit, or packed mode\n");
     printf("                                    <16bit|16> (default)\n");
     printf("                                    <8bit|8>\n");
+    printf("                                    <packed>\n");
     printf("    -s, --samplerate <value>    Use the specified sample rate.\n");
     printf("    -t, --test <test name>      Run the specified test.\n");
     printf("    -i, --iterations <count>    Run the specified number of iterations\n");
@@ -148,6 +149,8 @@ int handle_cmdline(int argc, char *argv[], struct app_params *p)
                     p->fmt = BLADERF_FORMAT_SC16_Q11;
                 } else if (strcmp(optarg, "8bit") == 0 || strcmp(optarg, "8") == 0) {
                     p->fmt = BLADERF_FORMAT_SC8_Q7;
+                } else if (strcmp(optarg, "packed") == 0) {
+                    p->fmt = BLADERF_FORMAT_SC16_Q11_PACKED;
                 } else {
                     printf("Unknown bitmode: %s\n", optarg);
                     return -1;
