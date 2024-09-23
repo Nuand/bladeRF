@@ -2141,6 +2141,22 @@ typedef enum {
     BLADERF_FORMAT_SC16_Q11,
 
     /**
+     * @brief Signed, Complex 16-bit Q11 using a 12-bit Q11 intermediate format.
+     *
+     * This format is a ::BLADERF_FORMAT_SC16_Q11 equivalent to the end user.
+     * The difference lies in the intermediate SC12 Q11 packing format used by
+     * the FPGA and libbladeRF. This intermediate format allows for a 33.3%
+     * higher sample rate when bandwidth limited by the host interface. Synchronous
+     * buffer length must be a multiple of 4096 samples.
+     *
+     * @note While this format allows for higher sample rates over bandwidth-limited
+     * interfaces, it requires additional CPU processing for packing/unpacking. Users
+     * should benchmark to determine if the increased sample rate outweighs the
+     * added processing overhead for their specific use case.
+     */
+    BLADERF_FORMAT_SC16_Q11_PACKED,
+
+    /**
      * This format is the same as the ::BLADERF_FORMAT_SC16_Q11 format, except
      * the first 4 samples in every <i>block*</i> of samples are replaced with
      * metadata organized as follows. All fields are little-endian byte order.

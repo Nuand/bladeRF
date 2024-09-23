@@ -55,6 +55,18 @@ static inline size_t sc16q11_to_bytes(size_t n_samples)
 }
 
 /*
+ * Convert SC16Q11 packed (SC12Q11) samples to bytes
+ * I and Q are packed into 3 bytes. I and Q are 12 bits each.
+ * That makes a sample 24 bits = 3 bytes.
+ */
+static inline size_t sc16q11_packed_to_bytes(size_t n_samples)
+{
+    const size_t sample_size = 3*sizeof(int8_t);
+    assert(n_samples <= (SIZE_MAX / sample_size));
+    return n_samples * sample_size;
+}
+
+/*
  * Convert bytes to SC16Q11 samples
  */
 static inline size_t bytes_to_sc16q11(size_t n_bytes)
@@ -71,6 +83,9 @@ static inline size_t samples_to_bytes(bladerf_format format, size_t n)
         case BLADERF_FORMAT_SC8_Q7:
         case BLADERF_FORMAT_SC8_Q7_META:
             return sc8q7_to_bytes(n);
+
+        case BLADERF_FORMAT_SC16_Q11_PACKED:
+            return sc16q11_packed_to_bytes(n);
 
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
@@ -93,6 +108,7 @@ static inline size_t bytes_to_samples(bladerf_format format, size_t n)
         case BLADERF_FORMAT_SC8_Q7_META:
             return bytes_to_sc8q7(n);
 
+        case BLADERF_FORMAT_SC16_Q11_PACKED:
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
             return bytes_to_sc16q11(n);
