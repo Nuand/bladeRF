@@ -35,7 +35,7 @@
 #include "conversions.h"
 
 /* TODO Make these configurable */
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 4096*3
 #define NUM_BUFFERS 128
 #define NUM_XFERS   31
 #define TIMEOUT_MS  2500

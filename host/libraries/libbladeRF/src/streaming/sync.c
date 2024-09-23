@@ -195,6 +195,11 @@ int sync_init(struct bladerf_sync *sync,
         return BLADERF_ERR_INVAL;
     }
 
+    if (format == BLADERF_FORMAT_SC16_Q11_PACKED && (buffer_size/3) % 4096 != 0) {
+        assert(!"Invalid buffer size for SC16Q11_PACKED format. Must be a 3x multiple of 1024 samples per buffer.");
+        return BLADERF_ERR_INVAL;
+    }
+
     /* Deinitialize sync handle if it's initialized */
     sync_deinit(sync);
 
