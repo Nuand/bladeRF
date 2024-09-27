@@ -38,7 +38,7 @@ Adjust the paths as necessary on your system, depending where you installed the 
 ```
 $ mkdir build
 $ cd build
-$ cmake -DFX3_INSTALL_PATH=/opt/cypress/fx3_sdk -DCMAKE_TOOLCHAIN_FILE=../cmake/fx3-toolchain.cmake ../
+$ cmake -DFX3_INSTALL_PATH=/opt/cypress/fx3_firmware_linux -DCMAKE_TOOLCHAIN_FILE=../cmake/fx3-toolchain.cmake ../
 $ make
 ```
 
