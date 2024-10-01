@@ -1348,9 +1348,9 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
 
     if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2]) || !strcasecmp("packed", argv[2])) {
         bladerf_get_feature(state->dev, &feature);
-        if(feature == BLADERF_FEATURE_OVERSAMPLE) {
-            printf("  Error: 16bit mode not permitted when\n"
-                   "         over sampling is enabled.\n");
+        if (feature == BLADERF_FEATURE_OVERSAMPLE) {
+            printf("  Error: %s mode not permitted when over sampling is enabled.\n",
+                   !strcasecmp("packed", argv[2]) ? "Packed" : "16bit");
             goto out;
         }
 
