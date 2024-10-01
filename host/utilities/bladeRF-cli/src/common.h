@@ -119,6 +119,7 @@ struct cli_state {
     struct rxtx_data *tx; /**< Data for sample transmission */
 
     bool bit_mode_8bit; /**< Bit mode is set to 16 bits */
+    bladerf_format sample_format; /**< Sample format */
 };
 
 /**

@@ -1303,7 +1303,20 @@ out:
 int print_bitmode(struct cli_state *state, int argc, char **argv)
 {
     int rv   = CLI_RET_OK;
-    printf("  Bit Mode: %s bit samples\n", state->bit_mode_8bit ? "8" : "16");
+    const char *mode_str;
+
+    switch (state->sample_format) {
+        case BLADERF_FORMAT_SC16_Q11:
+            mode_str = "16 bit";
+            break;
+        case BLADERF_FORMAT_SC8_Q7:
+            mode_str = "8 bit";
+            break;
+        default:
+            mode_str = "Unknown";
+    }
+
+    printf("  Bit Mode: %s samples\n", mode_str);
     return rv;
 }
 
@@ -1336,18 +1349,19 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
             printf("  Error: 16bit mode not permitted when\n"
                    "         over sampling is enabled.\n");
             goto out;
-        } else if(state->bit_mode_8bit) {
-            state->bit_mode_8bit = false;
         }
+
+        state->bit_mode_8bit = false;
+        state->sample_format = BLADERF_FORMAT_SC16_Q11;
     } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
         if (!state->bit_mode_8bit) {
             if (strcmp(bladerf_get_board_name(state->dev), "bladerf2") != 0) {
                 printf("  Error: BladeRF2 required for 8bit format\n");
                 rv = CLI_RET_UNSUPPORTED;
                 goto out;
-            } else {
-                state->bit_mode_8bit = true;
             }
+            state->bit_mode_8bit = true;
+            state->sample_format = BLADERF_FORMAT_SC8_Q7;
         }
     } else {
         printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);

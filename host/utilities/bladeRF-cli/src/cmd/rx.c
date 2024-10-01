@@ -311,7 +311,6 @@ void *rx_task(void *cli_state_arg)
     struct cli_state *cli_state = (struct cli_state *)cli_state_arg;
     struct rxtx_data *rx        = cli_state->rx;
     struct rx_params *rx_params = rx->params;
-    bladerf_format sync_fmt;
 
     task_state = rxtx_get_state(rx);
     assert(task_state == RXTX_STATE_INIT);
@@ -370,12 +369,9 @@ void *rx_task(void *cli_state_arg)
                 if (status == 0) {
                     MUTEX_LOCK(&rx->data_mgmt.lock);
 
-                    sync_fmt = cli_state->bit_mode_8bit ?
-                        BLADERF_FORMAT_SC8_Q7 : BLADERF_FORMAT_SC16_Q11;
-
                     status = bladerf_sync_config(
                         cli_state->dev, rx->data_mgmt.layout,
-                        sync_fmt, rx->data_mgmt.num_buffers,
+                        cli_state->sample_format, rx->data_mgmt.num_buffers,
                         rx->data_mgmt.samples_per_buffer,
                         rx->data_mgmt.num_transfers, rx->data_mgmt.timeout_ms);
 
