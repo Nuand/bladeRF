@@ -375,7 +375,6 @@ void *tx_task(void *cli_state_arg)
     enum rxtx_state task_state;
     struct cli_state *cli_state = (struct cli_state *)cli_state_arg;
     struct rxtx_data *tx        = cli_state->tx;
-    bladerf_format sync_fmt;
 
     /* We expect to be in the IDLE state when this is kicked off. We could
      * also get into the shutdown state if the program exits before we
@@ -408,13 +407,10 @@ void *tx_task(void *cli_state_arg)
                 assert(tx->file_mgmt.file != NULL);
                 MUTEX_UNLOCK(&tx->file_mgmt.file_meta_lock);
 
-                sync_fmt = cli_state->bit_mode_8bit ?
-                    BLADERF_FORMAT_SC8_Q7 : BLADERF_FORMAT_SC16_Q11;
-
                 /* Initialize the TX synchronous data configuration */
                 status = bladerf_sync_config(
                     cli_state->dev, tx->data_mgmt.layout,
-                    sync_fmt, tx->data_mgmt.num_buffers,
+                    cli_state->sample_format, tx->data_mgmt.num_buffers,
                     tx->data_mgmt.samples_per_buffer,
                     tx->data_mgmt.num_transfers, tx->data_mgmt.timeout_ms);
 
