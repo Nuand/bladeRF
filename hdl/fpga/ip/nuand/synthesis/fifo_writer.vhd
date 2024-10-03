@@ -659,10 +659,13 @@ begin
                 if( fifo_full = '1' or ( meta_current.meta_written = '0' and meta_en = '1') ) then
                     fifo_future.fifo_write <= '0';
                     fifo_future.state      <= HOLDOFF;
+                    fifo_future.write_cycle <= fifo_current.write_cycle;
+                    fifo_future.fifo_12b_buf <= fifo_current.fifo_12b_buf;
                 end if;
 
             when HOLDOFF =>
-
+                fifo_future.write_cycle <= fifo_current.write_cycle;
+                fifo_future.fifo_12b_buf <= fifo_current.fifo_12b_buf;
                 if( fifo_enough ) then
                     fifo_future.state <= WRITE_SAMPLES;
 
