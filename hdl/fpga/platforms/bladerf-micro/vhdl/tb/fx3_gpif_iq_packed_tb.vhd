@@ -643,4 +643,34 @@ begin
         end if;
     end process look_for_dropped_rx_samples;
 
+    look_for_dropped_tx_samples: process(tx_clock)
+        variable tx_val : integer := 0;
+        variable message_count : integer := 1;
+        variable q_expected : integer := 0;
+        variable valid_tx_count : integer := 0;
+    begin
+        if rising_edge(tx_clock) then
+            for i in dac_controls'range loop
+                if dac_streams(i).data_v = '1' then
+                    q_expected := to_integer(to_signed(message_count,8) & to_signed(tx_val+1, 8));
+
+                    assert(dac_streams(i).data_i = to_signed(tx_val, 16))
+                        report "TX("&integer'image(i)&") I expected: " & integer'image(tx_val) & ", Actual: " & integer'image(to_integer(signed(dac_streams(i).data_i)))
+                        severity failure;
+                    assert(dac_streams(i).data_q = q_expected)
+                        report "TX("&integer'image(i)&") Q expected: " & integer'image(q_expected) & ", Actual: " & integer'image(to_integer(signed(dac_streams(i).data_q)))
+                        severity failure;
+
+                    -- A new message is received every 2048 samples
+                    valid_tx_count := valid_tx_count + 1;
+                    if valid_tx_count mod 2048 = 0 then
+                        message_count := message_count + 1;
+                    end if;
+
+                    tx_val := (tx_val + 2) mod 2048;
+                end if;
+            end loop;
+        end if;
+    end process look_for_dropped_tx_samples;
+
 end architecture;
