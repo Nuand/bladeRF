@@ -291,6 +291,7 @@ begin
             fx3_rx_meta_en      => meta_en_rx,
             fx3_tx_en           => '1',
             fx3_tx_meta_en      => meta_en_tx,
+            packed_mode_en      => fx3_control.highly_packed_mode,
             done                => done
         );
 

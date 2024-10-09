@@ -42,6 +42,7 @@ entity fx3_model is
     fx3_tx_en           :   in      std_logic;
     fx3_tx_meta_en      :   in      std_logic;
     eight_bit_mode_en   :   in      std_logic := '0';
+    packed_mode_en      :   in      std_logic := '0';
     done                :   out     boolean
   );
 end entity ; -- fx3_model

@@ -58,6 +58,32 @@ architecture micro_dma of fx3_model is
     signal rx_data  : std_logic_vector(31 downto 0);
     signal tx_data  : std_logic_vector(31 downto 0);
 
+    -- Generates packed samples
+    -- The host will pack SC16Q11 samples into an SC12Q11 format. Every 3 gpif_in
+    -- cycles contain 4 SC12Q11 IQ pairs.
+    --
+    -- Packing order:
+    --  Buffer 1: [--Sample1(8)--|----------Sample0(24)----------]
+    --  Buffer 2: [------Sample2(16)------|------Sample1(16)-----]
+    --  Buffer 3: [----------Sample3(24)----------|--Sample2(8)--]
+    function data_gen_packed(cycle : natural) return std_logic_vector is
+        variable four_sample_buffer : std_logic_vector(95 downto 0) := (others => '0');
+        variable buffer_offset      : integer := 0;
+        variable sample_value_ref   : integer := 0;
+        variable I                  : std_logic_vector(11 downto 0) := (others => '0');
+        variable Q                  : std_logic_vector(11 downto 0) := (others => '0');
+    begin
+        sample_value_ref := cycle / 3;
+        for j in 0 to 3 loop
+            Q := std_logic_vector(to_signed(8*sample_value_ref+2*j+1, 12));
+            I := std_logic_vector(to_signed(8*sample_value_ref+2*j, 12));
+            four_sample_buffer := Q & I & four_sample_buffer(95 downto 24);
+        end loop;
+
+        buffer_offset := (cycle mod 3) * 32;
+        return four_sample_buffer(31+buffer_offset downto buffer_offset);
+    end function data_gen_packed;
+
     impure function data_gen (count : natural) return std_logic_vector is
         variable eight_bit_msw_i : std_logic_vector(7 downto 0);
         variable eight_bit_msw_q : std_logic_vector(7 downto 0);
@@ -155,6 +181,7 @@ begin
         constant TIME_BETWEEN_ITERATIONS : natural := 7000;
         constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
+        variable cycle          : natural := 0;
         variable timestamp_cntr : natural := 400;
         variable header_len     : natural := 0;
         variable data_out       : std_logic_vector(31 downto 0);
@@ -224,7 +251,11 @@ begin
                 for i in 1 to (BLOCK_SIZE - header_len) loop
                     gpif_state_tx   <= TX_SAMPLES;
                     data_out        := data_gen(count);
-                    if( eight_bit_mode_en = '1' ) then
+                    if packed_mode_en = '1' then
+                        data_out := data_gen_packed(cycle);
+                    end if;
+
+                    if( eight_bit_mode_en = '1' or packed_mode_en = '1' ) then
                         fx3_gpif <= data_out;
                         tx_data  <= data_out;
                     else
@@ -233,6 +264,7 @@ begin
                     end if;
                     wait until rising_edge( fx3_pclk );
 
+                    cycle := cycle + 1;
                     count := (count + 4) mod 128 when eight_bit_mode_en = '1' else
                              (count + 2) mod 2048;
                     gpif_state_tx   <= IDLE;
