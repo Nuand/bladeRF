@@ -1067,6 +1067,7 @@ int sync_tx(struct bladerf_sync *s,
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
+                    case BLADERF_FORMAT_SC16_Q11_PACKED:
                     case BLADERF_FORMAT_SC8_Q7:
                         s->state = SYNC_STATE_USING_BUFFER;
                         break;
@@ -1100,9 +1101,24 @@ int sync_tx(struct bladerf_sync *s,
                 samples_to_copy = uint_min(num_samples - samples_written,
                                            samples_per_buffer - b->partial_off);
 
-                memcpy(buf_dest + samples2bytes(s, b->partial_off),
-                       samples_src + samples2bytes(s, samples_written),
-                       samples2bytes(s, samples_to_copy));
+                if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+                    // Pack SC16Q11 samples to SC12Q11 directly into destination buffer
+                    size_t zz, jj;
+                    uint8_t *packed_dest = buf_dest + samples2bytes(s, b->partial_off);
+                    int16_t const *src_ptr = (int16_t const *)(samples_src + 2*sizeof(int16_t)*samples_written);
+                    for (zz = 0, jj = 0; zz < samples_to_copy * 2; zz += 4, jj += 3) {
+                        ((uint16_t*)packed_dest)[jj+0] = src_ptr[zz+0] & 0x0FFF;
+                        ((uint16_t*)packed_dest)[jj+0] |= (src_ptr[zz+1] << 12) & 0xF000;
+                        ((uint16_t*)packed_dest)[jj+1] = (src_ptr[zz+1] >> 4) & 0x00FF;
+                        ((uint16_t*)packed_dest)[jj+1] |= (src_ptr[zz+2] << 8) & 0xFF00;
+                        ((uint16_t*)packed_dest)[jj+2] = (src_ptr[zz+2] >> 8) & 0x000F;
+                        ((uint16_t*)packed_dest)[jj+2] |= (src_ptr[zz+3] << 4) & 0xFFF0;
+                    }
+                } else {
+                    memcpy(buf_dest + samples2bytes(s, b->partial_off),
+                           samples_src + samples2bytes(s, samples_written),
+                           samples2bytes(s, samples_to_copy));
+                }
 
                 b->partial_off += samples_to_copy;
                 samples_written += samples_to_copy;
