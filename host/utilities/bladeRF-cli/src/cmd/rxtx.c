@@ -340,7 +340,7 @@ enum rxtx_fmt rxtx_str2fmt(const char *str, struct cli_state *s)
     if (!strcasecmp("csv", str)) {
         ret = RXTX_FMT_CSV;
     } else if (!strcasecmp("bin", str)) {
-        ret = (s->bit_mode_8bit) ? RXTX_FMT_BIN_SC8Q7 : RXTX_FMT_BIN_SC16Q11;
+        ret = (s->sample_format == BLADERF_FORMAT_SC8_Q7) ? RXTX_FMT_BIN_SC8Q7 : RXTX_FMT_BIN_SC16Q11;
     }
 
     return ret;
