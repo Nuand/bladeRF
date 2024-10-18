@@ -66,7 +66,7 @@ int cmd_generate(struct cli_state *s, int argc, char **argv)
     int mag = 2047;
     int i;
 
-    if (s->bit_mode_8bit) {
+    if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
         mag /= 16;
     }
     int remaining_argc;

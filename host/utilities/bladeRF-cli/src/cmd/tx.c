@@ -246,7 +246,7 @@ static int tx_csv_to_bladerf_format(struct cli_state *s)
     int max_val          = SC16Q11_IQ_MAX;
 
     // 16 bit samples are 2*int8_t samples wide
-    int sample_size      = s->bit_mode_8bit ? 1 : 2;
+    int sample_size      = (s->sample_format == BLADERF_FORMAT_SC8_Q7) ? 1 : 2;
     int status;
 
     assert(tx->file_mgmt.path != NULL);
@@ -268,7 +268,7 @@ static int tx_csv_to_bladerf_format(struct cli_state *s)
     }
 
 
-    if (s->bit_mode_8bit) {
+    if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
         min_val = SC8Q7_IQ_MIN;
         max_val = SC8Q7_IQ_MAX;
     }
@@ -332,7 +332,7 @@ static int tx_csv_to_bladerf_format(struct cli_state *s)
             tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
 
             if (n_clamped != 0) {
-               if (s->bit_mode_8bit) {
+               if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
                    printf("  Warning: %zu value%s clamped within DAC SC8 Q7 "
                           "range of [%d, %d].\n",
                           n_clamped, 1 == n_clamped ? "" : "s", SC8Q7_IQ_MIN,
@@ -483,7 +483,7 @@ static int tx_cmd_start(struct cli_state *s)
         status = tx_csv_to_bladerf_format(s);
 
         if (status == 0) {
-            if (s->bit_mode_8bit) {
+            if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
                 printf("  Converted CSV to SC8 Q7 file and "
                     "switched to converted file.\n\n");
 

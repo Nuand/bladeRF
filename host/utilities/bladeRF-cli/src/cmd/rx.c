@@ -172,7 +172,7 @@ static int rx_write_csv(struct cli_state *s,
 
     MUTEX_LOCK(&rx->file_mgmt.file_lock);
 
-    if (s->bit_mode_8bit) {
+    if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
         samples_sc8q7 = (int8_t*)samples;
         // Output 2 columns for each enabled channel
         // (2 cols for BLADERF_RX_X1, 4 cols for BLADERF_RX_X2, etc)
