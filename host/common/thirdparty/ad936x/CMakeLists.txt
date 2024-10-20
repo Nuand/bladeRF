@@ -92,6 +92,7 @@ target_include_directories(ad936x PUBLIC
 ################################################################################
 
 if(MSVC)
+    add_definitions(-DHAVE_STRUCT_TIMESPEC)
     target_include_directories(ad936x PUBLIC ${MSVC_C99_INCLUDES})
 
     find_package(LibPThreadsWin32 REQUIRED)

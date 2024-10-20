@@ -50,6 +50,14 @@ package bladerf_p is
         );
     end component;
 
+    component clk_ctrl
+    port (
+        inclk       :in  std_logic;
+        ena         :in  std_logic;
+        outclk      :out std_logic
+    );
+    end component;
+
     component nios_system is
       port (
         clk_clk                         :   in  std_logic := 'X';

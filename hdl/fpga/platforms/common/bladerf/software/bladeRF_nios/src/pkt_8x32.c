@@ -126,5 +126,13 @@ void pkt_8x32(struct pkt_buf *b)
         success = perform_read(id, addr, &data);
     }
 
+    if (!success && is_write) {
+        DBG("Failed to write 0x%08x to 0x%02x\n", data, addr);
+    }
+
+    if (!success && !is_write) {
+        DBG("Failed to read from 0x%02x\n", addr);
+    }
+
     nios_pkt_8x32_resp_pack(b->resp, id, is_write, addr, data, success);
 }

@@ -161,6 +161,11 @@
  */
 #define BLADERF_CAP_FPGA_8BIT_SAMPLES (((uint64_t)1) << 39)
 
+/**
+ * Max number of gain calibration tables associated to max number of channels
+ */
+#define NUM_GAIN_CAL_TBLS 4
+
 struct bladerf {
     /* Handle lock - to ensure atomic access to control and configuration
      * operations */
@@ -192,6 +197,9 @@ struct bladerf {
 
     /* Enabled feature */
     bladerf_feature feature;
+
+    /* Calibration */
+    struct bladerf_gain_cal_tbl gain_tbls[NUM_GAIN_CAL_TBLS];
 };
 
 struct board_fns {

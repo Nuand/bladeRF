@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
         if (status != 0) {
             fprintf(stderr, "Failed to open device: %s\n",
                     bladerf_strerror(status));
+            return EXIT_FAILURE;
         } else {
             usleep(wait);
             bladerf_close(dev);
@@ -108,5 +109,5 @@ int main(int argc, char *argv[])
     }
 
 
-    return 0;
+    return EXIT_SUCCESS;
 }

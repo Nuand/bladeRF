@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(libbladeRF_doc_examples C)
 
 set(INCLUDES
@@ -35,3 +35,6 @@ target_link_libraries(libbladeRF_example_boilerplate ${LIBS})
 
 add_executable(libbladeRF_example_quick_tune quick_tune.c)
 target_link_libraries(libbladeRF_example_quick_tune ${LIBS})
+
+add_executable(libbladeRF_example_freq_range_sweep freq_range_sweep.c)
+target_link_libraries(libbladeRF_example_freq_range_sweep ${LIBS})

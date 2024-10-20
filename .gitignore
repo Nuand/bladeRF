@@ -34,9 +34,7 @@ hdl/quartus/qpsk_txx*
 fx3_firmware/make/toolchain.mk
 fx3_firmware/build/*
 
-build/*
-
-host/build/*
+build/
 
 host/examples/gnuradio/frs/bladeRF_frs.py
 
@@ -54,3 +52,10 @@ host/misc/windows/scripts/work
 **/modelsim/*.wlf
 **/modelsim/work/
 **/modelsim/nuand/
+
+# Common Python virtual environment names
+env/
+venv/
+ENV/
+
+.vscode/

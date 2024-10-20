@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 
+#include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -72,7 +73,7 @@ void sig_handler(int signo)
     }
 }
 
-int run_test(struct bladerf *dev)
+int run_test(struct bladerf *dev, uint32_t iterations)
 {
     const char *board_name;
     int status;
@@ -159,7 +160,7 @@ int run_test(struct bladerf *dev)
         goto out;
     }
 
-    for (i = 0; i < ITERATIONS; i++) {
+    for (i = 0; i < iterations; i++) {
         for( f = 0; f < NUM_FREQS; f++ ) {
 
             if (!is_running) {
@@ -205,18 +206,63 @@ out:
     return status;
 }
 
+#define OPTARG "i:d:v:h"
+static struct option long_options[] = {
+    { "iterations", required_argument,  NULL,   'i' },
+    { "device",     required_argument,  NULL,   'd' },
+    { "verbosity",  required_argument,  NULL,   'v' },
+    { "help",       no_argument,        NULL,   'h' },
+    { NULL,         0,                  NULL,   0   },
+};
+
 int main(int argc, char *argv[])
 {
     int status;
+    int opt = 0;
+    int opt_ind = 0;
+    uint32_t iterations = ITERATIONS;
+    bool ok;
     struct bladerf *dev = NULL;
+    bladerf_log_level log_level;
     const char *devstr = NULL;
 
-    if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
-        fprintf(stderr, "TX a tone across %d frequencies.\n", NUM_FREQS);
-        fprintf(stderr, "Usage: %s [device string]\n", argv[0]);
-        return 1;
-    } else {
-        devstr = argv[1];
+    while (opt != -1) {
+        opt = getopt_long(argc, argv, OPTARG, long_options, &opt_ind);
+
+        switch (opt) {
+            case 'i':
+                iterations = str2uint(optarg, 0, UINT32_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Iterations arg invalid: %s\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                break;
+
+            case 'd':
+                devstr = optarg;
+                printf("devstr: %s\n", devstr);
+                break;
+
+            case 'v':
+                log_level = str2loglevel(optarg, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid log level: %s\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                bladerf_log_set_verbosity(log_level);
+                break;
+
+            case 'h':
+                printf("TX a tone across %d frequencies.\n", NUM_FREQS);
+                printf("  -d, --device <str>    Specify device to open.\n");
+                printf("  -v, --verbosity <l>   Set libbladeRF verbosity level.\n");
+                printf("  -h, --help            Show this text.\n");
+                printf("\n");
+                return EXIT_SUCCESS;
+
+            default:
+                break;
+        }
     }
 
     if (signal(SIGINT, sig_handler) == SIG_ERR) {
@@ -232,7 +278,8 @@ int main(int argc, char *argv[])
         return status;
     }
 
-    status = run_test(dev);
+    printf("Iterations: %d\n", iterations);
+    status = run_test(dev, iterations);
 
     bladerf_close(dev);
     return status;

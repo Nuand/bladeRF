@@ -70,6 +70,36 @@ static const struct test_case tests[] = {
     { 1024 * 1024,      4097,           50 },
 };
 
+static const struct test_case fast_tests[] = {
+    /* Gap          Read Size       Iterations */
+    { 1,               1,               1000 },
+    { 17,               1,              500 },
+    { 17,               2,              500 },
+    { 17,               13,             500 },
+    { 17,               16,             500 },
+    { 1 * 1024,         1,              10 },
+    { 1 * 1024,         2,              10 },
+    { 1 * 1024,         13,             10 },
+    { 1 * 1024,         16,             10 },
+    { 1 * 1024,         64,             10 },
+    { 1 * 1024,         64,             10 },
+    { 1 * 1024,         1024,           10 },
+    { 2 * 1024,         1,              5 },
+    { 2 * 1024,         2,              5 },
+    { 2 * 1024,         13,             5 },
+    { 2 * 1024,         16,             5 },
+    { 2 * 1024,         64,             5 },
+    { 2 * 1024,         64,             5 },
+    { 2 * 1024,         1024,           5 },
+    { 2 * 1024,         2 * 1024,       5 },
+    { 1024 * 1024,      64,             3 },
+    { 1024 * 1024,      1023,           3 },
+    { 1024 * 1024,      1024,           3 },
+    { 1024 * 1024,      4095,           3 },
+    { 1024 * 1024,      4096,           3 },
+    { 1024 * 1024,      4097,           3 },
+};
+
 static int run(struct bladerf *dev, struct app_params *p,
                int16_t *samples, const struct test_case *t)
 {
@@ -169,6 +199,7 @@ int test_fn_rx_scheduled(struct bladerf *dev, struct app_params *p)
     int status = 0;
     int16_t *samples;
     size_t i;
+    const struct test_case *case_to_run = (p->fast_test) ? fast_tests : tests;
 
     samples = malloc(p->buf_size * 2 * sizeof(int16_t));
     if (samples == NULL) {
@@ -177,7 +208,7 @@ int test_fn_rx_scheduled(struct bladerf *dev, struct app_params *p)
     }
 
     for (i = 0; i < ARRAY_SIZE(tests) && status == 0; i++) {
-        status = run(dev, p, samples, &tests[i]);
+        status = run(dev, p, samples, &case_to_run[i]);
     }
 
     free(samples);

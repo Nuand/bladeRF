@@ -187,6 +187,7 @@ int sync_init(struct bladerf_sync *sync,
 
     /* bladeRF GPIF DMA requirement */
     if ((bytes_per_sample * buffer_size) % 4096 != 0) {
+        assert(!"Invalid buffer size");
         return BLADERF_ERR_INVAL;
     }
 
@@ -221,6 +222,7 @@ int sync_init(struct bladerf_sync *sync,
     sync->meta.msg_size = msg_size;
     sync->meta.msg_per_buf = msg_per_buf(msg_size, buffer_size, bytes_per_sample);
     sync->meta.samples_per_msg = samples_per_msg(msg_size, bytes_per_sample);
+    sync->meta.samples_per_ts = (layout == BLADERF_RX_X2 || layout == BLADERF_TX_X2) ? 2:1;
 
     log_verbose("%s: Buffer size (in bytes): %u\n",
                 __FUNCTION__, buffer_size * bytes_per_sample);
@@ -279,6 +281,7 @@ int sync_init(struct bladerf_sync *sync,
                 sync->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
             }
 
+            sync->meta.msg_timestamp = 0;
             sync->meta.in_burst = false;
             sync->meta.now = false;
             break;
@@ -360,6 +363,15 @@ static int wait_for_buffer(struct buffer_mgmt *b,
 #   define SYNC_WORKER_START_TIMEOUT_MS 250
 #endif
 
+/* Returns # of timestamps (or time steps) left in a message */
+static inline unsigned int ts_remaining(struct bladerf_sync *s)
+{
+    size_t ret = s->meta.samples_per_msg / s->meta.samples_per_ts - s->meta.curr_msg_off;
+    assert(ret <= UINT_MAX);
+
+    return (unsigned int) ret;
+}
+
 /* Returns # of samples left in a message (SC16Q11 mode only) */
 static inline unsigned int left_in_msg(struct bladerf_sync *s)
 {
@@ -404,6 +416,12 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
         log_debug("NULL pointer passed to %s\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     } else if (!s->initialized) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (num_samples % s->meta.samples_per_ts != 0) {
+        log_debug("%s: %u samples %% %u channels != 0\n",
+                  __FUNCTION__, num_samples, s->meta.samples_per_ts);
         return BLADERF_ERR_INVAL;
     }
 
@@ -673,10 +691,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                             copied_data = true;
 
-                            if (s->stream_config.layout == BLADERF_RX_X2)
-                               s->meta.curr_timestamp += samples_to_copy / 2;
-                            else
-                               s->meta.curr_timestamp += samples_to_copy;
+                            s->meta.curr_timestamp += samples_to_copy / s->meta.samples_per_ts;
 
                             /* We've begun copying samples, so our target will
                              * just keep tracking the current timestamp. */
@@ -700,9 +715,8 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             }
 
                         } else {
-                            const uint64_t time_delta =
-                                target_timestamp - s->meta.curr_timestamp;
-
+                            const uint64_t time_delta = target_timestamp - s->meta.curr_timestamp;
+                            uint64_t samples_left = time_delta * s->meta.samples_per_ts;
                             uint64_t left_in_buffer =
                                 (uint64_t) s->meta.samples_per_msg *
                                     (s->meta.msg_per_buf - s->meta.msg_num);
@@ -710,7 +724,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             /* Account for current position in buffer */
                             left_in_buffer -= s->meta.curr_msg_off;
 
-                            if (time_delta >= left_in_buffer) {
+                            if (samples_left >= left_in_buffer) {
                                 /* Discard the remainder of this buffer */
                                 advance_rx_buffer(b);
                                 s->state = SYNC_STATE_WAIT_FOR_BUFFER;
@@ -719,10 +733,11 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                                 log_verbose("%s: Discarding rest of buffer.\n",
                                             __FUNCTION__);
 
-                            } else if (time_delta <= left_in_msg(s)) {
+                            } else if (time_delta <= ts_remaining(s)) {
                                 /* Fast forward within the current message */
                                 assert(time_delta <= SIZE_MAX);
-                                s->meta.curr_msg_off += (size_t) time_delta;
+
+                                s->meta.curr_msg_off += (size_t)samples_left;
                                 s->meta.curr_timestamp += time_delta;
 
                                 log_verbose("%s: Seeking within message (t=%llu)\n",
@@ -730,8 +745,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                                             s->meta.curr_timestamp);
                             } else {
                                 s->meta.state = SYNC_META_STATE_HEADER;
-
-                                s->meta.msg_num += timestamp_to_msg(s, time_delta);
+                                s->meta.msg_num += timestamp_to_msg(s, samples_left);
 
                                 log_verbose("%s: Seeking to message %u.\n",
                                             __FUNCTION__, s->meta.msg_num);
@@ -1196,7 +1210,7 @@ int sync_tx(struct bladerf_sync *s,
                                    samples2bytes(s, samples_to_copy));
 
                             s->meta.curr_msg_off += samples_to_copy;
-                            if (s->stream_config.layout == BLADERF_RX_X2)
+                            if (s->stream_config.layout == BLADERF_TX_X2)
                                s->meta.curr_timestamp += samples_to_copy / 2;
                             else
                                s->meta.curr_timestamp += samples_to_copy;

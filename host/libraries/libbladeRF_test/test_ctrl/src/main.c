@@ -55,10 +55,11 @@ static const struct test_case *tests[] = {
     // clang-format on
 };
 
-#define OPTARG "d:t:s:T:v:hL"
+#define OPTARG "d:ft:s:T:v:hL"
 static const struct option long_options[] = {
     // clang-format off
     { "device",     required_argument,  0,      'd'},
+    { "fast",       no_argument,        0,      'f'},
     { "test",       required_argument,  0,      't'},
     { "seed",       required_argument,  0,      's'},
     { "help",       no_argument,        0,      'h'},
@@ -82,6 +83,7 @@ void usage(const char *argv0)
     printf("\nOptions:\n");
     printf("  -d, --device <str>            Open the specified device.\n");
     printf("                                By default, any device is used.\n");
+    printf("  -f, --fast                    Run fast test.\n");
     printf("  -t, --test <name>             Run specified test.\n");
     printf("  -s, --seed <seed>             Use specified seed for PRNG.\n");
     printf("  -h, --help                    Show this text.\n");
@@ -114,6 +116,7 @@ int get_params(int argc, char *argv[], struct app_params *p)
     p->randval_seed   = 1;
     p->tuning_mode    = BLADERF_TUNING_MODE_INVALID;
     p->module_enabled = false;
+    p->fast_test      = false;
 
     while ((c = getopt_long(argc, argv, OPTARG, long_options, &idx)) != -1) {
         switch (c) {
@@ -128,6 +131,10 @@ int get_params(int argc, char *argv[], struct app_params *p)
                         return -1;
                     }
                 }
+                break;
+
+            case 'f':
+                p->fast_test = true;
                 break;
 
             case 't':

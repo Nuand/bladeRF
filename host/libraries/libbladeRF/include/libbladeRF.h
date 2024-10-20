@@ -51,7 +51,7 @@
  *
  *  https://github.com/Nuand/bladeRF/blob/master/doc/development/versioning.md
  */
-#define LIBBLADERF_API_VERSION (0x02050000)
+#define LIBBLADERF_API_VERSION (0x02050100)
 
 #ifdef __cplusplus
 extern "C" {
@@ -1880,6 +1880,8 @@ struct bladerf_quick_tune {
  *       BLADERF_ERR_QUEUE_FULL will be returned. In this case, it should be
  *       possible to schedule a retune after the timestamp of one of the earlier
  *       requests occurs.
+
+ * @note NULL quick_tune parameters are not supported by the bladeRF 2.0 micro.
  */
 API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
@@ -1928,6 +1930,25 @@ API_EXPORT
 int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
                                      bladerf_channel ch,
                                      struct bladerf_quick_tune *quick_tune);
+
+/**
+ * @brief Prints the quick retune parameters for a bladeRF device.
+ *
+ * Outputs the current quick retune parameters of a bladeRF device
+ * to standard output. It is useful for debugging and verifying the
+ * configuration of quick tune settings.
+ *
+ * @note supported devices: bladeRF1, bladeRF2
+ *
+ * @param[in]   dev         Device handle. Must not be NULL.
+ * @param[in]   qt          Pointer to the `bladerf_quick_tune` structure containing
+ *                          the quick retune parameters. Must not be NULL.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int bladerf_print_quick_tune(struct bladerf *dev,
+                             const struct bladerf_quick_tune *qt);
 
 /** @} (End of FN_SCHEDULED_TUNING) */
 
@@ -2209,9 +2230,8 @@ typedef enum {
      * exclusive. Ensure that provided samples stay within [-128, 127].
      *
      * Samples consist of interleaved IQ value pairs, with I being the first
-     * value in the pair. Each value in the pair is a right-aligned,
-     * little-endian int16_t. The FPGA ensures that these values are
-     * sign-extended.
+     * value in the pair. Each value in the pair is a right-aligned int8_t.
+     * The FPGA ensures that these values are sign-extended.
      *
      * <pre>
      *  .--------------.--------------.
@@ -3269,6 +3289,7 @@ typedef enum {
     BLADERF_IMAGE_TYPE_RX_IQ_CAL,    /**< RX IQ balance calibration table */
     BLADERF_IMAGE_TYPE_TX_IQ_CAL,    /**< TX IQ balance calibration table */
     BLADERF_IMAGE_TYPE_FPGA_A5,      /**< FPGA bitstream for A5 device */
+    BLADERF_IMAGE_TYPE_GAIN_CAL,     /**< Gain calibration */
 } bladerf_image_type;
 
 /** Size of the magic signature at the beginning of bladeRF image files */
@@ -3370,6 +3391,11 @@ struct bladerf_image {
  * The `address` and `length` fields should be set 0 when reading an image from
  * a file.
  *
+ * @param[in] dev       Device handle
+ * @param[in] type      Image type to be created, represented by `bladerf_image_type`
+ * @param[in] address   Address in flash memory where the image is stored. Use 0xffffffff if not applicable.
+ * @param[in] length    Length of the image data in bytes
+ *
  * @return Pointer to allocated and initialized structure on success,
  *         `NULL` on memory allocation failure or invalid address/length.
  */
@@ -3405,6 +3431,41 @@ struct bladerf_image *CALL_CONV bladerf_alloc_cal_image(
  */
 API_EXPORT
 void CALL_CONV bladerf_free_image(struct bladerf_image *image);
+
+/**
+ * @brief Prints the metadata of a bladeRF image structure.
+ *
+ * This function displays the metadata of a provided `bladerf_image` structure.
+ * It includes information such as the magic number, version, timestamp, serial number,
+ * address, and length of the image. The function will return an error code if the
+ * provided image pointer is `NULL`.
+ *
+ * @pre The image should have been allocated using bladerf_alloc_image().
+ *
+ * @note This function only prints the metadata of the image and does not
+ *       perform any operations on the image data itself.
+ *
+ * @param[in] image Pointer to the `bladerf_image` structure whose metadata is to be printed.
+ *                  It should not be `NULL`.
+ *
+ * @return 0 on success, BLADERF_ERR_MEM if the image pointer is `NULL`.
+ */
+API_EXPORT
+int CALL_CONV bladerf_image_print_metadata(const struct bladerf_image *image);
+
+/**
+ * @brief Converts a bladeRF image type to its corresponding string representation.
+ *
+ * This function maps a `bladerf_image_type` enumeration value to a human-readable
+ * string. It is useful for logging, debugging, or displaying the image type
+ * to an end user.
+ *
+ * @param[in] type The `bladerf_image_type` enumeration value to be converted.
+ *
+ * @return A pointer to a string representing the image type. Returns "Unknown Type"
+ *         for any unrecognized or out-of-range values.
+ */
+const char* bladerf_image_type_to_string(bladerf_image_type type);
 
 /**
  * Write a flash image to a file.
@@ -3589,18 +3650,14 @@ int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
 /**
  * Frequency tuning modes
  *
- * ::BLADERF_TUNING_MODE_HOST is the default if either of the following
- * conditions are true:
- *   - libbladeRF < v1.3.0
- *   - FPGA       < v0.2.0
+ * The default tuning mode, `BLADERF_TUNING_MODE_HOST`, can be overridden by
+ * setting a BLADERF_DEFAULT_TUNING_MODE environment variable to `host` or `fpga`.
  *
- * ::BLADERF_TUNING_MODE_FPGA is the default if both of the following
- * conditions are true:
+ * ::BLADERF_TUNING_MODE_HOST is the default tuning mode.
+ *
+ * ::BLADERF_TUNING_MODE_FPGA requirements:
  *  - libbladeRF >= v1.3.0
  *  - FPGA       >= v0.2.0
- *
- * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
- * environment variable to `host` or `fpga`.
  *
  * @note Overriding this value with a mode not supported by the FPGA will result
  *       in failures or unexpected behavior.
@@ -4112,6 +4169,161 @@ int CALL_CONV bladerf_get_feature(struct bladerf *dev,
                                   bladerf_feature* feature);
 
 /** @} (End of FN_SF) */
+
+/**
+ * @defgroup FN_CAL Gain Calibration
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * @brief Individual gain calibration entry. Each entry associates a frequency
+ * with a corresponding gain correction factor.
+ */
+struct bladerf_gain_cal_entry {
+    bladerf_frequency freq;   /**< Frequency (Hz) */
+    double gain_corr;         /**< Gain correction factor */
+};
+
+/**
+ * @brief Gain calibration table. The table contains a series of
+ * entries, each associating a frequency with a gain correction factor. Entries
+ * are sorted by frequency, from start_freq to stop_freq.
+ */
+struct bladerf_gain_cal_tbl {
+    struct bladerf_version version;         /**< Table format version */
+    bladerf_channel ch;                     /**< Channel */
+    bool enabled;                           /**< Whether gain calibration is enabled. */
+    uint32_t n_entries;                     /**< Number of entries */
+    bladerf_frequency start_freq;           /**< Start frequency (Hz) */
+    bladerf_frequency stop_freq;            /**< Stop frequency (Hz) */
+    struct bladerf_gain_cal_entry *entries; /**< Sorted calibration entries */
+    bladerf_gain gain_target;               /**< Compensated gain */
+    size_t file_path_len;                   /**< Length of the file path string. */
+    char *file_path;                        /**< Path to the file from which the table was loaded. */
+    enum gain_cal_state {
+        BLADERF_GAIN_CAL_UNINITIALIZED,
+        BLADERF_GAIN_CAL_LOADED,
+        BLADERF_GAIN_CAL_UNLOADED
+    } state; /**< Calibration state */
+};
+
+
+/**
+ * @brief Loads and applies gain calibration for a specified channel from a
+ * file.
+ *
+ * This function adjusts the specified channel's gain settings on the bladeRF
+ * device using calibration data from the provided file path. It supports
+ * calibration files in CSV format, automatically converting them to binary
+ * format as required by the device. This ensures the device operates with
+ * optimized gain settings across its frequency range. The operation is
+ * protected by mutex locks to maintain thread safety.
+ *
+ * @param[in] dev          Pointer to the initialized bladeRF device.
+ * @param[in] ch           The target channel (RX or TX) for gain calibration.
+ * @param[in] cal_file_loc Path to the calibration file, either in CSV or binary
+ * format. CSV files are converted to binary format during the process.
+ *
+ * @return 0 on success, indicating that the calibration data was successfully
+ * applied to the channel. Returns BLADERF_ERR_UNSUPPORTED if the device or
+ * channel does not support gain calibration. Other BLADERF_ERR_* error codes
+ * indicate specific failures, such as file access issues or conversion errors.
+ */
+API_EXPORT
+int CALL_CONV bladerf_load_gain_calibration(struct bladerf *dev,
+                                            bladerf_channel ch,
+                                            const char* cal_file_loc);
+
+/**
+ * @brief Displays gain calibration details for a specified channel.
+ *
+ * Outputs the gain calibration information to the console. The level of detail
+ * is adjustable via `with_entries`.
+ *
+ * @note This operation is thread-safe.
+ *
+ * @param[in] dev          Non-NULL pointer to a bladeRF device.
+ * @param[in] ch           Channel to display gain calibration for. Use
+ * `bladerf_channel`.
+ * @param[in] with_entries Set to `true` to print all calibration entries, or
+ * `false` for a summary only.
+ *
+ * @return 0 on success, BLADERF_ERR_UNSUPPORTED if calibration is not supported
+ * on the device, or other BLADERF_ERR_* codes for different failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_print_gain_calibration(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   bool with_entries);
+
+/**
+ * @brief Toggles gain calibration for a specified channel.
+ *
+ * Enables or disables automatic gain adjustment based on a preloaded
+ * calibration table for the specified channel. This operation is thread-safe.
+
+ *
+ * @note Gain calibration mode persists until device reset or power cycle.
+ * Ensure a calibration table is loaded before enabling.
+
+ *
+ * @param[in] dev  Non-NULL pointer to the bladeRF device.
+ * @param[in] ch   Channel (`BLADERF_CHANNEL_RX(0)`, `BLADERF_CHANNEL_TX(0)`,
+ * etc.) to set gain calibration for.
+ * @param[in] en   `true` to enable or `false` to disable gain calibration.
+ *
+ * @return 0 on success, or a `BLADERF_ERR_*` code on failure (e.g., if
+ * calibration table is not initialized).
+ */
+API_EXPORT
+int CALL_CONV bladerf_enable_gain_calibration(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    bool en);
+
+/**
+ * @brief Provides read-only access to a channel's gain calibration table.
+ *
+ * Returns a read-only pointer to a specified channel's gain calibration table,
+ * preventing modification. Access is thread-safe, protected by device mutexes.
+ *
+ * @param[in]  dev Non-NULL pointer to a BladeRF device structure.
+ * @param[in]  ch  Channel to retrieve the gain calibration table for.
+ * @param[out] tbl On success, updated to point to the read-only gain
+ * calibration table.
+ *
+ * @return 0 on success, BLADERF_ERR_UNEXPECTED if the table is not loaded, or
+ * BLADERF_ERR_INVAL for invalid inputs.
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_cal_tbl **tbl);
+
+/**
+ * @brief Computes the gain target for a specified channel, incorporating
+ * calibration corrections.
+ *
+ * For a channel, this calculates the target gain considering the current gain
+ * setting and calibration corrections, if available. In MGC mode, it returns
+ * the target gain from the calibration table. In AGC mode, it adjusts the
+ * target based on the calibration correction for the current frequency.
+ *
+ * @note Access to device and calibration data is thread-safe.
+ *
+ * @param[in]  dev         Non-NULL pointer to a BladeRF device.
+ * @param[in]  ch          Channel (RX/TX) for querying the gain target.
+ * @param[out] gain_target Where to store the computed gain target. Reflects
+ * current gain and calibration corrections.
+ *
+ * @return 0 if successful, with `gain_target` updated. On failure, returns
+ * BLADERF_ERR_UNEXPECTED if calibration is uninitialized, or other error codes
+ * for different failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_target(struct bladerf *dev, bladerf_channel ch, int *gain_target);
+
+/** @} (End of FN_CAL) */
 
 /**
  * @defgroup    FN_XB   Expansion board support

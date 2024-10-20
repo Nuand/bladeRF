@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(libbladeRF C)
 
 
@@ -8,7 +8,10 @@ project(libbladeRF C)
 
 set(VERSION_INFO_MAJOR  2)
 set(VERSION_INFO_MINOR  5)
-set(VERSION_INFO_PATCH  0)
+set(VERSION_INFO_PATCH  1)
+set(LIBBLADERF_VERSION
+  ${VERSION_INFO_MAJOR}.${VERSION_INFO_MINOR}.${VERSION_INFO_PATCH})
+
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
     set(VERSION_INFO_EXTRA "git")
@@ -349,6 +352,7 @@ set(LIBBLADERF_SOURCE
         src/helpers/configfile.c
         src/version.h
         src/devinfo.c
+        src/device_calibration.c
         src/bladerf.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
@@ -522,6 +526,26 @@ install(TARGETS libbladerf_shared
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR} # .dll
 )
 
+# ###############################################################################
+# CMake Config Files
+# ###############################################################################
+configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/libbladeRFConfigVersion.cmake.in
+    ${PROJECT_BINARY_DIR}/bladeRFConfigVersion.cmake @ONLY)
+
+configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/libbladeRFConfig.cmake.in
+    ${PROJECT_BINARY_DIR}/bladeRFConfig.cmake @ONLY)
+
+set(cmake_files
+    ${PROJECT_BINARY_DIR}/bladeRFConfig.cmake
+    ${PROJECT_BINARY_DIR}/bladeRFConfigVersion.cmake)
+
+if(UNIX)
+    install(FILES ${cmake_files} DESTINATION share/cmake/bladeRF)
+elseif(WIN32)
+    install(FILES ${cmake_files} DESTINATION cmake)
+endif()
 
 ################################################################################
 # Informational output

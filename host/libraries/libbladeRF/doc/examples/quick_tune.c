@@ -40,6 +40,16 @@ int example(struct bladerf *dev, bladerf_channel ch)
                     frequencies[i], bladerf_strerror(status));
             return status;
         }
+
+        printf("Frequency: %u Hz\n", frequencies[i]);
+        status = bladerf_print_quick_tune(dev, &quick_tunes[i]);
+        if (status != 0) {
+            fprintf(stderr, "Failed to print quick tune for %u Hz: %s\n",
+                    frequencies[i], bladerf_strerror(status));
+            return status;
+        }
+
+        printf("\n");
     }
 
     for (i = j = 0; i < ITERATIONS; i++) {

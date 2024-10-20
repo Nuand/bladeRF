@@ -1,0 +1,11 @@
+contourpy==1.1.1
+cycler==0.12.0
+fonttools==4.43.1
+kiwisolver==1.4.5
+matplotlib==3.8.0
+numpy==1.26.0
+packaging==23.2
+Pillow==10.0.1
+pyparsing==3.1.1
+python-dateutil==2.8.2
+six==1.16.0

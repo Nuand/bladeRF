@@ -786,8 +786,6 @@ static int bladerf2_get_gain_modes(struct bladerf *dev,
                                    bladerf_channel ch,
                                    struct bladerf_gain_modes const **modes)
 {
-    NULL_CHECK(modes);
-
     struct bladerf_gain_modes const *mode_infos;
     unsigned int mode_infos_len;
 
@@ -799,7 +797,9 @@ static int bladerf2_get_gain_modes(struct bladerf *dev,
         mode_infos_len = ARRAY_SIZE(bladerf2_rx_gain_modes);
     }
 
-    *modes = mode_infos;
+    if (modes != NULL) {
+        *modes = mode_infos;
+    }
 
     return mode_infos_len;
 }
@@ -957,7 +957,11 @@ static int bladerf2_get_sample_rate_range(struct bladerf *dev,
 {
     NULL_CHECK(range);
 
-    *range = &bladerf2_sample_rate_range;
+    *range = &bladerf2_sample_rate_range_base;
+
+    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE) {
+        *range = &bladerf2_sample_rate_range_oversample;
+    }
 
     return 0;
 }
@@ -1081,6 +1085,11 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
             txfir != BLADERF_RFIC_TXFIR_INT4) {
             log_debug("%s: enabling 4x decimation/interpolation filters\n",
                       __FUNCTION__);
+
+            /* Intermidiate sample rate assignment to circumvent rfic->set_filter error */
+            if ((current > 40e6 && rate < 2083334) || (rate > 40e6 && current < 2083334)) {
+                CHECK_STATUS(rfic->set_sample_rate(dev, ch, 30e6));
+            }
 
             status = rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
                                       BLADERF_RFIC_RXFIR_DEC4, 0);
@@ -3564,6 +3573,10 @@ int bladerf_set_clock_select(struct bladerf *dev, bladerf_clock_select sel)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    if (bladerf_device_speed(dev) == BLADERF_DEVICE_SPEED_HIGH) {
+        log_warning("USB 3.0 recommended for reliable clock select assignment.\n");
+    }
 
     WITH_MUTEX(&dev->lock, {
         uint32_t gpio;

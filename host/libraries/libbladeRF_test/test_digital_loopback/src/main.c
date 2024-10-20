@@ -69,8 +69,8 @@ struct rx_buffer_state {
  * Constants
  ******************************************************************************/
 
-static uint16_t const CONSTANT_PATTERN_I = 0x2ee;
-static uint16_t const CONSTANT_PATTERN_Q = 0x2cc;
+static uint16_t CONSTANT_PATTERN_I = 0x2ee;
+static uint16_t CONSTANT_PATTERN_Q = 0x2cc;
 
 static uint16_t const SAMPLE_MIN = -2047;
 static uint16_t const SAMPLE_MAX = 2047;
@@ -176,12 +176,23 @@ void *tx_callback(struct bladerf *dev,
                 break;
         }
 
-        buf[i]     = i_val;
-        buf[i + 1] = q_val;
+        if (stream->format == BLADERF_FORMAT_SC8_Q7) {
+            ((int8_t *)buf)[i]     = i_val;
+            ((int8_t *)buf)[i + 1] = q_val;
 
-        if (skip_by == 4) {
-            buf[i + 2] = i_val;
-            buf[i + 3] = q_val;
+            if (skip_by == 4) {
+                ((int8_t *)buf)[i + 2] = i_val;
+                ((int8_t *)buf)[i + 3] = q_val;
+            }
+
+        } else {
+            buf[i]     = i_val;
+            buf[i + 1] = q_val;
+
+            if (skip_by == 4) {
+                buf[i + 2] = i_val;
+                buf[i + 3] = q_val;
+            }
         }
     }
 
@@ -214,7 +225,7 @@ void *tx_streamer(void *context)
  * RX Sample Processing
  ******************************************************************************/
 
-bool check_rx(uint16_t *buf, size_t i, uint16_t expected_i, uint16_t expected_q)
+bool check_rx(uint16_t *buf, size_t i, uint16_t expected_i, uint16_t expected_q, bladerf_format fmt)
 {
     static size_t error_dump    = 0;
     static bool error_throttled = false;
@@ -229,7 +240,11 @@ bool check_rx(uint16_t *buf, size_t i, uint16_t expected_i, uint16_t expected_q)
                 "%04x,%04x\n",
                 i / 2, expected_i, expected_q, buf[i], buf[i + 1]);
 
-    if (buf[i] == expected_i && buf[i + 1] == expected_q) {
+    if (fmt == BLADERF_FORMAT_SC8_Q7
+            && ((int8_t *)buf)[i] == (int8_t)expected_i
+            && ((int8_t *)buf)[i + 1] == (int8_t)expected_q) {
+        return true;
+    } else if (buf[i] == expected_i && buf[i + 1] == expected_q) {
         return true;
     } else {
         if (!error_throttled) {
@@ -284,7 +299,7 @@ void *rx_callback(struct bladerf *dev,
                 expected_i = CONSTANT_PATTERN_I;
                 expected_q = CONSTANT_PATTERN_Q;
 
-                if (check_rx(buf, i, expected_i, expected_q)) {
+                if (check_rx(buf, i, expected_i, expected_q, stream->format)) {
                     ++good_count;
                 } else {
                     match = false;
@@ -297,7 +312,7 @@ void *rx_callback(struct bladerf *dev,
                 expected_i = (value >> 32) & 0x3ff;
                 expected_q = value & 0x3ff;
 
-                if (check_rx(buf, i, expected_i, expected_q)) {
+                if (check_rx(buf, i, expected_i, expected_q, stream->format)) {
                     ++good_count;
                 } else {
                     match = false;
@@ -309,7 +324,7 @@ void *rx_callback(struct bladerf *dev,
                 expected_i = state->i_count++;
                 expected_q = state->q_count--;
 
-                if (check_rx(buf, i, expected_i, expected_q)) {
+                if (check_rx(buf, i, expected_i, expected_q, stream->format)) {
                     ++good_count;
                 } else {
                     match = false;
@@ -475,6 +490,8 @@ int main(int argc, char *argv[])
                     bitmode = BLADERF_FORMAT_SC16_Q11;
                 } else if (strcmp(optarg, "8bit") == 0 || strcmp(optarg, "8") == 0) {
                     bitmode = BLADERF_FORMAT_SC8_Q7;
+                    CONSTANT_PATTERN_I -= 0x200;
+                    CONSTANT_PATTERN_Q -= 0x200;
                 } else {
                     log_error("Unknown bitmode: %s\n", optarg);
                     return -1;

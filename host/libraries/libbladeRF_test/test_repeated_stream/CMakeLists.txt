@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(libbladeRF_test_repeated_stream C)
 
 set(INCLUDES
@@ -7,7 +7,7 @@ set(INCLUDES
 )
 
 set(SRC
-    src/main.c 
+    src/main.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/devcfg.c
 )
