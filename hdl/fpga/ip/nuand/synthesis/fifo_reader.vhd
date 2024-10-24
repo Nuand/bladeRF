@@ -75,6 +75,7 @@ architecture simple of fifo_reader is
 
     constant DMA_BUF_SIZE_SS    : natural   := GPIF_BUF_SIZE_SS;
     constant DMA_BUF_SIZE_HS    : natural   := GPIF_BUF_SIZE_HS;
+    constant MAX_TIMESTAMP      : unsigned(timestamp'high downto timestamp'low) := (others => '1');
 
     signal   dma_buf_size       : natural range DMA_BUF_SIZE_HS to DMA_BUF_SIZE_SS := DMA_BUF_SIZE_SS;
     signal   underflow_detected : std_logic := '0';
@@ -261,7 +262,7 @@ begin
                    meta_future.dma_downcount <= dma_buf_size - 4;
                 end if;
 
-                if( (timestamp >= meta_current.meta_p_time or meta_current.meta_p_time + 1 = 0)
+                if( (timestamp >= meta_current.meta_p_time or meta_current.meta_p_time = MAX_TIMESTAMP)
                         and ( packet_en = '0' or ( packet_en = '1' and packet_ready = '1' ) ) ) then
                     meta_future.meta_time_go <= '1';
                     meta_future.state        <= META_DOWNCOUNT;
