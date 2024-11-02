@@ -2079,36 +2079,41 @@ int bladerf_xb300_get_output_power(struct bladerf *dev, float *val)
 /* Features */
 /******************************************************************************/
 
+static const char *feature2str(bladerf_feature feature)
+{
+    switch (feature) {
+        case BLADERF_FEATURE_DEFAULT: return "DEFAULT";
+        case BLADERF_FEATURE_OVERSAMPLE: return "OVERSAMPLE";
+        default: return "UNKNOWN FEATURE";
+    }
+}
+
+static int validate_board_compatibility(const char *board_name, bladerf_feature feature)
+{
+    if (strcmp(board_name, "bladerf2") != 0 && feature == BLADERF_FEATURE_OVERSAMPLE) {
+        log_error("BladeRF2 required for %s feature\n", feature2str(feature));
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+    return 0;
+}
+
 int bladerf_enable_feature(struct bladerf *dev, bladerf_feature feature, bool enable)
 {
-    int status;
-    MUTEX_LOCK(&dev->lock);
+    log_verbose("%s feature %s\n", enable ? "Enabling" : "Disabling", feature2str(feature));
+    int status = 0;
+    CHECK_NULL(dev);
 
-    status = 0;
+    const char *board_name = bladerf_get_board_name(dev);
 
-    if(feature == BLADERF_FEATURE_DEFAULT) {
-        dev->feature = 0;
-    } else {
-        if(feature == BLADERF_FEATURE_OVERSAMPLE) {
-            if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
-                log_error("BladeRF2 required for OVERSAMPLE feature\n");
-                status = BLADERF_ERR_UNSUPPORTED;
-            }
-        } else {
-            /* Unknown / Unsupported feature */
-            status = BLADERF_ERR_UNSUPPORTED;
-        }
-
-        if (status == 0) {
-            if (enable) {
-                dev->feature |= feature;
-            } else {
-                dev->feature &= ~feature;
-            }
-        }
+    if (enable == false) {
+        dev->feature = BLADERF_FEATURE_DEFAULT;
+        return 0;
     }
 
-    MUTEX_UNLOCK(&dev->lock);
+    CHECK_STATUS(validate_board_compatibility(board_name, feature));
+    dev->feature = feature;
+
+error:
     return status;
 }
 
