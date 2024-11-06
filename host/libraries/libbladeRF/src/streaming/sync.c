@@ -779,8 +779,10 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                 buf_src = (uint8_t*)b->buffers[b->cons_i];
 
-                pkt_len_dwords = metadata_get_packet_len(buf_src);
+                user_meta->flags = metadata_get_packet_flags(buf_src);
+                user_meta->timestamp = metadata_get_timestamp(buf_src);
 
+                pkt_len_dwords = metadata_get_packet_len(buf_src);
                 if (pkt_len_dwords > 0) {
                    samples_returned += num_samples;
                    user_meta->actual_count = pkt_len_dwords;
