@@ -28,6 +28,7 @@
 #include "nios_pkt_retune2.h"    /* Packet format definition */
 #include "devices.h"
 #include "debug.h"
+#include "sys/alt_stdio.h"
 
 #ifdef BLADERF_NIOS_LIBAD936X
 void rfic_invalidate_frequency(bladerf_module module);
@@ -293,6 +294,14 @@ static inline void perform_work(struct queue *q, bladerf_module module)
 
             /* Load the fast lock profile into the RFFE */
             profile_load(module, e->profile);
+
+            #ifdef BLADERF_NIOS_DEBUG
+            if (time_tamer_read(module) > e->timestamp) {
+                DBG("Timestamp %x is in the past. SPI write likely too slow.\n", e->timestamp);
+                DBG("Try increasing timestamp spacing between retunes.\n");
+                INCREMENT_ERROR_COUNT();
+            }
+            #endif
 
             /* Schedule the retune */
             e->state = ENTRY_STATE_SCHEDULED;
