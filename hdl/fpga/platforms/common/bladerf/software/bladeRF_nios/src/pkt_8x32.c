@@ -98,7 +98,7 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint32_t data)
 
 #ifdef BOARD_BLADERF_MICRO
         case NIOS_PKT_8x32_TARGET_FASTLOCK:
-            adi_fastlock_save( (addr == 1), (data >> 16), (data & 0xff));
+            adi_fastlock_save( (addr == 1), (data >> 16), (data & 0xffff));
             break;
 #endif  // BOARD_BLADERF_MICRO
 
