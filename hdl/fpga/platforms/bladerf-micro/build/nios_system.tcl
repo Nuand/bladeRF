@@ -496,7 +496,7 @@ set_connection_parameter_value nios2.data_master/peripheral_spi.spi_control_port
 
 add_connection nios2.data_master ram.s1
 set_connection_parameter_value nios2.data_master/ram.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.data_master/ram.s1 baseAddress {0x00020000}
+set_connection_parameter_value nios2.data_master/ram.s1 baseAddress {0x00040000}
 set_connection_parameter_value nios2.data_master/ram.s1 defaultConnection {0}
 
 add_connection nios2.data_master rffe_spi.spi_control_port
@@ -556,7 +556,7 @@ set_connection_parameter_value nios2.instruction_master/nios2.debug_mem_slave de
 
 add_connection nios2.instruction_master ram.s1
 set_connection_parameter_value nios2.instruction_master/ram.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.instruction_master/ram.s1 baseAddress {0x00020000}
+set_connection_parameter_value nios2.instruction_master/ram.s1 baseAddress {0x00040000}
 set_connection_parameter_value nios2.instruction_master/ram.s1 defaultConnection {0}
 
 add_connection nios2.irq command_uart.interrupt

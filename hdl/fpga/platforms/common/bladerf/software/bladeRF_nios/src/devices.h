@@ -102,7 +102,7 @@
 /* Number of RFFE fast lock profiles to store in the Nios.
  * Make sure this matches what is defined in bladerf2.c.
  */
-#define NUM_BBP_FASTLOCK_PROFILES  256
+#define NUM_BBP_FASTLOCK_PROFILES  2048
 
 /* Number of fast lock profiles that can be stored in the RFFE */
 #define NUM_RFFE_FASTLOCK_PROFILES 8

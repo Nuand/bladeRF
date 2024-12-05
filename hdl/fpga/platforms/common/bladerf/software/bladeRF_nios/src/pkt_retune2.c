@@ -42,9 +42,9 @@ void rfic_invalidate_frequency(bladerf_module module);
 #endif
 
 /* The enqueue/dequeue routines require that this be a power of two */
-#define RETUNE2_QUEUE_MAX   16
-#define QUEUE_FULL          0xff
-#define QUEUE_EMPTY         0xfe
+#define RETUNE2_QUEUE_MAX   2048
+#define QUEUE_FULL          UINT16_MAX
+#define QUEUE_EMPTY         (UINT16_MAX - 1)
 
 /* State of items in the retune queue */
 enum entry_state {
@@ -64,20 +64,20 @@ struct queue_entry {
 };
 
 static struct queue {
-    uint8_t count;      /* Total number of items in the queue */
-    uint8_t ins_idx;    /* Insertion index */
-    uint8_t rem_idx;    /* Removal index */
+    uint16_t count;      /* Total number of items in the queue */
+    uint16_t ins_idx;    /* Insertion index */
+    uint16_t rem_idx;    /* Removal index */
 
     struct queue_entry entries[RETUNE2_QUEUE_MAX];
 } rx_queue, tx_queue;
 
 /* Returns queue size after enqueue operation, or QUEUE_FULL if we could
  * not enqueue the requested item */
-static inline uint8_t enqueue_retune(struct queue *q,
+static inline uint16_t enqueue_retune(struct queue *q,
                                      fastlock_profile *p,
                                      uint64_t timestamp)
 {
-    uint8_t ret;
+    uint16_t ret;
 
     if (q->count >= RETUNE2_QUEUE_MAX) {
         return QUEUE_FULL;
@@ -97,9 +97,9 @@ static inline uint8_t enqueue_retune(struct queue *q,
 
 /* Retune number of items left in the queue after the dequeue operation,
  * or QUEUE_EMPTY if there was nothing to dequeue */
-static inline uint8_t dequeue_retune(struct queue *q, struct queue_entry *e)
+static inline uint16_t dequeue_retune(struct queue *q, struct queue_entry *e)
 {
-    uint8_t ret;
+    uint16_t ret;
 
     if (q->count == 0) {
         return QUEUE_EMPTY;
@@ -132,7 +132,7 @@ static inline struct queue_entry* peek_next_retune(struct queue *q)
 
 /* Get the queue element at the given offset relative to the removal index */
 static inline struct queue_entry* peek_next_retune_offset(struct queue *q,
-                                                           uint8_t offset)
+                                                           uint16_t offset)
 {
     if (q == NULL) {
         return NULL;
@@ -419,7 +419,7 @@ void pkt_retune2(struct pkt_buf *b)
                 status = -1;
         }
     } else {
-        uint8_t queue_size;
+        uint16_t queue_size;
 
         switch (module) {
             case BLADERF_MODULE_RX:

@@ -97,7 +97,7 @@ static bladerf_frequency const RESET_FREQUENCY = 70000000;
 
 /* Number of fast lock profiles that can be stored in the Nios
  * Make sure this number matches that of the Nios' devices.h */
-#define NUM_BBP_FASTLOCK_PROFILES   256
+#define NUM_BBP_FASTLOCK_PROFILES   2048
 
 /* Number of fast lock profiles that can be stored in the RFFE
  * Make sure this number matches that of the Nios' devices.h */
