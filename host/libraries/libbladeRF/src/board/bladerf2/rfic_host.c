@@ -443,6 +443,8 @@ static int _rfic_host_set_frequency(struct bladerf *dev,
     CHECK_STATUS(dev->board->get_frequency_range(dev, ch, &range));
 
     if (!is_within_range(range, frequency)) {
+        log_error("Frequency out of range [%0.2f MHz, %0.2f MHz]: %f MHz\n",
+            range->min/1e6, range->max/1e6, frequency/1e6);
         return BLADERF_ERR_RANGE;
     }
 
