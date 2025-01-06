@@ -293,7 +293,7 @@ begin
                     meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
                 end if;
 
-                if( meta_current.dma_downcount <= NUM_STREAMS ) then
+                if( meta_current.dma_downcount <= 2 ) then
                     -- Look for 2 because of the 2 cycles passing
                     -- through IDLE and META_WRITE after this.
                     -- 8bit format requires an additional 2 cycle delay.
