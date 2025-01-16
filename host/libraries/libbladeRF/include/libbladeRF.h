@@ -2217,6 +2217,13 @@ typedef enum {
      * USB 2.0 Hi-Speed or USB 3.0 SuperSpeed for packets for this streaming
      * format.
      *
+     * @warning A packet length of (n*256-4) DWORDs will cause the synchronous
+     * buffer it's filled into to indefinitely persist. For instance, if a
+     * packet containing 252 DWORDs is filled into buffer N, buffer N will
+     * always return that first 252 dword packet. It is recommended to avoid
+     * these specific packet lengths (252, 508, 764, 1020, etc. DWORDs)
+     * until this limitation is resolved.
+     *
      * @see STREAMING_FORMAT_METADATA
      * @see The `src/streaming/metadata.h` header in the libbladeRF codebase.
      */
