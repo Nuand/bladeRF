@@ -146,7 +146,7 @@ architecture simple of fifo_reader is
 
         -- Highly packed mode signals
         packed_buffer       : std_logic_vector(47 downto 0);
-        packed_cycle        : integer range 0 to 3;
+        packed_cycle        : integer range 0 to 4;
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
@@ -648,9 +648,10 @@ begin
                                 fifo_future.fifo_read <= read_req and fifo_current.eight_bit_sample_sel;
                                 fifo_future.eight_bit_sample_sel <= not fifo_current.eight_bit_sample_sel;
                             elsif (highly_packed_mode_en = '1' and NUM_STREAMS = 2) then
-                                fifo_future.packed_cycle <= (fifo_current.packed_cycle + 1) mod 4;
+                                fifo_future.packed_cycle <= (fifo_current.packed_cycle + 1);
                                 fifo_future.packed_buffer <= fifo_data(fifo_data'high downto fifo_data'high-47);
-                                if read_req = '1' and fifo_current.packed_cycle = 3 then
+                                if fifo_current.packed_cycle = 3 then
+                                    fifo_future.packed_cycle <= 0;
                                     fifo_future.fifo_read <= '0';
                                 end if;
                             end if;
