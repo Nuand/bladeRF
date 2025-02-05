@@ -517,6 +517,10 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
         return 0;
     }
 
+    enum rxtx_fmt fmt;
+    fmt = (s->bit_mode_8bit) ? RXTX_FMT_BIN_SC8Q7 : RXTX_FMT_BIN_SC16Q11;
+    rxtx_set_file_format(s->rx, fmt);
+
     for (i = 2; i < argc; i++) {
         status = rxtx_handle_config_param(s, s->rx, argv[0], argv[i], &val);
 
