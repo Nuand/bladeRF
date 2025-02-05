@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(bladeRF-fsk C)
 
 ################################################################################
@@ -281,7 +281,7 @@ target_compile_definitions(bladeRF-fsk_test_prng PRIVATE "-DPRNG_TEST")
 # FIR Filter test
 ################################################################################
 
-set(FIR_FILTER_TEST_SRC 
+set(FIR_FILTER_TEST_SRC
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
     ${SRC_DIR}/fir_filter.c
     ${SRC_DIR}/utils.c
@@ -319,7 +319,7 @@ target_link_libraries(bladeRF-fsk_test_fir_filter ${FIR_FILTER_TEST_LIBS})
 # Correlator test
 ################################################################################
 
-set(CORRELATOR_TEST_SRC 
+set(CORRELATOR_TEST_SRC
     ${SRC_DIR}/correlator.c
     ${SRC_DIR}/utils.c
     ${SRC_DIR}/fsk.c

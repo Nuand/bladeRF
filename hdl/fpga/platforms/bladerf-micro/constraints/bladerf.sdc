@@ -71,10 +71,11 @@ set_false_path -from exp_present   -to *
 set_false_path -from pwr_status    -to *
 
 # JTAG settings
-set_clock_groups -exclusive -group [get_clocks altera_reserved_tck]
-set_input_delay  -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_reserved_tdi]
-set_input_delay  -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_reserved_tms]
-set_output_delay -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_reserved_tdo]
+create_clock -name {altera_reserved_tck} -period 100 [get_ports {altera_reserved_tck}]
+set_clock_groups -asynchronous -group {altera_reserved_tck}
+set_false_path -from [get_ports {altera_reserved_tms}]
+set_false_path -from [get_ports {altera_reserved_tdi}]
+set_false_path -to [get_ports {altera_reserved_tdo}]
 
 # Exceptions
 

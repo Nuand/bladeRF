@@ -33,7 +33,7 @@
 #include "conversions.h"
 #include "test_timestamps.h"
 
-#define OPTSTR "hd:s:S:t:B:v:n:x:T:"
+#define OPTSTR "hd:s:S:ft:B:v:n:x:T:"
 
 
 #define DECLARE_TEST(name) \
@@ -52,7 +52,9 @@ DECLARE_TEST(rx_scheduled);
 DECLARE_TEST(tx_onoff);
 DECLARE_TEST(tx_onoff_nowsched);
 DECLARE_TEST(tx_gmsk_bursts);
+DECLARE_TEST(txrx_hwloop);
 DECLARE_TEST(loopback_onoff);
+DECLARE_TEST(loopback_onoff_rf);
 DECLARE_TEST(loopback_onoff_zp);
 DECLARE_TEST(format_mismatch);
 DECLARE_TEST(readback);
@@ -64,7 +66,9 @@ static const struct test *tests[] = {
     TEST(tx_onoff),
     TEST(tx_onoff_nowsched),
     TEST(tx_gmsk_bursts),
+    TEST(txrx_hwloop),
     TEST(loopback_onoff),
+    TEST(loopback_onoff_rf),
     TEST(loopback_onoff_zp),
     TEST(format_mismatch),
     TEST(readback),
@@ -85,6 +89,7 @@ static const struct option long_options[] = {
 
     /* Test configuration */
     { "test",               required_argument,  0,      't' },
+    { "fast",                     no_argument,  0,      'f' },
 
     /* Verbosity options */
     { "lib-verbosity",      required_argument,  0,      'v' },
@@ -134,7 +139,12 @@ static void usage(const char *argv0)
     printf("                                Requires external verification.\n");
     printf("         tx_gmsk_bursts       Transmits GMSK bursts.\n");
     printf("                                Requires external verification.\n");
+    printf("         txrx_hwloop          Generates and measures TX fill\n");
+    printf("                                Requires two bladeRFs and 20dB attenuator.\n");
     printf("         loopback_onoff       Transmits ON-OFF bursts which are verified\n");
+    printf("         loopback_onoff_rf    Transmits ON-OFF bursts verified by\n");
+    printf("                                looping back from TX1 to RX1 via SMA cable.\n");
+    printf("                                NOTE: 20dB attenuator required\n");
     printf("         loopback_onoff_zp    Transmits ON-OFF bursts with zero-padding,\n");
     printf("                                which are verified via baseband loopback\n");
     printf("                                to the RX module.\n");
@@ -148,6 +158,7 @@ static void usage(const char *argv0)
     printf("\n");
 
     printf("Misc options:\n");
+    printf("    -f, --fast                  Reduces test time for applicable tests\n");
     printf("    -h, --help                  Show this help text\n");
     printf("    -v, --lib-verbosity <level> Set libbladeRF verbosity (Default: warning)\n");
     printf("\n");
@@ -163,6 +174,7 @@ static void init_app_params(struct app_params *p)
     p->num_xfers = 8;
     p->buf_size = 64 * 1024;
     p->timeout_ms = 10000;
+    p->fast_test = false;
 }
 
 static void deinit_app_params(struct app_params *p)
@@ -269,6 +281,10 @@ static int handle_args(int argc, char *argv[], struct app_params *p)
                     perror("strdup");
                     return -1;
                 }
+                break;
+
+            case 'f':
+                p->fast_test = true;
                 break;
 
             case 'S':

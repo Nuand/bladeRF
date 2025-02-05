@@ -281,6 +281,7 @@ int sync_init(struct bladerf_sync *sync,
                 sync->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
             }
 
+            sync->meta.msg_timestamp = 0;
             sync->meta.in_burst = false;
             sync->meta.now = false;
             break;
@@ -1209,7 +1210,7 @@ int sync_tx(struct bladerf_sync *s,
                                    samples2bytes(s, samples_to_copy));
 
                             s->meta.curr_msg_off += samples_to_copy;
-                            if (s->stream_config.layout == BLADERF_RX_X2)
+                            if (s->stream_config.layout == BLADERF_TX_X2)
                                s->meta.curr_timestamp += samples_to_copy / 2;
                             else
                                s->meta.curr_timestamp += samples_to_copy;

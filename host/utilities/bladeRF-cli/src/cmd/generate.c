@@ -26,6 +26,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define _USE_MATH_DEFINES
+#include <math.h>
+#endif
 #include "conversions.h"
 #include "host_config.h"
 #include "minmax.h"

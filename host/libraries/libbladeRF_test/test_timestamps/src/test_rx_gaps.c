@@ -61,6 +61,25 @@ static const struct test_case tests[] = {
     { RANDOM_GAP_SIZE, 500 },
 };
 
+static const struct test_case fast_tests[] = {
+    { 1,    20000 },
+    { 2,    20000 },
+    { 128,  750 },
+    { 256,  500 },
+    { 512,  500 },
+    { 1023, 100 },
+    { 1024, 100 },
+    { 1025, 100 },
+    { 2048, 50 },
+    { 3172, 50 },
+    { 4096, 25 },
+    { 8192, 25 },
+    { 16 * 1024, 10 },
+    { 32 * 1024, 10 },
+    { 64 * 1024, 10 },
+    { RANDOM_GAP_SIZE, 10 },
+};
+
 static inline unsigned int get_gap(struct app_params *p,
                                    const struct test_case *t,
                                    unsigned int buf_len)
@@ -299,9 +318,10 @@ int test_fn_rx_gaps(struct bladerf *dev, struct app_params *p)
     int status = 0;
     size_t i;
     unsigned int failures = 0;
+    const struct test_case *case_to_run = (p->fast_test) ? fast_tests : tests;
 
     for (i = 0; i < ARRAY_SIZE(tests); i++) {
-        status = run(dev, p, &tests[i]);
+        status = run(dev, p, &case_to_run[i]);
         if (status != 0) {
             failures++;
         }

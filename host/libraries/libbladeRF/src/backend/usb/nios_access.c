@@ -207,6 +207,31 @@ static int nios_8x16_write(struct bladerf *dev, uint8_t id,
     }
 }
 
+static void log_debug_8x32_pkt(const uint8_t *buf) {
+    if (buf == NULL) {
+        log_debug("Failed to log packet: packet buffer is NULL\n");
+        return;
+    }
+
+    uint8_t target_id;
+    bool write;
+    uint8_t addr;
+    uint32_t data;
+    bool success;
+
+    nios_pkt_8x32_resp_unpack(buf, &target_id, &write, &addr, &data, &success);
+
+    const char *operation = write ? "Write" : "Read";
+    const char *status = success ? "Success" : "Failure";
+
+    log_debug("Packet Magic:      0x%02x\n", buf[NIOS_PKT_8x32_IDX_MAGIC]);
+    log_debug("Packet Target:     %s\n", target2str(target_id));
+    log_debug("Packet Operation:  %s\n", operation);
+    log_debug("Packet Address:    0x%02x\n", addr);
+    log_debug("Packet Data:       0x%08x\n", data);
+    log_debug("Packet Status:     %s\n", status);
+}
+
 static int nios_8x32_read(struct bladerf *dev, uint8_t id,
                           uint8_t addr, uint32_t *data)
 {
@@ -228,6 +253,7 @@ static int nios_8x32_read(struct bladerf *dev, uint8_t id,
     } else {
         *data = 0;
         log_debug("%s: response packet reported failure.\n", __FUNCTION__);
+        log_debug_8x32_pkt(buf);
         return BLADERF_ERR_FPGA_OP;
     }
 }
@@ -252,6 +278,7 @@ static int nios_8x32_write(struct bladerf *dev, uint8_t id,
         return 0;
     } else {
         log_debug("%s: response packet reported failure.\n", __FUNCTION__);
+        log_debug_8x32_pkt(buf);
         return BLADERF_ERR_FPGA_OP;
     }
 }
@@ -438,6 +465,8 @@ int nios_config_write(struct bladerf *dev, uint32_t val)
 
     if (status == 0) {
         log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, val);
+    } else {
+        log_error("%s: Failed to write 0x%08x\n", __FUNCTION__, val);
     }
 
     return status;

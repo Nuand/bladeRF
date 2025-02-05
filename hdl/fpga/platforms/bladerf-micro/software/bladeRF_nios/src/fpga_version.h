@@ -8,7 +8,7 @@
 #define FPGA_VERSION_ID         0x7777
 #define FPGA_VERSION_MAJOR      0
 #define FPGA_VERSION_MINOR      15
-#define FPGA_VERSION_PATCH      2
+#define FPGA_VERSION_PATCH      3
 #define FPGA_VERSION ((uint32_t)( FPGA_VERSION_MAJOR        | \
                                  (FPGA_VERSION_MINOR << 8)  | \
                                  (FPGA_VERSION_PATCH << 16) ) )

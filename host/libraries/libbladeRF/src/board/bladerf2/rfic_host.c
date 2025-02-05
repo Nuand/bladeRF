@@ -360,6 +360,13 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     lastrun = nsec;
 #endif
 
+    /** Force rerun frequency calibration */
+    if (enable) {
+        bladerf_frequency current_frequency;
+        CHECK_STATUS(dev->board->get_frequency(dev, ch, &current_frequency));
+        CHECK_STATUS(dev->board->set_frequency(dev, ch, current_frequency));
+    }
+
     return 0;
 }
 
@@ -983,6 +990,23 @@ static int _rfic_host_store_fastlock_profile(struct bladerf *dev,
     return 0;
 }
 
+static int _rfic_host_save_fastlock_profile(struct bladerf *dev,
+                                             bladerf_channel ch,
+                                             uint32_t profile,
+                                             uint8_t *values)
+{
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct ad9361_rf_phy *phy              = board_data->phy;
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        CHECK_AD936X(ad9361_tx_fastlock_save(phy, profile, values));
+    } else {
+        CHECK_AD936X(ad9361_rx_fastlock_save(phy, profile, values));
+    }
+
+    return 0;
+}
+
 
 /******************************************************************************/
 /* Function pointers */
@@ -1028,6 +1052,7 @@ struct controller_fns const rfic_host_control = {
     FIELD_INIT(.set_txmute, _rfic_host_set_txmute),
 
     FIELD_INIT(.store_fastlock_profile, _rfic_host_store_fastlock_profile),
+    FIELD_INIT(.save_fastlock_profile, _rfic_host_save_fastlock_profile),
 
     FIELD_INIT(.command_mode, RFIC_COMMAND_HOST),
 };

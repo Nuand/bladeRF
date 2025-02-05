@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(bladeRF C)
 
 ################################################################################
@@ -97,7 +97,7 @@ add_subdirectory(common/thirdparty/ad936x)
 option(ENABLE_GDB_EXTENSIONS "Build with -ggdb3 instead of -g" OFF)
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
-   ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+   ${CMAKE_C_COMPILER_ID} MATCHES  ".*Clang")
 
     # Personal preference - as much debug info as possible with GDB
     if(${ENABLE_GDB_EXTENSIONS})
@@ -119,7 +119,7 @@ if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
     endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 
 endif(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
-      ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+      ${CMAKE_C_COMPILER_ID} MATCHES  ".*Clang")
 
 ###############################
 # MS Visual Studio
@@ -134,6 +134,9 @@ if(MSVC)
     if(MSVC_VERSION LESS 1800)
         set(MSVC_C99_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/common/include/windows/c99)
     endif()
+
+    # MSVC ships with its own timespec
+    add_definitions(-DHAVE_STRUCT_TIMESPEC)
 endif(MSVC)
 
 ################################################################################

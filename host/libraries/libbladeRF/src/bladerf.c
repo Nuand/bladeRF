@@ -36,7 +36,9 @@
 #include "backend/backend.h"
 #include "backend/usb/usb.h"
 #include "board/board.h"
+#include "conversions.h"
 #include "driver/fx3_fw.h"
+#include "device_calibration.h"
 #include "streaming/async.h"
 #include "version.h"
 
@@ -49,6 +51,26 @@
 #include "helpers/file.h"
 #include "helpers/have_cap.h"
 #include "helpers/interleave.h"
+
+#define CHECK_NULL(...) do { \
+    const void* _args[] = { __VA_ARGS__, NULL }; \
+    for (size_t _i = 0; _args[_i] != NULL; ++_i) { \
+        if (_args[_i] == NULL) { \
+            log_error("%s:%d: Argument %zu is a NULL pointer\n", __FILE__, __LINE__, _i + 1); \
+            return BLADERF_ERR_INVAL; \
+        } \
+    } \
+} while (0)
+
+#define CHECK_STATUS(fn)                                \
+    do {                                                \
+        status = fn;                                    \
+        if (status != 0) {                              \
+            log_error("%s: %s %s\n", __FUNCTION__, #fn, \
+                      bladerf_strerror(status));        \
+            goto error;                                 \
+        }                                               \
+    } while (0)
 
 
 /******************************************************************************/
@@ -186,6 +208,11 @@ void bladerf_close(struct bladerf *dev)
 
         if (dev->backend) {
             dev->backend->close(dev);
+        }
+
+        /** Free gain table entries */
+        for (int i = 0; i < NUM_GAIN_CAL_TBLS; i++) {
+            gain_cal_tbl_free(&dev->gain_tbls[i]);
         }
 
         MUTEX_UNLOCK(&dev->lock);
@@ -519,10 +546,43 @@ int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch, bool enable)
 int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     int status;
+    bladerf_gain_mode gain_mode;
+    bladerf_frequency freq;
+    bladerf_gain assigned_gain = gain;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_gain(dev, ch, gain);
+    /* Change gain mode to manual if ch = RX */
+    if (BLADERF_CHANNEL_IS_TX(ch) == false) {
+        status = dev->board->get_gain_mode(dev, ch, &gain_mode);
+        if (status != 0) {
+            log_error("Failed to get gain mode\n");
+            goto error;
+        }
 
+        if (gain_mode != BLADERF_GAIN_MGC) {
+            log_warning("Setting gain mode to manual\n");
+            status = dev->board->set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
+            if (status != 0) {
+                log_error("Failed to set gain mode\n");
+                goto error;
+            }
+        }
+    }
+
+    dev->gain_tbls[ch].gain_target = gain;
+
+    if (dev->gain_tbls[ch].enabled == true) {
+        dev->board->get_frequency(dev, ch, &freq);
+        get_gain_correction(dev, freq, ch, &assigned_gain);
+    }
+
+    status = dev->board->set_gain(dev, ch, assigned_gain);
+    if (status != 0) {
+        log_error("Failed to set gain\n");
+        goto error;
+    }
+
+error:
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
@@ -632,11 +692,24 @@ int bladerf_set_sample_rate(struct bladerf *dev,
                             bladerf_sample_rate *actual)
 {
     int status;
+    bladerf_feature feature = dev->feature;
+
     MUTEX_LOCK(&dev->lock);
-
     status = dev->board->set_sample_rate(dev, ch, rate, actual);
-
     MUTEX_UNLOCK(&dev->lock);
+
+    /*****************************************************
+      Sample rate assignments clear previous register
+      values. We must reassign oversample register config
+      for every set_samplerate().
+    *******************************************************/
+    if ((feature & BLADERF_FEATURE_OVERSAMPLE)) {
+        status = bladerf_set_oversample_register_config(dev);
+        if (status != 0) {
+            log_error("Oversample register config failure\n");
+        }
+    }
+
     return status;
 }
 
@@ -755,6 +828,13 @@ int bladerf_set_frequency(struct bladerf *dev,
 
     status = dev->board->set_frequency(dev, ch, frequency);
 
+    if (dev->gain_tbls[ch].enabled && status == 0) {
+        status = apply_gain_correction(dev, ch, frequency);
+        if (status != 0) {
+            log_error("Failed to set gain correction\n");
+        }
+    }
+
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
@@ -851,6 +931,39 @@ int bladerf_get_quick_tune(struct bladerf *dev,
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
+}
+
+int bladerf_print_quick_tune(struct bladerf *dev, const struct bladerf_quick_tune *qt) {
+    if (dev == NULL || qt == NULL) {
+        log_error("Device handle or quick tune structure is NULL.\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    const char *board_name = bladerf_get_board_name(dev);
+    if (board_name == NULL) {
+        log_error("Failed to get board name.\n");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    printf("board: %s\n", board_name);
+    if (strcmp(board_name, "bladerf1") == 0) {
+        printf("freqsel: %u\n", qt->freqsel);
+        printf("vcocap: %u\n", qt->vcocap);
+        printf("nint: %u\n", qt->nint);
+        printf("nfrac: %u\n", qt->nfrac);
+        printf("flags: %u\n", qt->flags);
+        printf("xb_gpio: %u\n", qt->xb_gpio);
+    } else if (strcmp(board_name, "bladerf2") == 0) {
+        printf("nios_profile: %u\n", qt->nios_profile);
+        printf("rffe_profile: %u\n", qt->rffe_profile);
+        printf("port: %u\n", qt->port);
+        printf("spdt: %u\n", qt->spdt);
+    } else {
+        log_error("Unknown bladeRF board name: %s\n", board_name);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    return 0;
 }
 
 int bladerf_schedule_retune(struct bladerf *dev,
@@ -991,6 +1104,8 @@ int bladerf_init_stream(struct bladerf_stream **stream,
                         void *data)
 {
     int status;
+    bladerf_sample_rate tx_samp_rate;
+    bladerf_sample_rate rx_samp_rate;
     MUTEX_LOCK(&dev->lock);
 
     if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
@@ -1003,6 +1118,22 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     status = dev->board->init_stream(stream, dev, callback, buffers,
                                      num_buffers, format, samples_per_buffer,
                                      num_transfers, data);
+
+    dev->board->get_sample_rate(dev, BLADERF_MODULE_TX, &tx_samp_rate);
+    if (tx_samp_rate) {
+        if (tx_samp_rate < num_transfers * samples_per_buffer / (*stream)->transfer_timeout) {
+            log_warning("TX samples may be dropped.\n");
+            log_warning("Condition to meet: samp_rate > num_transfers * samples_per_buffer / transfer_timeout\n");
+        }
+    }
+
+    dev->board->get_sample_rate(dev, BLADERF_MODULE_RX, &rx_samp_rate);
+    if (rx_samp_rate) {
+        if (rx_samp_rate < num_transfers * samples_per_buffer / (*stream)->transfer_timeout) {
+            log_warning("RX samples may be dropped.\n");
+            log_warning("Condition to meet: samp_rate > num_transfers * samples_per_buffer / transfer_timeout\n");
+        }
+    }
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -1091,6 +1222,7 @@ int bladerf_sync_tx(struct bladerf *dev,
                     struct bladerf_metadata *metadata,
                     unsigned int timeout_ms)
 {
+    CHECK_NULL(samples);
     return dev->board->sync_tx(dev, samples, num_samples, metadata, timeout_ms);
 }
 
@@ -1144,6 +1276,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
 
     status = file_read_buffer(fpga_file, &buf, &buf_size);
     if (status != 0) {
+        log_error("Failed to read FPGA image: %s\n", bladerf_strerror(status));
         goto exit;
     }
 
@@ -2031,4 +2164,224 @@ int bladerf_set_oversample_register_config(struct bladerf *dev) {
     bladerf_set_rfic_register(dev,0x3f6,0x03);
 
     return 0;
+}
+
+/******************************************************************************/
+/* Calibration */
+/******************************************************************************/
+
+int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char* cal_file_loc)
+{
+    int status = 0;
+    const char *board_name;
+    char *full_path = NULL;
+    char *full_path_bin = NULL;
+    char *ext;
+
+    size_t filename_len = PATH_MAX;
+    char *filename = (char *)calloc(1, filename_len + 1);
+    CHECK_NULL(filename);
+
+    bladerf_gain_mode gain_mode_before_gain_reset;
+
+    log_debug("Loading gain calibration\n");
+    MUTEX_LOCK(&dev->lock);
+
+    board_name = bladerf_get_board_name(dev);
+    if (strcmp(board_name, "bladerf2") != 0) {
+        log_error("Gain calibration unsupported on this device: %s\n", board_name);
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto error;
+    }
+
+    if (cal_file_loc != NULL) {
+        strcpy(filename, cal_file_loc);
+    } else {
+        log_debug("No calibration file specified, using serial number\n");
+        strcpy(filename, dev->ident.serial);
+        filename_len -= strlen(filename);
+
+        if (BLADERF_CHANNEL_IS_TX(ch))
+            strncat(filename, "_tx_gain_cal.tbl", filename_len);
+        else
+            strncat(filename, "_rx_gain_cal.tbl", filename_len);
+    }
+
+    full_path = file_find(filename);
+    if (full_path == NULL) {
+        log_error("Failed to find gain calibration file: %s\n", filename);
+        status = BLADERF_ERR_NO_FILE;
+        goto error;
+    }
+
+    /** Convert to binary format if CSV */
+    full_path_bin = (char*)malloc(strlen(full_path) + 1);
+    strcpy(full_path_bin, full_path);
+    ext = strstr(full_path_bin, ".csv");
+    if (ext) {
+        log_debug("Converting gain calibration to binary format\n");
+        strcpy(ext, ".tbl");
+        status = gain_cal_csv_to_bin(dev, full_path, full_path_bin, ch);
+        if (status != 0) {
+            log_error("Failed to convert csv to binary: %s -> %s\n",
+                full_path, full_path_bin);
+            status = EXIT_FAILURE;
+            goto error;
+        }
+    }
+
+    status = load_gain_calibration(dev, ch, full_path_bin);
+    if (status != 0) {
+        log_error("Failed to load calibration\n");
+        status = BLADERF_ERR_UNEXPECTED;
+        goto error;
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    /* Save current gain mode before gain reset */
+    if (BLADERF_CHANNEL_IS_TX(ch) == false)
+        dev->board->get_gain_mode(dev, ch, &gain_mode_before_gain_reset);
+
+    /* Reset gain to ensure calibration adjustment is applied after loading */
+    status = bladerf_set_gain(dev, ch, dev->gain_tbls[ch].gain_target);
+    if (status != 0) {
+        log_error("%s: Failed to reset gain.\n", __FUNCTION__);
+        goto error;
+    }
+
+    /** Restore previous gain mode */
+    if (BLADERF_CHANNEL_IS_TX(ch) == false) {
+        status = bladerf_set_gain_mode(dev, ch, gain_mode_before_gain_reset);
+        if (status != 0) {
+            log_error("%s: Failed to reset gain mode.\n", __FUNCTION__);
+            goto error;
+        }
+    }
+
+error:
+    if (full_path)
+        free(full_path);
+    if (full_path_bin)
+        free(full_path_bin);
+    if (filename)
+        free(filename);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_enable_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool en)
+{
+    CHECK_NULL(dev);
+    int status = 0;
+
+    if (dev->gain_tbls[ch].state == BLADERF_GAIN_CAL_UNINITIALIZED) {
+        log_warning("%s: Gain calibration not loaded\n", __FUNCTION__);
+        return 0;
+    }
+
+    dev->gain_tbls[ch].enabled = en;
+    status = bladerf_set_gain(dev, ch, dev->gain_tbls[ch].gain_target);
+    if (status != 0) {
+        log_error("%s: Failed to reset gain.\n", __FUNCTION__);
+        return status;
+    }
+
+    return status;
+}
+
+int bladerf_print_gain_calibration(struct bladerf *dev, bladerf_channel ch, bool with_entries)
+{
+    CHECK_NULL(dev);
+    int status = 0;
+    const char *board_name;
+    struct bladerf_gain_cal_tbl *gain_tbls = dev->gain_tbls;
+
+    board_name = bladerf_get_board_name(dev);
+    if (strcmp(board_name, "bladerf2") != 0) {
+        log_error("Gain calibration unsupported on this device: %s\n", board_name);
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto error;
+    }
+
+    if (gain_tbls[ch].state == BLADERF_GAIN_CAL_UNINITIALIZED) {
+        printf("Gain Calibration [%s]: uninitialized\n", channel2str(ch));
+        return 0;
+    }
+
+    printf("Gain Calibration [%s]: loaded\n", channel2str(ch));
+    printf("  Status: %s\n", (gain_tbls[ch].enabled) ? "enabled" : "disabled");
+    printf("  Version: %i.%i.%i\n",
+        gain_tbls[ch].version.major, gain_tbls[ch].version.minor, gain_tbls[ch].version.patch);
+    printf("  Number of Entries: %u\n", gain_tbls[ch].n_entries);
+    printf("  Start Frequency: %" PRIu64 " Hz\n", gain_tbls[ch].start_freq);
+    printf("  Stop Frequency: %" PRIu64 " Hz\n", gain_tbls[ch].stop_freq);
+    printf("  File Path: %s\n", gain_tbls[ch].file_path);
+
+    if (with_entries) {
+        for (size_t i = 0; i < gain_tbls[ch].n_entries; i++) {
+            printf("%" PRIu64 ",%f\n", gain_tbls[ch].entries[i].freq, gain_tbls[ch].entries[i].gain_corr);
+        }
+    }
+
+error:
+    return status;
+}
+
+int bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_cal_tbl **tbl)
+{
+    CHECK_NULL(dev);
+    MUTEX_LOCK(&dev->lock);
+
+    if (dev->gain_tbls[ch].state != BLADERF_GAIN_CAL_LOADED) {
+        log_error("%s: Gain calibration not loaded\n", __FUNCTION__);
+        MUTEX_UNLOCK(&dev->lock);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    *tbl = &(dev->gain_tbls[ch]);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return 0;
+}
+
+int bladerf_get_gain_target(struct bladerf *dev, bladerf_channel ch, int *gain_target)
+{
+    int status = 0;
+    CHECK_NULL(dev);
+    MUTEX_LOCK(&dev->lock);
+    bladerf_frequency current_frequency;
+    struct bladerf_gain_cal_tbl *cal_table = &dev->gain_tbls[ch];
+    struct bladerf_gain_cal_entry current_entry;
+    bladerf_gain current_gain;
+    bladerf_gain_mode gain_mode;
+
+
+    if (dev->gain_tbls[ch].state == BLADERF_GAIN_CAL_UNINITIALIZED) {
+        log_error("Gain calibration not loaded\n");
+        status = BLADERF_ERR_UNEXPECTED;
+        goto error;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch) == true) {
+        *gain_target = cal_table->gain_target;
+        goto error;
+    }
+
+    dev->board->get_gain_mode(dev, ch, &gain_mode);
+
+    if (gain_mode == BLADERF_GAIN_MGC) {
+        *gain_target = cal_table->gain_target;
+        goto error;
+    }
+
+    CHECK_STATUS(dev->board->get_gain(dev, ch, &current_gain));
+    CHECK_STATUS(dev->board->get_frequency(dev, ch, &current_frequency));
+    CHECK_STATUS(get_gain_cal_entry(cal_table, current_frequency, &current_entry));
+    *gain_target = current_gain + current_entry.gain_corr;
+
+error:
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
 }

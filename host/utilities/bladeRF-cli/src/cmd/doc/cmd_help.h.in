@@ -732,7 +732,7 @@
   "Notes:\n" \
   "\n" \
   "-   The n, samples, buffers, and xfers parameters support the suffixes\n" \
-  "    K, M, and G, which are multiples of 1024.\n" \
+  "    K, M, and G, which are integer powers of 1024.\n" \
   "-   An rx stop followed by an rx start will result in the samples file\n" \
   "    being truncated. If this is not desired, be sure to run rx config\n" \
   "    to set another file before restarting the rx stream.\n" \
@@ -906,7 +906,7 @@
   "Notes:\n" \
   "\n" \
   "-   The n, samples, buffers, and xfers parameters support the suffixes\n" \
-  "    K, M, and G, which are multiples of 1024.\n" \
+  "    K, M, and G, which are integer powers of 1024.\n" \
   "-   For higher sample rates, it is advised that the input file be\n" \
   "    stored in RAM (e.g. /tmp, /dev/shm) or on an SSD, rather than a\n" \
   "    HDD.\n" \

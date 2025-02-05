@@ -43,6 +43,7 @@ struct loopback_burst_test {
     pthread_mutex_t lock;
     bool stop;
     bool rx_ready;
+    bladerf_frequency frequency;
 };
 
 struct loopback_burst {
@@ -52,6 +53,7 @@ struct loopback_burst {
 
 /* Returns 0 on success, non-zero on failure */
 int setup_device_loopback(struct loopback_burst_test *t);
+int setup_device_loopback_rf(struct loopback_burst_test *t);
 
 /* Alloc and fill sample buffer for TX.
  * Returns heap-allocated sample buffer on success, NULL on failure */
@@ -59,5 +61,6 @@ int16_t * alloc_loopback_samples(size_t n_samples);
 
 /* Returns NULL, args should be the loopback_burst_test structure */
 void *loopback_burst_rx_task(void *args);
+void *loopback_burst_rx_task_rf(void *args);
 
 #endif

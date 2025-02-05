@@ -27,17 +27,20 @@
  * our frequency tuning operations.
  */
 
+#include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <libbladeRF.h>
+#include "log.h"
 #include "test_common.h"
+#include "conversions.h"
 
 #define ITERATIONS 2500u
 #define FIXED_FREQ 2405000000u
 
-double fixed_retune(struct bladerf *dev)
+double fixed_retune(struct bladerf *dev, uint32_t iterations)
 {
     int status;
     struct timespec start, end;
@@ -49,7 +52,7 @@ double fixed_retune(struct bladerf *dev)
         return -1;
     }
 
-    for (i = 0; i < ITERATIONS; i++) {
+    for (i = 0; i < iterations; i++) {
         status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, FIXED_FREQ);
         if (status != 0) {
             fprintf(stderr, "Failed to set frequency (%u): %s\n",
@@ -64,10 +67,10 @@ double fixed_retune(struct bladerf *dev)
         return -1;
     }
 
-    return calc_avg_duration(&start, &end, ITERATIONS);
+    return calc_avg_duration(&start, &end, iterations);
 }
 
-double random_retune(struct bladerf *dev)
+double random_retune(struct bladerf *dev, uint32_t iterations)
 {
     int status;
     struct timespec start, end;
@@ -83,7 +86,7 @@ double random_retune(struct bladerf *dev)
         return -1;
     }
 
-    for (i = 0; i < ITERATIONS; i++) {
+    for (i = 0; i < iterations; i++) {
         freq = get_rand_freq(&prng, false);
         status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, freq);
         if (status != 0) {
@@ -99,10 +102,10 @@ double random_retune(struct bladerf *dev)
         return -1;
     }
 
-    return calc_avg_duration(&start, &end, ITERATIONS);
+    return calc_avg_duration(&start, &end, iterations);
 }
 
-double quick_retune(struct bladerf *dev)
+double quick_retune(struct bladerf *dev, uint32_t iterations)
 {
     const char *board_name;
     bladerf_frequency center_freq;
@@ -152,7 +155,7 @@ double quick_retune(struct bladerf *dev)
         return -1;
     }
 
-    for (i = 0; i < (ITERATIONS / 2); i++) {
+    for (i = 0; i < (iterations / 2); i++) {
         status = bladerf_schedule_retune(dev, BLADERF_MODULE_RX,
                                          BLADERF_RETUNE_NOW,
                                          0, &f1);
@@ -178,8 +181,17 @@ double quick_retune(struct bladerf *dev)
         return -1;
     }
 
-    return calc_avg_duration(&start, &end, ITERATIONS);
+    return calc_avg_duration(&start, &end, iterations);
 }
+
+#define OPTSTR "i:d:v:h"
+static struct option long_options[] = {
+    { "iterations", required_argument,  NULL,   'i' },
+    { "device",     required_argument,  NULL,   'd' },
+    { "verbosity",  required_argument,  NULL,   'v' },
+    { "help",       no_argument,        NULL,   'h' },
+    { NULL,         0,                  NULL,   0   },
+};
 
 int main(int argc, char *argv[])
 {
@@ -189,11 +201,50 @@ int main(int argc, char *argv[])
     double duration_host, duration_fpga;
     const char *board_name;
 
-    if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
-        fprintf(stderr, "Usage: %s [device string]\n", argv[0]);
-        return 1;
-    } else {
-        devstr = argv[1];
+    int opt = 0;
+    int opt_ind = 0;
+    uint32_t iterations = ITERATIONS;
+    bool ok;
+    bladerf_log_level log_level;
+
+    while (opt != -1) {
+        opt = getopt_long(argc, argv, OPTSTR, long_options, &opt_ind);
+
+        switch (opt) {
+            case 'i':
+                iterations = str2uint(optarg, 0, UINT32_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Iterations arg invalid: %s\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                break;
+
+            case 'd':
+                devstr = optarg;
+                printf("devstr: %s\n", devstr);
+                break;
+
+            case 'v':
+                log_level = str2loglevel(optarg, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid log level: %s\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                bladerf_log_set_verbosity(log_level);
+                break;
+
+            case 'h':
+                printf("Fixed, random, and quick-tune timing test.\n\n");
+                printf("  -d, --device <str>        Specify device to open.\n");
+                printf("  -i, --iterations <int>    Specify device to open.\n");
+                printf("  -v, --verbosity <l>       Set libbladeRF verbosity level.\n");
+                printf("  -h, --help                Show this text.\n");
+                printf("\n");
+                return EXIT_SUCCESS;
+
+            default:
+                break;
+        }
     }
 
     status = bladerf_open(&dev, devstr);
@@ -215,8 +266,9 @@ int main(int argc, char *argv[])
         goto out;
     }
 
-    duration_host = fixed_retune(dev);
+    printf("Iterations: %d\n", iterations);
 
+    duration_host = fixed_retune(dev, iterations);
     if (duration_host < 0) {
         status = (int) duration_host;
         goto out;
@@ -232,7 +284,7 @@ int main(int argc, char *argv[])
             status = -1;
             goto out;
         } else {
-            duration_fpga = fixed_retune(dev);
+            duration_fpga = fixed_retune(dev, iterations);
 
             if (duration_fpga < 0) {
                 status = (int) duration_fpga;
@@ -257,7 +309,7 @@ int main(int argc, char *argv[])
         goto out;
     }
 
-    duration_host = random_retune(dev);
+    duration_host = random_retune(dev, iterations);
 
     if (duration_host < 0) {
         status = (int) duration_host;
@@ -274,7 +326,7 @@ int main(int argc, char *argv[])
             status = -1;
             goto out;
         } else {
-            duration_fpga = fixed_retune(dev);
+            duration_fpga = fixed_retune(dev, iterations);
 
             if (duration_fpga < 0) {
                 status = (int) duration_fpga;
@@ -297,7 +349,7 @@ int main(int argc, char *argv[])
         goto out;
     }
 
-    duration_host = quick_retune(dev);
+    duration_host = quick_retune(dev, iterations);
 
     if (duration_host < 0) {
         status = (int) duration_host;
@@ -314,7 +366,7 @@ int main(int argc, char *argv[])
             status = -1;
             goto out;
         } else {
-            duration_fpga = quick_retune(dev);
+            duration_fpga = quick_retune(dev, iterations);
 
             if (duration_fpga < 0) {
                 status = (int) duration_fpga;

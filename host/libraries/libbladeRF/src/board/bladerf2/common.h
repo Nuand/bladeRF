@@ -124,6 +124,11 @@ struct controller_fns {
                                   bladerf_channel ch,
                                   uint32_t profile);
 
+    int (*save_fastlock_profile)(struct bladerf *dev,
+                                 bladerf_channel ch,
+                                 uint32_t profile,
+                                 uint8_t *values);
+
     enum bladerf2_rfic_command_mode const command_mode;
 };
 
@@ -336,6 +341,23 @@ extern char const *bladerf2_state_to_string[4];
         if (_s < 0) {                      \
             RETURN_ERROR_STATUS(#_fn, _s); \
         }                                  \
+    } while (0)
+
+/**
+ * @brief   Call a function and goto error if it fails
+ *
+ * @param   _fn   The function
+ *
+ * @note    `int status` must be declared in the including scope
+ */
+#define CHECK_STATUS_GOTO(_fn)                             \
+    do {                                                   \
+        status = _fn;                                      \
+        if (status < 0) {                                  \
+            log_error("%s: %i failed: %s\n", #_fn, status, \
+                      bladerf_strerror(status));           \
+            goto error;                                    \
+        }                                                  \
     } while (0)
 
 /**

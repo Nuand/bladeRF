@@ -146,11 +146,11 @@ int version_check(const struct version_compat_table *fw_compat_table,
     if (fw_compat == NULL) {
         log_debug("%s is missing FW version compat table entry?\n",
                   __FUNCTION__);
-        assert(!"BUG!");
+        return BLADERF_ERR_UPDATE_FW;
     } else if (fpga_compat == NULL) {
         log_debug("%s is missing FPGA version compat table entry?\n",
                   __FUNCTION__);
-        assert(!"BUG!");
+        return BLADERF_ERR_UPDATE_FPGA;
     }
 
     if (required_fw_version) {

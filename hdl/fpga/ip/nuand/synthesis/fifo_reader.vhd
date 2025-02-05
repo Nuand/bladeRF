@@ -92,7 +92,10 @@ architecture simple of fifo_reader is
         meta_read       : std_logic;
         meta_cache      : std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0);
         meta_p_time     : unsigned(63 downto 0);
+        meta_p_time_r   : unsigned(63 downto 0);
         meta_time_go    : std_logic;
+        meta_fifo_empty : std_logic;
+        meta_fifo_data  : std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0);
     end record;
 
     constant META_FSM_RESET_VALUE : meta_fsm_t := (
@@ -104,7 +107,10 @@ architecture simple of fifo_reader is
         meta_read       => '0',
         meta_cache      => (others => '0'),
         meta_p_time     => (others => '-'),
-        meta_time_go    => '0'
+        meta_p_time_r   => (others => '-'),
+        meta_time_go    => '0',
+        meta_fifo_empty => '1',
+        meta_fifo_data  => (others => '0')
     );
 
     signal meta_current : meta_fsm_t := META_FSM_RESET_VALUE;
@@ -193,7 +199,7 @@ begin
         end if;
     end process;
 
-    packet_empty <= '1' when ( meta_fifo_empty = '1' and meta_current.state /= META_WAIT ) else '0' ;
+    packet_empty <= '1' when ( meta_current.meta_fifo_empty = '1' and meta_current.state /= META_WAIT ) else '0' ;
 
     -- Meta FIFO combinatorial process
     meta_fsm_comb : process( all )
@@ -205,26 +211,29 @@ begin
         meta_future.meta_read <= '0';
         meta_future.meta_pkt_sop <= '0';
         meta_future.meta_pkt_eop <= '0';
+        meta_future.meta_fifo_empty <= meta_fifo_empty;
+        meta_future.meta_fifo_data  <= meta_fifo_data;
+        meta_time := unsigned(meta_current.meta_fifo_data(95 downto 32)) - 1;
+        meta_future.meta_p_time_r <= meta_time;
 
         case meta_current.state is
 
             when META_LOAD =>
 
                 meta_future.skip_padding <= '0';
-                meta_time := unsigned(meta_fifo_data(95 downto 32)) - 1;
-                meta_future.meta_p_time <= meta_time;
-                meta_future.meta_cache  <= meta_fifo_data;
+                meta_future.meta_p_time <= meta_current.meta_p_time_r;
+                meta_future.meta_cache  <= meta_current.meta_fifo_data;
 
                 if( meta_current.dma_downcount = NUM_STREAMS ) then
                     meta_future.dma_downcount <= 0;
                 end if;
 
                 if( fifo_current.ch_shift = 0 ) then
-                    if( meta_fifo_empty = '0' and (packet_en = '0' or
+                    if( meta_current.meta_fifo_empty = '0' and (packet_en = '0' or
                                (packet_en = '1' and packet_ready = '1') ) ) then
                        meta_future.meta_read <= '1';
                        meta_future.state     <= META_WAIT;
-                       if( packet_en = '1' or meta_time /= timestamp ) then
+                       if( packet_en = '1' or meta_current.meta_p_time_r /= timestamp ) then
                              meta_future.meta_time_go  <= '0';
                           else
                              meta_future.meta_time_go  <= '1';

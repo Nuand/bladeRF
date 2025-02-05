@@ -64,6 +64,37 @@ static inline char * strip_chars(char *str)
     return str;
 }
 
+/**
+ * @brief Generates a hop file in CSV format
+ *
+ * @param filename          Desired file name
+ * @param num_frequencies   Number of desired frequencies
+ *
+ * @return int 0 on success or -1 on failure
+ */
+int generate_hop_csv(const char* filename, const int num_frequencies) {
+    int status = 0;
+    const bladerf_frequency startFrequency = 900000000;
+    const bladerf_frequency endFrequency   = 930000000;
+
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Error opening file for write.\n");
+        return -1;
+    }
+
+    int step = (endFrequency - startFrequency) / (num_frequencies - 1);
+
+    for (int i = 0; i < num_frequencies; i++) {
+        int frequency = startFrequency + i * step;
+        fprintf(file, "%d\n", frequency);
+    }
+    fprintf(file, "\n");
+
+    fclose(file);
+    return status;
+}
+
 struct hop_set * hop_set_load(const char *filename)
 {
     int status = -1;
@@ -75,9 +106,17 @@ struct hop_set * hop_set_load(const char *filename)
 
     in = fopen(filename, "r");
     if (in == NULL) {
-        fprintf(stderr, "Failed to open %s: %s\n",
+        fprintf(stderr, "Failed to open provided %s: %s\n",
                 filename, strerror(errno));
-        return NULL;
+
+        fprintf(stderr, "Generating a hop set: %s\n", filename);
+        status = generate_hop_csv(filename, 10);
+        if (status != 0) {
+            fprintf(stderr, "Failed to create hop file %s: %s\n",
+                    filename, strerror(errno));
+            return NULL;
+        }
+        in = fopen(filename, "r");
     }
 
     h = malloc(sizeof(h[0]));
