@@ -212,6 +212,7 @@ begin
 
     -- Meta FIFO combinatorial process
     meta_fsm_comb : process( all )
+        constant  META_NOW      : unsigned(63 downto 0) := (others => '1');
         variable  meta_time     : unsigned(63 downto 0);
         variable  packet_len    : integer;
     begin
@@ -243,7 +244,7 @@ begin
                                (packet_en = '1' and packet_ready = '1') ) ) then
                        meta_future.meta_read <= '1';
                        meta_future.state     <= META_WAIT;
-                       if( packet_en = '1' or meta_current.meta_p_time_r /= timestamp ) then
+                       if( packet_en = '1' or (meta_current.meta_p_time_r > timestamp and meta_current.meta_p_time_r /= META_NOW) ) then
                              meta_future.meta_time_go  <= '0';
                           else
                              meta_future.meta_time_go  <= '1';
