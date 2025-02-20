@@ -1086,7 +1086,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 break;
 
             case LIBUSB_TRANSFER_TIMED_OUT:
-                log_error("Transfer timed out for buffer %p\n\r",
+                log_error("Transfer timed out for %s buffer %p\n\r",
+                          (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX ? "TX" : "RX",
                           transfer->buffer);
                 stream->error_code = BLADERF_ERR_TIMEOUT;
                 break;
