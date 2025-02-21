@@ -179,8 +179,8 @@ architecture sample_shuffler of fx3_gpif is
 
     signal current, future      :   fsm_t := FSM_RESET_VALUE;
 
-    signal can_rx, should_rx    :   boolean;
-    signal can_tx, should_tx    :   boolean;
+    signal can_rx               :   boolean;
+    signal can_tx               :   boolean;
     signal rx_fifo_enough       :   boolean;
     signal tx_fifo_enough       :   boolean;
     signal rx_fifo_critical     :   boolean;
@@ -192,14 +192,10 @@ architecture sample_shuffler of fx3_gpif is
     attribute preserve                  :   boolean;
     attribute preserve  of can_rx       :   signal is true;
     attribute preserve  of can_tx       :   signal is true;
-    attribute preserve  of should_rx    :   signal is true;
-    attribute preserve  of should_tx    :   signal is true;
 
     attribute keep                      :   boolean;
     attribute keep      of can_rx       :   signal is true;
     attribute keep      of can_tx       :   signal is true;
-    attribute keep      of should_rx    :   signal is true;
-    attribute keep      of should_tx    :   signal is true;
 
     -- acknowledge(dma_channel) returns a dma_handshake_t with all bits 0
     -- except the bit corresponding to dma_channel
@@ -337,22 +333,28 @@ begin
         end if;
     end process gpif_mux;
 
-    -- Arbitrate RX and TX requests
-    -- In the event the FX3 simultaneously requests RX and TX, we generally
-    -- prioritize the TX first; this helps avoid discontinuities on the TX
-    -- signal. However, if RX is about to overflow, we'll choose that.
     can_and_should : process(pclk, reset)
+        variable rx_dma_req : boolean;
+        variable tx_dma_req : boolean;
+        variable rx_meta_ok : boolean;
     begin
         if (reset = '1') then
             can_rx      <= false;
             can_tx      <= false;
-            should_rx   <= false;
-            should_tx   <= false;
         elsif (rising_edge(pclk)) then
-            can_rx      <= dma_rx_enable = '1' and rx_fifo_enough and (dma_req.rx0 = '1' or dma_req.rx1 = '1');
-            can_tx      <= dma_tx_enable = '1' and tx_fifo_enough and (dma_req.tx2 = '1' or dma_req.tx3 = '1');
-            should_rx   <= can_rx and (not can_tx or rx_fifo_critical);
-            should_tx   <= can_tx and not rx_fifo_critical;
+            rx_dma_req := dma_req.rx0 = '1' or dma_req.rx1 = '1';
+            rx_meta_ok := meta_enable = '1' nand rx_meta_fifo_empty = '1';
+
+            can_rx <= dma_rx_enable = '1' and
+                      rx_fifo_enough and
+                      rx_dma_req and
+                      rx_meta_ok;
+
+            tx_dma_req := dma_req.tx2 = '1' or dma_req.tx3 = '1';
+
+            can_tx <= dma_tx_enable = '1' and
+                      tx_fifo_enough and
+                      tx_dma_req;
         end if;
     end process;
 
@@ -408,21 +410,24 @@ begin
                 future.fini_downcount   <= FINI_DOWNCOUNT_RESET;
                 future.finishing_rx   <= '0';
 
+                -- Arbitrate RX and TX requests
+                -- In the event the FX3 simultaneously requests RX and TX, we generally
+                -- prioritize the TX first; this helps avoid discontinuities on the TX
+                -- signal. However, if RX is about to overflow, we'll choose that.
                 if (current.dma_idle = '1') then
-                    if (should_rx and ( (rx_meta_fifo_empty = '0' and current.rx_meta_en = '1')
-                                        or (current.rx_meta_en = '0') ) ) then
-                        -- There is an RX to perform (sending data to FX3).
+                    future.dma_downcount <= gpif_buf_size-1;
+                    if (can_rx and rx_fifo_critical) then
                         future.ack_downcount    <= ACK_DOWNCOUNT_READ;
-                        future.dma_downcount    <= gpif_buf_size-1;
                         future.rx_current_dma   <= RX0;
                         future.state            <= SETUP_RD;
-
-                    elsif (should_tx) then
-                        -- There is a TX to perform (getting data from FX3).
+                    elsif (can_tx) then
                         future.ack_downcount    <= ACK_DOWNCOUNT_WRITE;
-                        future.dma_downcount    <= gpif_buf_size-1;
                         future.tx_current_dma   <= TX3;
                         future.state            <= SETUP_WR;
+                    elsif (can_rx) then
+                        future.ack_downcount    <= ACK_DOWNCOUNT_READ;
+                        future.rx_current_dma   <= RX0;
+                        future.state            <= SETUP_RD;
                     end if;
                 end if;
 
