@@ -149,6 +149,10 @@ header = """
     const char *stage, bladerf_gain gain);
   int bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch,
     const char *stage, bladerf_gain *gain);
+  int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch,
+        const char* cal_file_loc);
+  int bladerf_enable_gain_calibration(struct bladerf *dev, bladerf_channel ch,
+        bool en);
   int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel
     ch, const char *stage, const struct bladerf_range **range);
   int bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch,
