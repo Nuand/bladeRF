@@ -52,8 +52,10 @@ int async_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_INVAL;
     }
 
-    if (samples_per_buffer < 1024 || samples_per_buffer % 1024 != 0) {
-        log_error("samples_per_buffer must be multiples of 1024\n");
+    buffer_size_bytes = samples_to_bytes(format, samples_per_buffer);
+    if (buffer_size_bytes < USB_MSG_SIZE_SS || buffer_size_bytes % USB_MSG_SIZE_SS != 0) {
+        log_error("Samples_per_buffer must be multiples of %u\n",
+                  bytes_to_samples(format, USB_MSG_SIZE_SS));
         return BLADERF_ERR_INVAL;
     }
 
@@ -107,26 +109,6 @@ int async_init_stream(struct bladerf_stream **stream,
                       "Upgrade to at least FPGA version 0.15.0.\n");
             return BLADERF_ERR_UNSUPPORTED;
         }
-    }
-
-    switch(format) {
-        case BLADERF_FORMAT_SC8_Q7:
-        case BLADERF_FORMAT_SC8_Q7_META:
-            buffer_size_bytes = sc8q7_to_bytes(samples_per_buffer);
-            break;
-
-        case BLADERF_FORMAT_SC16_Q11:
-        case BLADERF_FORMAT_SC16_Q11_META:
-            buffer_size_bytes = sc16q11_to_bytes(samples_per_buffer);
-            break;
-
-        case BLADERF_FORMAT_PACKET_META:
-            buffer_size_bytes = samples_per_buffer;
-            break;
-
-        default:
-            status = BLADERF_ERR_INVAL;
-            break;
     }
 
     if (!status) {

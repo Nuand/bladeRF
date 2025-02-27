@@ -24,7 +24,7 @@
  * ~~~~~~~~~~~~~~~~~~~~~~~
  *
  * The FPGA handles data in units of "messages."  These messages are
- * 1024 or 2048 bytes for USB 2.0 (Hi-Speed) or USB 3.0 (SuperSpeed),
+ * 2048 or 8192 bytes for USB 2.0 (Hi-Speed) or USB 3.0 (SuperSpeed),
  * respectively.
  *
  * The first 16 bytes of the message form a header, which includes metadata
