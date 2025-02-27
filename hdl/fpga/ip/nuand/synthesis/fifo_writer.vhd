@@ -120,6 +120,8 @@ architecture simple of fifo_writer is
         fifo_clear          : std_logic;
         fifo_write          : std_logic;
         fifo_data           : unsigned(fifo_data'range);
+        fifo_12b_buf        : unsigned(95 downto 0);
+        write_cycle         : natural range 0 to 3;
         samples_left        : natural range 0 to in_sample_controls'length;
         in_sample_controls_r: sample_controls_t(0 to NUM_STREAMS-1);
         in_samples_r        : sample_streams_t(0 to NUM_STREAMS-1);
@@ -131,6 +133,8 @@ architecture simple of fifo_writer is
         fifo_clear          => '1',
         fifo_write          => '0',
         fifo_data           => (others => '-'),
+        fifo_12b_buf        => (others => '-'),
+        write_cycle         => 0,
         samples_left        => 0,
         in_sample_controls_r=> (others => SAMPLE_CONTROL_DISABLE),
         in_samples_r        => (others => ZERO_SAMPLE),
@@ -432,6 +436,57 @@ begin
             return rv;
         end function;
 
+
+        -- --------------------------------------------------------------------
+        -- MIMO PACKER: STEP 1 of 3 (SC12Q11 Highly Packed Mode)
+        -- --------------------------------------------------------------------
+        -- This block receives samples as an array of sample streams, one
+        -- element per channel. These streams need to be packed into a single,
+        -- wide bus that is written to a FIFO and delivered to the host.
+        -- For SC12Q11 (SC16_Q11_PACKED) format, each I and Q sample is 12 bits wide.
+        --
+        -- This packing scheme efficiently utilizes the available bandwidth
+        -- for the SC12Q11 format, allowing for 8 complete IQ pairs every 3 cycles.
+        --
+        -- The packing process fills 3 cycles of a 64-bit buffer with 8 24b IQ pairs:
+        -- Cycle 1: | 63:60 | 59:48 | 47:36 | 35:24 | 23:12 | 11:0  | Bit indices
+        --          |  Q0'  |   I0  |   Q1  |   I1  |   Q0  |  I0   | Samples
+        --           [-----][--------full 12-bit samples-----------]
+        --            4-bit
+        --           overlap
+        --
+        -- Cycle 2: | 63:56 | 55:44 | 43:32 | 31:20 | 19:8  |  7:0  | Bit indices
+        --          |  I1'  |   Q0  |   I0  |   Q1  |  I1   |  Q0'  | Samples
+        --           [-----][--------full 12-bit samples--------][---]
+        --            8-bit                                       8-bit
+        --           overlap                                     overlap
+        --
+        -- Cycle 3: | 63:52 | 51:40 | 39:28 | 27:16 | 15:4  |  3:0  | Bit indices
+        --          |   Q1  |   I1  |   Q0  |   I0  |  Q1   |  I1'  | Samples
+        --           [--------full 12-bit samples-----------][-----]
+        --                                                    4-bit
+        --                                                   overlap
+        --
+        -- Note: Samples with apostrophes (') indicate partial samples that span
+        -- across cycle boundaries. The complete samples are reconstructed by
+        -- combining these partial segments from different cycles.
+        function pack_sc12q11( sc : sample_controls_t;
+                               ss : sample_streams_t;
+                               d  : unsigned ) return unsigned is
+            constant IQ_PAIR_LEN  : positive := 24;
+            variable rv           : unsigned(d'range) := (others => '0');
+        begin
+            rv := d;
+            for i in sc'range loop
+                if( (sc(i).enable = '1') and (ss(i).data_v = '1') ) then
+                    rv := unsigned(ss(i).data_q(11 downto 0)) &
+                          unsigned(ss(i).data_i(11 downto 0)) &
+                          rv(rv'high downto rv'low+IQ_PAIR_LEN);
+                end if;
+            end loop;
+            return rv;
+        end function;
+
         procedure handle_fifo_write(
             signal fifo_current : in fifo_fsm_t;
             signal meta_current : in meta_fsm_t;
@@ -459,11 +514,18 @@ begin
                 if( write_req = '1' ) then
                     if( fifo_current.samples_left = 0 ) then
                         fifo_future.samples_left <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
+                        fifo_future.fifo_write <= write_req;
+
                         if( eight_bit_mode_en = '1' ) then
                             fifo_future.fifo_write <= write_req and fifo_current.eight_bit_delay;
                             fifo_future.eight_bit_delay <= not fifo_current.eight_bit_delay;
-                        else
-                            fifo_future.fifo_write <= write_req;
+                        end if;
+
+                        if( highly_packed_mode_en = '1' ) then
+                            fifo_future.write_cycle <= (fifo_current.write_cycle + 1) mod 4;
+                            if fifo_current.write_cycle = 0 then
+                                fifo_future.fifo_write <= '0';
+                            end if;
                         end if;
                     else
                         -- MIMO PACKER: STEP 3 of 3
@@ -489,14 +551,33 @@ begin
 
         -- MIMO PACKER: STEP 1 of 3
         if( packet_en = '0' ) then
+            fifo_future.fifo_data  <= pack(fifo_current.in_sample_controls_r,
+                                           fifo_current.in_samples_r,
+                                           fifo_current.fifo_data);
+
+            if( highly_packed_mode_en = '1' ) then
+                fifo_future.fifo_12b_buf <= pack_sc12q11(
+                    sc => in_sample_controls,
+                    ss => in_samples,
+                    d => fifo_current.fifo_12b_buf
+                );
+
+                if fifo_current.write_cycle = 1 then
+                    fifo_future.fifo_data <= fifo_current.fifo_12b_buf(
+                        fifo_data'length-1 downto fifo_current.fifo_12b_buf'low);
+                elsif fifo_current.write_cycle = 2 then
+                    fifo_future.fifo_data <= fifo_current.fifo_12b_buf(
+                        fifo_data'length-1+16 downto fifo_current.fifo_12b_buf'low+16);
+                elsif fifo_current.write_cycle = 3 then
+                    fifo_future.fifo_data <= fifo_current.fifo_12b_buf(
+                        fifo_data'length-1+32 downto fifo_current.fifo_12b_buf'low+32);
+                end if;
+            end if;
+
             if( eight_bit_mode_en = '1' ) then
                 fifo_future.fifo_data <= pack_eight_bit_mode(fifo_current.in_sample_controls_r,
                                                              fifo_current.in_samples_r,
                                                              fifo_current.fifo_data);
-            else
-                fifo_future.fifo_data  <= pack(fifo_current.in_sample_controls_r,
-                                               fifo_current.in_samples_r,
-                                               fifo_current.fifo_data);
             end if;
         end if;
 
