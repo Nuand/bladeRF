@@ -141,6 +141,8 @@ int sync_init(struct bladerf_sync *sync,
 {
     int status = 0;
     size_t i, bytes_per_sample;
+    size_t bytes_per_buffer;
+    const size_t GPIF_BUF_SIZE = 8192;
 
     if (num_transfers >= num_buffers) {
         return BLADERF_ERR_INVAL;
@@ -168,27 +170,22 @@ int sync_init(struct bladerf_sync *sync,
         }
     }
 
-    switch (format) {
-        case BLADERF_FORMAT_SC8_Q7:
-        case BLADERF_FORMAT_SC8_Q7_META:
-            bytes_per_sample = 2;
-            break;
+    bytes_per_sample = samples_to_bytes(format, 1);
+    bytes_per_buffer = samples_to_bytes(format, buffer_size);
+    if (bytes_per_buffer < GPIF_BUF_SIZE || bytes_per_buffer % GPIF_BUF_SIZE != 0) {
+        size_t original_size = buffer_size;
 
-        case BLADERF_FORMAT_SC16_Q11:
-        case BLADERF_FORMAT_SC16_Q11_META:
-        case BLADERF_FORMAT_PACKET_META:
-            bytes_per_sample = 4;
-            break;
+        /* Round up to the next multiple of GPIF_BUF_SIZE, ensuring at least one GPIF buffer */
+        buffer_size = bytes_per_buffer == 0 ? GPIF_BUF_SIZE / bytes_per_sample :
+                     ((bytes_per_buffer + GPIF_BUF_SIZE - 1) / GPIF_BUF_SIZE)
+                     * (GPIF_BUF_SIZE / bytes_per_sample);
 
-        default:
-            log_debug("Invalid format value: %d\n", format);
-            return BLADERF_ERR_INVAL;
-    }
+        log_warning("Requested buffer size %zu samples (%zu bytes) is invalid. "
+                    "Adjusting to %zu samples (%zu bytes).\n",
+                    original_size, samples_to_bytes(format, original_size),
+                    buffer_size, samples_to_bytes(format, buffer_size));
 
-    /* bladeRF GPIF DMA requirement */
-    if ((bytes_per_sample * buffer_size) % 4096 != 0) {
-        assert(!"Invalid buffer size");
-        return BLADERF_ERR_INVAL;
+        bytes_per_buffer = samples_to_bytes(format, buffer_size);
     }
 
     /* Deinitialize sync handle if it's initialized */
