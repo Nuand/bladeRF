@@ -44,6 +44,7 @@ entity fifo_reader is
         meta_en             :   in      std_logic;
         packet_en           :   in      std_logic;
         eight_bit_mode_en   :   in      std_logic;
+        highly_packed_mode_en : in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
 
         fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
@@ -142,6 +143,10 @@ architecture simple of fifo_reader is
         fifo_read           : std_logic;
         out_samples         : sample_streams_t(out_samples'range);
         eight_bit_sample_sel: std_logic;
+
+        -- Highly packed mode signals
+        packed_buffer       : std_logic_vector(47 downto 0);
+        packed_cycle        : integer range 0 to 3;
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
@@ -157,7 +162,9 @@ architecture simple of fifo_reader is
         packet_data_cache   => (others => '0'),
         fifo_read           => '0',
         out_samples         => (others => ZERO_SAMPLE),
-        eight_bit_sample_sel => '0'
+        eight_bit_sample_sel => '0',
+        packed_buffer       => (others => '0'),
+        packed_cycle        => 0
     );
 
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
@@ -420,6 +427,67 @@ begin
         end function;
 
         -- --------------------------------------------------------------------
+        -- MIMO UNPACKER: STEP 1 of 5 (SC12Q11 Highly Packed Mode)
+        -- --------------------------------------------------------------------
+        -- The sample FIFO output is a wide data bus that contains multiple
+        -- 12-bit I/Q samples packed across multiple cycles. This procedure unpacks
+        -- data from a 64-bit wide bus across three cycles to extract eight 12-bit I/Q pairs.
+        --
+        -- The packing scheme for 12-bit samples across three 64-bit cycles:
+        -- Cycle 1: | 63:60 | 59:48 | 47:36 | 35:24 | 23:12 | 11:0  | Bit indices
+        --          |  Q0'  |   I0  |   Q1  |   I1  |   Q0  |  I0   | Samples
+        --           [-----][--------full 12-bit samples-----------]
+        --            4-bit
+        --           overlap
+        --
+        -- Cycle 2: | 63:56 | 55:44 | 43:32 | 31:20 | 19:8  |  7:0  | Bit indices
+        --          |  I1'  |   Q0  |   I0  |   Q1  |  I1   |  Q0'  | Samples
+        --           [-----][--------full 12-bit samples--------][---]
+        --            8-bit                                       8-bit
+        --           overlap                                     overlap
+        --
+        -- Cycle 3: | 63:52 | 51:40 | 39:28 | 27:16 | 15:4  |  3:0  | Bit indices
+        --          |   Q1  |   I1  |   Q0  |   I0  |  Q1   |  I1'  | Samples
+        --           [--------full 12-bit samples-----------][-----]
+        --                                                    4-bit
+        --                                                   overlap
+        --
+        -- Note: Samples with apostrophes (') indicate partial samples that span
+        -- across cycle boundaries. The complete samples are reconstructed by
+        -- combining these partial segments from different cycles.
+        procedure unpack_sc12q11(
+            signal data : in std_logic_vector(63 downto 0);
+            signal previous_data : in std_logic_vector(47 downto 0);
+            signal cycle : in integer;
+            variable rv : out sample_streams_t
+        ) is
+            constant OFFSET_UNIT : natural := 24;
+        begin
+            for i in rv'range loop
+                rv(i).data_i := resize(signed(shift_right(unsigned(data),i*OFFSET_UNIT)(11 downto 0)),rv(i).data_i'length);
+                rv(i).data_q := resize(signed(shift_right(unsigned(data),i*OFFSET_UNIT)(23 downto 12)),rv(i).data_q'length);
+                rv(i).data_v := '0';
+            end loop;
+
+            if (cycle = 1) then
+                rv(0).data_i := resize(signed(previous_data(43 downto 32)),rv(0).data_i'length);
+                rv(0).data_q := resize(signed(data(7 downto 0) & previous_data(47 downto 44)),rv(0).data_q'length);
+                rv(1).data_i := resize(signed(shift_right(unsigned(data),8)(11 downto 0)),rv(1).data_i'length);
+                rv(1).data_q := resize(signed(shift_right(unsigned(data),8)(23 downto 12)),rv(1).data_q'length);
+            elsif (cycle = 2) then
+                rv(0).data_i := resize(signed(previous_data(27 downto 16)),rv(0).data_i'length);
+                rv(0).data_q := resize(signed(previous_data(39 downto 28)),rv(0).data_q'length);
+                rv(1).data_i := resize(signed(fifo_data(3 downto 0) & previous_data(47 downto 40)), rv(1).data_i'length);
+                rv(1).data_q := resize(signed(fifo_data(15 downto 4)), rv(1).data_q'length);
+            elsif (cycle = 3) then
+                rv(0).data_i := resize(signed(previous_data(11 downto 0)),rv(0).data_i'length);
+                rv(0).data_q := resize(signed(previous_data(23 downto 12)),rv(0).data_q'length);
+                rv(1).data_i := resize(signed(previous_data(35 downto 24)),rv(0).data_i'length);
+                rv(1).data_q := resize(signed(previous_data(47 downto 36)),rv(0).data_q'length);
+            end if;
+        end procedure;
+
+        -- --------------------------------------------------------------------
         -- MIMO UNPACKER: STEP 3 of 5
         -- --------------------------------------------------------------------
         -- The FIFO data has been unpacked into an array containing I and Q
@@ -459,7 +527,14 @@ begin
 
         fifo_future.packet_control.data_valid <= '0';
         -- MIMO UNPACKER: STEP 1 of 5
-        if( eight_bit_mode_en = '1') then
+        if (highly_packed_mode_en = '1' and NUM_STREAMS = 2) then
+            unpack_sc12q11(
+                data => fifo_data,
+                previous_data => fifo_current.packed_buffer,
+                cycle => fifo_current.packed_cycle,
+                rv => unpacked
+            );
+        elsif (eight_bit_mode_en = '1') then
             unpacked := unpack_eight_bit_mode(fifo_current.sample_controls_reg, fifo_data, fifo_current.eight_bit_sample_sel);
         else
             unpacked := unpack(fifo_current.sample_controls_reg, fifo_data);
@@ -566,11 +641,16 @@ begin
                         if( fifo_current.samples_left = 0 ) then
                             fifo_future.samples_left <= fifo_current.samples_left_init;
                             fifo_future.ch_shift     <= 0;
+                            fifo_future.fifo_read    <= read_req;
                             if( eight_bit_mode_en = '1' ) then
                                 fifo_future.fifo_read <= read_req and fifo_current.eight_bit_sample_sel;
                                 fifo_future.eight_bit_sample_sel <= not fifo_current.eight_bit_sample_sel;
-                            else
-                                fifo_future.fifo_read <= read_req;
+                            elsif (highly_packed_mode_en = '1' and NUM_STREAMS = 2) then
+                                fifo_future.packed_cycle <= (fifo_current.packed_cycle + 1) mod 4;
+                                fifo_future.packed_buffer <= fifo_data(fifo_data'high downto fifo_data'high-47);
+                                if read_req = '1' and fifo_current.packed_cycle = 3 then
+                                    fifo_future.fifo_read <= '0';
+                                end if;
                             end if;
                         else
                             -- MIMO UNPACKER: STEP 5 of 5
