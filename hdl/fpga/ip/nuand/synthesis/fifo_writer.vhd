@@ -43,6 +43,7 @@ entity fifo_writer is
         meta_en             :   in      std_logic;
         packet_en           :   in      std_logic;
         eight_bit_mode_en   :   in      std_logic := '0';
+        highly_packed_mode_en : in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
         mini_exp            :   in      std_logic_vector(1 downto 0);
 
