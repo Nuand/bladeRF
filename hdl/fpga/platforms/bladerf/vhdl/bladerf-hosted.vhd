@@ -769,6 +769,7 @@ begin
         meta_en             =>  meta_en_rx,
         packet_en           =>  packet_en_rx,
         eight_bit_mode_en   =>  '0',
+        highly_packed_mode_en => '0',
         timestamp           =>  rx_timestamp,
         mini_exp            =>  mini_exp2 & mini_exp1,
 
