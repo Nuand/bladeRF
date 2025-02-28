@@ -920,6 +920,7 @@ begin
         meta_en             =>  meta_en_tx,
         packet_en           =>  packet_en_tx,
         eight_bit_mode_en   =>  '0',
+        highly_packed_mode_en => '0',
         timestamp           =>  tx_timestamp,
 
         fifo_empty          =>  tx_sample_fifo.rempty,

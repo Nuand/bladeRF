@@ -339,6 +339,9 @@ begin
             tx_underflow_led     => open,
             tx_timestamp         => tx_timestamp,
 
+            -- Packing modes
+            highly_packed_mode_en => fx3_control.highly_packed_mode,
+
             -- Triggering
             trigger_arm          => '0',
             trigger_fire         => '0',
@@ -653,7 +656,8 @@ begin
         if rising_edge(tx_clock) then
             for i in dac_controls'range loop
                 if dac_streams(i).data_v = '1' then
-                    q_expected := to_integer(to_signed(message_count,8) & to_signed(tx_val+1, 8));
+                    q_expected := tx_val+1 when fx3_control.highly_packed_mode = '1'
+                                  else to_integer(to_signed(message_count,8) & to_signed(tx_val+1, 8));
 
                     assert(dac_streams(i).data_i = to_signed(tx_val, 16))
                         report "TX("&integer'image(i)&") I expected: " & integer'image(tx_val) & ", Actual: " & integer'image(to_integer(signed(dac_streams(i).data_i)))
@@ -668,7 +672,7 @@ begin
                         message_count := message_count + 1;
                     end if;
 
-                    tx_val := (tx_val + 2) mod 2048;
+                    tx_val := (tx_val + 2) when tx_val < 2046 else -2048;
                 end if;
             end loop;
         end if;
