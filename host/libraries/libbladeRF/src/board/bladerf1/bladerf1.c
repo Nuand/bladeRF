@@ -576,7 +576,7 @@ static int bladerf1_initialize(struct bladerf *dev)
     if (status < 0) {
 #if LOGGING_ENABLED
         if (status == BLADERF_ERR_UPDATE_FPGA) {
-            log_warning("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
+            log_error("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
                         "requires FPGA v%u.%u.%u or later. Please load a "
                         "different FPGA version before continuing.\n\n",
                         board_data->fpga_version.major,
@@ -589,7 +589,7 @@ static int bladerf1_initialize(struct bladerf *dev)
                         required_fpga_version.minor,
                         required_fpga_version.patch);
         } else if (status == BLADERF_ERR_UPDATE_FW) {
-            log_warning("FPGA v%u.%u.%u was detected, which requires firmware "
+            log_error("FPGA v%u.%u.%u was detected, which requires firmware "
                         "v%u.%u.%u or later. The device firmware is currently "
                         "v%u.%u.%u. Please upgrade the device firmware before "
                         "continuing.\n\n",
@@ -604,6 +604,16 @@ static int bladerf1_initialize(struct bladerf *dev)
                         board_data->fw_version.patch);
         }
 #endif
+
+        if (version_greater_or_equal(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION) &&
+            version_less_than(&board_data->fpga_version, &FPGA_LARGER_BUFFER_VERSION)) {
+            return BLADERF_ERR_UPDATE_FPGA;
+        }
+
+        if (version_greater_or_equal(&board_data->fpga_version, &FPGA_LARGER_BUFFER_VERSION) &&
+            version_less_than(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION)) {
+            return BLADERF_ERR_UPDATE_FW;
+        }
     }
 
     /* Detect AGC FPGA bug and report warning */
