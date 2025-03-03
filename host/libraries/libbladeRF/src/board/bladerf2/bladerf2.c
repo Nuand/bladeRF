@@ -254,6 +254,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     struct bladerf_version required_fw_version;
     char *full_path;
     bladerf_dev_speed usb_speed;
+    bool use_legacy_msg_size = false;
     size_t i;
     int ready, status;
 
@@ -324,17 +325,31 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     /* Determine data message size */
     CHECK_STATUS(dev->backend->get_device_speed(dev, &usb_speed));
 
+    use_legacy_msg_size = version_less_than(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION);
     switch (usb_speed) {
         case BLADERF_DEVICE_SPEED_SUPER:
             board_data->msg_size = USB_MSG_SIZE_SS;
+            if (use_legacy_msg_size)
+                board_data->msg_size = USB_MSG_SIZE_SS_LEGACY;
             break;
+
         case BLADERF_DEVICE_SPEED_HIGH:
             board_data->msg_size = USB_MSG_SIZE_HS;
+            if (use_legacy_msg_size)
+                board_data->msg_size = USB_MSG_SIZE_HS_LEGACY;
             break;
+
         default:
             log_error("%s: unsupported device speed (%d)\n", __FUNCTION__,
                       usb_speed);
             return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    log_debug("Size of a host<->FPGA message: %zu bytes\n", board_data->msg_size);
+    if (use_legacy_msg_size) {
+        log_warning("Using legacy message size. Consider upgrading firmware >= v%u.%u.%u and fpga >= v%u.%u.%u\n",
+            FW_LARGER_BUFFER_VERSION.major, FW_LARGER_BUFFER_VERSION.minor, FW_LARGER_BUFFER_VERSION.patch,
+            FPGA_LARGER_BUFFER_VERSION.major, FPGA_LARGER_BUFFER_VERSION.minor, FPGA_LARGER_BUFFER_VERSION.patch);
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */

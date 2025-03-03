@@ -63,6 +63,23 @@ extern bool bladerf_usb_reset_device_on_open;
 /* Size of a host<->FPGA message in BYTES */
 #define USB_MSG_SIZE_SS 8192
 #define USB_MSG_SIZE_HS 4096
+#define USB_MSG_SIZE_SS_LEGACY 2048
+#define USB_MSG_SIZE_HS_LEGACY 1024
+
+
+static const struct bladerf_version FW_LARGER_BUFFER_VERSION = {
+    .major = 2,
+    .minor = 5,
+    .patch = 0,
+    .describe = NULL
+};
+
+static const struct bladerf_version FPGA_LARGER_BUFFER_VERSION = {
+    .major = 0,
+    .minor = 16,
+    .patch = 0,
+    .describe = NULL
+};
 
 typedef enum {
     USB_TARGET_DEVICE,
