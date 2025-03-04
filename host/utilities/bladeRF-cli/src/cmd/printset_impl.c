@@ -1309,6 +1309,9 @@ int print_bitmode(struct cli_state *state, int argc, char **argv)
         case BLADERF_FORMAT_SC16_Q11:
             mode_str = "16 bit";
             break;
+        case BLADERF_FORMAT_SC16_Q11_PACKED:
+            mode_str = "Packed 16 bit";
+            break;
         case BLADERF_FORMAT_SC8_Q7:
             mode_str = "8 bit";
             break;
@@ -1334,7 +1337,7 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
 
     if (argc != 3) {
         if (argc == 2) {
-            printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);
+            printf("  Usage: %s %s <8|16|packed>\n", argv[0], argv[1]);
             rv = CLI_RET_OK;
             goto out;
         } else {
@@ -1360,8 +1363,10 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
         }
 
         state->sample_format = BLADERF_FORMAT_SC8_Q7;
+    } else if (!strcasecmp("packed", argv[2])) {
+        state->sample_format = BLADERF_FORMAT_SC16_Q11_PACKED;
     } else {
-        printf("  Usage: %s %s <8|16>\n", argv[0], argv[1]);
+        printf("  Usage: %s %s <8|16|packed>\n", argv[0], argv[1]);
         rv = CLI_RET_UNSUPPORTED;
         goto out;
     }
