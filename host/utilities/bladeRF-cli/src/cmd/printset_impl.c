@@ -1346,7 +1346,7 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
         }
     }
 
-    if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2])) {
+    if (!strcasecmp("16", argv[2]) || !strcasecmp("16bit", argv[2]) || !strcasecmp("packed", argv[2])) {
         bladerf_get_feature(state->dev, &feature);
         if(feature == BLADERF_FEATURE_OVERSAMPLE) {
             printf("  Error: 16bit mode not permitted when\n"
@@ -1354,7 +1354,9 @@ int set_bitmode(struct cli_state *state, int argc, char **argv)
             goto out;
         }
 
-        state->sample_format = BLADERF_FORMAT_SC16_Q11;
+        state->sample_format = !strcasecmp("packed", argv[2]) ?
+                               BLADERF_FORMAT_SC16_Q11_PACKED :
+                               BLADERF_FORMAT_SC16_Q11;
     } else if (!strcasecmp("8", argv[2]) || !strcasecmp("8bit", argv[2])) {
         if (strcmp(bladerf_get_board_name(state->dev), "bladerf2") != 0) {
             printf("  Error: BladeRF2 required for 8bit format\n");
