@@ -39,6 +39,7 @@
 #include "board/board.h"
 #include "helpers/timeout.h"
 #include "helpers/have_cap.h"
+#include "backend/usb/usb.h"
 
 #ifdef ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
 static inline void dump_buf_states(struct bladerf_sync *s)
@@ -142,7 +143,9 @@ int sync_init(struct bladerf_sync *sync,
     int status = 0;
     size_t i, bytes_per_sample;
     size_t bytes_per_buffer;
-    const size_t GPIF_BUF_SIZE = 8192;
+    size_t gpif_buffer_size = USB_MSG_SIZE_SS;
+    size_t valid_buffer_size = gpif_buffer_size;
+    struct bladerf_version fx3_version = FW_LARGER_BUFFER_VERSION;
 
     if (num_transfers >= num_buffers) {
         return BLADERF_ERR_INVAL;
@@ -170,15 +173,35 @@ int sync_init(struct bladerf_sync *sync,
         }
     }
 
+    status = dev->board->get_fw_version(dev, &fx3_version);
+    if (status != 0) {
+        log_error("Failed to get FX3 firmware version: %s\n",
+                  bladerf_strerror(status));
+        return status;
+    }
+
+    if (fx3_version.major <= FW_LARGER_BUFFER_VERSION.major &&
+        fx3_version.minor < FW_LARGER_BUFFER_VERSION.minor) {
+        gpif_buffer_size = USB_MSG_SIZE_SS_LEGACY;
+    }
+
+    log_debug("FX3 firmware %u.%u.%u GPIF buffer size: %zu%s\n",
+        fx3_version.major, fx3_version.minor, fx3_version.patch,
+        gpif_buffer_size, gpif_buffer_size == USB_MSG_SIZE_SS_LEGACY ? " (legacy)" : "");
+
+    if (format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+        valid_buffer_size = 3*gpif_buffer_size;
+    }
+
     bytes_per_sample = samples_to_bytes(format, 1);
     bytes_per_buffer = samples_to_bytes(format, buffer_size);
-    if (bytes_per_buffer < GPIF_BUF_SIZE || bytes_per_buffer % GPIF_BUF_SIZE != 0) {
+    if (bytes_per_buffer < valid_buffer_size || bytes_per_buffer % valid_buffer_size != 0) {
         size_t original_size = buffer_size;
 
-        /* Round up to the next multiple of GPIF_BUF_SIZE, ensuring at least one GPIF buffer */
-        buffer_size = bytes_per_buffer == 0 ? GPIF_BUF_SIZE / bytes_per_sample :
-                     ((bytes_per_buffer + GPIF_BUF_SIZE - 1) / GPIF_BUF_SIZE)
-                     * (GPIF_BUF_SIZE / bytes_per_sample);
+        /* Round up to the next multiple of valid_buffer_size, ensuring at least one GPIF buffer */
+        buffer_size = bytes_per_buffer == 0 ? valid_buffer_size / bytes_per_sample :
+                     ((bytes_per_buffer + valid_buffer_size - 1) / valid_buffer_size)
+                     * (valid_buffer_size / bytes_per_sample);
 
         log_warning("Requested buffer size %zu samples (%zu bytes) is invalid. "
                     "Adjusting to %zu samples (%zu bytes).\n",

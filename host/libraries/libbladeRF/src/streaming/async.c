@@ -44,6 +44,8 @@ int async_init_stream(struct bladerf_stream **stream,
 {
     struct bladerf_stream *lstream;
     size_t buffer_size_bytes;
+    size_t gpif_buffer_size = USB_MSG_SIZE_SS;
+    struct bladerf_version fx3_version = FW_LARGER_BUFFER_VERSION;
     size_t i;
     int status = 0;
 
@@ -52,10 +54,26 @@ int async_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_INVAL;
     }
 
+    status = dev->board->get_fw_version(dev, &fx3_version);
+    if (status != 0) {
+        log_error("Failed to get FX3 firmware version: %s\n",
+                  bladerf_strerror(status));
+        return status;
+    }
+
+    if (fx3_version.major <= FW_LARGER_BUFFER_VERSION.major &&
+        fx3_version.minor < FW_LARGER_BUFFER_VERSION.minor) {
+        gpif_buffer_size = USB_MSG_SIZE_SS_LEGACY;
+    }
+
+    log_debug("FX3 firmware %u.%u.%u GPIF buffer size: %zu%s\n",
+        fx3_version.major, fx3_version.minor, fx3_version.patch,
+        gpif_buffer_size, gpif_buffer_size == USB_MSG_SIZE_SS_LEGACY ? " (legacy)" : "");
+
     buffer_size_bytes = samples_to_bytes(format, samples_per_buffer);
-    if (buffer_size_bytes < USB_MSG_SIZE_SS || buffer_size_bytes % USB_MSG_SIZE_SS != 0) {
+    if (buffer_size_bytes < gpif_buffer_size || buffer_size_bytes % gpif_buffer_size != 0) {
         log_error("Samples_per_buffer must be multiples of %u\n",
-                  bytes_to_samples(format, USB_MSG_SIZE_SS));
+                  bytes_to_samples(format, gpif_buffer_size));
         return BLADERF_ERR_INVAL;
     }
 
