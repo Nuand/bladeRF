@@ -617,6 +617,12 @@ class BladeRF:
         _check_error(ret)
         return ret
     
+    def get_gain_calibration(self, ch):
+        gain = ffi.new("int *")
+        ret = libbladeRF.bladerf_get_gain_target(self.dev[0], ch, gain)
+        _check_error(ret)
+        return gain[0]
+    
     def set_gain(self, ch, gain):
         ret = libbladeRF.bladerf_set_gain(self.dev[0], ch, gain)
         _check_error(ret)
@@ -1142,7 +1148,12 @@ class BladeRF:
         def gain(self):
             """Gain, in dB"""
             return self.dev.get_gain(self.channel)
-
+        
+        @property
+        def gain_target(self):
+            "Computes the gain target for a specified channel, incorporating calibration corrections."
+            return self.dev.get_gain_calibration(self.channel)
+        
         @gain.setter
         def gain(self, value):
             return self.dev.set_gain(self.channel, value)
