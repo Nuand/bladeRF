@@ -2344,6 +2344,16 @@ typedef enum {
 } bladerf_format;
 
 /**
+ * Convert a sample format to a string suitable for printing
+ *
+ * @param   format  Format to convert to string
+ *
+ * @return  The string representation of the format
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_format_to_string(bladerf_format format);
+
+/**
  * @defgroup STREAMING_FORMAT_METADATA Metadata structure and flags
  *
  * @{

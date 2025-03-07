@@ -1787,6 +1787,28 @@ int bladerf_lock_otp(struct bladerf *dev)
 /* Helpers & Miscellaneous */
 /******************************************************************************/
 
+const char * bladerf_format_to_string(bladerf_format format)
+{
+    switch (format) {
+        case BLADERF_FORMAT_SC8_Q7:
+            return "BLADERF_FORMAT_SC8_Q7";
+        case BLADERF_FORMAT_SC8_Q7_META:
+            return "BLADERF_FORMAT_SC8_Q7_META";
+        case BLADERF_FORMAT_SC16_Q11_PACKED:
+            return "BLADERF_FORMAT_SC16_Q11_PACKED";
+        case BLADERF_FORMAT_SC16_Q11:
+            return "BLADERF_FORMAT_SC16_Q11";
+        case BLADERF_FORMAT_SC16_Q11_META:
+            return "BLADERF_FORMAT_SC16_Q11_META";
+        case BLADERF_FORMAT_PACKET_META:
+            return "BLADERF_FORMAT_PACKET_META";
+
+        default:
+            assert(!"Invalid format");
+            return "UNKNOWN";
+    }
+}
+
 const char *bladerf_strerror(int error)
 {
     switch (error) {
