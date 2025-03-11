@@ -2757,9 +2757,10 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev,
  *                              data stream. This must be greater than the
  *                              `num_xfers` parameter.
  * @param[in]   buffer_size     The size of the underlying stream buffers, in
- *                              samples. This value must be a multiple of 2048.
- *                              Note that samples are only transferred when a
- *                              buffer of this size is filled.
+ *                              samples. Must be a multiple of:
+ *                              - 8192 bytes (2048 for FW < v2.5.0)
+ *                              - For SC16_Q11_PACKED format, multiply by 3
+ *                              Invalid sizes are automatically rounded up.
  * @param[in]   num_transfers   The number of active USB transfers that may be
  *                              in-flight at any given time. If unsure of what
  *                              to use here, try values of 4, 8, or 16.
