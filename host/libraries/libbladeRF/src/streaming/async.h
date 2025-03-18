@@ -66,8 +66,6 @@ struct bladerf_stream {
 /* Get the number of bytes per stream buffer */
 static inline size_t async_stream_buf_bytes(struct bladerf_stream *s)
 {
-    if (s->format == BLADERF_FORMAT_PACKET_META)
-       return s->samples_per_buffer;
     return samples_to_bytes(s->format, s->samples_per_buffer);
 }
 

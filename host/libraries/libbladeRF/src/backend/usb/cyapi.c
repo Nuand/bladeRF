@@ -655,7 +655,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
 
         if ((stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
                 && stream->format == BLADERF_FORMAT_PACKET_META) {
-            status = submit_transfer(stream, next_buffer, meta.actual_count);
+            status = submit_transfer(stream, next_buffer, meta.actual_count * sizeof(uint32_t));
         } else {
             status = submit_transfer(stream, next_buffer, async_stream_buf_bytes(stream));
         }
@@ -714,7 +714,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         } else if (next_buffer != BLADERF_STREAM_NO_DATA) {
             if ((layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
                     && stream->format == BLADERF_FORMAT_PACKET_META) {
-                status = submit_transfer(stream, next_buffer, meta.actual_count);
+                status = submit_transfer(stream, next_buffer, meta.actual_count * sizeof(uint32_t));
             } else {
                 status = submit_transfer(stream, next_buffer, async_stream_buf_bytes(stream));
             }

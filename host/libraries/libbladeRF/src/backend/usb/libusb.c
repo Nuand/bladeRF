@@ -1125,7 +1125,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
             int status;
             if((stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
                   && stream->format == BLADERF_FORMAT_PACKET_META) {
-               status = submit_transfer(stream, next_buffer, metadata.actual_count);
+               status = submit_transfer(stream, next_buffer, metadata.actual_count * sizeof(uint32_t));
             } else {
                status = submit_transfer(stream, next_buffer, async_stream_buf_bytes(stream));
             }
@@ -1372,7 +1372,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
         if (buffer != BLADERF_STREAM_NO_DATA) {
             if((layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
                   && stream->format == BLADERF_FORMAT_PACKET_META) {
-               status = submit_transfer(stream, buffer, metadata.actual_count);
+               status = submit_transfer(stream, buffer, metadata.actual_count * sizeof(uint32_t));
             } else {
                status = submit_transfer(stream, buffer, async_stream_buf_bytes(stream));
             }
