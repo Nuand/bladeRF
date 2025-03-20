@@ -1072,17 +1072,17 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     CHECK_STATUS(dev->board->get_sample_rate_range(dev, ch, &range));
 
     if (!is_within_range(range, rate)) {
-        return BLADERF_ERR_RANGE;
-    }
-
-    /* Feature range check */
-    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE &&
-        !is_within_range(&bladerf2_sample_rate_range_oversample, rate)) {
-        log_error("Sample rate outside of OVERSAMPLE feature range\n");
-        return BLADERF_ERR_RANGE;
-    } else if (dev->feature == BLADERF_FEATURE_DEFAULT &&
-               !is_within_range(&bladerf2_sample_rate_range_base, rate)) {
-        log_error("Sample rate outside of DEFAULT feature range\n");
+        log_error("Sample rate %.3f MHz is out of range\n"
+                  "Available ranges:\n"
+                  "  Normal operating range: %.3f MHz to %.3f MHz%s\n"
+                  "  Oversample feature range: %.3f MHz to %.3f MHz%s\n",
+                  rate/1e6,
+                  bladerf2_sample_rate_range_base.min/1e6,
+                  bladerf2_sample_rate_range_base.max/1e6,
+                  (dev->feature == BLADERF_FEATURE_DEFAULT) ? " (current)" : "",
+                  bladerf2_sample_rate_range_oversample.min/1e6,
+                  bladerf2_sample_rate_range_oversample.max/1e6,
+                  (dev->feature == BLADERF_FEATURE_OVERSAMPLE) ? " (current)" : "");
         return BLADERF_ERR_RANGE;
     }
 
