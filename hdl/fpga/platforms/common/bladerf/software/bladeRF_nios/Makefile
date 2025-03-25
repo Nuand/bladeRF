@@ -1004,7 +1004,7 @@ download-elf : $(ELF)
 		$(ECHO) Downloading $(ELF) not supported; \
 	else \
 		$(ECHO) Info: Downloading $(ELF); \
-		$(DOWNLOAD) --go --cpu_name=$(CPU_NAME) $(DOWNLOAD_CABLE_FLAG) $(SOPC_SYSID_FLAG) $(DOWNLOAD_JDI_FLAG) $(WRITE_GMON_OPTION) $(ELF); \
+		$(DOWNLOAD) --cpu_name=$(CPU_NAME) $(DOWNLOAD_CABLE_FLAG) $(SOPC_SYSID_FLAG) $(DOWNLOAD_JDI_FLAG) $(WRITE_GMON_OPTION) $(ELF); \
 	fi
 
 # Delete the target of a rule if it has changed and its commands exit
