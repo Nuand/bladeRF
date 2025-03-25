@@ -146,7 +146,7 @@ Command-Line Debugging with GDB
     - `$QUARTUS_INSTALL_DIR/nios2eds/nios2_command_shell.sh`
   - cd into `$BLADERF_DIR/hdl/quartus/work/<platform>-<size>-<rev>/bladeRF_nios`
   - Start the Nios gdb client:
-    - `nios2-elf-gdb -ex "target remote localhost:8888" bladeRF_nios.elf`
+    - `make WORKDIR=work/<platform>-<size>-<rev> elf-gdb`
   - The Nios processor will now be in a paused state. This lets us setup breakpoints and whatnot as needed for debug. When ready to begin the debug process, issue the `continue` command. This will unpause the Nios.
     - If a breakpoint is hit, gdb will pause the Nios again until you issue another `continue` command. This may cause a timeout and break the user application. Breakpoints can have [commands associated with them](https://ftp.gnu.org/old-gnu/Manuals/gdb/html_node/gdb_34.html), so when one is hit, gdb can immediately print a value and continue. The print operation is slow enough that if more than a few characters are printed, it will trigger a timeout in libbladeRF. Refer to the *Debugging Tips* section for how to increase the timeout.
 

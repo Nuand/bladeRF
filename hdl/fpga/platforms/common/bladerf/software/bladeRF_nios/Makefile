@@ -897,6 +897,8 @@ endif # QSYS == 1
 	@$(ECHO) "  Run targets:"
 	@$(ECHO) "    download-elf      - Download and run your elf executable"
 	@$(ECHO) "    program-flash     - Program flash contents to the board"
+	@$(ECHO) "    gdb-server        - Start GDB server on port 8888"
+	@$(ECHO) "    elf-gdb           - Connect GDB to running server and load symbols"
 
 # Handy rule to skip making libraries and just make application.
 .PHONY : app
@@ -1111,3 +1113,13 @@ $(OBJDUMP_NAME) : $(ELF)
 .PHONY: print-elf-name
 print-elf-name:
 	@$(ECHO) $(ELF)
+
+.PHONY : elf-gdb
+elf-gdb : $(ELF)
+	@$(ECHO) Info: Starting GDB for $(ELF)
+	nios2-elf-gdb -ex "target remote localhost:8888" $(ELF)
+
+.PHONY : gdb-server
+gdb-server:
+	@$(ECHO) Info: Starting GDB server on port 8888
+	nios2-gdb-server --tcpport 8888 --tcppersist
