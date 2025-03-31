@@ -278,11 +278,11 @@ begin
                 if( packet_en = '0' ) then
                    if( fifo_current.fifo_read = '1') then
                       meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
-                   end if;
-                   if( meta_current.dma_downcount <= 2 ) then
-                       -- Look for 2 because of the 2 cycles passing
-                       -- through META_LOAD and META_WAIT after this.
-                       meta_future.state <= META_LOAD;
+                      if( meta_current.dma_downcount <= 2 ) then
+                          -- Look for 2 because of the 2 cycles passing
+                          -- through META_LOAD and META_WAIT after this.
+                          meta_future.state <= META_LOAD;
+                      end if;
                    end if;
                 else
                    if( fifo_current.packet_control.data_valid = '1') then
