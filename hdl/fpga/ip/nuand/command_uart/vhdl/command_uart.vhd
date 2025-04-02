@@ -184,7 +184,7 @@ begin
             count := 0 ;
             irq <= '0' ;
         elsif( rising_edge(clock) ) then
-            if( sin_we = '1' ) then
+            if( sin_we = '1' and state /= WAIT_FOR_READ ) then
                 reg_request(count*8+7 downto count*8) <= sin_data ;
             end if ;
             case state is
