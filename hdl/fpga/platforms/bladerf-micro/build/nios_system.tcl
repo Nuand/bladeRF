@@ -33,6 +33,10 @@ if { [info exists platform_revision] == 0 } {
     puts "platform revision: ${platform_revision}"
 }
 
+# RAM base address is equal to the RAM size
+set ram_base_addr "0x[format %08x $ram_size]"
+puts "RAM size: ${ram_size}, base address: ${ram_base_addr}"
+
 # Instances and instance parameters
 # (disabled instances are intentionally culled)
 add_instance axi_ad9361_0 axi_ad9361 1.0
@@ -496,7 +500,7 @@ set_connection_parameter_value nios2.data_master/peripheral_spi.spi_control_port
 
 add_connection nios2.data_master ram.s1
 set_connection_parameter_value nios2.data_master/ram.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.data_master/ram.s1 baseAddress {0x00020000}
+set_connection_parameter_value nios2.data_master/ram.s1 baseAddress ${ram_base_addr}
 set_connection_parameter_value nios2.data_master/ram.s1 defaultConnection {0}
 
 add_connection nios2.data_master rffe_spi.spi_control_port
@@ -556,7 +560,7 @@ set_connection_parameter_value nios2.instruction_master/nios2.debug_mem_slave de
 
 add_connection nios2.instruction_master ram.s1
 set_connection_parameter_value nios2.instruction_master/ram.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.instruction_master/ram.s1 baseAddress {0x00020000}
+set_connection_parameter_value nios2.instruction_master/ram.s1 baseAddress ${ram_base_addr}
 set_connection_parameter_value nios2.instruction_master/ram.s1 defaultConnection {0}
 
 add_connection nios2.irq command_uart.interrupt
