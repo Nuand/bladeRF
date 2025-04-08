@@ -2179,8 +2179,8 @@ typedef enum {
      *
      * <i>*</i>The number of samples in a <i>block</i> is dependent upon
      * the USB speed being used:
-     *  - USB 2.0 Hi-Speed: 256 samples
-     *  - USB 3.0 SuperSpeed: 512 samples
+     *  - USB 2.0 Hi-Speed: 1024 samples
+     *  - USB 3.0 SuperSpeed: 2048 samples
      *
      * When using the bladerf_sync_rx() and bladerf_sync_tx() functions, the
      * above details are entirely transparent; the caller need not be concerned
@@ -2324,8 +2324,8 @@ typedef enum {
      *
      * <i>*</i>The number of samples in a <i>block</i> is dependent upon
      * the USB speed being used:
-     *  - USB 2.0 Hi-Speed: 256 samples
-     *  - USB 3.0 SuperSpeed: 512 samples
+     *  - USB 2.0 Hi-Speed: 1024 samples
+     *  - USB 3.0 SuperSpeed: 2048 samples
      *
      * When using the bladerf_sync_rx() and bladerf_sync_tx() functions, the
      * above details are entirely transparent; the caller need not be concerned
