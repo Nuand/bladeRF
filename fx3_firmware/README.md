@@ -18,7 +18,7 @@ Building the FX3 firmware first requires the download of the [Cypress FX3 SDK][c
 
 **This firmware build requires FX3 SDK version 1.3.3 or later**
 
-[cypress_sdk]: http://www.cypress.com/?rID=57990 (Cypress FX3 SDK)
+[cypress_sdk]: http://www.cypress.com/?rID=57990 (Cypress FX3 SDK) (downloaded file is `ezusbfx3sdk_1.3.5_Linux_x32-x64.tar.gz`)
 
 [CMake](https://cmake.org) is used to configure the build. There are two locations that we must provide to CMake when configuring the build:
 
@@ -26,6 +26,24 @@ Building the FX3 firmware first requires the download of the [Cypress FX3 SDK][c
 2. The path to the toolchain description file in `cmake/fx3-toolchain.cmake`
 
 ### Command Line-Based Build (Recommended for Linux Users) ###
+
+#### Setting up the FX3 SDK on Linux ####
+
+1. Extract the contents of `ezusbfx3sdk_1.3.5_Linux_x32-x64.tar.gz` (the contents are 5 .tar.gz files)
+2. Extract and arrange two of them such that these folders exist:
+   - `/opt/cypress/ARM_GCC/arm-2013.11/`
+   - `/opt/cypress/fx3_firmware_linux/cyfx3sdk/`
+
+##### Ubuntu 20.04 Dependencies #####
+On Ubuntu 20.04, you'll need to install 32-bit libraries:
+
+```
+sudo dpkg --add-architecture i386
+sudo apt update
+sudo apt install libc6:i386 libstdc++6:i386 libncurses5:i386
+```
+
+#### Building the Firmware ####
 
 Below are instructions for building the FX3 firmware from the command-line. This assumes that `cmake` and `make`
 are in your `PATH`, and is best suited for Linux developers.
