@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(libbladeRF C)
 
 
@@ -432,7 +432,7 @@ if(MSVC)
 endif()
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
-    cmake_policy(SET CMP0115 OLD)
+    cmake_policy(SET CMP0115 NEW)
 endif(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 

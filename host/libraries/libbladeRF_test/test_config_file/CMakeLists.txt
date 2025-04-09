@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(libbladeRF_test_config_file C)
 
 set(TEST_CONFIG_FILE_INCLUDES

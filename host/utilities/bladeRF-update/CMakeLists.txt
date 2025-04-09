@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)  # Increased for FetchContent
+cmake_minimum_required(VERSION 3.11...3.27)  # Increased for FetchContent
 project(bladeRF-update C)
 
 include(FetchContent)

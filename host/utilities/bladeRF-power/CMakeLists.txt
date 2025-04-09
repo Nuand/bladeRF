@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(bladeRF-power LANGUAGES C)
 
 set (CURSES_NEED_NCURSES TRUE)

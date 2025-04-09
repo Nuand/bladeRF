@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10...3.27)
 
 add_subdirectory(test_async)
 add_subdirectory(test_bootloader_recovery)

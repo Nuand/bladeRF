@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11) # FetchContent is available in 3.11
+cmake_minimum_required(VERSION 3.11...3.27) # FetchContent is available in 3.11
 project(libbladeRF_test_regression
         VERSION 3.11
         LANGUAGES CXX)
