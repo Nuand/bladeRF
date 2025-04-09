@@ -12,14 +12,9 @@ enable_testing()
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG        v1.13.x
+  GIT_TAG        v1.16.x
 )
 
-FetchContent_GetProperties(googletest)
-if(NOT googletest_POPULATED)
-  FetchContent_Populate(googletest)
-  add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-endif()
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
@@ -28,12 +23,9 @@ set(ABSL_PROPAGATE_CXX_STD ON)
 FetchContent_Declare(
   abseil
   GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
-  GIT_TAG lts_2023_01_25
+  GIT_TAG lts_2025_01_27
 )
-if(NOT abseil_POPULATED)
-  FetchContent_Populate(abseil)
-  add_subdirectory(${abseil_SOURCE_DIR} ${abseil_BINARY_DIR})
-endif()
+FetchContent_MakeAvailable(abseil)
 
 set(INCLUDES
     ./include
