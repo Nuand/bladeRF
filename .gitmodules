@@ -1,3 +1,6 @@
 [submodule "thirdparty/analogdevicesinc/no-OS"]
 	path = thirdparty/analogdevicesinc/no-OS
 	url = https://github.com/analogdevicesinc/no-OS/
+[submodule "host/utilities/bladeRF-fsk"]
+	path = host/utilities/bladeRF-fsk
+	url = https://github.com/Nuand/bladeRF-fsk
