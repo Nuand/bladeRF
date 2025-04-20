@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <libbladeRF.h>
-#include <unistd.h>
+#include "host_config.h"
 #include "log.h"
 
 #define CHECK(func_call) do { \

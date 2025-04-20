@@ -20,10 +20,12 @@
  */
 #include <stdio.h>
 #include <stdint.h>
-#include <unistd.h>
+#include "host_config.h"
 #include <string.h>
 #include "libbladeRF.h"
-
+#ifndef F_OK
+#define F_OK 0
+#endif
 int read_and_print_binary(const char *binary_path) {
     uint64_t frequency;
     float power;

@@ -8,6 +8,11 @@ set(INCLUDES
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
 )
 
+set(LIBS libbladerf_shared)
+if(NOT MSVC)
+    set(LIBS ${LIBS} m)
+endif()
+
 if(LIBBLADERF_SEARCH_PREFIX_OVERRIDE)
     add_definitions(-DLIBBLADERF_SEARCH_PREFIX="${LIBBLADERF_SEARCH_PREFIX_OVERRIDE}")
 else()
@@ -23,7 +28,7 @@ set(SRC
 
 include_directories(${INCLUDES})
 add_executable(libbladeRF_test_gain_calibration ${SRC})
-target_link_libraries(libbladeRF_test_gain_calibration libbladerf_shared m)
+target_link_libraries(libbladeRF_test_gain_calibration ${LIBS})
 
 configure_file(example_measurements/rx_sweep_0.csv
                ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/rx_sweep_0.csv
