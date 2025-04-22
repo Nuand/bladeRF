@@ -3499,6 +3499,7 @@ int CALL_CONV bladerf_image_print_metadata(const struct bladerf_image *image);
  * @return A pointer to a string representing the image type. Returns "Unknown Type"
  *         for any unrecognized or out-of-range values.
  */
+API_EXPORT
 const char* bladerf_image_type_to_string(bladerf_image_type type);
 
 /**
