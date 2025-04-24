@@ -6,7 +6,7 @@ project(bladeRF-cli C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  1)
-set(VERSION_INFO_MINOR  9)
+set(VERSION_INFO_MINOR  10)
 set(VERSION_INFO_PATCH  0)
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
@@ -200,6 +200,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/info.c
         src/cmd/jump_boot.c
         src/cmd/lms_reg_info.c
+        src/cmd/cmd_load_gain_calibration.c
         src/cmd/load.c
         src/cmd/mimo.c
         src/cmd/open.c
