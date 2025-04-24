@@ -200,7 +200,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/info.c
         src/cmd/jump_boot.c
         src/cmd/lms_reg_info.c
-        src/cmd/cmd_load_gain_calibration.c
+        src/cmd/load_gain_calibration.c
         src/cmd/load.c
         src/cmd/mimo.c
         src/cmd/open.c
