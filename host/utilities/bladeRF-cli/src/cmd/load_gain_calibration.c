@@ -24,17 +24,17 @@ int cmd_load_gain_calibration(struct cli_state *state, int argc, char **argv)
         if (!strcasecmp(argv[1], "rx")) {
 
             printf("\n  Loading RX Gain table from %s...\n\n", expanded_path);
-            lib_status = load_gain_calibration(dev, BLADERF_CHANNEL_RX(0), expanded_path);
+            lib_status = bladerf_load_gain_calibration(dev, BLADERF_CHANNEL_RX(0), expanded_path);
             if (lib_status == 0) {
-                printf("  Done. RX.\n\n");
+                printf("  RX load success!\n\n");
             }
 
         } else if (!strcasecmp(argv[1], "tx")) {
 
             printf("\n  Loading TX Gain table from %s...\n\n", expanded_path);
-            lib_status = load_gain_calibration(dev, BLADERF_CHANNEL_TX(0), expanded_path);
+            lib_status = bladerf_load_gain_calibration(dev, BLADERF_CHANNEL_TX(0), expanded_path);
             if (lib_status == 0) {
-                printf("  Done. Cycle power on the device.\n\n");
+                printf("  TX load success!\n\n");
             }
 
         } else {
