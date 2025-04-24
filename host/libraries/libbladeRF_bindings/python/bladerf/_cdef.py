@@ -153,6 +153,8 @@ header = """
         const char* cal_file_loc);
   int bladerf_enable_gain_calibration(struct bladerf *dev, bladerf_channel ch,
         bool en);
+  int bladerf_print_gain_calibration(struct bladerf *dev, bladerf_channel ch,
+        bool with_entries);        
   int bladerf_get_gain_target(struct bladerf *dev, bladerf_channel ch, 
         int *gain_target);
   int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel
