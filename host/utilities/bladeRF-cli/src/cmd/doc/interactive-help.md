@@ -358,6 +358,21 @@ Usage: `load <fpga|fx3> <filename>`
 
 Load an FPGA bitstream or program the FX3's SPI flash.
 
+load_gain
+----
+
+Usage: `load_gain <rx|tx> <filename>`
+
+Load a .tbl file for either RX or TX gain table calibration.
+
+ * `<rx|tx>`
+
+    Select which RF Path to use, only sets the first of each
+
+ * `<filename>`
+   
+    Set filepath and filename to locate .tbl file
+
 
 xb
 --

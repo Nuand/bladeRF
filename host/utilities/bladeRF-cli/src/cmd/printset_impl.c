@@ -726,6 +726,40 @@ out:
     return rv;
 }
 
+/* gain Table*/
+int print_gain_table(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+
+    status = bladerf_print_gain_calibration(state->dev,BLADERF_CHANNEL_RX(0),false );
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+
+    status = bladerf_print_gain_calibration(state->dev,BLADERF_CHANNEL_TX(0),false );
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+
+out:
+    return rv;
+}
+
+int set_gain_table(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    .tbl
+    rv = print_gain_table(state, argc, argv);
+
+    return rv;
+}
+
 int print_gain(struct cli_state *state, int argc, char **argv)
 {
     int rv = CLI_RET_OK;

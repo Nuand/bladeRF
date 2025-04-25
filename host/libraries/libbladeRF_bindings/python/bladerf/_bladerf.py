@@ -612,6 +612,7 @@ class BladeRF:
         ret = libbladeRF.bladerf_load_gain_calibration(self.dev[0], ch, path.encode())
         _check_error(ret)
         return ret
+
     def enable_gain_calibration(self, ch, enable):
         ret = libbladeRF.bladerf_enable_gain_calibration(self.dev[0], ch, enable)
         _check_error(ret)
@@ -622,7 +623,10 @@ class BladeRF:
         ret = libbladeRF.bladerf_get_gain_target(self.dev[0], ch, gain)
         _check_error(ret)
         return gain[0]
-    
+    def print_gain_calibration(self, ch, with_entries):
+        ret = libbladeRF.bladerf_print_gain_calibration(self.dev[0], ch, with_entries)
+        _check_error(ret)
+        return ret
     def set_gain(self, ch, gain):
         ret = libbladeRF.bladerf_set_gain(self.dev[0], ch, gain)
         _check_error(ret)
