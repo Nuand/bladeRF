@@ -754,7 +754,6 @@ out:
 int set_gain_table(struct cli_state *state, int argc, char **argv)
 {
     int rv   = CLI_RET_OK;
-    .tbl
     rv = print_gain_table(state, argc, argv);
 
     return rv;
