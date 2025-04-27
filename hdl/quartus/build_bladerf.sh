@@ -192,7 +192,7 @@ if [ "$build_hosted" == "1" ]; then
     mkdir -p build_logs
     build_pids=()
 
-    for config in "bladeRF 40" "bladeRF 115" "bladeRF-micro A4" "bladeRF-micro A9"; do
+    for config in "bladeRF 40" "bladeRF 115" "bladeRF-micro A4" "bladeRF-micro A5" "bladeRF-micro A9"; do
         read -r board size <<< "$config"
         echo "Starting build for $board hosted $size..."
         $0 -b "$board" -r hosted -s "$size" > "build_logs/$board-hosted-$size.log" 2>&1 &
