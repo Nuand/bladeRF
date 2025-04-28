@@ -220,6 +220,10 @@ int start_streaming(struct bladerf *dev, struct test_params *test) {
         if (cmd == 'i') {
             show_calibration_info = !show_calibration_info;
         }
+        if (cmd == 'b'){
+            bladerf_set_bias_tee(dev, ch, !test->bias_tee);
+            test->bias_tee = !test->bias_tee;
+        }
 
         if (BLADERF_CHANNEL_IS_TX(ch) == false) {
             CHECK(bladerf_get_gain_mode(dev, ch, &test->gain_mode));

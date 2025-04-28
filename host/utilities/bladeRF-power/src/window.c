@@ -96,6 +96,7 @@ void update_window(WINDOW *win, struct test_params *test) {
         test->direction == BLADERF_TX ? "TX" : "RX", test->channel);
     mvwprintw(win, start_y++, 1, "Gain Calibration: %s\n", test->gain_cal_enabled ? "enabled" : "disabled");
     mvwprintw(win, start_y++, 1, "Automatic Gain Control: %s\n", test->gain_mode == BLADERF_GAIN_MGC ? "disabled" : "enabled");
+    mvwprintw(win, start_y++, 1, "Biastee Control: %s\n", test->bias_tee  ?  "enabled": "disabled");
     mvwprintw(win, start_y++, 1, "Sample Rate:  %7.3f %sHz\n",
         uint64_to_eng_double(test->samp_rate).value,
         uint64_to_eng_double(test->samp_rate).unit);
@@ -138,7 +139,7 @@ void update_window(WINDOW *win, struct test_params *test) {
         }
     }
 
-    mvwprintw(win, maxy-2, 1, "Keys: [q] Quit, [h/l] Frequency, [j/k] Gain, [c] Toggle Calibration, [a] Toggle AGC, [i] Cal info, [m] Toggle messages\n");
+    mvwprintw(win, maxy-2, 1, "Keys: [q] Quit, [h/l] Frequency, [j/k] Gain, [c] Toggle Calibration, [a] Toggle AGC, [b] Toggle Biastee, [i] Cal info, [m] Toggle messages\n");
     box(win, 0, 0);
 
     if (maxy < MIN_LINES) {

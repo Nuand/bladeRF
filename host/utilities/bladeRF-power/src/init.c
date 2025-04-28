@@ -57,6 +57,7 @@ void init_params(struct test_params *test) {
     test->direction = DIRECTION_UNSET;
 
     test->rx_power = 0.0;
+    test->bias_tee = false;
     test->gain_cal_enabled = false;
     test->gain_cal_file = NULL;
 }

@@ -48,6 +48,7 @@ struct test_params {
     bool gain_cal_enabled;
     char *gain_cal_file;
     bool show_messages;
+    bool bias_tee;
     char message_buffer[4096];  // Adjust size as needed
 };
 

@@ -91,7 +91,13 @@ int main(int argc, char *argv[])
                     NUM_FREQ_SUFFIXES, &ok);
                 printf("Frequency: %" PRIu64 "\n", test.frequency);
                 break;
-
+            case 'b':
+                test.bias_tee = str2bool(optarg, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid bias tee value: %s\n", optarg);
+                    return -1;
+                }
+                break;
             case 't':
             case 'r':
                 if (test.direction != DIRECTION_UNSET) {
