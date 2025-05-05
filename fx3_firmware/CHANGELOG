@@ -5,7 +5,6 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
-
 v2.5.0 (2024-07-30)
 --------------------------------
  * Bumped GPIF DMA buffer size to 8192 bytes

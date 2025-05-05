@@ -5,6 +5,78 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
+v2.5.0 (2023-02-13)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+  FX3 Firmware v2.4.0
+  FPGA         v0.15.0
+
+Changes:
+ * Added 8-bit SC8_Q11 sample mode support for bladeRF 2.0 micro
+ * Added oversampling (OC) mode configuration to libbladeRF
+ * Extended TX bandwidth limit with oversampling enabled
+ * Improved compatibility checks and guards for sample rate and gain settings
+ * Fixed mutex locking bug during stream configuration
+ * Renamed bladerf_set_feature() to bladerf_enable_feature()
+ * Expanded help menus and command abbreviation support in bladeRF-cli
+ * Various minor fixes and cleanups
+
+v2.4.1 (2021-10-04)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+  FX3 Firmware v2.4.0
+  FPGA         v0.14.0
+
+Changes:
+ * Added support for bladeRF 2.0 micro xA5
+ * Fixed packet mode enable issue on bladeRF 1.0
+ * Added Wishbone master control functions
+ * ConfigFile: Added keywords clock_out, clock_sel, refin_freq, clock_ref
+ * ConfigFile: Fixed parsing of vctcxo_tamer key
+ * Minor documentation updates and code cleanups
+
+v2.4.0 (2020-12-23)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+  FX3 Firmware v2.4.0
+  FPGA         v0.12.0
+
+Changes:
+ * Added BLADERF_FORMAT_PACKET_META streaming format
+ * Added FPGA and firmware version checks for packet meta support
+ * Added metadata helper functions for packet streaming
+ * Introduced BLADERF_GPIO_PACKET_CORE_PRESENT definition
+ * Improved RFIC initialization parameter selection
+ * Added RFIC fast AGC settings
+ * Improved internal capability checking functions
+ * Updated version compatibility tables
+ * Minor fixes and code cleanups
+
+v2.2.1 (2019-07-30)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+  FX3 Firmware v2.3.2
+  FPGA         v0.11.0
+
+Changes:
+ * bladerf2: Set tuning mode default to host-based
+ * bladerf2: Include FPGA v0.11.0 compatibility
+ * streaming: Fix timestamp advancement calculation
+ * bladerf1: Allow quicktune to control XB GPIO register
+ * bladerf2: Improve error handling on FIR filter failures
+ * flash: Add OTP read/write and locking functionality
+ * host: Update FPGA flash type definitions
+ * host: Fix formatting error in internal error message
+ * host: Fix type warnings in flash.c (Windows build)
+
 v2.2.0 (2018-12-21)
 --------------------------------
 

@@ -5,6 +5,26 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
+v1.9.0 (2023-02-13)
+--------------------------------
+ * Added 8-bit sample support for RX/TX, CSV and binary formats
+ * Introduced "bitmode" and "feature" commands for enhanced device configuration
+ * Added "generate" command to create waveform samples
+ * Expanded command abbreviations (e.g., "set freq" for "set frequency")
+ * Improved help menus and error handling
+ * Updated samplerate reporting and recommendations for 8-bit and oversample modes
+ * Internal cleanups and minor fixes
+
+v1.8.0 (2019-07-30)
+--------------------------------
+ * Added 'tuning_mode' parameter; allows FPGA or host-based tuning selection
+ * Added 'filter' command to configure RFIC FIR filter modes for rx/tx paths
+ * Improved 'print hardware' output; fixed premature exit in FPGA tuning mode
+ * Updated flash utilities (flash_backup/image/init_cal/restore)
+ * Improved help text formatting and provided additional command hints
+ * Display error if FPGA size query fails
+ * Added internal device type detection and storage
+
 v1.7.1 (2018-12-21)
 --------------------------------
  * tx.c: fix memory leak in CSV-to-SC16Q11 conversion (fixes #694)
