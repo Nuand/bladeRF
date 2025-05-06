@@ -5,6 +5,17 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
+v1.10.0 (2025-05-06)
+--------------------------------
+ * Added sc16q11 packed format support
+ * Improved sample format tracking and replaced legacy bit_mode handling
+ * Migrated threading to unified libbladeRF thread macros
+ * Updated CMake minimum requirement to modernized syntax
+ * Fixed RX sample count overflow (issue #941)
+ * Return error code when no available devices detected (issue #844)
+ * Clarified K/M/G prefixes as powers of 1024 in documentation (issue #840)
+ * Updated documentation to reflect sample limit changes
+
 v1.9.0 (2023-02-13)
 --------------------------------
  * Added 8-bit sample support for RX/TX, CSV and binary formats
