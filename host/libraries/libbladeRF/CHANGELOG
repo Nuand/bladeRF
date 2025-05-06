@@ -5,6 +5,56 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
+v2.6.0 (2025-05-06)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+  FX3 Firmware v2.6.0
+  FPGA         v0.16.0
+
+New Features:
+ * Added SC16_Q11 packed sample format support, improving sample efficiency
+ * Increased FX3 GPIF buffer sizes, significantly boosting USB throughput (~356MB/s)
+ * Implemented dynamic Nios base address assignment based on RAM size
+ * Added parallel build support for hosted FPGA variants (40, 115, A4, A5, A9)
+ * Enabled elf-gdb and gdb-server support for improved FPGA debugging capability
+ * Added git revision information to FPGA build outputs
+ * bladeRF 2.0: Added support for gain calibration loading, enabling, and management
+ * bladeRF 2.0: Introduced bladeRF-power CLI tool for managing gain calibration
+ * bladeRF 2.0: Added bladerf_get_gain_target function for gain management
+ * bladeRF 2.0: Added bladerf_format_to_string API call
+ * bladeRF 2.0: Added bladerf_image_print_metadata API to display image metadata
+ * bladeRF 2.0: Improved compatibility checking between FPGA and FX3 firmware GPIF buffers
+
+Improvements:
+ * libbladeRF now compiles and runs under MinGW and MSVC on Windows platforms
+ * Replaced libpthreadswin32 dependency with native libbladeRF threading macros
+ * Improved error handling and reporting for out-of-range frequency and sample rate settings
+ * Added detailed logging for USB transfer and Nios access timeouts
+ * Updated Doxygen to v1.9.8, adding support for light/dark modes and modernized configuration
+ * Improved GPIF buffer alignment handling for larger FX3 buffer sizes
+ * Added CMake find_package() support for easier integration into external projects
+ * Streamlined internal error checking macros, simplifying codebase
+ * Enhanced sync_rx_meta example with additional argument parsing and MIMO support
+ * Improved FPGA simulations for bladeRF 1.0 and bladeRF 2.0 micro
+
+Bug Fixes:
+ * Fixed delayed sample and off-by-one timestamp issues on bladeRF 1.0
+ * Corrected TX meta sample gap issue when timestamp set to META_NOW
+ * Resolved corrupted UART buffer in command_uart component
+ * Fixed TX deadlock scenarios by refactoring RX/TX DMA prioritization
+ * Addressed SC16_Q11 packed RX discontinuity issue on overflow condition
+ * Fixed false timing paths and resolved multiple timing violations
+ * Fixed calibration load check in bladerf_get_gain_calibration
+ * Corrected RX meta packet timestamp and flags assignment
+ * Fixed sync TX initialization bug
+
+Miscellaneous:
+ * Updated API documentation to reflect larger GPIF buffer sizes
+ * Improved FX3 SDK setup instructions in README
+ * Minor typo and documentation corrections throughout the codebase
+
 v2.5.0 (2023-02-13)
 --------------------------------
 
