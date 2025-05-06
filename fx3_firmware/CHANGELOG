@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.6.0 (2025-05-06)
+--------------------------------
+ * Fixed missing break in BLADE_USB_CMD_QUERY_FPGA_SOURCE command handling
+ * Improved FX3 SDK setup instructions in README
+
 v2.5.0 (2024-07-30)
 --------------------------------
  * Bumped GPIF DMA buffer size to 8192 bytes
