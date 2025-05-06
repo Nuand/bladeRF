@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.4.0 (2025-05-06)
+--------------------------------
+ * add support for SC16_Q11_META format
+ * update Python binding definitions
+
 v1.3.0 (2023-02-13)
 --------------------------------
  * add special case for loading Windows DLL in Python bindings
