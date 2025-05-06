@@ -6,6 +6,30 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.16.0 (2025-05-06)
+--------------------------------
+
+This version brings significant FPGA improvements including sc16q11 packed mode
+support and optimized USB throughput, along with important bug fixes for bladeRF
+1.0 and 2.0 micro devices.
+
+ Features:
+ * hdl: Added sc16q11 packed mode for improved sample efficiency
+ * hdl: Increased FX3 GPIF buffer sizes, boosting USB throughput (~356MB/s)
+ * hdl: Implemented dynamic Nios base address assignment based on RAM size
+ * hdl: Added parallel build support for hosted FPGA variants (40, 115, A4, A5, A9)
+ * nios: Enabled elf-gdb and gdb-server support for improved debugging capability
+ * hdl: Added git revision information to FPGA build outputs
+
+ Fixes:
+ * hdl: Fixed delayed sample and off-by-one timestamp bugs on bladeRF 1.0
+ * hdl: Corrected TX meta sample gap issue when timestamp set to META NOW
+ * hdl: Fixed corrupted UART buffer in command_uart component
+ * hdl: Resolved TX deadlock scenarios by refactoring RX/TX DMA prioritization
+ * hdl: Improved FPGA simulation accuracy for bladeRF 1 and 2 micro models
+ * hdl: Fixed false timing paths and resolved multiple timing violations
+
+--------------------------------
 v0.15.3 (2023-08-09)
 --------------------------------
 
