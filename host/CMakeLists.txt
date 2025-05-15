@@ -4,6 +4,7 @@ project(bladeRF C)
 ################################################################################
 # Project configuration
 ################################################################################
+add_compile_definitions(NUAND_MODIFICATIONS=1)
 
 # All build output lands in this directory:
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
