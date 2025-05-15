@@ -36,7 +36,9 @@ LIBAD936X_DIR       := ../../../../fpga/ip/analogdevicesinc/no_OS
 
 INC_DIRS            += $(LIBAD936X_BUILDDIR) \
                        ../$(LIBAD936X_DIR)/include \
-                       ../../../../../../host/common/include
+                       ../../../../../../host/common/include \
+                       ../../../../../../host/build/common/thirdparty/ad936x/ \
+                       ../../../../../../thirdparty/analogdevicesinc/no-OS_local/platform_bladerf2/
 
 LIB_DIRS            += $(LIBAD936X_BUILDDIR)
 LDDEPS              += $(LIBAD936X_BUILDDIR)/libad936x.a
