@@ -1130,7 +1130,12 @@ void update_rbf_files(const UpdateInfo* update_info) {
             if (file_exists(filepath)) {
                 if (verify_file(filepath, latest_version->files[j].md5, latest_version->files[j].sha256, update_info)) {
                     rbf_up_to_date = true;
-                    strncpy(existing_rbf_path, filepath, MAX_PATH_LENGTH - 1);
+                    size_t copy_len = strlen(filepath);
+                    if (copy_len >= MAX_PATH_LENGTH) {
+                        copy_len = MAX_PATH_LENGTH - 1;
+                    }
+                    memcpy(existing_rbf_path, filepath, copy_len);
+                    existing_rbf_path[copy_len] = '\0';
                     printf("[+] Found up-to-date RBF at %s, skipping download\n", filepath);
                     break;
                 }
@@ -1184,7 +1189,12 @@ void update_fw_files(const UpdateInfo* update_info) {
         if (file_exists(filepath)) {
             if (verify_file(filepath, update_info->firmware.md5, update_info->firmware.sha256, update_info)) {
                 fw_up_to_date = true;
-                strncpy(existing_fw_path, filepath, MAX_PATH_LENGTH - 1);
+                size_t copy_len = strlen(filepath);
+                if (copy_len >= MAX_PATH_LENGTH) {
+                    copy_len = MAX_PATH_LENGTH - 1;
+                }
+                memcpy(existing_fw_path, filepath, copy_len);
+                existing_fw_path[copy_len] = '\0';
                 printf("[+] Found up-to-date firmware at %s, skipping download\n", filepath);
                 break;
             }

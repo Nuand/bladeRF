@@ -51,7 +51,9 @@
 #include <pthread.h>
 #include <errno.h>
 #include <time.h>
+#ifndef CLOCK_REALTIME
 #define CLOCK_REALTIME 0
+#endif
 
 #define THREAD pthread_t
 #define MUTEX pthread_mutex_t
