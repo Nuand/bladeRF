@@ -2,8 +2,8 @@ Source: bladerf
 Priority: optional
 Maintainer: Nuand LLC <bladeRF@nuand.com>
 Build-Depends: debhelper (>=9), cmake (>= 2.8.5), pkg-config, doxygen,
- libusb-1.0-0-dev (>= 1.0.12), libtecla-dev | libtecla1-dev, libncurses5-dev,
- git, help2man, pandoc
+ libusb-1.0-0-dev (>= 1.0.12), libedit-dev, libncurses5-dev,
+ git, help2man, pandoc, libcurl4-openssl-dev
 Standards-Version: 4.1.4
 Section: comm
 Homepage: https://www.nuand.com/bladeRF
