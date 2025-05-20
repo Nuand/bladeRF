@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-UPSTREAM='https://www.nuand.com/fpga/v0.14.0/hostedxA9.rbf'
-CHECKSUM='7dfe8c32f260d43a14b9583375a1a6eb'
+UPSTREAM='https://www.nuand.com/fpga/v0.16.0/hostedxA9.rbf'
+CHECKSUM='1ab3bc8bdcf16a5f0ddf3fcdbaa6556b'
 DATAFILE='/usr/share/Nuand/bladeRF/hostedxA9.rbf'
 DESCRIPT='FPGA bitstream'
 MYNAMEIS='bladerf-fpga-hostedxa9'
