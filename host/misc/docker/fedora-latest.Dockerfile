@@ -24,14 +24,14 @@
 FROM fedora:latest
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
-LABEL version="0.0.3"
+LABEL version="0.0.4"
 LABEL description="CI build environment for the bladeRF project"
 LABEL com.nuand.ci.distribution.name="Fedora"
 LABEL com.nuand.ci.distribution.version="latest"
 
 # Install things
-RUN yum groupinstall -y "Development Tools" \
- && yum install -y \
+RUN dnf install -y @development-tools \
+ && dnf install -y \
     clang \
     cmake \
     doxygen \
@@ -41,10 +41,13 @@ RUN yum groupinstall -y "Development Tools" \
     libedit-devel \
     libusbx \
     libusbx-devel \
+    ncurses-devel \
+    curl-devel \
+    awk \
     pandoc \
     wget \
- && yum clean all \
- && rm -rf /var/cache/yum \
+ && dnf clean all \
+ && rm -rf /var/cache/dnf \
  && echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
  && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
 
@@ -69,8 +72,7 @@ RUN cd /root/bladeRF/ \
         -DCMAKE_BUILD_TYPE=${buildtype} \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
-        -DTAGGED_RELEASE=${taggedrelease} \
-    ../ \
+        -DTAGGED_RELEASE=${taggedrelease} ../ \
  && make -j${parallel} \
  && make install \
  && ldconfig

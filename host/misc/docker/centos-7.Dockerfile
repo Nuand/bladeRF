@@ -24,14 +24,14 @@
 FROM centos:7
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
-LABEL version="0.0.3"
+LABEL version="0.0.4"
 LABEL description="CI build environment for the bladeRF project"
 LABEL com.nuand.ci.distribution.name="CentOS"
 LABEL com.nuand.ci.distribution.version="7"
 
 # Install things
-RUN yum groupinstall -y "Development Tools" \
- && yum install -y \
+RUN dnf install -y @development-tools \
+ && dnf install -y \
     clang \
     cmake \
     doxygen \
@@ -40,10 +40,13 @@ RUN yum groupinstall -y "Development Tools" \
     libedit-devel \
     libusbx \
     libusbx-devel \
+    ncurses-devel \
+    curl-devel \
+    awk \
     pandoc \
     wget \
- && yum clean all \
- && rm -rf /var/cache/yum \
+ && dnf clean all \
+ && rm -rf /var/cache/dnf \
  && echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
  && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
 
