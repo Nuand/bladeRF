@@ -39,7 +39,9 @@ RUN apt-get update \
         doxygen \
         git \
         help2man \
-        libtecla-dev \
+        libcurl4-openssl-dev \
+        libedit-dev \
+        libncurses5-dev \
         libusb-1.0-0-dev \
         pandoc \
         pkg-config \
