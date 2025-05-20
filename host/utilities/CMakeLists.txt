@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10...3.27)
 
+option(BUILD_BLADERF_FSK "Build bladeRF FSK" ON)
+
 if(NOT IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bladeRF-fsk/c)
     message(STATUS "bladeRF-fsk: Attempting to initialize missing submodule")
 
@@ -28,5 +30,7 @@ add_subdirectory(bladeRF-cli)
 add_subdirectory(bladeRF-update)
 if(NOT MSVC)
     add_subdirectory(bladeRF-power)
-    add_subdirectory(bladeRF-fsk/c)
+    if(BUILD_BLADERF_FSK)
+        add_subdirectory(bladeRF-fsk/c)
+    endif()
 endif()
