@@ -62,6 +62,7 @@ function usage()
     echo "       synth                Synthesize the design"
     echo "       full (default)       Fit the design and create programming files"
     echo "    -S <seed>             Fitter seed setting (default: 1)"
+    echo "    -D                    Output directory name won't contain the date"
     echo "    -h                    Show this text"
     echo ""
 
@@ -143,8 +144,9 @@ fi
 nios_rev="Tiny"
 flow="full"
 seed="1"
+omit_date=false
 
-while getopts ":cb:r:s:a:Hfn:l:S:h" opt; do
+while getopts ":cb:r:s:a:fn:l:S:Dh" opt; do
     case $opt in
         c)
             clear_work_dir=1
@@ -186,6 +188,10 @@ while getopts ":cb:r:s:a:Hfn:l:S:h" opt; do
 
         S)
             seed=$OPTARG
+            ;;
+
+        D)
+            omit_date=true
             ;;
 
         h)
@@ -501,7 +507,11 @@ if [[ ${flow} == "full" ]]; then
     BUILD_TIME_DONE=$(date -d"$BUILD_TIME_DONE" '+%F_%H.%M.%S')
 
     BUILD_NAME="$rev"x"$size"
-    BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
+    if [ "$omit_date" = false ]; then
+        BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
+    else
+        BUILD_OUTPUT_DIR="$BUILD_NAME"
+    fi
     RBF=$BUILD_NAME.rbf
 
     mkdir -p "$BUILD_OUTPUT_DIR"

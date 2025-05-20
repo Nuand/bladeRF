@@ -20,7 +20,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <histedit.h>
+#ifdef __FreeBSD__
+#include <edit/readline/readline.h>
+#else
 #include <editline/readline.h>
+#endif
 #include <string.h>
 #include <errno.h>
 #include "input_impl.h"

@@ -16,6 +16,22 @@
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
+/* Use CLOCK_MONOTONIC as a portable alternative that works on FreeBSD and Linux */
+#ifndef CLOCK_MONOTONIC_PRECISE
+#ifdef __FreeBSD__
+/* FreeBSD defines CLOCK_MONOTONIC_PRECISE for higher precision */
+#define TIMING_CLOCK CLOCK_MONOTONIC_PRECISE
+#elif defined(CLOCK_MONOTONIC_RAW) && defined(__linux__)
+/* Linux has CLOCK_MONOTONIC_RAW which is not affected by NTP adjustments */
+#define TIMING_CLOCK CLOCK_MONOTONIC_RAW
+#else
+/* Fallback to CLOCK_MONOTONIC which is POSIX standard */
+#define TIMING_CLOCK CLOCK_MONOTONIC
+#endif
+#else
+#define TIMING_CLOCK CLOCK_MONOTONIC_PRECISE
+#endif
+
 void print_usage(const char *prog_name)
 {
     printf("Usage: %s [-h] [-v]\n", prog_name);
@@ -71,9 +87,9 @@ int main(int argc, char *argv[])
 
     // Collect samples
     CHECK_STATUS(bladerf_enable_module(dev, BLADERF_MODULE_RX, true));
-    CHECK_STATUS(clock_gettime(CLOCK_MONOTONIC_RAW, &start));
+    CHECK_STATUS(clock_gettime(TIMING_CLOCK, &start));
     CHECK_STATUS(bladerf_sync_rx(dev, samples, num_samples, NULL, 0));
-    CHECK_STATUS(clock_gettime(CLOCK_MONOTONIC_RAW, &end));
+    CHECK_STATUS(clock_gettime(TIMING_CLOCK, &end));
     CHECK_STATUS(bladerf_enable_module(dev, BLADERF_MODULE_RX, false));
 
     const double expected_sync_time = (double)num_samples / samp_rate;
