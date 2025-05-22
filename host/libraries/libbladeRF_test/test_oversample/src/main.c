@@ -2,7 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <getopt.h>
+#if !defined(_WIN32)
 #include <unistd.h>  // for getopt
+#else
+#include <windows.h>
+#include <clock_gettime.h>
+#endif
 #include <libbladeRF.h>
 #include <math.h>
 #include "log.h"
@@ -17,6 +23,10 @@
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 /* Use CLOCK_MONOTONIC as a portable alternative that works on FreeBSD and Linux */
+#if defined(_WIN32)
+/* On Windows, only CLOCK_REALTIME is supported by our implementation */
+#define TIMING_CLOCK CLOCK_REALTIME
+#else
 #ifndef CLOCK_MONOTONIC_PRECISE
 #ifdef __FreeBSD__
 /* FreeBSD defines CLOCK_MONOTONIC_PRECISE for higher precision */
@@ -31,6 +41,7 @@
 #else
 #define TIMING_CLOCK CLOCK_MONOTONIC_PRECISE
 #endif
+#endif
 
 void print_usage(const char *prog_name)
 {
@@ -44,6 +55,7 @@ int main(int argc, char *argv[])
     int status = 0;
     struct bladerf *dev = NULL;
     int opt;
+    int opt_ind = 0;
     bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_INFO);
 
     bladerf_frequency freq = 915e6;
@@ -56,7 +68,13 @@ int main(int argc, char *argv[])
 
     struct timespec start, end;
 
-    while ((opt = getopt(argc, argv, "hv")) != -1) {
+    struct option longopts[] = {
+        {"help", no_argument, 0, 'h'},
+        {"verbose", no_argument, 0, 'v'},
+        {0, 0, 0, 0}
+    };
+
+    while ((opt = getopt_long(argc, argv, "hv", longopts, &opt_ind)) != -1) {
         switch (opt) {
             case 'h':
                 print_usage(argv[0]);
