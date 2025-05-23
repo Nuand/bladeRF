@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018-2025 Nuand LLC.
+# Copyright (c) 2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,32 +21,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM ubuntu:lunar
+FROM rockylinux:9-minimal
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="Ubuntu"
-LABEL com.nuand.ci.distribution.codename="lunar"
-LABEL com.nuand.ci.distribution.version="23.04"
+LABEL com.nuand.ci.distribution.name="Rocky Linux"
+LABEL com.nuand.ci.distribution.codename="9"
+LABEL com.nuand.ci.distribution.version="9"
 
-# Install things
-RUN apt-get update \
- && apt-get install -y \
-        build-essential \
+# Install dnf first, then everything else
+RUN microdnf install -y dnf \
+ && dnf update -y \
+ && dnf install -y epel-release \
+ && dnf groupinstall -y "Development Tools" \
+ && dnf config-manager --set-enabled crb \
+ && dnf install -y \
         clang \
         cmake \
         doxygen \
         git \
         help2man \
-        libcurl4-openssl-dev \
-        libedit-dev \
-        libncurses5-dev \
-        libusb-1.0-0-dev \
+        libcurl-devel \
+        libedit-devel \
+        ncurses-devel \
+        libusb1-devel \
         pandoc \
-        pkg-config \
         usbutils \
- && apt-get clean
+ && dnf clean all
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
@@ -69,8 +71,9 @@ RUN cd /root/bladeRF/ \
         -DCMAKE_BUILD_TYPE=${buildtype} \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
+        -DTEST_REGRESSION=ON \
         -DTAGGED_RELEASE=${taggedrelease} \
     ../ \
  && make -j${parallel} \
  && make install \
- && ldconfig
+ && ldconfig 

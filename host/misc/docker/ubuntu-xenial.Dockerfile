@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -42,11 +42,27 @@ RUN apt-get update \
         libcurl4-openssl-dev \
         libedit-dev \
         libncurses5-dev \
+        libncurses-dev \
+        libncursesw5-dev \
+        libssl-dev \
         libusb-1.0-0-dev \
         pandoc \
         pkg-config \
         usbutils \
+        wget \
  && apt-get clean
+
+# Custom compile cmake because the version provided in the xenial repos is too old for our cmake scripts
+RUN version=3.28 \
+&& build=1 \
+&& mkdir ~/temp \
+&& cd ~/temp \
+&& wget -nv https://cmake.org/files/v$version/cmake-$version.$build.tar.gz \
+&& tar -xzf cmake-$version.$build.tar.gz \
+&& cd cmake-$version.$build/ \
+&& ./bootstrap --parallel=$(nproc) --no-debugger \
+&& make -j$(nproc) \
+&& make install
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
@@ -59,6 +75,8 @@ ARG buildtype=Release
 ARG taggedrelease=NO
 ARG parallel=1
 
+RUN ${compiler} --version
+
 # Do the build!
 RUN cd /root/bladeRF/ \
  && mkdir -p build \
@@ -70,7 +88,8 @@ RUN cd /root/bladeRF/ \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
         -DTAGGED_RELEASE=${taggedrelease} \
-    ../ \
+        ../ \
  && make -j${parallel} \
  && make install \
  && ldconfig
+    

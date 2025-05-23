@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
             case 't':
             case 'r':
-                if (test.direction != DIRECTION_UNSET) {
+                if ((int)test.direction != DIRECTION_UNSET) {
                     fprintf(stderr, "Only one direction may be specified.\n");
                     test.direction = ask_direction();
                     break;
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     CHECK(bladerf_get_devinfo(dev, &devinfo));
     printf("Device: %s\n", devinfo.serial);
 
-    if (test.direction == DIRECTION_UNSET) {
+    if ((int)test.direction == DIRECTION_UNSET) {
         test.direction = ask_direction();
     }
 
