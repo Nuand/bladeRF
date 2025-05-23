@@ -30,6 +30,8 @@ LABEL com.nuand.ci.distribution.name="Ubuntu"
 LABEL com.nuand.ci.distribution.codename="latest"
 LABEL com.nuand.ci.distribution.version="latest"
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install things
 RUN apt-get update \
  && apt-get install -y \
@@ -69,6 +71,7 @@ RUN cd /root/bladeRF/ \
         -DCMAKE_BUILD_TYPE=${buildtype} \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
+        -DTEST_REGRESSION=ON \
         -DTAGGED_RELEASE=${taggedrelease} \
     ../ \
  && make -j${parallel} \

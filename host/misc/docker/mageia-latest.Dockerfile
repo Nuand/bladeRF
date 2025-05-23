@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,32 +21,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM i386/ubuntu:trusty
+FROM mageia:latest
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="Ubuntu"
-LABEL com.nuand.ci.distribution.codename="trusty-i386"
-LABEL com.nuand.ci.distribution.version="14.04"
+LABEL com.nuand.ci.distribution.name="Mageia Linux"
 
-# Install things
-RUN apt-get update \
- && apt-get install -y \
-        build-essential \
+# Install development tools and required packages using urpmi (Mageia's package manager)
+RUN urpmi.update -a \
+ && urpmi --auto \
+        task-c-devel \
+        task-c++-devel \
         clang \
         cmake \
         doxygen \
         git \
         help2man \
-        libcurl4-openssl-dev \
-        libedit-dev \
-        libncurses5-dev \
-        libusb-1.0-0-dev \
-        pandoc \
-        pkg-config \
+        lib64curl-devel \
+        lib64edit-devel \
+        lib64ncurses-devel \
+        lib64usb1.0-devel \
         usbutils \
- && apt-get clean
+        make \
+        gcc \
+        gcc-c++ \
+ && urpme --auto-orphans
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
@@ -69,8 +69,13 @@ RUN cd /root/bladeRF/ \
         -DCMAKE_BUILD_TYPE=${buildtype} \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
+        -DTEST_REGRESSION=ON \
         -DTAGGED_RELEASE=${taggedrelease} \
+        -DCURSES_INCLUDE_PATH=/usr/include \
+        -DCURSES_CURSES_LIBRARY=/usr/lib64/libcurses.so \
+        -DCURSES_NCURSES_LIBRARY=/usr/lib64/libncurses.so \
     ../ \
  && make -j${parallel} \
  && make install \
+ && echo "/usr/local/lib64" > /etc/ld.so.conf.d/bladerf.conf \
  && ldconfig
