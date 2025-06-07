@@ -269,6 +269,18 @@ int main(int argc, char *argv[]) {
             buf += 2 * to_send;
         }
 
+        // Wait for this burst to complete before scheduling the next one
+        if (status == 0 && i < (test.iterations - 1)) {
+            uint64_t burst_end_timestamp = meta.timestamp + test.burst_len;
+            int wait_status = wait_for_timestamp(dev_tx, BLADERF_MODULE_TX, 
+                                                burst_end_timestamp, 1000);
+            if (wait_status != 0) {
+                fprintf(stderr, "Failed to wait for burst %u to complete: %s\n",
+                        (unsigned int)i, bladerf_strerror(wait_status));
+                status = first_error(status, wait_status);
+            }
+        }
+
         meta.timestamp += test.period;
     }
 
