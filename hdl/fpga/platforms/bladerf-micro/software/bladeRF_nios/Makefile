@@ -82,3 +82,6 @@ $(LIBAD936X_BUILDDIR)/Makefile: $(LIBAD936X_MAKE_DEP)
 $(LIBAD936X_BUILDDIR)/libad936x.a: $(LIBAD936X_BUILD_DEP)
 	@$(ECHO) Info: Building libad936x
 	@$(MAKE) --no-print-directory -C $(LIBAD936X_BUILDDIR) ad936x
+
+# Ensure libad936x is built before the application objects that depend on its headers
+$(APP_OBJS): $(LIBAD936X_BUILDDIR)/libad936x.a
