@@ -3,6 +3,24 @@
 # Build a bladeRF fpga image
 ################################################################################
 
+# Ensure we're in the right directory and submodules are initialized
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Initialize and update submodules if needed
+echo "Checking and initializing submodules..."
+cd "$PROJECT_ROOT"
+if [ -f .gitmodules ]; then
+    # Initialize submodules if not already initialized
+    git submodule init
+
+    # Update submodules to ensure they're checked out
+    git submodule update
+
+    echo "Submodules initialized and updated."
+fi
+cd "$SCRIPT_DIR"
+
 cleanup() {
     # Prevent recursive cleanup calls
     trap '' INT TERM HUP
@@ -146,7 +164,7 @@ flow="full"
 seed="1"
 omit_date=false
 
-while getopts ":cb:r:s:a:fn:l:S:Dh" opt; do
+while getopts ":cb:r:s:a:fn:l:S:DhH" opt; do
     case $opt in
         c)
             clear_work_dir=1
