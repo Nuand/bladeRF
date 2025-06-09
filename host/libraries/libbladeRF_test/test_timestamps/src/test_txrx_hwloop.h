@@ -34,7 +34,14 @@ struct test_case {
     unsigned int fill;
     unsigned int init_ts_delay;
     bladerf_frequency frequency;
-    bladerf_gain gain;
+    bladerf_gain gain;          /* Legacy gain field - kept for compatibility */
+    
+    /* Separate TX and RX gain support */
+    bool tx_gain_set;
+    bool rx_gain_set;
+    bladerf_gain tx_gain;
+    bladerf_gain rx_gain;
+    
     char* dev_tx_str;
     char* dev_rx_str;
     bool just_tx;
@@ -51,6 +58,8 @@ static struct option const long_options[] = {
     { "fill", required_argument, NULL, 'f' },
     { "loop", no_argument, NULL, 'l' },
     { "iterations", required_argument, NULL, 'i' },
+    { "tx-gain", required_argument, NULL, 'g' },
+    { "rx-gain", required_argument, NULL, 'G' },
     { "verbosity", required_argument, NULL, 'v' },
     { "help", no_argument, NULL, 'h' },
     { NULL, 0, NULL, 0 },
@@ -95,6 +104,8 @@ static void usage()
     printf("    -p, --period <value>      Length between timestamps in samples\n");
     printf("    -f, --fill <value>        %% of burst to fill with [2000,2000]\n");
     printf("                                others set to [0,0]\n");
+    printf("    -g, --tx-gain <value>     Set TX gain (unified gain mode)\n");
+    printf("    -G, --rx-gain <value>     Set RX gain (unified gain mode, MGC)\n");
     printf("    -l, --loop                Enables RX device for TX capture\n");
     printf("    -c, --compare             Outputs CSV RX capture from TX device\n");
     printf("                                for multi-device fill comparison\n");
@@ -108,7 +119,7 @@ static void usage()
     printf("\n");
 
     printf("Loop setup:\n");
-    printf("    A bladeRF device will TX into the other bladeRF device’s\n"
+    printf("    A bladeRF device will TX into the other bladeRF device's\n"
            "    RX port over SMA and a 20dB attenuator. See the following\n"
            "    tested config.\n\n");
     printf("        bladeRF micro 2.0 TX -> 20dB att. -> SMA -> RX bladeRF x115\n");
@@ -155,6 +166,27 @@ int module_config_enable(struct bladerf *dev, bladerf_channel ch,
         return status;
     }
 
+    // Set gain if specified
+    if (BLADERF_CHANNEL_IS_TX(ch) && test->tx_gain_set) {
+        status = bladerf_set_gain(dev, ch, test->tx_gain);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set TX gain: %s\n", bladerf_strerror(status));
+            return status;
+        }
+    } else if (!BLADERF_CHANNEL_IS_TX(ch) && test->rx_gain_set) {
+        status = bladerf_set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set RX gain mode: %s\n", bladerf_strerror(status));
+            return status;
+        }
+        
+        status = bladerf_set_gain(dev, ch, test->rx_gain);
+        if (status != 0) {
+            fprintf(stderr, "Failed to set RX gain: %s\n", bladerf_strerror(status));
+            return status;
+        }
+    }
+
     status = bladerf_sync_config(dev, ch, sample_format,
                                  params->num_buffers, params->buf_size,
                                  params->num_xfers, params->timeout_ms);
@@ -194,6 +226,7 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
 
     /** RX init */
     if (tc->just_tx == false && tc->compare == true) {
+        // -l -c
         printf("Mode: TX -> RX (+RF loopback)\n");
         printf("    +---------------+       +---------------+\n");
         printf("    | TX Device   TX|---┬-->|RX   RX Device |\n");
@@ -201,6 +234,7 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         printf("    |             RX|<--┘   |               |\n");
         printf("    +---------------+       +---------------+\n");
     } else if (tc->just_tx == true && tc->compare == true) {
+        // -c
         printf("Mode: TX -> TX\n");
         printf("    +---------------+       +---------------+\n");
         printf("    | TX Device   TX|---┬   |RX   RX Device |\n");
@@ -208,13 +242,15 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
         printf("    |             RX|<--┘   |               |\n");
         printf("    +---------------+       +---------------+\n");
     } else if (tc->just_tx == false && tc->compare == false) {
+        // -l
         printf("Mode: TX -> RX\n");
         printf("    +---------------+       +---------------+\n");
         printf("    | TX Device   TX|------>|RX   RX Device |\n");
         printf("    |               |       |               |\n");
         printf("    |             RX|       |               |\n");
         printf("    +---------------+       +---------------+\n");
-    } else {
+    } else {// tc->just_tx == true && tc->compare == false
+        // defaults, no args
         printf("Mode: TX Only\n");
         printf("    +---------------+   v   +---------------+\n");
         printf("    | TX Device   TX|---┘   |RX   RX Device |\n");
@@ -248,7 +284,9 @@ int init_devices(struct bladerf** dev_tx, struct bladerf** dev_rx, struct app_pa
             return -1;
         }
 
-        status = bladerf_set_gain(*dev_tx, BLADERF_MODULE_RX, tc->gain);
+        // Use new RX gain CLI argument if set
+        bladerf_gain compare_gain = tc->rx_gain_set ? tc->rx_gain : tc->gain;
+        status = bladerf_set_gain(*dev_tx, BLADERF_MODULE_RX, compare_gain);
         if (status != 0) {
             fprintf(stderr, "Failed to set gain loopback compare RX gain: %s\n", bladerf_strerror(status));
             return -1;

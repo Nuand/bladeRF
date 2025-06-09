@@ -81,7 +81,7 @@ add_executable(libbladeRF_test_txrx_hwloop ${SRC})
 target_link_libraries(libbladeRF_test_txrx_hwloop ${LIBS})
 
 configure_file(scripts/test_txrx_hwloop.py
-               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${BIN_NAME}.py
+               ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libbladeRF_test_txrx_hwloop.py
                FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ
                COPYONLY)
 

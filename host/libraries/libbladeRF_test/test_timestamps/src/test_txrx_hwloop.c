@@ -63,6 +63,12 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     tc->fill = 50; //percent
     tc->init_ts_delay = 200000;
     tc->gain = 30;
+    
+    // Initialize gain parameters
+    tc->tx_gain_set = false;
+    tc->rx_gain_set = false;
+    tc->tx_gain = 0;
+    tc->rx_gain = 0;
 
     memset(p, 0, sizeof(p[0]));
     p->samplerate = 1e6;
@@ -162,6 +168,24 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Invalid number of iterations %s\n", optarg);
                     return -1;
                 }
+                break;
+
+            case 'g':
+                test.tx_gain = str2uint(optarg, 0, UINT_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid TX gain: %s\n", optarg);
+                    return -1;
+                }
+                test.tx_gain_set = true;
+                break;
+
+            case 'G':
+                test.rx_gain = str2uint(optarg, 0, UINT_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid RX gain: %s\n", optarg);
+                    return -1;
+                }
+                test.rx_gain_set = true;
                 break;
 
             case 'v':

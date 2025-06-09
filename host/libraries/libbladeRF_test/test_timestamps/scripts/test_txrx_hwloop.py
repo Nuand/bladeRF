@@ -26,8 +26,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
 import os
+import sys
 import argparse
 import subprocess
+import json
 
 def close_figure(event):
     if event.key == 'escape':
@@ -71,6 +73,8 @@ devarg_tx = ""
 devarg_rx = ""
 samp_rate_arg = ""
 devarg_verbosity = ""
+devarg_tx_gain = ""
+devarg_rx_gain = ""
 print_stats = False
 
 parser = argparse.ArgumentParser(
@@ -84,11 +88,21 @@ parser.add_argument('-sr', '--samprate', type=int, help='Sample Rate (Hz)', defa
 parser.add_argument('-p', '--period', type=int, help='period length (in samples)')
 parser.add_argument('-i', '--iterations', type=int, help='number of pulses')
 parser.add_argument('-t', '--threshold', type=int, help='edge count power threshold')
+parser.add_argument('-ts', '--threshold-spread', type=int, help='threshold spread (rising = threshold + spread, falling = threshold - spread)', default=int(1e6))
 parser.add_argument('-tx', '--txdev', type=str, help='TX device string')
 parser.add_argument('-rx', '--rxdev', type=str, help='RX device string')
+parser.add_argument('-g', '--tx-gain', type=int, help='TX gain (unified gain mode)')
+parser.add_argument('-G', '--rx-gain', type=int, help='RX gain (unified gain mode, MGC)')
 parser.add_argument('-v', '--verbosity', type=str, help='bladeRF log level', default="info")
 parser.add_argument('-c', '--compare', help='RF loopback compare', action="store_true", default=False)
+parser.add_argument('-l', '--loop', help='Enable RX device', action="store_false", default=True, dest="just_tx")
 parser.add_argument('-s', '--stats', help='print edge statistics', action="store_true", default=False)
+parser.add_argument('-o', '--output', type=str, help='output stats to the specified filename, in JSON format')
+parser.add_argument('-ng', '--no-gui', help='No GUI', action="store_false", default=True, dest="gui")
+parser.add_argument('-e', '--enforce', type=float, help='enforce results and exit code appropriately (in samples, lower is more strict, less than or equal)', default=False)
+parser.add_argument('--save-png', type=str, help='Path to save the plot output as a PNG file. When set the gui will not be shown. Use --png-width and --png-height to control size.')
+parser.add_argument('--png-width', type=int, help='Width of saved PNG in pixels (default: 800 for single plot, 1600 for dual plot)', default=None)
+parser.add_argument('--png-height', type=int, help='Height of saved PNG in pixels (default: 600)', default=None)
 
 args = parser.parse_args()
 
@@ -114,8 +128,20 @@ if args.stats:
     print_stats = True
 if args.samprate:
     samp_rate_arg = f"-s {args.samprate}"
+if args.tx_gain:
+    devarg_tx_gain = f"-g {args.tx_gain}"
+if args.rx_gain:
+    devarg_rx_gain = f"-G {args.rx_gain}"
 
-threshold_spread  = 1e6
+plot_count = 2 if not args.just_tx and args.compare else 1
+first_label = "TX" if args.just_tx else "RX"
+first_file = "compare.csv" if args.just_tx else "samples.csv"
+jout = {}
+jout["settings"] = {}
+jout["settings"]["python_args"] = " ".join(sys.argv[1:])
+test_pass = True
+
+threshold_spread  = args.threshold_spread
 rising_threshold  = threshold + threshold_spread
 falling_threshold = threshold - threshold_spread
 
@@ -126,39 +152,68 @@ binary_file = 'libbladeRF_test_txrx_hwloop'
 output_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(output_dir)
 proc = subprocess.run(f"./{binary_file} --fill {fill} --burst {burst} --period {period} "
-                      f"--iterations {iterations} -l {devarg_tx} {devarg_rx} {args.compare * '-c'} "
-                      f"{devarg_verbosity} {samp_rate_arg}", shell=True)
+                      f"--iterations {iterations} {devarg_tx} {devarg_rx} {args.compare * '-c'} {(not args.just_tx) * '-l'} "
+                      f"{devarg_verbosity} {samp_rate_arg} {devarg_tx_gain} {devarg_rx_gain}", shell=True)
 
 if proc.returncode != 0:
     print("Failed to run hwloop binary")
     exit(1)
 
+if not args.compare and args.just_tx:
+    print("No output written for python to analyze. Please use a combination of -c and -l to display something useful.")
+    exit(1)
+
 ################################################################
-# RX Data Analysis
+# TX or RX Data Analysis
 ################################################################
-data = pd.read_csv('samples.csv')
+data = pd.read_csv(first_file)
+
 I = data['I'].to_numpy()
 Q = data['Q'].to_numpy()
 power = I**2 + Q**2
 num_samples = range(len(I))
 
-if args.compare == True:
-    fig, ((ax1, ax3),
-          (ax2, ax4),
-          (ax5, ax6)) = plt.subplots(nrows=3, ncols=2, figsize=(16, 6))
+# Calculate figure size for custom PNG dimensions or GUI display
+if args.save_png:
+    # For PNG output, calculate figsize based on desired pixel dimensions
+    default_width = 1600 if plot_count == 2 else 800
+    default_height = 600
+    
+    png_width = args.png_width if args.png_width else default_width
+    png_height = args.png_height if args.png_height else default_height
+    
+    # Use DPI of 100 to make calculations simple (pixels = inches * 100)
+    dpi = 100
+    figsize = (png_width/dpi, png_height/dpi)
 else:
-    fig, (ax1, ax2, ax5) = plt.subplots(nrows=3, ncols=1, figsize=(8, 6))
+    # For GUI display, use the original sizes
+    figsize = (16, 6) if plot_count == 2 else (8, 6)
+    dpi = 100
 
-ax1.set_title('RX Board IQ')
-ax1.plot(I, label='I')
-ax1.plot(Q, label='Q')
-ax2.set_title('RX Board Power')
-ax2.plot(power, label='Power', color='red')
+if args.gui or args.save_png:
+    if plot_count == 2:
+        fig, ((ax1, ax3),
+            (ax2, ax4),
+            (ax5, ax6)) = plt.subplots(nrows=3, ncols=2, figsize=figsize, dpi=dpi)
+    else:
+        fig, (ax1, ax2, ax5) = plt.subplots(nrows=3, ncols=1, figsize=figsize, dpi=dpi)
+
+    ax1.set_title('%s Board IQ' % first_label)
+    ax1.plot(I, label='I')
+    ax1.plot(Q, label='Q')
+    ax2.set_title('%s Board Power' % first_label)
+    ax2.plot(power, label='Power', color='red')
+    
+    # Add threshold lines
+    ax2.axhline(y=rising_threshold, color='green', linestyle='--', alpha=0.7, label=f'Rising Threshold ({rising_threshold:.0f})')
+    ax2.axhline(y=falling_threshold, color='orange', linestyle='--', alpha=0.7, label=f'Falling Threshold ({falling_threshold:.0f})')
 
 positive_edge, negative_edge = edge_detector(power, rising_threshold, falling_threshold, cycles_to_debounce)
 pos_edge_indexes = np.argwhere(positive_edge).flatten()
-for i in pos_edge_indexes:
-    ax2.plot(i, rising_threshold, 'g^', markersize=6)
+
+if args.gui or args.save_png:
+    for i in pos_edge_indexes:
+        ax2.plot(i, rising_threshold, 'g^', markersize=6)
 
 time_delta_pos_edges = np.diff(pos_edge_indexes)
 avg = np.average(time_delta_pos_edges)
@@ -172,8 +227,10 @@ if print_stats:
     print(f"  Edge Count: {len(pos_edge_indexes)}")
 
 neg_edge_indexes = np.argwhere(negative_edge).flatten()
-for i in neg_edge_indexes:
-    ax2.plot(i, falling_threshold, 'yv', markersize=6)
+
+if args.gui or args.save_png:
+    for i in neg_edge_indexes:
+        ax2.plot(i, falling_threshold, 'yv', markersize=6)
 
 time_delta_neg_edges = np.diff(neg_edge_indexes)
 avg = np.average(time_delta_neg_edges)
@@ -186,8 +243,8 @@ if print_stats:
     print(f"  Std.Dev: {dev:.2f}")
     print(f"  Edge Count: {len(neg_edge_indexes)}")
 
-print("\nRX Board")
-print(f"  Predicted Timestamp: {(avg):.3f} samples, Error: {(avg-period):.3f} samples")
+print("\n%s Board" % first_label)
+print(f"  Measured Timestamp: {(avg):.3f} samples, Error: {(avg-period):.3f} samples")
 
 try:
     fill_expected = int(burst*fill/100)
@@ -197,38 +254,59 @@ try:
     dev = np.std(fill)
     fill_vs_burst = 100 * avg/burst
 except ValueError as err:
-    print(f"[Error] RX Board: Edge count imbalanced.\n{err}")
+    print(f"[Error] %s Board: Edge count imbalanced.\n{err}" % first_label)
     print(err)
     fill = None
     fill_vs_burst = -1
 
-ax5.set_title("Fill Error")
-ax5.set_xlabel("Error (samples)")
-fill_error = fill - fill_expected
-ax5.hist(fill_error, alpha=0.7, bins=30, color=('skyblue'))
 
-print(f"  Predicted Fill:      {fill_vs_burst:.2f}%, Error: {(avg-fill_expected):.2f} samples")
+if args.gui or args.save_png:
+    ax5.set_title("Fill Error")
+    ax5.set_xlabel("Error (samples)")
+    fill_error = fill - fill_expected
+    ax5.hist(fill_error, alpha=0.7, bins=30, color=('skyblue'))
+
+error_samples=(avg-fill_expected)
+
+jout[first_label] = {
+    "measured_fill_percent": fill_vs_burst,
+    "error_samples": error_samples}
+
+print(f"  Measured Fill:      {fill_vs_burst:.2f}%, Error: {error_samples:.2f} samples")
+
+if args.enforce:
+    local_pass = abs(error_samples) <= args.enforce
+    test_pass = False if not local_pass else test_pass
+    print(f"  Test threshold:      {args.enforce}, Result: %s" % ("PASS" if local_pass else "FAIL"))
+
 
 ################################################################
 # TX Loopback Compare
 ################################################################
-if args.compare == True:
+if plot_count == 2:
     data = pd.read_csv('compare.csv')
     I = data['I'].to_numpy()
     Q = data['Q'].to_numpy()
     power = I**2 + Q**2
     num_samples = range(len(I))
 
-    ax3.set_title('TX Loopback Compare IQ')
-    ax3.plot(I, label='I')
-    ax3.plot(Q, label='Q')
-    ax4.set_title('TX Loopback Compare Power')
-    ax4.plot(power, label='Power', color='red')
+    if args.gui or args.save_png:
+        ax3.set_title('TX Loopback Compare IQ')
+        ax3.plot(I, label='I')
+        ax3.plot(Q, label='Q')
+        ax4.set_title('TX Loopback Compare Power')
+        ax4.plot(power, label='Power', color='red')
+        
+        # Add threshold lines
+        ax4.axhline(y=rising_threshold, color='green', linestyle='--', alpha=0.7, label=f'Rising Threshold ({rising_threshold:.0f})')
+        ax4.axhline(y=falling_threshold, color='orange', linestyle='--', alpha=0.7, label=f'Falling Threshold ({falling_threshold:.0f})')
 
     positive_edge, negative_edge = edge_detector(power, rising_threshold, falling_threshold, cycles_to_debounce)
     pos_edge_indexes = np.argwhere(positive_edge).flatten()
-    for i in pos_edge_indexes:
-        ax4.plot(i, rising_threshold, 'g^', markersize=6)
+
+    if args.gui or args.save_png:
+        for i in pos_edge_indexes:
+            ax4.plot(i, rising_threshold, 'g^', markersize=6)
 
     time_delta_pos_edges = np.diff(pos_edge_indexes)
     avg = np.average(time_delta_pos_edges)
@@ -242,8 +320,10 @@ if args.compare == True:
         print(f"  Edge Count: {len(pos_edge_indexes)}")
 
     neg_edge_indexes = np.argwhere(negative_edge).flatten()
-    for i in neg_edge_indexes:
-        ax4.plot(i, falling_threshold, 'yv', markersize=6)
+
+    if args.gui or args.save_png:
+        for i in neg_edge_indexes:
+            ax4.plot(i, falling_threshold, 'yv', markersize=6)
 
     time_delta_neg_edges = np.diff(neg_edge_indexes)
     avg = np.average(time_delta_neg_edges)
@@ -256,8 +336,10 @@ if args.compare == True:
         print(f"  Std.Dev: {dev:.2f}")
         print(f"  Edge Count: {len(neg_edge_indexes)}")
 
+
+    jout["TX"] = {"measured_timestamp": avg}
     print("\nTX Board: loopback compare")
-    print(f"  Predicted Timestamp: {(avg):.3f} samples")
+    print(f"  Measured Timestamp: {(avg):.3f} samples")
 
     try:
         fill_compare = neg_edge_indexes - pos_edge_indexes
@@ -271,20 +353,41 @@ if args.compare == True:
         fill_compare = None
         fill_vs_burst_compare = -1
 
-    print(f"  Predicted Fill:      {fill_vs_burst_compare:.2f}%, Error: {(avg-fill_expected):.2f} samples")
+    error_samples=(avg-fill_expected)
+    jout["TX"]["measured_fill_percent"] = fill_vs_burst_compare
+    jout["TX"]["error_samples"] = error_samples
+    print(f"  Measured Fill:      {fill_vs_burst_compare:.2f}%, Error: {error_samples:.2f} samples")
+
+    if args.enforce:
+        local_pass = error_samples <= args.enforce
+        test_pass = False if not local_pass else test_pass
+        print(f"  Test threshold:      {args.enforce}, Result: %s" % ("PASS" if local_pass else "FAIL"))
 
     print("")
     print(f"Fill Delta:")
     fill_delta_avg = 100*(np.average(fill_compare) - np.average(fill))/burst
+    jout["TX"]["fill_delta_average"] = fill_delta_avg
     print(f"  Average:  {fill_delta_avg:.2f}%")
 
-    ax6.set_title("Fill Error")
-    ax6.set_xlabel("Error (samples)")
-    fill_error = fill_compare - fill_expected
-    ax6.hist(fill_error, alpha=0.7, bins=30, color=('skyblue'))
+    if args.gui or args.save_png:
+        ax6.set_title("Fill Error")
+        ax6.set_xlabel("Error (samples)")
+        fill_error = fill_compare - fill_expected
+        ax6.hist(fill_error, alpha=0.7, bins=30, color=('skyblue'))
+
+# File Ops
+if args.enforce:
+    jout["exit"] = 1 if not test_pass else 0
+if args.output:
+    with open(args.output, 'w') as json_file:
+        json.dump(jout, json_file, indent=4)
+
+# early exit, as the rest of the script is GUI stuff
+if not args.gui and not args.save_png:
+    exit(1 if not test_pass else 0)
 
 # General plot assignments
-if args.compare == True:
+if plot_count == 2:
     axis = (ax1, ax2, ax3, ax4)
     axis_iq = (ax1, ax3)
     axis_power = (ax2, ax4)
@@ -303,6 +406,13 @@ for ax in axis_iq:
     ax.set_ylim(bottom=-2500, top=2500)
 
 fig.subplots_adjust(hspace=1)
-print(f"\nPress [Escape] to close figure")
-fig.canvas.mpl_connect('key_press_event', close_figure)
-plt.show()
+
+if args.save_png:
+    plt.savefig(args.save_png, dpi=dpi)
+    print(f"Plot saved to {args.save_png} ({png_width}x{png_height} pixels)")
+elif args.gui:
+    print(f"\nPress [Escape] to close figure")
+    fig.canvas.mpl_connect('key_press_event', close_figure)
+    plt.show()
+
+exit(1 if not test_pass else 0)
