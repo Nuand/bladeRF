@@ -72,6 +72,16 @@ add_custom_target(test_synthesis
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+add_custom_target(prep_ci
+                  COMMAND ${PROJECT_NAME} --gtest_filter="dump_tests.disk" --gtest_output="json"
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(bitfile_ci
+                  COMMAND ${PROJECT_NAME} --gtest_filter="bitfile_ci/synth_ci*" --gtest_output="json":bitfile_ci.json
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
 target_link_libraries(
     ${PROJECT_NAME}
     libbladerf_shared

@@ -36,9 +36,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <fstream>
 
 #define TEST_LIBBLADERF libbladeRF
 #define TEST_XB200 xb200
+#define BLADERF_QUARTUS_CI_DIR "bladeRF/hdl/quartus/"
 #define BLADERF_QUARTUS_DIR "../../hdl/quartus/"
 #define BLADERF_MODELSIM_DIR "../../hdl/fpga/platforms/bladerf-micro/modelsim/"
 #define NIOS2SHELL "~/intelFPGA_lite/20.1/nios2eds/nios2_command_shell.sh"
@@ -474,6 +476,20 @@ const std::vector<std::tuple<std::string, std::string, std::string>> fpga_images
     {"bladeRF-micro",   "wlan",         "A9"}
 };
 
+const std::vector<std::tuple<std::string, std::string, std::string>> fpga_images_ci = {
+    {"bladeRF",         "hosted",       "40"},
+    {"bladeRF",         "hosted",       "115"},
+    {"bladeRF",         "fsk_bridge",   "40"},
+    {"bladeRF",         "fsk_bridge",   "115"},
+    {"bladeRF",         "qpsk_tx",      "40"},
+    {"bladeRF",         "qpsk_tx",      "115"},
+    {"bladeRF-micro",   "hosted",       "A4"},
+    {"bladeRF-micro",   "hosted",       "A9"},
+    {"bladeRF-micro",   "foxhunt",      "A4"},
+    {"bladeRF-micro",   "foxhunt",      "A9"},
+    {"bladeRF-micro",   "wlan",         "A9"}
+};
+
 class synth: public ::testing::TestWithParam<std::tuple<std::string, std::string, std::string>> {
     char build_dir[PATH_MAX];
     void SetUp() override {
@@ -506,6 +522,8 @@ class synth: public ::testing::TestWithParam<std::tuple<std::string, std::string
     }
 };
 
+class synth_ci : public synth {};
+
 TEST_P(synth, synthesis) {
     std::string board    = std::get<0>(GetParam());
     std::string revision = std::get<1>(GetParam());
@@ -521,27 +539,130 @@ TEST_P(synth, synthesis) {
     EXPECT_EQ(status, 0);
 }
 
+TEST_P(synth_ci, synthesis) {
+    std::string board    = std::get<0>(GetParam());
+    std::string revision = std::get<1>(GetParam());
+    std::string size     = std::get<2>(GetParam());
+
+    std::string command = NIOS2SHELL;
+    command += " ./build_bladerf.sh ";
+    command += " -b " + board;
+    command += " -r " + revision;
+    command += " -s " + size;
+    command += " -D ";
+
+    status = std::system(command.c_str());
+    EXPECT_EQ(status, 0);
+}
+
+
+/**
+ * @brief      Convert a tuple into a build output folder used by build_bladerf.sh
+ * This is only valid when -o is passed to build_bladerf.sh
+ *
+ * @param[in]  row   The tuple
+ *
+ * @return     The output folder name
+ */
+std::string build_folder_name(const std::tuple<std::string, std::string, std::string>& row) {
+    std::string name = absl::StrCat(
+        std::get<1>(row), "x",
+        std::get<2>(row));
+    absl::c_replace_if(name, [](char c) { return !std::isalnum(c); }, '_');
+    return name;
+}
+
+/**
+ * @brief      Convert a tuple into a test name.
+ *
+ * @param[in]  row   The tuple
+ *
+ * @return     The name of the test
+ */
+std::string test_name(const std::tuple<std::string, std::string, std::string>& row) {
+    std::string name = absl::StrCat(
+        std::get<0>(row), "_",
+        std::get<1>(row), "_",
+        std::get<2>(row));
+    absl::c_replace_if(name, [](char c) { return !std::isalnum(c); }, '_');
+    return name;
+}
+
+/**
+ * @brief      Convert a TestParamInfo into a test name.
+ *
+ * @param[in]  row   The TestParamInfo
+ *
+ * @return     The name of the test
+ */
+std::string info_test_name(const testing::TestParamInfo<synth::ParamType>& info) {
+    return test_name(info.param);
+}
+
 INSTANTIATE_TEST_SUITE_P(synthesize_defaults, synth,
     ::testing::ValuesIn(fpga_images_defaults),
-    [](const testing::TestParamInfo<synth::ParamType>& info) {
-        std::string name = absl::StrCat(
-            std::get<0>(info.param), "_",
-            std::get<1>(info.param), "_",
-            std::get<2>(info.param));
-        absl::c_replace_if(name, [](char c) { return !std::isalnum(c); }, '_');
-        return name;
-    });
+    info_test_name);
 
 INSTANTIATE_TEST_SUITE_P(DISABLED_synthesize_all, synth,
     ::testing::ValuesIn(fpga_images_all),
-    [](const testing::TestParamInfo<synth::ParamType>& info) {
-        std::string name = absl::StrCat(
-            std::get<0>(info.param), "_",
-            std::get<1>(info.param), "_",
-            std::get<2>(info.param));
-        absl::c_replace_if(name, [](char c) { return !std::isalnum(c); }, '_');
-        return name;
-    });
+    info_test_name);
+
+INSTANTIATE_TEST_SUITE_P(bitfile_ci, synth_ci,
+    ::testing::ValuesIn(fpga_images_ci),
+    info_test_name);
+
+/**
+ * @brief      Not a test, writes out an artifacts file to disk so CI can pick it up.
+ *
+ */
+TEST(dump_tests, disk) {
+    std::vector<std::string> out;
+    for(const auto& row : fpga_images_ci) {
+        out.push_back(test_name(row));
+        out.push_back(std::string(BLADERF_QUARTUS_CI_DIR) + build_folder_name(row));
+    }
+
+    std::ofstream file("ci_artifacts.txt"); // Create an ofstream object and open "ci_artifacts.txt" for writing
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file." << std::endl;
+        FAIL();
+    }
+
+    file << "[";
+
+    for(size_t i = 0; i < out.size(); ++i) {
+        file << "\"" << out[i] << "\"";
+        if (i < out.size() - 1) {
+            file << ", ";
+        }
+    }
+
+    file << "]" << std::endl;
+    file.close();
+}
+
+/**
+ * @brief      Convert argc/argv into a vector, and filter out gtest_ args
+ *
+ * @param[in]  argc  The number of arguments
+ * @param[in]  argv  The arguments
+ *
+ * @return     A vector of arguments
+ */
+std::vector<std::string> filter_gtest_args(int argc, char** argv) {
+    std::vector<std::string> args;
+    for (int i = 0; i < argc; ++i) {
+        std::string arg(argv[i]);
+
+        // skip all arguments that are for gtest
+        if (i == 0 || arg.find("--gtest_") != 0) {
+            std::cout << "adding " << arg << "\n";
+            args.push_back(arg);
+        }
+    }
+    return args;
+}
 
 #define OPTARG "v:h"
 static struct option long_options[] = {
@@ -556,8 +677,17 @@ int main(int argc, char** argv) {
     int opt_ind = 0;
     bladerf_log_level log_level;
 
+    auto filtered = filter_gtest_args(argc, argv);
+    const int argc_filt = filtered.size();
+    const char* argv_filt[argc_filt];
+
+    // copy back into a c-style array for getopt_long
+    for (size_t i = 0; i < filtered.size(); ++i) {
+        argv_filt[i] = filtered[i].c_str();
+    }
+
     while (opt != -1) {
-        opt = getopt_long(argc, argv, OPTARG, long_options, &opt_ind);
+        opt = getopt_long(argc_filt, const_cast<char* const*>(argv_filt), OPTARG, long_options, &opt_ind);
 
         switch (opt) {
             case 'v':
@@ -579,6 +709,7 @@ int main(int argc, char** argv) {
                 printf("                                        Example filters: \"libbladeRF*\", \"hdl*\", \"synthesis*\"\n");
                 printf("  --gtest_also_run_disabled_tests   Run only the tests matching the filter.\n");
                 printf("  --gtest_output=\"json\"           Generates JSON report of test run.\n");
+                printf("  --gtest_help                      View gtest specific help menu.\n");
                 printf("\n");
                 return EXIT_SUCCESS;
 
