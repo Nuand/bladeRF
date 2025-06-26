@@ -42,12 +42,12 @@ DECLARE_CMD(flash_image, "flash_image", "fi");
 DECLARE_CMD(flash_init_cal, "flash_init_cal", "fic");
 DECLARE_CMD(flash_restore, "flash_restore", "fr");
 DECLARE_CMD(fw_log, "fw_log");
+DECLARE_CMD(gain_calibration_load,"load_gain","lg")
 DECLARE_CMD(generate, "generate");
 DECLARE_CMD(help, "help", "h", "?");
 DECLARE_CMD(info, "info", "i");
 DECLARE_CMD(jump_to_bootloader, "jump_to_boot", "j");
 DECLARE_CMD(load, "load", "ld");
-DECLARE_CMD(load_gain_calibration,"load_gain","lg")
 DECLARE_CMD(mimo, "mimo");
 DECLARE_CMD(open, "open", "op", "o");
 DECLARE_CMD(peek, "peek", "pe");
@@ -210,10 +210,10 @@ static struct cmd const cmd_table[] = {
         FIELD_INIT(.allow_while_streaming, false),
     },
     {
-        FIELD_INIT(.names, cmd_names_load_gain_calibration),
-        FIELD_INIT(.exec, cmd_load_gain_calibration),
+        FIELD_INIT(.names, cmd_names_gain_calibration_load),
+        FIELD_INIT(.exec, cmd_gain_calibration_load),
         FIELD_INIT(.desc, "Load gain calibration table to allow RX or TX to have exact pwr"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_load_gain_calibration),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_gain_calibration_load),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
         FIELD_INIT(.allow_while_streaming, false),

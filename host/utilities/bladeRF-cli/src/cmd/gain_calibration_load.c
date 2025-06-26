@@ -3,7 +3,7 @@
 #include "cmd.h"
 #include "input.h"
 
-int cmd_load_gain_calibration(struct cli_state *state, int argc, char **argv)
+int cmd_gain_calibration_load(struct cli_state *state, int argc, char **argv)
 {
     /* Valid commands:
         load_gain <rx|tx> <filename>

@@ -193,11 +193,11 @@ set(BLADERF_CLI_SOURCE
         src/cmd/flash_init_cal.c
         src/cmd/flash_restore.c
         src/cmd/fw_log.c
+        src/cmd/gain_calibration_load.c
         src/cmd/generate.c
         src/cmd/info.c
         src/cmd/jump_boot.c
         src/cmd/lms_reg_info.c
-        src/cmd/load_gain_calibration.c
         src/cmd/load.c
         src/cmd/mimo.c
         src/cmd/open.c

@@ -260,6 +260,12 @@
   "written to stdout.\n" \
   "\n" \
 
+#define CLI_CMD_HELPTEXT_gain_calibration_load \
+"Usage: load_gain <rx|tx> <filename>\n" \
+"\n" \
+"Load a .tbl file for either RX or TX gain table calibration.\n" \
+"CURRENT LIMITATION OF ONLY RX0 or TX0 can be calibrated, didnt want to figure out ch sorting\n" \
+"\n" \
 
 #define CLI_CMD_HELPTEXT_generate \
   "Usage: generate <filename> [parameters] <signal_type>\n" \
@@ -351,12 +357,6 @@
   "\n" \
 
 
-#define CLI_CMD_HELPTEXT_load_gain_calibration \
-"Usage: load_gain <rx|tx> <filename>\n" \
-"\n" \
-"Load a .tbl file for either RX or TX gain table calibration.\n" \
-"CURRENT LIMITATION OF ONLY RX0 or TX0 can be calibrated, didnt want to figure out ch sorting\n" \
-"\n" \
 
 #define CLI_CMD_HELPTEXT_xb \
   "Usage: xb <board_model> <subcommand> [parameters]\n" \

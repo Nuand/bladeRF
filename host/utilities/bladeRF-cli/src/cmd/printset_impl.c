@@ -727,7 +727,7 @@ out:
 }
 
 /* gain Table*/
-int print_gain_table(struct cli_state *state, int argc, char **argv)
+int print_table_gain(struct cli_state *state, int argc, char **argv)
 {
     int rv   = CLI_RET_OK;
     int *err = &state->last_lib_error;
@@ -751,10 +751,10 @@ out:
     return rv;
 }
 
-int set_gain_table(struct cli_state *state, int argc, char **argv)
+int set_table_gain(struct cli_state *state, int argc, char **argv)
 {
     int rv   = CLI_RET_OK;
-    rv = print_gain_table(state, argc, argv);
+    rv = print_table_gain(state, argc, argv);
 
     return rv;
 }
