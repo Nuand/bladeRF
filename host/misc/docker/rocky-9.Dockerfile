@@ -76,4 +76,5 @@ RUN cd /root/bladeRF/ \
     ../ \
  && make -j${parallel} \
  && make install \
+ && echo "/usr/local/lib64" > /etc/ld.so.conf.d/bladerf.conf \
  && ldconfig 
