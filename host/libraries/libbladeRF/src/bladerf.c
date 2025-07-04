@@ -2165,7 +2165,7 @@ int bladerf_set_oversample_register_config(struct bladerf *dev) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
+    bladerf_set_rfic_register(dev,0x003,0xD4); // OC Register
 
     /* TX Register Assignments */
     bladerf_set_rfic_register(dev,0x02,0xc0);  // TX Enable and Filter Control
