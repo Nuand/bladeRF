@@ -44,6 +44,8 @@ int async_init_stream(struct bladerf_stream **stream,
 {
     struct bladerf_stream *lstream;
     size_t buffer_size_bytes;
+    size_t gpif_buffer_size = USB_MSG_SIZE_SS;
+    struct bladerf_version fx3_version = FW_LARGER_BUFFER_VERSION;
     size_t i;
     int status = 0;
 
@@ -52,8 +54,26 @@ int async_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_INVAL;
     }
 
-    if (samples_per_buffer < 1024 || samples_per_buffer % 1024 != 0) {
-        log_error("samples_per_buffer must be multiples of 1024\n");
+    status = dev->board->get_fw_version(dev, &fx3_version);
+    if (status != 0) {
+        log_error("Failed to get FX3 firmware version: %s\n",
+                  bladerf_strerror(status));
+        return status;
+    }
+
+    if (fx3_version.major <= FW_LARGER_BUFFER_VERSION.major &&
+        fx3_version.minor < FW_LARGER_BUFFER_VERSION.minor) {
+        gpif_buffer_size = USB_MSG_SIZE_SS_LEGACY;
+    }
+
+    log_debug("FX3 firmware %u.%u.%u GPIF buffer size: %zu%s\n",
+        fx3_version.major, fx3_version.minor, fx3_version.patch,
+        gpif_buffer_size, gpif_buffer_size == USB_MSG_SIZE_SS_LEGACY ? " (legacy)" : "");
+
+    buffer_size_bytes = samples_to_bytes(format, samples_per_buffer);
+    if (buffer_size_bytes < gpif_buffer_size || buffer_size_bytes % gpif_buffer_size != 0) {
+        log_error("Samples_per_buffer must be multiples of %u\n",
+                  bytes_to_samples(format, gpif_buffer_size));
         return BLADERF_ERR_INVAL;
     }
 
@@ -66,12 +86,12 @@ int async_init_stream(struct bladerf_stream **stream,
 
     MUTEX_INIT(&lstream->lock);
 
-    if (pthread_cond_init(&lstream->can_submit_buffer, NULL) != 0) {
+    if (COND_INIT(&lstream->can_submit_buffer) != THREAD_SUCCESS) {
         free(lstream);
         return BLADERF_ERR_UNEXPECTED;
     }
 
-    if (pthread_cond_init(&lstream->stream_started, NULL) != 0) {
+    if (COND_INIT(&lstream->stream_started) != THREAD_SUCCESS) {
         free(lstream);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -107,26 +127,6 @@ int async_init_stream(struct bladerf_stream **stream,
                       "Upgrade to at least FPGA version 0.15.0.\n");
             return BLADERF_ERR_UNSUPPORTED;
         }
-    }
-
-    switch(format) {
-        case BLADERF_FORMAT_SC8_Q7:
-        case BLADERF_FORMAT_SC8_Q7_META:
-            buffer_size_bytes = sc8q7_to_bytes(samples_per_buffer);
-            break;
-
-        case BLADERF_FORMAT_SC16_Q11:
-        case BLADERF_FORMAT_SC16_Q11_META:
-            buffer_size_bytes = sc16q11_to_bytes(samples_per_buffer);
-            break;
-
-        case BLADERF_FORMAT_PACKET_META:
-            buffer_size_bytes = samples_per_buffer;
-            break;
-
-        default:
-            status = BLADERF_ERR_INVAL;
-            break;
     }
 
     if (!status) {
@@ -203,7 +203,7 @@ int async_run_stream(struct bladerf_stream *stream, bladerf_channel_layout layou
     MUTEX_LOCK(&stream->lock);
     stream->layout = layout;
     stream->state = STREAM_RUNNING;
-    pthread_cond_signal(&stream->stream_started);
+    COND_SIGNAL(&stream->stream_started);
     MUTEX_UNLOCK(&stream->lock);
 
     status = dev->backend->stream(stream, layout);
@@ -218,32 +218,23 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
                                bool nonblock)
 {
     int status = 0;
-    struct timespec timeout_abs;
 
     MUTEX_LOCK(&stream->lock);
 
     if (buffer != BLADERF_STREAM_SHUTDOWN) {
-        if (stream->state != STREAM_RUNNING && timeout_ms != 0) {
-            status = populate_abs_timeout(&timeout_abs, timeout_ms);
-            if (status != 0) {
-                log_debug("Failed to populate timeout value\n");
-                goto error;
-            }
-        }
-
         while (stream->state != STREAM_RUNNING) {
             log_debug("Buffer submitted while stream's not running. "
                     "Waiting for stream to start.\n");
 
             if (timeout_ms == 0) {
-                status = pthread_cond_wait(&stream->stream_started,
+                status = COND_WAIT(&stream->stream_started,
                                            &stream->lock);
             } else {
-                status = pthread_cond_timedwait(&stream->stream_started,
-                        &stream->lock, &timeout_abs);
+                status = COND_TIMED_WAIT(&stream->stream_started,
+                        &stream->lock, timeout_ms);
             }
 
-            if (status == ETIMEDOUT) {
+            if (status == THREAD_TIMEOUT) {
                 status = BLADERF_ERR_TIMEOUT;
                 log_debug("%s: %u ms timeout expired",
                           __FUNCTION__, timeout_ms);

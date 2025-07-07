@@ -31,11 +31,11 @@
 #include <inttypes.h>
 #include <libbladeRF.h>
 #include <getopt.h>
-#include <pthread.h>
 #include "conversions.h"
 #include "test_timestamps.h"
 #include "test_txrx_hwloop.h"
 #include "minmax.h"
+#include "thread.h"
 
 #ifdef _WIN32
 #include "gettimeofday.h"
@@ -97,8 +97,8 @@ int main(int argc, char *argv[]) {
     bladerf_log_level log_level;
 
     /** Threading */
-    pthread_t thread_rx;
-    pthread_t thread_loopcompare;
+    THREAD thread_rx;
+    THREAD thread_loopcompare;
     thread_args args_loopbackcompare;
     thread_args args_rx;
 
@@ -231,14 +231,14 @@ int main(int argc, char *argv[]) {
         args_rx.is_rx_device = true;
         args_rx.dev = dev_rx;
         args_rx.tc  = &test;
-        pthread_create(&thread_rx, NULL, rx_task, &args_rx);
+        THREAD_CREATE(&thread_rx, rx_task, &args_rx);
     }
 
     if (test.compare == true) {
         args_loopbackcompare.is_rx_device = false;
         args_loopbackcompare.dev = dev_tx;
         args_loopbackcompare.tc  = &test;
-        pthread_create(&thread_loopcompare, NULL, rx_task, &args_loopbackcompare);
+        THREAD_CREATE(&thread_loopcompare, rx_task, &args_loopbackcompare);
     }
 
     for (i = 0; i < test.iterations && status == 0; i++) {
@@ -287,12 +287,12 @@ int main(int argc, char *argv[]) {
     printf("TX finished in %.4f seconds\n", time_passed);
 out:
     if (!test.just_tx) {
-        pthread_join(thread_rx, NULL);
+        THREAD_JOIN(thread_rx, NULL);
         bladerf_close(dev_rx);
     }
 
     if (test.compare)
-        pthread_join(thread_loopcompare, NULL);
+        THREAD_JOIN(thread_loopcompare, NULL);
 
     status_out = bladerf_enable_module(dev_tx, BLADERF_MODULE_TX, false);
     if (status_out != 0) {

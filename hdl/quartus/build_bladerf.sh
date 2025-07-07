@@ -33,6 +33,7 @@ function usage()
     echo "    -r <rev>              Quartus project revision"
     echo "    -s <size>             FPGA size"
     echo "    -a <stp>              SignalTap STP file"
+    echo "    -H                    Build all hosted configurations"
     echo "    -f                    Force SignalTap STP insertion by temporarily enabling"
     echo "                          the TalkBack feature of Quartus (required for Web Edition)."
     echo "                          The previous setting will be restored afterward."
@@ -126,7 +127,7 @@ nios_rev="Tiny"
 flow="full"
 seed="1"
 
-while getopts ":cb:r:s:a:fn:l:S:h" opt; do
+while getopts ":cb:r:s:a:Hfn:l:S:h" opt; do
     case $opt in
         c)
             clear_work_dir=1
@@ -147,6 +148,10 @@ while getopts ":cb:r:s:a:fn:l:S:h" opt; do
         a)
             echo "STP: $OPTARG"
             stp=$(readlink -f $OPTARG)
+            ;;
+
+        H)
+            build_hosted=1
             ;;
 
         f)
@@ -182,6 +187,30 @@ while getopts ":cb:r:s:a:fn:l:S:h" opt; do
             ;;
     esac
 done
+
+if [ "$build_hosted" == "1" ]; then
+    mkdir -p build_logs
+    build_pids=()
+
+    for config in "bladeRF 40" "bladeRF 115" "bladeRF-micro A4" "bladeRF-micro A5" "bladeRF-micro A9"; do
+        read -r board size <<< "$config"
+        echo "Starting build for $board hosted $size..."
+        $0 -b "$board" -r hosted -s "$size" > "build_logs/$board-hosted-$size.log" 2>&1 &
+        build_pids+=($!)
+    done
+
+    echo "Waiting for ${#build_pids[@]} hosted builds to complete..."
+
+    for pid in "${build_pids[@]}"; do
+        if ! wait "$pid"; then
+            echo "Build failed. Check build_logs directory for details."
+            exit 1
+        fi
+    done
+
+    echo "All hosted builds completed successfully!"
+    exit 0
+fi
 
 if [ "$board" == "" ]; then
     echo -e "\nError: board (-b) is required\n" >&2
@@ -462,6 +491,18 @@ if [[ ${flow} == "full" ]]; then
     sha256sum $RBF > $RBF.sha256sum
     MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
     SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
+
+    GIT_HASH=$(git rev-parse --short HEAD)
+    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    GIT_DIRTY=$(git diff --quiet && echo "clean" || echo "dirty")
+
+    cat << EOF > git_info.txt
+Git Information:
+Commit Hash: $GIT_HASH
+Branch: $GIT_BRANCH
+Working Directory: $GIT_DIRTY
+EOF
+
     popd
 
     echo ""
@@ -472,6 +513,10 @@ if [[ ${flow} == "full" ]]; then
     echo " $RBF checksums:"
     echo "  MD5:    $MD5SUM"
     echo "  SHA256: $SHA256SUM"
+    echo ""
+    echo " Git Information:"
+    echo "  Commit: $GIT_HASH ($GIT_DIRTY)"
+    echo "  Branch: $GIT_BRANCH"
     echo ""
     cat "$BUILD_OUTPUT_DIR/$BUILD_NAME.fit.summary" | sed -e 's/^\(.\)/ \1/g'
     echo "##########################################################################"

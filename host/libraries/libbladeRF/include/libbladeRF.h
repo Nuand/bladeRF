@@ -51,7 +51,7 @@
  *
  *  https://github.com/Nuand/bladeRF/blob/master/doc/development/versioning.md
  */
-#define LIBBLADERF_API_VERSION (0x02050100)
+#define LIBBLADERF_API_VERSION (0x02060000)
 
 #ifdef __cplusplus
 extern "C" {
@@ -2141,6 +2141,22 @@ typedef enum {
     BLADERF_FORMAT_SC16_Q11,
 
     /**
+     * @brief Signed, Complex 16-bit Q11 using a 12-bit Q11 intermediate format.
+     *
+     * This format is a ::BLADERF_FORMAT_SC16_Q11 equivalent to the end user.
+     * The difference lies in the intermediate SC12 Q11 packing format used by
+     * the FPGA and libbladeRF. This intermediate format allows for a 33.3%
+     * higher sample rate when bandwidth limited by the host interface. Synchronous
+     * buffer length must be a multiple of 4096 samples.
+     *
+     * @note While this format allows for higher sample rates over bandwidth-limited
+     * interfaces, it requires additional CPU processing for packing/unpacking. Users
+     * should benchmark to determine if the increased sample rate outweighs the
+     * added processing overhead for their specific use case.
+     */
+    BLADERF_FORMAT_SC16_Q11_PACKED,
+
+    /**
      * This format is the same as the ::BLADERF_FORMAT_SC16_Q11 format, except
      * the first 4 samples in every <i>block*</i> of samples are replaced with
      * metadata organized as follows. All fields are little-endian byte order.
@@ -2163,8 +2179,8 @@ typedef enum {
      *
      * <i>*</i>The number of samples in a <i>block</i> is dependent upon
      * the USB speed being used:
-     *  - USB 2.0 Hi-Speed: 256 samples
-     *  - USB 3.0 SuperSpeed: 512 samples
+     *  - USB 2.0 Hi-Speed: 1024 samples
+     *  - USB 3.0 SuperSpeed: 2048 samples
      *
      * When using the bladerf_sync_rx() and bladerf_sync_tx() functions, the
      * above details are entirely transparent; the caller need not be concerned
@@ -2216,6 +2232,13 @@ typedef enum {
      * With the exception of packet lenghts, no difference should exist between
      * USB 2.0 Hi-Speed or USB 3.0 SuperSpeed for packets for this streaming
      * format.
+     *
+     * @warning A packet length of (n*256-4) DWORDs will cause the synchronous
+     * buffer it's filled into to indefinitely persist. For instance, if a
+     * packet containing 252 DWORDs is filled into buffer N, buffer N will
+     * always return that first 252 dword packet. It is recommended to avoid
+     * these specific packet lengths (252, 508, 764, 1020, etc. DWORDs)
+     * until this limitation is resolved.
      *
      * @see STREAMING_FORMAT_METADATA
      * @see The `src/streaming/metadata.h` header in the libbladeRF codebase.
@@ -2301,8 +2324,8 @@ typedef enum {
      *
      * <i>*</i>The number of samples in a <i>block</i> is dependent upon
      * the USB speed being used:
-     *  - USB 2.0 Hi-Speed: 256 samples
-     *  - USB 3.0 SuperSpeed: 512 samples
+     *  - USB 2.0 Hi-Speed: 1024 samples
+     *  - USB 3.0 SuperSpeed: 2048 samples
      *
      * When using the bladerf_sync_rx() and bladerf_sync_tx() functions, the
      * above details are entirely transparent; the caller need not be concerned
@@ -2319,6 +2342,16 @@ typedef enum {
      */
     BLADERF_FORMAT_SC8_Q7_META,
 } bladerf_format;
+
+/**
+ * Convert a sample format to a string suitable for printing
+ *
+ * @param   format  Format to convert to string
+ *
+ * @return  The string representation of the format
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_format_to_string(bladerf_format format);
 
 /**
  * @defgroup STREAMING_FORMAT_METADATA Metadata structure and flags
@@ -2724,9 +2757,10 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev,
  *                              data stream. This must be greater than the
  *                              `num_xfers` parameter.
  * @param[in]   buffer_size     The size of the underlying stream buffers, in
- *                              samples. This value must be a multiple of 1024.
- *                              Note that samples are only transferred when a
- *                              buffer of this size is filled.
+ *                              samples. Must be a multiple of:
+ *                              - 8192 bytes (2048 for FW < v2.5.0)
+ *                              - For SC16_Q11_PACKED format, multiply by 3
+ *                              Invalid sizes are automatically rounded up.
  * @param[in]   num_transfers   The number of active USB transfers that may be
  *                              in-flight at any given time. If unsure of what
  *                              to use here, try values of 4, 8, or 16.
@@ -3465,6 +3499,7 @@ int CALL_CONV bladerf_image_print_metadata(const struct bladerf_image *image);
  * @return A pointer to a string representing the image type. Returns "Unknown Type"
  *         for any unrecognized or out-of-range values.
  */
+API_EXPORT
 const char* bladerf_image_type_to_string(bladerf_image_type type);
 
 /**

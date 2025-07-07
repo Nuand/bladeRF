@@ -5,6 +5,7 @@
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="pages" visible="no" title="" intro=""/>
     <tab type="modules" visible="yes" title="API Sections" intro="libbladeRF is divided into the following sections. Click one of these section names to view information about the macros, enumerations, data structures, and functions within the section."/>
+    <tab type="topics" visible="yes" title="API Sections" intro="libbladeRF is divided into the following sections. Click one of these section names to view information about the macros, enumerations, data structures, and functions within the section." force="!hasModules"/>
     <tab type="namespaces" visible="no" title="">
       <tab type="namespacelist" visible="yes" title="" intro=""/>
       <tab type="namespacemembers" visible="yes" title="" intro=""/>

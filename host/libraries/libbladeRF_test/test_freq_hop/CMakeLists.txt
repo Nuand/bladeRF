@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(libbladeRF_test_freq_hop C)
 
 set(INCLUDES
@@ -11,9 +11,6 @@ set(LIBS libbladerf_shared)
 
 if(MSVC)
     set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
-    find_package(LibPThreadsWin32 REQUIRED)
-    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
 endif()
 
 set(SRC

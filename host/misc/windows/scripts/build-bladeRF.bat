@@ -36,9 +36,6 @@ set GIT_REV=HEAD
 rem Path to libusb binaries and headers
 set LIBUSB="C:\Program Files (x86)\libusb-1.0.19"
 
-rem Path to Win32 Pthreads
-set PTHREADS="C:\Program Files (x86)\pthreads-win32"
-
 rem Build type (Release vs Debug)
 set BUILD_TYPE=Release
 
@@ -117,7 +114,7 @@ mkdir %BUILDDIR64%
 pushd %BUILDDIR64%
 echo ====================== Configuring 64-bit build ======================
 cmake -G %CMAKE_GENERATOR_64% -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-      -DLIBUSB_PATH=%LIBUSB% -DLIBPTHREADSWIN32_PATH=%PTHREADS% ^
+      -DLIBUSB_PATH=%LIBUSB% ^
       ..\bladeRF\host ^
         || goto EXIT_FAILURE
 
@@ -138,7 +135,7 @@ echo[
 echo[
 echo ====================== Configuring 32-bit build ======================
 cmake -G %CMAKE_GENERATOR_32% -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-      -DLIBUSB_PATH=%LIBUSB% -DLIBPTHREADSWIN32_PATH=%PTHREADS% ^
+      -DLIBUSB_PATH=%LIBUSB% ^
       ..\bladeRF\host ^
         || goto EXIT_FAILURE
 

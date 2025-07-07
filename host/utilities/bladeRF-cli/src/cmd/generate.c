@@ -19,7 +19,6 @@
  */
 #include <errno.h>
 #include <limits.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -36,6 +35,7 @@
 #include "parse.h"
 #include "rel_assert.h"
 #include "rxtx_impl.h"
+#include "thread.h"
 #include "doc/cmd_help.h"
 
 int gen_write_fmt_sample(FILE *fp, enum rxtx_fmt fmt, int16_t s_i, int16_t s_q) {
@@ -66,7 +66,7 @@ int cmd_generate(struct cli_state *s, int argc, char **argv)
     int mag = 2047;
     int i;
 
-    if (s->bit_mode_8bit) {
+    if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
         mag /= 16;
     }
     int remaining_argc;

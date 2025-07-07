@@ -468,6 +468,7 @@ CyBool_t NuandHandleVendorRequest(
     case BLADE_USB_CMD_QUERY_FPGA_SOURCE:
         ret = (unsigned int)NuandGetFpgaConfigSource();
         CyU3PUsbSendRetCode(ret);
+    break;
 
     case BLADE_USB_CMD_SET_LOOPBACK:
         NuandRFLinkLoopBack(wValue);

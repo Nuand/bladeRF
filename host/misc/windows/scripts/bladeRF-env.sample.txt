@@ -20,9 +20,6 @@ rem set GIT_REV=HEAD
 rem Path to libusb binaries and headers
 rem set LIBUSB="C:\Program Files (x86)\libusb-1.0.19"
 
-rem Path to Win32 Pthreads
-rem set PTHREADS="C:\Program Files (x86)\pthreads-win32"
-
 rem Build type (Release vs Debug)
 rem set BUILD_TYPE=Release
 

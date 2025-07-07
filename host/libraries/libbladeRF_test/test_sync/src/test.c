@@ -27,7 +27,7 @@
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
-#include <pthread.h>
+#include "thread.h"
 #include <signal.h>
 #include <libbladeRF.h>
 
@@ -40,7 +40,7 @@ static struct task_args {
     struct bladerf *dev;
 
     struct test_params *p;
-    pthread_t thread;
+    THREAD thread;
     int status;
     bool quit;
 } rx_args, tx_args;
@@ -365,7 +365,7 @@ int test_run(struct test_params *p)
         tx_args.quit = false;
 
         log_debug("Starting TX task\n");
-        if (pthread_create(&tx_args.thread, NULL, tx_task, &tx_args) != 0) {
+        if (THREAD_CREATE(&tx_args.thread, tx_task, &tx_args) != THREAD_SUCCESS) {
             fclose(p->in_file);
             p->in_file = NULL;
         }
@@ -378,7 +378,7 @@ int test_run(struct test_params *p)
         rx_args.quit = false;
 
         log_debug("Starting RX task\n");
-        if (pthread_create(&rx_args.thread, NULL, rx_task, &rx_args) != 0) {
+        if (THREAD_CREATE(&rx_args.thread, rx_task, &rx_args) != THREAD_SUCCESS) {
             fclose(p->out_file);
             p->out_file = NULL;
         }
@@ -387,12 +387,12 @@ int test_run(struct test_params *p)
     log_debug("Running...\n");
 
     if (p->in_file != NULL) {
-        pthread_join(tx_args.thread, NULL);
+        THREAD_JOIN(tx_args.thread, NULL);
         log_debug("Joined TX task\n");
     }
 
     if (p->out_file != NULL) {
-        pthread_join(rx_args.thread, NULL);
+        THREAD_JOIN(rx_args.thread, NULL);
         log_debug("Joined  RX task\n");
     }
 

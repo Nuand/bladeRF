@@ -22,14 +22,24 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <limits.h>
+#include "common.h"
 #include "libbladeRF.h"
 #include "board/board.h"
 #include "helpers/version.h"
 #include "device_calibration.h"
 #include "log.h"
-#include "common.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#include <limits.h>
+// Define PATH_MAX for Windows if not already defined
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+#else
+#include <unistd.h>
+#include <limits.h>
+#endif
 
 #define GAIN_CAL_HEADER_RX "RX Chain,RX Gain,VSG Power into bladeRF RX (dBm),Frequency of signal (Hz),Frequency of bladeRF+PXI (Hz),AD9361 RSSI register value,Power of Signal from Full Scale (dBFS)\0"
 #define GAIN_CAL_HEADER_TX "TX Chain,TX Gain,Frequency of Signal (Hz),Frequency of bladeRF+PXI (Hz),VSA Measured Power (dBm)\0"
@@ -226,7 +236,7 @@ static int gain_cal_tbl_init(struct bladerf_gain_cal_tbl *tbl, uint32_t num_entr
     tbl->n_entries = num_entries;
     tbl->start_freq = 0;
     tbl->stop_freq = 0;
-    tbl->file_path_len = PATH_MAX;
+    tbl->file_path_len = 4;
 
     tbl->entries = malloc(num_entries * sizeof(struct bladerf_gain_cal_entry));
     if (tbl->entries == NULL) {
@@ -269,8 +279,13 @@ void gain_cal_tbl_free(struct bladerf_gain_cal_tbl *tbl) {
 }
 
 int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *binary_path) {
-    int num_channels = 4;
-    struct bladerf_gain_cal_tbl gain_tbls[num_channels];
+    const int num_channels = 4;  // Make this const to fix the array allocation issue
+    struct bladerf_gain_cal_tbl *gain_tbls = malloc(num_channels * sizeof(struct bladerf_gain_cal_tbl));
+    if (!gain_tbls) {
+        log_error("Failed to allocate memory for gain tables\n");
+        return BLADERF_ERR_MEM;
+    }
+
     bladerf_gain current_gain;
     uint64_t frequency;
     float power;
@@ -413,6 +428,9 @@ error:
         fclose(binaryFile);
     if (image)
         bladerf_free_image(image);
+    if (gain_tbls)
+        free(gain_tbls);
+
     return status;
 }
 

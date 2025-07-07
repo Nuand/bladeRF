@@ -19,7 +19,6 @@
  */
 #include <errno.h>
 #include <limits.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,6 +30,7 @@
 #include "minmax.h"
 #include "parse.h"
 #include "rel_assert.h"
+#include "thread.h"
 #include "rxtx_impl.h"
 
 /* The DAC range is [-2048, 2047] */
@@ -246,7 +246,7 @@ static int tx_csv_to_bladerf_format(struct cli_state *s)
     int max_val          = SC16Q11_IQ_MAX;
 
     // 16 bit samples are 2*int8_t samples wide
-    int sample_size      = s->bit_mode_8bit ? 1 : 2;
+    int sample_size      = (s->sample_format == BLADERF_FORMAT_SC8_Q7) ? 1 : 2;
     int status;
 
     assert(tx->file_mgmt.path != NULL);
@@ -268,7 +268,7 @@ static int tx_csv_to_bladerf_format(struct cli_state *s)
     }
 
 
-    if (s->bit_mode_8bit) {
+    if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
         min_val = SC8Q7_IQ_MIN;
         max_val = SC8Q7_IQ_MAX;
     }
@@ -332,7 +332,7 @@ static int tx_csv_to_bladerf_format(struct cli_state *s)
             tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
 
             if (n_clamped != 0) {
-               if (s->bit_mode_8bit) {
+               if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
                    printf("  Warning: %zu value%s clamped within DAC SC8 Q7 "
                           "range of [%d, %d].\n",
                           n_clamped, 1 == n_clamped ? "" : "s", SC8Q7_IQ_MIN,
@@ -375,7 +375,6 @@ void *tx_task(void *cli_state_arg)
     enum rxtx_state task_state;
     struct cli_state *cli_state = (struct cli_state *)cli_state_arg;
     struct rxtx_data *tx        = cli_state->tx;
-    bladerf_format sync_fmt;
 
     /* We expect to be in the IDLE state when this is kicked off. We could
      * also get into the shutdown state if the program exits before we
@@ -408,13 +407,10 @@ void *tx_task(void *cli_state_arg)
                 assert(tx->file_mgmt.file != NULL);
                 MUTEX_UNLOCK(&tx->file_mgmt.file_meta_lock);
 
-                sync_fmt = cli_state->bit_mode_8bit ?
-                    BLADERF_FORMAT_SC8_Q7 : BLADERF_FORMAT_SC16_Q11;
-
                 /* Initialize the TX synchronous data configuration */
                 status = bladerf_sync_config(
                     cli_state->dev, tx->data_mgmt.layout,
-                    sync_fmt, tx->data_mgmt.num_buffers,
+                    cli_state->sample_format, tx->data_mgmt.num_buffers,
                     tx->data_mgmt.samples_per_buffer,
                     tx->data_mgmt.num_transfers, tx->data_mgmt.timeout_ms);
 
@@ -487,7 +483,7 @@ static int tx_cmd_start(struct cli_state *s)
         status = tx_csv_to_bladerf_format(s);
 
         if (status == 0) {
-            if (s->bit_mode_8bit) {
+            if (s->sample_format == BLADERF_FORMAT_SC8_Q7) {
                 printf("  Converted CSV to SC8 Q7 file and "
                     "switched to converted file.\n\n");
 

@@ -168,11 +168,11 @@ package bladerf_p is
 
     constant TX_FIFO_WWIDTH         : natural := 32;    -- write side data width
     constant TX_FIFO_RWIDTH         : natural := 64;    -- read side data width
-    constant TX_FIFO_LENGTH         : natural := 16384; -- samples
+    constant TX_FIFO_LENGTH         : natural := 8192;  -- samples
 
     constant RX_FIFO_WWIDTH         : natural := 64;    -- write side data width
     constant RX_FIFO_RWIDTH         : natural := 32;    -- read side data width
-    constant RX_FIFO_LENGTH         : natural := 4096;  -- samples
+    constant RX_FIFO_LENGTH         : natural := 8192;  -- samples
 
     constant ADSB_FIFO_WWIDTH       : natural := 128;   -- write side data width
     constant ADSB_FIFO_RWIDTH       : natural := 32;    -- read side data width
@@ -184,11 +184,11 @@ package bladerf_p is
 
     constant META_FIFO_TX_WWIDTH    : natural := 32;    -- write side data width
     constant META_FIFO_TX_RWIDTH    : natural := 128;   -- read side data width
-    constant META_FIFO_TX_LENGTH    : natural := 512;   -- 32-bit words
+    constant META_FIFO_TX_LENGTH    : natural := 2048;  -- 32-bit words
 
     constant META_FIFO_RX_WWIDTH    : natural := 128;   -- write side data width
     constant META_FIFO_RX_RWIDTH    : natural := 32;    -- read side data width
-    constant META_FIFO_RX_LENGTH    : natural := 512;   -- 32-bit words
+    constant META_FIFO_RX_LENGTH    : natural := 2048;  -- 32-bit words
 
     type tx_fifo_t is record
         aclr    :   std_logic;
@@ -307,6 +307,7 @@ package bladerf_p is
     type nios_gpo_t is record
         xb_mode         : std_logic_vector(1 downto 0);
         eightbit_en     : std_logic;
+        highly_packed_en: std_logic;
         packet_en       : std_logic;
         si_clock_sel    : std_logic;
         ufl_clock_oe    : std_logic;
@@ -518,6 +519,7 @@ package body bladerf_p is
         variable rv : std_logic_vector(31 downto 0) := (others => 'U');
     begin
         rv(31 downto 30) := x.xb_mode;
+        rv(21)           := x.highly_packed_en;
         rv(20)           := x.eightbit_en;
         rv(19)           := x.packet_en;
         rv(18)           := x.si_clock_sel;
@@ -597,6 +599,7 @@ package body bladerf_p is
         variable rv : nios_gpo_t;
     begin
         rv.xb_mode         := x(31 downto 30);
+        rv.highly_packed_en:= x(21);
         rv.eightbit_en     := x(20);
         rv.packet_en       := x(19);
         rv.si_clock_sel    := x(18);

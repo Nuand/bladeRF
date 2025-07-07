@@ -42,6 +42,7 @@ proc compile_nuand { root platform } {
 
     vcom -work nuand -2008 [file join $root ./synthesis/tb/atsc_tx_tb.vhd]
 
+    vcom -work nuand -2008 [file join $root ../../platforms/common/bladerf/vhdl/fx3_gpif_p.vhd]
     vcom -work nuand -2008 [file join $root ./simulation/fx3_model.vhd]
     vcom -work nuand -2008 [file join $root ./simulation/lms6002d_model.vhd]
 

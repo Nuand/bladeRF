@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(libbladeRF C)
 
 
@@ -7,8 +7,8 @@ project(libbladeRF C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  2)
-set(VERSION_INFO_MINOR  5)
-set(VERSION_INFO_PATCH  1)
+set(VERSION_INFO_MINOR  6)
+set(VERSION_INFO_PATCH  0)
 set(LIBBLADERF_VERSION
   ${VERSION_INFO_MAJOR}.${VERSION_INFO_MINOR}.${VERSION_INFO_PATCH})
 
@@ -199,16 +199,7 @@ set(LIBBLADERF_INCLUDES
 if(MSVC)
     set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${MSVC_C99_INCLUDES})
 
-    find_package(LibPThreadsWin32 REQUIRED)
-    if(LIBPTHREADSWIN32_FOUND)
-        set(HAVE_THREADS true)
-        set(LIBBLADERF_INCLUDES
-            ${LIBBLADERF_INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-        set(LIBBLADERF_LIBS
-            ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-    else()
-        set(HAVE_THREADS false)
-    endif()
+    set(HAVE_THREADS true)
 else(MSVC)
     find_package(Threads REQUIRED)
     if(Threads_FOUND)
@@ -282,11 +273,6 @@ if(ENABLE_BACKEND_CYAPI)
     find_package(CyAPI REQUIRED)
     set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${CYAPI_INCLUDE_DIRS})
 endif(ENABLE_BACKEND_CYAPI)
-
-if(MSVC)
-    set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES}
-        ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-endif()
 
 if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
     add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
@@ -432,7 +418,7 @@ if(MSVC)
 endif()
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
-    cmake_policy(SET CMP0115 OLD)
+    cmake_policy(SET CMP0115 NEW)
 endif(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
@@ -441,11 +427,9 @@ add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 # Build configuration
 ################################################################################
 
-if(MSVC)
-    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-else()
+if(NOT MSVC)
     set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-endif(MSVC)
+endif(NOT MSVC)
 
 if(ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBUSB_LIBRARIES})

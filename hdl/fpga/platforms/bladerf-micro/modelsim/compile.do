@@ -3,6 +3,7 @@ compile_nuand ../../../ip/nuand bladerf-micro
 
 vcom -work nuand -2008 ../vhdl/tb/nios_system.vhd
 
+vcom -work nuand -2008 ../../../platforms/common/bladerf/vhdl/fx3_gpif_p.vhd
 vcom -work nuand -2008 ../../../platforms/common/bladerf/vhdl/fx3_gpif.vhd
 
 vcom -work nuand -2008 ../vhdl/bladerf_p.vhd

@@ -32,6 +32,7 @@ library nuand;
     use nuand.fifo_readwrite_p.all;
     use nuand.common_dcfifo_p.all;
     use nuand.bladerf_p.all;
+    use nuand.fx3_gpif_p.all;
 
 entity rx_timestamp_tb is
     generic (
@@ -618,7 +619,8 @@ begin
         -- variable timestamp  : unsigned(63 downto 0) := (others => '0');
     begin
         wait for 1 ns;
-        delta_expected := to_unsigned(508, 64) when not EIGHT_BIT_MODE_EN else to_unsigned(1016, 64);
+        delta_expected := to_unsigned(GPIF_BUF_SIZE_SS-HEADER_LEN, 64) when not EIGHT_BIT_MODE_EN
+                          else to_unsigned(2*(GPIF_BUF_SIZE_SS-HEADER_LEN), 64);
 
         if (ENABLE_CHANNEL_0 and ENABLE_CHANNEL_1) then
             delta_expected := delta_expected/2;

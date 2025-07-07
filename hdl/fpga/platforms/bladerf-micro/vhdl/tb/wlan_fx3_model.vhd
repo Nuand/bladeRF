@@ -26,6 +26,7 @@ library ieee;
 
 library work;
     use work.util.all;
+    use work.fx3_gpif_p.all;
 
 architecture wlan_micro_packet_dma of fx3_model is
 
@@ -108,7 +109,7 @@ begin
     done <= rx_done and tx_done;
 
     rx_sample_stream : process
-        constant BLOCK_SIZE     : natural := 512;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable req_time       : time;
     begin
@@ -161,7 +162,7 @@ begin
     end process;
 
     tx_sample_stream : process
-        constant BLOCK_SIZE     : natural := 512;
+        constant BLOCK_SIZE     : natural := GPIF_BUF_SIZE_SS;
         variable count          : natural := START_COUNT;
         variable timestamp_cntr : natural := 100;
         variable header_len     : natural := 0;

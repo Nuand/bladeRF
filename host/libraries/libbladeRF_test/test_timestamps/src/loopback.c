@@ -284,10 +284,10 @@ void *loopback_burst_rx_task (void *args)
                             burst_num, bladerf_strerror(status));
                 } else if (meta.status & BLADERF_META_STATUS_OVERRUN) {
                     fprintf(stderr, "Error: RX overrun detected.\n");
-                    pthread_mutex_lock(&t->lock);
+                    MUTEX_LOCK(&t->lock);
                     t->stop = true;
                     t->rx_ready = true;
-                    pthread_mutex_unlock(&t->lock);
+                    MUTEX_UNLOCK(&t->lock);
                 } else {
                     /*
                     printf("Read %-8u samples @ 0x%08"PRIx64" (%-8"PRIu64")\n",
@@ -336,9 +336,9 @@ void *loopback_burst_rx_task (void *args)
                          * rid ourselves of any junk in the RX FIFOs and are
                          * ready to start the test */
                         next_state = WAIT_FOR_BURST_START;
-                        pthread_mutex_lock(&t->lock);
+                        MUTEX_LOCK(&t->lock);
                         t->rx_ready = true;
-                        pthread_mutex_unlock(&t->lock);
+                        MUTEX_UNLOCK(&t->lock);
                     }
                 }
                 break;
@@ -443,9 +443,9 @@ void *loopback_burst_rx_task (void *args)
                 break;
         }
 
-        pthread_mutex_lock(&t->lock);
+        MUTEX_LOCK(&t->lock);
         stop = t->stop;
-        pthread_mutex_unlock(&t->lock);
+        MUTEX_UNLOCK(&t->lock);
     }
 
     if (status < 0) {
@@ -459,9 +459,9 @@ void *loopback_burst_rx_task (void *args)
 #endif
 
     /* Ensure the TX side is signalled to stop, if it isn't already */
-    pthread_mutex_lock(&t->lock);
+    MUTEX_LOCK(&t->lock);
     t->stop = true;
-    pthread_mutex_unlock(&t->lock);
+    MUTEX_UNLOCK(&t->lock);
 
     return NULL;
 }
@@ -514,10 +514,10 @@ void *loopback_burst_rx_task_rf (void *args)
                             burst_num, bladerf_strerror(status));
                 } else if (meta.status & BLADERF_META_STATUS_OVERRUN) {
                     fprintf(stderr, "Error: RX overrun detected.\n");
-                    pthread_mutex_lock(&t->lock);
+                    MUTEX_LOCK(&t->lock);
                     t->stop = true;
                     t->rx_ready = true;
-                    pthread_mutex_unlock(&t->lock);
+                    MUTEX_UNLOCK(&t->lock);
                 } else {
                     /*
                     printf("Read %-8u samples @ 0x%08"PRIx64" (%-8"PRIu64")\n",
@@ -565,9 +565,9 @@ void *loopback_burst_rx_task_rf (void *args)
                          * rid ourselves of any junk in the RX FIFOs and are
                          * ready to start the test */
                         next_state = WAIT_FOR_BURST_START;
-                        pthread_mutex_lock(&t->lock);
+                        MUTEX_LOCK(&t->lock);
                         t->rx_ready = true;
-                        pthread_mutex_unlock(&t->lock);
+                        MUTEX_UNLOCK(&t->lock);
                     }
                 }
                 break;
@@ -672,9 +672,9 @@ void *loopback_burst_rx_task_rf (void *args)
                 break;
         }
 
-        pthread_mutex_lock(&t->lock);
+        MUTEX_LOCK(&t->lock);
         stop = t->stop;
-        pthread_mutex_unlock(&t->lock);
+        MUTEX_UNLOCK(&t->lock);
     }
 
     if (status < 0) {
@@ -688,9 +688,9 @@ void *loopback_burst_rx_task_rf (void *args)
 #endif
 
     /* Ensure the TX side is signalled to stop, if it isn't already */
-    pthread_mutex_lock(&t->lock);
+    MUTEX_LOCK(&t->lock);
     t->stop = true;
-    pthread_mutex_unlock(&t->lock);
+    MUTEX_UNLOCK(&t->lock);
 
     return NULL;
 }

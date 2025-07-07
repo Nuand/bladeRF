@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(bladeRF-power LANGUAGES C)
 
 set (CURSES_NEED_NCURSES TRUE)
@@ -24,6 +24,7 @@ target_link_libraries(${PROJECT_NAME}
     libbladerf_shared
     m
     ${BLADERF_HOST_COMMON_LIBRARIES}
-    ${CURSES_LIBRARIES})
+    ${CURSES_LIBRARIES}
+    ncurses)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${BIN_INSTALL_DIR})
