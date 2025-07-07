@@ -38,7 +38,11 @@ make_jobs_clangscan=4
 
 # assuming the script is 3 levels down (host/misc/docker)
 dfdir=$(dirname "${0}")
+dfdir=$(cd "${dfdir}" && pwd)  # Convert to absolute path
 basedir=${dfdir}/../../..
+
+# Always cd to the root. This script is a lot more reliable when we do this
+cd $basedir
 
 # globals
 success=""
@@ -171,18 +175,28 @@ main () {
     echo "RESULT:SUCCESS:${success}"
     echo "RESULT:FAILED:${failure}"
 
-    [ -n "${failure}" ] && exit 1
+    # this if structure is important, script was exiting 1 when it should be passing. bad version:   [ -n "${failure}" ] && exit 1
+    if [ -n "${failure}" ]; then
+        exit 1
+    fi
 }
 
 if [ $# -gt 0 ]; then
     # We have an argument, so just build those images...
+    base_only=true
     for rootname in "$*"; do
         if [ "${rootname}" == "_base" ]; then
             do_base
             continue
         fi
         rels="${rels} ${rootname}"
+        base_only=false
     done
+    
+    # If we only processed _base targets, exit successfully
+    if [ "$base_only" = true ] && [ -z "${rels}" ]; then
+        exit 0
+    fi
 else
     # No argument, so build everything
     cd ${basedir}

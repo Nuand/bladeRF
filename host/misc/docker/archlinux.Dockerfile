@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM archlinux/base
+FROM archlinux:latest
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"

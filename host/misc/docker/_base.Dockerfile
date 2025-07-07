@@ -23,14 +23,11 @@
 
 # This image is a cleaned version of the current working directory.
 # It is used to speed up the copy/clean process for later builds.
-FROM ubuntu AS first
+FROM alpine AS first
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 
-RUN apt-get update \
- && apt-get install -y \
-        git \
- && apt-get clean
+RUN apk add --no-cache git
 
 COPY . /root/bladeRF
 ENV work="/root/bladeRF/hdl/quartus/work"

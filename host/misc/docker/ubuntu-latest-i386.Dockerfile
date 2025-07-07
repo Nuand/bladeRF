@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,30 +21,47 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM i386/debian:jessie
+FROM i386/ubuntu:latest
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="Debian"
-LABEL com.nuand.ci.distribution.codename="jessie-i386"
-LABEL com.nuand.ci.distribution.version="8"
+LABEL com.nuand.ci.distribution.name="Ubuntu"
+LABEL com.nuand.ci.distribution.codename="latest"
+LABEL com.nuand.ci.distribution.version="latest-i386"
 
 # Install things
 RUN apt-get update \
  && apt-get install -y \
         build-essential \
         clang \
-        cmake \
         doxygen \
         git \
         help2man \
-        libtecla-dev \
+        libcurl4-openssl-dev \
+        libedit-dev \
+        libncurses5-dev \
+        libncurses-dev \
+        libncursesw5-dev \
+        libssl-dev \
         libusb-1.0-0-dev \
         pandoc \
         pkg-config \
         usbutils \
+        wget \
  && apt-get clean
+
+# Custom compile cmake because the version provided in the i386 repos is too old for our cmake scripts
+RUN version=3.28 \
+ && build=1 \
+ && mkdir ~/temp \
+ && cd ~/temp \
+ && wget -nv https://cmake.org/files/v$version/cmake-$version.$build.tar.gz \
+ && tar -xzf cmake-$version.$build.tar.gz \
+ && cd cmake-$version.$build/ \
+ && ./bootstrap --parallel=$(nproc) --no-debugger \
+ && make -j$(nproc) \
+ && make install
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
@@ -57,6 +74,8 @@ ARG buildtype=Release
 ARG taggedrelease=NO
 ARG parallel=1
 
+RUN ${compiler} --version
+
 # Do the build!
 RUN cd /root/bladeRF/ \
  && mkdir -p build \
@@ -65,6 +84,25 @@ RUN cd /root/bladeRF/ \
         -DBUILD_DOCUMENTATION=ON \
         -DCMAKE_C_COMPILER=${compiler} \
         -DCMAKE_BUILD_TYPE=${buildtype} \
+        -DENABLE_FX3_BUILD=OFF \
+        -DENABLE_HOST_BUILD=ON \
+        -DTAGGED_RELEASE=${taggedrelease} \
+    ../ \
+ && make -j${parallel} \
+ && make install \
+ && ldconfig
+
+# Do an i686 build
+RUN cd /root/bladeRF/ \
+ && rm -rf build \
+ && mkdir -p build \
+ && cd build \
+ && cmake \
+        -DBUILD_DOCUMENTATION=ON \
+        -DCMAKE_C_COMPILER=${compiler} \
+        -DCMAKE_BUILD_TYPE=${buildtype} \
+        -DCMAKE_C_FLAGS="-march=i686 -mtune=i686" \
+        -DCMAKE_CXX_FLAGS="-march=i686 -mtune=i686" \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
         -DTAGGED_RELEASE=${taggedrelease} \

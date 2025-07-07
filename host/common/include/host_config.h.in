@@ -316,7 +316,9 @@
 /*******************************************************************************
  * Miscellaneous utility macros
  ******************************************************************************/
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE(n) (sizeof(n) / sizeof(n[0]))
+#endif
 
 /**
  * GCC 7+ warns on implicit fallthroughs in switch statements

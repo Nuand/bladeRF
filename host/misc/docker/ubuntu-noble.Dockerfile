@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2018-2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM i386/ubuntu:xenial
+FROM ubuntu:noble
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
 LABEL com.nuand.ci.distribution.name="Ubuntu"
-LABEL com.nuand.ci.distribution.codename="xenial-i386"
-LABEL com.nuand.ci.distribution.version="16.04"
+LABEL com.nuand.ci.distribution.codename="noble"
+LABEL com.nuand.ci.distribution.version="24.04"
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install things
 RUN apt-get update \
@@ -39,7 +41,9 @@ RUN apt-get update \
         doxygen \
         git \
         help2man \
-        libtecla-dev \
+        libcurl4-openssl-dev \
+        libedit-dev \
+        libncurses5-dev \
         libusb-1.0-0-dev \
         pandoc \
         pkg-config \
@@ -67,6 +71,7 @@ RUN cd /root/bladeRF/ \
         -DCMAKE_BUILD_TYPE=${buildtype} \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
+        -DTEST_REGRESSION=ON \
         -DTAGGED_RELEASE=${taggedrelease} \
     ../ \
  && make -j${parallel} \

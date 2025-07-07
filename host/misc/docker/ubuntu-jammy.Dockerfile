@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2018-2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,31 +21,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM centos:7
+FROM ubuntu:jammy
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
-LABEL version="0.0.3"
+LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="CentOS"
-LABEL com.nuand.ci.distribution.version="7"
+LABEL com.nuand.ci.distribution.name="Ubuntu"
+LABEL com.nuand.ci.distribution.codename="jammy"
+LABEL com.nuand.ci.distribution.version="22.04"
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install things
-RUN yum groupinstall -y "Development Tools" \
- && yum install -y \
-    clang \
-    cmake \
-    doxygen \
-    help2man \
-    libedit \
-    libedit-devel \
-    libusbx \
-    libusbx-devel \
-    pandoc \
-    wget \
- && yum clean all \
- && rm -rf /var/cache/yum \
- && echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
- && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
+RUN apt-get update \
+ && apt-get install -y \
+        build-essential \
+        clang \
+        cmake \
+        doxygen \
+        git \
+        help2man \
+        libcurl4-openssl-dev \
+        libedit-dev \
+        libncurses5-dev \
+        libusb-1.0-0-dev \
+        pandoc \
+        pkg-config \
+        usbutils \
+ && apt-get clean
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
@@ -68,6 +71,7 @@ RUN cd /root/bladeRF/ \
         -DCMAKE_BUILD_TYPE=${buildtype} \
         -DENABLE_FX3_BUILD=OFF \
         -DENABLE_HOST_BUILD=ON \
+        -DTEST_REGRESSION=ON \
         -DTAGGED_RELEASE=${taggedrelease} \
     ../ \
  && make -j${parallel} \

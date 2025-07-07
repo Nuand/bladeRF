@@ -30,6 +30,8 @@ LABEL com.nuand.ci.distribution.name="Ubuntu"
 LABEL com.nuand.ci.distribution.codename="focal"
 LABEL com.nuand.ci.distribution.version="20.10"
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install things
 RUN apt-get update \
  && apt-get install -y \
@@ -39,7 +41,9 @@ RUN apt-get update \
         doxygen \
         git \
         help2man \
-        libtecla-dev \
+        libcurl4-openssl-dev \
+        libedit-dev \
+        libncurses5-dev \
         libusb-1.0-0-dev \
         pandoc \
         pkg-config \

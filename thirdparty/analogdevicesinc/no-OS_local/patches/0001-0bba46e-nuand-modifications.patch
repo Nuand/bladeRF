@@ -492,6 +492,15 @@ index 77ffa44..ff5d7c5 100644
  /* Set the Enable State Machine (ENSM) mode. */
  int32_t ad9361_set_en_state_machine_mode (struct ad9361_rf_phy *phy, uint32_t mode);
  /* Get the Enable State Machine (ENSM) mode. */
+@@ -365,6 +381,8 @@
+ int32_t ad9361_set_rx_rf_gain (struct ad9361_rf_phy *phy, uint8_t ch, int32_t gain_db);
+ /* Get current receive RF gain for the selected channel. */
+ int32_t ad9361_get_rx_rf_gain (struct ad9361_rf_phy *phy, uint8_t ch, int32_t *gain_db);
++/* Get RFIC temperature */
++int32_t ad9361_get_temp(struct ad9361_rf_phy *phy);
+ /* Set the RX RF bandwidth. */
+ int32_t ad9361_set_rx_rf_bandwidth (struct ad9361_rf_phy *phy, uint32_t bandwidth_hz);
+ /* Get the RX RF bandwidth. */
 diff --git a/ad9361/sw/ad9361_conv.c b/ad9361/sw/ad9361_conv.c
 index b20cb71..0491f91 100644
 --- a/ad9361/sw/ad9361_conv.c

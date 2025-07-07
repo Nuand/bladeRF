@@ -3,6 +3,17 @@ project(bladeRF-power LANGUAGES C)
 
 set (CURSES_NEED_NCURSES TRUE)
 set (CURSES_NEED_WIDE TRUE)
+
+if(APPLE)
+    if(EXISTS "/opt/homebrew/opt/ncurses")
+        list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/ncurses")
+    elseif(EXISTS "/usr/local/opt/ncurses")
+        list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/ncurses")
+    else()
+        message(WARNING "Homebrew ncurses not found. Install it if the build is failing: brew install ncurses")
+    endif()
+endif()
+
 find_package(Curses REQUIRED)
 
 include_directories(

@@ -36,7 +36,9 @@ extern "C" {
 #endif
 
 typedef int clockid_t;
+#ifndef CLOCK_REALTIME
 #define CLOCK_REALTIME 0
+#endif
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp);
 

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #define FREQ_HOP_SPACING (bladerf_frequency)40e6
 #define ITERATIONS 10000
@@ -78,16 +79,16 @@ int main(int argc, char *argv[])
     for (i = 0; i < num_frequencies; i++) {
         status = bladerf_set_frequency(dev, ch, frequencies[i]);
         if (status != 0) {
-            fprintf(stderr, "Failed to set frequency to %lu Hz: %s\n",
+            fprintf(stderr, "Failed to set frequency to %" PRIu64 " Hz: %s\n",
                     frequencies[i], bladerf_strerror(status));
             return status;
         }
 
         bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_VERBOSE);
-        printf("Frequency: %lu Hz\n", frequencies[i]);
+        printf("Frequency: %" PRIu64 " Hz\n", frequencies[i]);
         status = bladerf_get_quick_tune(dev, ch, &quick_tunes[i]);
         if (status != 0) {
-            fprintf(stderr, "Failed to get quick tune for %lu Hz: %s\n",
+            fprintf(stderr, "Failed to get quick tune for %" PRIu64 " Hz: %s\n",
                     frequencies[i], bladerf_strerror(status));
             return status;
         }

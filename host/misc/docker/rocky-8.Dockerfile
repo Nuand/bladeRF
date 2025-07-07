@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,30 +21,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM debian:stretch
+FROM rockylinux:8-minimal
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="Debian"
-LABEL com.nuand.ci.distribution.codename="stretch"
-LABEL com.nuand.ci.distribution.version="9"
+LABEL com.nuand.ci.distribution.name="Rocky Linux"
+LABEL com.nuand.ci.distribution.codename="8"
+LABEL com.nuand.ci.distribution.version="8"
 
-# Install things
-RUN apt-get update \
- && apt-get install -y \
-        build-essential \
+# Install dnf first, then everything else
+RUN microdnf install -y dnf \
+ && dnf update -y \
+ && dnf install -y epel-release \
+ && dnf config-manager --set-enabled powertools \
+ && dnf groupinstall -y "Development Tools" \
+ && dnf install -y \
         clang \
         cmake \
         doxygen \
         git \
         help2man \
-        libtecla-dev \
-        libusb-1.0-0-dev \
+        libcurl-devel \
+        libedit-devel \
+        ncurses-devel \
+        libusb1-devel \
         pandoc \
-        pkg-config \
         usbutils \
- && apt-get clean
+ && dnf clean all
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
@@ -71,4 +75,4 @@ RUN cd /root/bladeRF/ \
     ../ \
  && make -j${parallel} \
  && make install \
- && ldconfig
+ && ldconfig 
