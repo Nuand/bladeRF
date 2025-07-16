@@ -2471,8 +2471,9 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback mode)
 
     IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
         if (BLADERF_LB_RFIC_BIST == mode) {
-            log_debug(
-                "%s: BLADERF_LB_RFIC_BIST not supported in FPGA command mode\n",
+            log_error(
+                "%s: RFIC BIST requires HOST tuning mode (currently FPGA). "
+                "Check BLADERF_DEFAULT_TUNING_MODE env var.\n",
                 __FUNCTION__);
             return BLADERF_ERR_UNSUPPORTED;
         }
