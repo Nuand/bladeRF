@@ -833,11 +833,8 @@ int bladerf_set_frequency(struct bladerf *dev,
     MUTEX_LOCK(&dev->lock);
 
     status = dev->board->set_frequency(dev, ch, frequency);
-    bladerf_gain_mode gain_mode;
 
-    dev->board->get_gain_mode(dev, ch, &gain_mode);
-
-    if (dev->gain_tbls[ch].enabled && status == 0)  {
+    if (dev->gain_tbls[ch].enabled && status == 0) {
         status = apply_gain_correction(dev, ch, frequency);
         if (status != 0) {
             log_error("Failed to set gain correction\n");
