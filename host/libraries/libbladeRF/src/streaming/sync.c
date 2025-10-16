@@ -271,6 +271,22 @@ int sync_init(struct bladerf_sync *sync,
         goto error;
     }
 
+    if ((layout & BLADERF_DIRECTION_MASK) == BLADERF_RX) {
+        sync->buf_mgmt.buffer_seq =
+            (uint32_t *)malloc(num_buffers * sizeof(uint32_t));
+        if (sync->buf_mgmt.buffer_seq == NULL) {
+            status = BLADERF_ERR_MEM;
+            goto error;
+        }
+    } else {
+        sync->buf_mgmt.buffer_seq = NULL;
+    }
+
+    sync->buf_mgmt.expected_seq = 0;
+    sync->buf_mgmt.next_seq     = 0;
+    sync->buf_mgmt.reorder_len  = 0;
+    sync->buf_mgmt.reorder_limit = 0;
+
     switch (layout & BLADERF_DIRECTION_MASK) {
         case BLADERF_RX:
             /* When starting up an RX stream, the first 'num_transfers'
@@ -289,6 +305,8 @@ int sync_init(struct bladerf_sync *sync,
 
             sync->meta.msg_timestamp = 0;
             sync->meta.msg_flags = 0;
+
+            sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
             break;
 
@@ -332,13 +350,21 @@ void sync_deinit(struct bladerf_sync *sync)
         sync_worker_deinit(sync->worker, &sync->buf_mgmt.lock,
                            &sync->buf_mgmt.buf_ready);
 
-        if (sync->buf_mgmt.actual_lengths) {
-            free(sync->buf_mgmt.actual_lengths);
-        }
         /* De-allocate our buffer management resources */
         if (sync->buf_mgmt.status) {
             MUTEX_DESTROY(&sync->buf_mgmt.lock);
             free(sync->buf_mgmt.status);
+            sync->buf_mgmt.status = NULL;
+        }
+
+        if (sync->buf_mgmt.actual_lengths) {
+            free(sync->buf_mgmt.actual_lengths);
+            sync->buf_mgmt.actual_lengths = NULL;
+        }
+
+        if (sync->buf_mgmt.buffer_seq) {
+            free(sync->buf_mgmt.buffer_seq);
+            sync->buf_mgmt.buffer_seq = NULL;
         }
 
         MUTEX_DESTROY(&sync->lock);
@@ -378,6 +404,43 @@ static int wait_for_buffer(struct buffer_mgmt *b,
 #ifndef SYNC_WORKER_START_TIMEOUT_MS
 #   define SYNC_WORKER_START_TIMEOUT_MS 250
 #endif
+
+int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms)
+{
+    int status;
+    unsigned int wait_ms = timeout_ms ? timeout_ms : SYNC_WORKER_START_TIMEOUT_MS;
+
+    if (sync == NULL || !sync->initialized) {
+        return 0;
+    }
+
+    if ((sync->stream_config.layout & BLADERF_DIRECTION_MASK) != BLADERF_RX) {
+        return 0;
+    }
+
+    if (sync->worker == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    switch (sync_worker_get_state(sync->worker, NULL)) {
+        case SYNC_WORKER_STATE_RUNNING:
+            return 0;
+
+        case SYNC_WORKER_STATE_IDLE:
+            break;
+
+        default:
+            return BLADERF_ERR_UNEXPECTED;
+    }
+
+    sync_worker_submit_request(sync->worker, SYNC_WORKER_START);
+
+    status = sync_worker_wait_for_state(sync->worker,
+                                        SYNC_WORKER_STATE_RUNNING,
+                                        wait_ms);
+
+    return status;
+}
 
 /* Returns # of timestamps (or time steps) left in a message */
 static inline unsigned int ts_remaining(struct bladerf_sync *s)

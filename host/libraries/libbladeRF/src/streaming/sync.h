@@ -23,6 +23,7 @@
 #define STREAMING_SYNC_H_
 
 #include <limits.h>
+#include <stdint.h>
 
 #include <libbladeRF.h>
 
@@ -46,6 +47,16 @@ typedef enum {
     SYNC_BUFFER_FULL,      /**< Buffer is full of data */
     SYNC_BUFFER_IN_FLIGHT, /**< Currently being transferred */
 } sync_buffer_status;
+
+#ifndef SYNC_RX_MAX_REORDER
+#define SYNC_RX_MAX_REORDER 256
+#endif
+
+struct rx_reorder_entry {
+    uint32_t seq;
+    unsigned int buf_idx;
+    size_t num_samples;
+};
 
 typedef enum {
     SYNC_META_STATE_HEADER,  /**< Extract the metadata header */
@@ -85,11 +96,67 @@ struct buffer_mgmt {
      * submitting full buffers to the underlying async system */
     sync_tx_submitter submitter;
 
+    /* RX-specific tracking for out-of-order completions */
+    uint32_t *buffer_seq;
+    uint32_t expected_seq;
+    uint32_t next_seq;
+    struct rx_reorder_entry reorder[SYNC_RX_MAX_REORDER];
+    size_t reorder_len;
+    unsigned int reorder_limit;
+
 
     MUTEX lock;
     COND buf_ready;           /**< Buffer produced by RX callback, or
                                *   buffer emptied by TX callback */
 };
+
+static inline void sync_reset_sequence_tracking(struct buffer_mgmt *b,
+                                                unsigned int num_in_flight)
+{
+    if (b == NULL) {
+        return;
+    }
+
+    if (!b->buffer_seq) {
+        b->expected_seq = 0;
+        b->next_seq     = 0;
+        b->reorder_len  = 0;
+        return;
+    }
+
+    for (size_t i = 0; i < SYNC_RX_MAX_REORDER; ++i) {
+        b->reorder[i].seq        = 0;
+        b->reorder[i].buf_idx    = 0;
+        b->reorder[i].num_samples = 0;
+    }
+
+    for (unsigned int i = 0; i < b->num_buffers; ++i) {
+        b->buffer_seq[i] = UINT32_MAX;
+    }
+
+    unsigned int limit = num_in_flight;
+    if (limit > b->num_buffers) {
+        limit = b->num_buffers;
+    }
+
+    for (unsigned int i = 0; i < limit; ++i) {
+        b->buffer_seq[i] = i;
+    }
+
+    b->expected_seq = 0;
+    b->next_seq     = limit;
+    b->reorder_len  = 0;
+    /* Allow a larger reorder window independent of instantaneous slack. */
+    if (b->num_buffers > 1) {
+        unsigned int capacity = b->num_buffers - 1;
+        if (capacity > SYNC_RX_MAX_REORDER) {
+            capacity = SYNC_RX_MAX_REORDER;
+        }
+        b->reorder_limit = capacity;
+    } else {
+        b->reorder_limit = 0;
+    }
+}
 
 /* State of API-side sync interface */
 typedef enum {
@@ -188,5 +255,7 @@ int sync_tx(struct bladerf_sync *sync,
 unsigned int sync_buf2idx(struct buffer_mgmt *b, void *addr);
 
 void *sync_idx2buf(struct buffer_mgmt *b, unsigned int idx);
+
+int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms);
 
 #endif

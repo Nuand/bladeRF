@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,6 +43,75 @@
 #define worker2str(s) (direction2str(s->stream_config.layout & BLADERF_DIRECTION_MASK))
 
 void *sync_worker_task(void *arg);
+
+static void mark_buffer_ready(struct buffer_mgmt *b,
+                              unsigned int idx,
+                              size_t num_samples)
+{
+    b->status[idx]         = SYNC_BUFFER_FULL;
+    b->actual_lengths[idx] = num_samples;
+    COND_SIGNAL(&b->buf_ready);
+}
+
+static void flush_reorder_entries(struct buffer_mgmt *b)
+{
+    bool progressed = true;
+
+    while (progressed && b->reorder_len > 0) {
+        progressed = false;
+
+        for (size_t i = 0; i < b->reorder_len; ++i) {
+            if (b->reorder[i].seq == b->expected_seq) {
+                mark_buffer_ready(b, b->reorder[i].buf_idx,
+                                  b->reorder[i].num_samples);
+                b->expected_seq++;
+
+                for (size_t j = i; j + 1 < b->reorder_len; ++j) {
+                    b->reorder[j] = b->reorder[j + 1];
+                }
+
+                b->reorder_len--;
+                progressed = true;
+                break;
+            }
+        }
+    }
+}
+
+static bool hold_out_of_order_buffer(struct buffer_mgmt *b,
+                                     uint32_t seq,
+                                     unsigned int idx,
+                                     size_t num_samples)
+{
+    if (b->reorder_limit == 0 || b->reorder_len >= b->reorder_limit) {
+        return false;
+    }
+
+    const uint32_t new_distance = seq - b->expected_seq;
+    size_t insert_pos           = 0;
+
+    while (insert_pos < b->reorder_len) {
+        const uint32_t existing_distance =
+            b->reorder[insert_pos].seq - b->expected_seq;
+
+        if (existing_distance > new_distance) {
+            break;
+        }
+
+        insert_pos++;
+    }
+
+    for (size_t i = b->reorder_len; i > insert_pos; --i) {
+        b->reorder[i] = b->reorder[i - 1];
+    }
+
+    b->reorder[insert_pos].seq         = seq;
+    b->reorder[insert_pos].buf_idx     = idx;
+    b->reorder[insert_pos].num_samples = num_samples;
+    b->reorder_len++;
+
+    return true;
+}
 
 static void *rx_callback(struct bladerf *dev,
                          struct bladerf_stream *stream,
@@ -80,28 +150,81 @@ static void *rx_callback(struct bladerf *dev,
     if (b->resubmit_count == 0) {
         if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
 
-            /* This buffer is now ready for the consumer */
-            b->status[samples_idx] = SYNC_BUFFER_FULL;
-            b->actual_lengths[samples_idx] = num_samples;
-            COND_SIGNAL(&b->buf_ready);
+            bool release_now = true;
+            uint32_t seq     = 0;
+
+            if (b->buffer_seq) {
+                seq = b->buffer_seq[samples_idx];
+
+                if (seq != b->expected_seq) {
+                    const uint32_t distance = seq - b->expected_seq;
+
+                    if (distance != 0 && distance <= b->reorder_limit) {
+                        if (hold_out_of_order_buffer(b, seq, samples_idx,
+                                                     num_samples)) {
+                            release_now = false;
+                            log_verbose("%s worker: buf[%u] held for reorder "
+                                        "(seq=%u expect=%u)\n",
+                                        worker2str(s), samples_idx, seq,
+                                        b->expected_seq);
+                        } else {
+                            log_warning("%s worker: RX reorder window full "
+                                        "(limit=%u). Forwarding buf[%u] "
+                                        "(seq=%u, expect=%u).\n",
+                                        worker2str(s), b->reorder_limit,
+                                        samples_idx, seq, b->expected_seq);
+                        }
+                    } else if (distance != 0) {
+                        log_warning("%s worker: RX reorder distance %u exceeds "
+                                    "window %u. Forwarding buf[%u].\n",
+                                    worker2str(s), distance, b->reorder_limit,
+                                    samples_idx);
+                    }
+                }
+            }
+
+            if (release_now) {
+                mark_buffer_ready(b, samples_idx, num_samples);
+
+                if (b->buffer_seq && seq == b->expected_seq) {
+                    b->expected_seq++;
+                    flush_reorder_entries(b);
+                }
+
+                log_verbose("%s worker: buf[%u] = full\n",
+                            worker2str(s), samples_idx);
+            }
 
             /* Update the state of the buffer being submitted next */
             next_idx = b->prod_i;
             b->status[next_idx] = SYNC_BUFFER_IN_FLIGHT;
+            if (b->buffer_seq) {
+                b->buffer_seq[next_idx] = b->next_seq++;
+            }
             next_buf = b->buffers[next_idx];
 
             /* Advance to the next buffer for the next callback */
             b->prod_i = (next_idx + 1) % b->num_buffers;
 
-            log_verbose("%s worker: buf[%u] = full, buf[%u] = in_flight\n",
-                        worker2str(s), samples_idx, next_idx);
+            if (release_now) {
+                log_verbose("%s worker: buf[%u] now in_flight\n",
+                            worker2str(s), next_idx);
+            }
 
         } else {
-            /* TODO propagate back the RX Overrun to the sync_rx() caller */
-            log_debug("RX overrun @ buffer %u\r\n", samples_idx);
+            if (b->reorder_len > 0) {
+                /* We're holding buffers to restore order. Skip submitting a
+                 * new transfer this time to avoid overwriting held data. */
+                next_buf = BLADERF_STREAM_NO_DATA;
+                log_verbose("%s worker: delaying submission while reorder "
+                            "queue drains\n", worker2str(s));
+            } else {
+                /* TODO propagate back the RX Overrun to the sync_rx() caller */
+                log_debug("RX overrun @ buffer %u\r\n", samples_idx);
 
-            next_buf = samples;
-            b->resubmit_count = s->stream_config.num_xfers - 1;
+                next_buf = samples;
+                b->resubmit_count = s->stream_config.num_xfers - 1;
+            }
         }
     } else {
         /* We're still recovering from an overrun at this point. Just
@@ -428,6 +551,9 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
                     s->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
                 }
             }
+
+            sync_reset_sequence_tracking(&s->buf_mgmt,
+                                         s->stream_config.num_xfers);
         }
 
         MUTEX_UNLOCK(&s->buf_mgmt.lock);

@@ -1369,6 +1369,18 @@ static int bladerf1_enable_module(struct bladerf *dev,
     }
 
     lms_enable_rffe(dev, ch, enable);
+
+    if (enable && !BLADERF_CHANNEL_IS_TX(ch)) {
+        struct bladerf_sync *sync = &board_data->sync[ch];
+
+        if (sync->initialized) {
+            status = sync_prime_stream(sync, 0);
+            if (status != 0) {
+                return status;
+            }
+        }
+    }
+
     status = dev->backend->enable_module(
         dev, BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX, enable);
 

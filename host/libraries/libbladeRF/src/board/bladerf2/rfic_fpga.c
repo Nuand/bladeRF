@@ -319,6 +319,14 @@ static int _rfic_fpga_enable_module(struct bladerf *dev,
 
     /* Perform backend setup */
     if (be_setup) {
+        if (dir == BLADERF_RX) {
+            struct bladerf_sync *sync = &board_data->sync[BLADERF_RX];
+
+            if (sync->initialized) {
+                CHECK_STATUS(sync_prime_stream(sync, 0));
+            }
+        }
+
         CHECK_STATUS(dev->backend->enable_module(dev, dir, true));
     }
 

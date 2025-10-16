@@ -337,6 +337,14 @@ static int _rfic_host_enable_module(struct bladerf *dev,
         }
 
         if (dir_enable || backend_clear) {
+            if (dir == BLADERF_RX) {
+                struct bladerf_sync *sync = &board_data->sync[BLADERF_RX];
+
+                if (sync->initialized) {
+                    CHECK_STATUS(sync_prime_stream(sync, 0));
+                }
+            }
+
             CHECK_STATUS(dev->backend->enable_module(dev, dir, true));
         }
     }
