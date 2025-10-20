@@ -51,6 +51,7 @@ entity rx is
 
         -- 8-bit mode
         eight_bit_mode_en      : in std_logic := '0';
+        highly_packed_mode_en  : in std_logic := '0';
 
         -- Packet to host via FX3
         packet_en              : in    std_logic;
@@ -251,6 +252,7 @@ begin
             packet_ready        =>  packet_ready,
 
             eight_bit_mode_en   => eight_bit_mode_en,
+            highly_packed_mode_en => highly_packed_mode_en,
 
             meta_fifo_full      =>  meta_fifo.wfull,
             meta_fifo_usedw     =>  meta_fifo.wused,

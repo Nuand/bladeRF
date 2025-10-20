@@ -25,7 +25,7 @@
 #ifndef WIN_NANOSLEEP_H_
 #define WIN_NANOSLEEP_H_
 
-#include <pthread.h>
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {

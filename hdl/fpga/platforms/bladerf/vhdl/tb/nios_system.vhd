@@ -46,7 +46,16 @@ entity nios_system is
     tx_trigger_ctl_in_port          : in  std_logic_vector(7 downto 0);
     tx_trigger_ctl_out_port         : out std_logic_vector(7 downto 0);
     rx_trigger_ctl_in_port          : in  std_logic_vector(7 downto 0);
-    rx_trigger_ctl_out_port         : out std_logic_vector(7 downto 0)
+    rx_trigger_ctl_out_port         : out std_logic_vector(7 downto 0);
+    arbiter_request                 : in  std_logic_vector(1 downto 0);
+    arbiter_granted                 : out std_logic_vector(1 downto 0);
+    arbiter_ack                     : in  std_logic_vector(1 downto 0);
+    agc_dc_i_max_export             : out std_logic_vector(15 downto 0);
+    agc_dc_q_max_export             : out std_logic_vector(15 downto 0);
+    agc_dc_i_mid_export             : out std_logic_vector(15 downto 0);
+    agc_dc_q_mid_export             : out std_logic_vector(15 downto 0);
+    agc_dc_i_min_export             : out std_logic_vector(15 downto 0);
+    agc_dc_q_min_export             : out std_logic_vector(15 downto 0)
   );
 end entity ;
 
@@ -82,6 +91,18 @@ begin
 
     xb_gpio_out_port <= (others =>'0') ;
     xb_gpio_dir_export <= (others =>'0') ;
+
+    tx_trigger_ctl_out_port <= (others => '0');
+    rx_trigger_ctl_out_port <= (others => '0');
+
+    arbiter_granted <= (others => '0');
+
+    agc_dc_i_max_export <= (others => '0');
+    agc_dc_q_max_export <= (others => '0');
+    agc_dc_i_mid_export <= (others => '0');
+    agc_dc_q_mid_export <= (others => '0');
+    agc_dc_i_min_export <= (others => '0');
+    agc_dc_q_min_export <= (others => '0');
 
 end architecture ;
 

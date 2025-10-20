@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(libbladeRF_test_ctrl C)
 
 set(INCLUDES
@@ -13,14 +13,10 @@ endif()
 
 set(LIBS libbladerf_shared)
 
-if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-else(MSVC)
+if(NOT MSVC)
     find_package(Threads REQUIRED)
     set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-endif(MSVC)
+endif(NOT MSVC)
 
 set(SRC
         src/main.c

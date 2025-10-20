@@ -32,7 +32,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
-#include <pthread.h>
+#include "thread.h"
 #include <libbladeRF.h>
 #include "test_timestamps.h"
 
@@ -77,8 +77,8 @@ static struct async_task
     size_t curr_buf_idx;
     size_t n_buffers;
 
-    pthread_t thread;
-    pthread_mutex_t lock;
+    THREAD thread;
+    MUTEX lock;
 } rx_task, tx_task;
 
 void *callback(struct bladerf *dev, struct bladerf_stream *stream,
@@ -90,7 +90,7 @@ void *callback(struct bladerf *dev, struct bladerf_stream *stream,
     void *ret;
 
 
-    pthread_mutex_lock(&t->lock);
+    MUTEX_LOCK(&t->lock);
 
     t->curr_buf_idx = (t->curr_buf_idx + 1) % t->n_buffers;
     ret = t->buffers[t->curr_buf_idx];
@@ -112,7 +112,7 @@ void *callback(struct bladerf *dev, struct bladerf_stream *stream,
             ret = BLADERF_STREAM_SHUTDOWN;
     }
 
-    pthread_mutex_unlock(&t->lock);
+    MUTEX_UNLOCK(&t->lock);
     return ret;
 }
 
@@ -146,10 +146,10 @@ static void *stream_task(void *arg)
     bladerf_deinit_stream(stream);
 
 out:
-    pthread_mutex_lock(&t->lock);
+    MUTEX_LOCK(&t->lock);
     t->state = TASK_STOPPED;
     t->exit_status = status;
-    pthread_mutex_unlock(&t->lock);
+    MUTEX_UNLOCK(&t->lock);
 
     return NULL;
 }
@@ -217,8 +217,8 @@ static int init_if(struct bladerf *dev, struct app_params *p, bladerf_module m,
         t->fmt = fmt;
         t->state = state = TASK_UNINITIALIZED;
 
-        status = pthread_create(&t->thread, NULL, stream_task, t);
-        if (status != 0) {
+        status = THREAD_CREATE(&t->thread, stream_task, t);
+        if (status != THREAD_SUCCESS) {
             fprintf(stderr, "Failed to launch %s task\n",
                     m == BLADERF_MODULE_RX ? "RX" : "TX");
             return status;
@@ -226,15 +226,15 @@ static int init_if(struct bladerf *dev, struct app_params *p, bladerf_module m,
 
         do {
             usleep(25000);
-            pthread_mutex_lock(&t->lock);
+            MUTEX_LOCK(&t->lock);
             state = t->state;
-            pthread_mutex_unlock(&t->lock);
+            MUTEX_UNLOCK(&t->lock);
         } while (state == TASK_UNINITIALIZED);
 
         /* This may have already stopped if an invalid configuration was
          * detected. */
         if (state == TASK_STOPPED) {
-            pthread_join(t->thread, NULL);
+            THREAD_JOIN(t->thread, NULL);
             if (t->exit_status != exp_status) {
                 fprintf(stderr,
                         "Uexpected status when configuring async %s: %s\n",
@@ -274,23 +274,23 @@ static int deinit_if(struct bladerf *dev, bladerf_module m, bool sync,
                 return -1;
         }
 
-        pthread_mutex_lock(&t->lock);
+        MUTEX_LOCK(&t->lock);
         state = t->state;
-        pthread_mutex_unlock(&t->lock);
+        MUTEX_UNLOCK(&t->lock);
 
         while (state != TASK_STOPPED) {
-            pthread_mutex_lock(&t->lock);
+            MUTEX_LOCK(&t->lock);
             t->state = TASK_SHUTDOWN_REQUESTED;
-            pthread_mutex_unlock(&t->lock);
+            MUTEX_UNLOCK(&t->lock);
 
             usleep(25000);
 
-            pthread_mutex_lock(&t->lock);
+            MUTEX_LOCK(&t->lock);
             state = t->state;
-            pthread_mutex_unlock(&t->lock);
+            MUTEX_UNLOCK(&t->lock);
         }
 
-        pthread_join(t->thread, NULL);
+        THREAD_JOIN(t->thread, NULL);
 
         if (t->exit_status != exp_status) {
             fprintf(stderr,
@@ -331,7 +331,7 @@ static void init_task_info(struct bladerf *dev, struct app_params *p,
     t->n_buffers = 16;
     t->curr_buf_idx = 0;
 
-    pthread_mutex_init(&t->lock, NULL);
+    MUTEX_INIT(&t->lock);
 }
 
 int test_fn_format_mismatch(struct bladerf *dev, struct app_params *p)

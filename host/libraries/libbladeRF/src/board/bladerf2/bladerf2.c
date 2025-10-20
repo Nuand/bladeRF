@@ -143,7 +143,7 @@ static int _bladerf2_initialize(struct bladerf *dev)
     if (status < 0) {
 #if LOGGING_ENABLED
         if (BLADERF_ERR_UPDATE_FPGA == status) {
-            log_warning(
+            log_error(
                 "FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
                 "requires FPGA v%u.%u.%u or later. Please load a "
                 "different FPGA version before continuing.\n\n",
@@ -153,7 +153,7 @@ static int _bladerf2_initialize(struct bladerf *dev)
                 required_fpga_version.major, required_fpga_version.minor,
                 required_fpga_version.patch);
         } else if (BLADERF_ERR_UPDATE_FW == status) {
-            log_warning(
+            log_error(
                 "FPGA v%u.%u.%u was detected, which requires firmware "
                 "v%u.%u.%u or later. The device firmware is currently "
                 "v%u.%u.%u. Please upgrade the device firmware before "
@@ -165,6 +165,16 @@ static int _bladerf2_initialize(struct bladerf *dev)
                 board_data->fw_version.patch);
         }
 #endif
+
+        if (version_greater_or_equal(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION) &&
+            version_less_than(&board_data->fpga_version, &FPGA_LARGER_BUFFER_VERSION)) {
+            return BLADERF_ERR_UPDATE_FPGA;
+        }
+
+        if (version_greater_or_equal(&board_data->fpga_version, &FPGA_LARGER_BUFFER_VERSION) &&
+            version_less_than(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION)) {
+            return BLADERF_ERR_UPDATE_FW;
+        }
     }
 
     /* Set FPGA packet protocol */
@@ -254,6 +264,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     struct bladerf_version required_fw_version;
     char *full_path;
     bladerf_dev_speed usb_speed;
+    bool use_legacy_msg_size = false;
     size_t i;
     int ready, status;
 
@@ -324,17 +335,31 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     /* Determine data message size */
     CHECK_STATUS(dev->backend->get_device_speed(dev, &usb_speed));
 
+    use_legacy_msg_size = version_less_than(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION);
     switch (usb_speed) {
         case BLADERF_DEVICE_SPEED_SUPER:
             board_data->msg_size = USB_MSG_SIZE_SS;
+            if (use_legacy_msg_size)
+                board_data->msg_size = USB_MSG_SIZE_SS_LEGACY;
             break;
+
         case BLADERF_DEVICE_SPEED_HIGH:
             board_data->msg_size = USB_MSG_SIZE_HS;
+            if (use_legacy_msg_size)
+                board_data->msg_size = USB_MSG_SIZE_HS_LEGACY;
             break;
+
         default:
             log_error("%s: unsupported device speed (%d)\n", __FUNCTION__,
                       usb_speed);
             return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    log_debug("Size of a host<->FPGA message: %zu bytes\n", board_data->msg_size);
+    if (use_legacy_msg_size) {
+        log_warning("Using legacy message size. Consider upgrading firmware >= v%u.%u.%u and fpga >= v%u.%u.%u\n",
+            FW_LARGER_BUFFER_VERSION.major, FW_LARGER_BUFFER_VERSION.minor, FW_LARGER_BUFFER_VERSION.patch,
+            FPGA_LARGER_BUFFER_VERSION.major, FPGA_LARGER_BUFFER_VERSION.minor, FPGA_LARGER_BUFFER_VERSION.patch);
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
@@ -1047,17 +1072,17 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     CHECK_STATUS(dev->board->get_sample_rate_range(dev, ch, &range));
 
     if (!is_within_range(range, rate)) {
-        return BLADERF_ERR_RANGE;
-    }
-
-    /* Feature range check */
-    if (dev->feature == BLADERF_FEATURE_OVERSAMPLE &&
-        !is_within_range(&bladerf2_sample_rate_range_oversample, rate)) {
-        log_error("Sample rate outside of OVERSAMPLE feature range\n");
-        return BLADERF_ERR_RANGE;
-    } else if (dev->feature == BLADERF_FEATURE_DEFAULT &&
-               !is_within_range(&bladerf2_sample_rate_range_base, rate)) {
-        log_error("Sample rate outside of DEFAULT feature range\n");
+        log_error("Sample rate %.3f MHz is out of range\n"
+                  "Available ranges:\n"
+                  "  Normal operating range: %.3f MHz to %.3f MHz%s\n"
+                  "  Oversample feature range: %.3f MHz to %.3f MHz%s\n",
+                  rate/1e6,
+                  bladerf2_sample_rate_range_base.min/1e6,
+                  bladerf2_sample_rate_range_base.max/1e6,
+                  (dev->feature == BLADERF_FEATURE_DEFAULT) ? " (current)" : "",
+                  bladerf2_sample_rate_range_oversample.min/1e6,
+                  bladerf2_sample_rate_range_oversample.max/1e6,
+                  (dev->feature == BLADERF_FEATURE_OVERSAMPLE) ? " (current)" : "");
         return BLADERF_ERR_RANGE;
     }
 
@@ -2446,8 +2471,9 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback mode)
 
     IF_COMMAND_MODE(dev, RFIC_COMMAND_FPGA, {
         if (BLADERF_LB_RFIC_BIST == mode) {
-            log_debug(
-                "%s: BLADERF_LB_RFIC_BIST not supported in FPGA command mode\n",
+            log_error(
+                "%s: RFIC BIST requires HOST tuning mode (currently FPGA). "
+                "Check BLADERF_DEFAULT_TUNING_MODE env var.\n",
                 __FUNCTION__);
             return BLADERF_ERR_UNSUPPORTED;
         }

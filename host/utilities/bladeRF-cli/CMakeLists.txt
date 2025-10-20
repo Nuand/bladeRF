@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(bladeRF-cli C)
 
 ################################################################################
@@ -28,11 +28,9 @@ configure_file(
 find_package(LibTecla)
 find_package(LibEdit)
 
-if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-else(MSVC)
+if(NOT MSVC)
 	find_package(Threads REQUIRED)
-endif(MSVC)
+endif(NOT MSVC)
 
 find_program(PANDOC_EXECUTABLE pandoc)
 find_program(BASH_EXECUTABLE bash)
@@ -169,7 +167,6 @@ endif()
 if(MSVC)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS}
         ${BLADERF_HOST_COMMON_INCLUDE_DIRS}/windows
-        ${LIBPTHREADSWIN32_INCLUDE_DIRS}
     )
 endif()
 
@@ -267,7 +264,7 @@ set(CLI_LINK_LIBRARIES
 
 if(NOT MSVC)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} m)
-endif()
+endif(NOT MSVC)
 
 if(ENABLE_LIBTECLA)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES})
@@ -280,10 +277,6 @@ if(ENABLE_LIBTECLA)
 elseif(ENABLE_LIBEDIT)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBEDIT_LIBRARIES})
 endif(ENABLE_LIBTECLA)
-
-if(LIBPTHREADSWIN32_FOUND)
-    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBPTHREADSWIN32_LIBRARIES})
-endif()
 
 if(LIBC_VERSION)
     # clock_gettime() was moved from librt -> libc in 2.17

@@ -4,6 +4,7 @@ proc compile_fx3_gpif { root } {
     vlib work
 
     vcom -2008 -work work [file join $root ./synthesis/set_clear_ff.vhd]
+    vcom -2008 -work work [file join $root ../../platforms/common/bladerf/vhdl/fx3_gpif_p.vhd]
     vcom -2008 -work work [file join $root ../../platforms/common/bladerf/vhdl/fx3_gpif.vhd]
     vcom -2008 -work work [file join $root ./simulation/util.vhd]
     vcom -2008 -work work [file join $root ./simulation/fx3_model.vhd]

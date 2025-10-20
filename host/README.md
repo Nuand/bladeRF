@@ -23,9 +23,6 @@ Windows users that wish to use a Cypress driver/library based libbladeRF backend
 ### CMake ###
 [CMake][CMake.org] is used to build the items in this directory.  \>= v2.8.5 is required, but the latest available version is recommended.
 
-### pthreads-win32 - Windows-only ###
-Windows users will need to get [pthreads-win32], and may (with newer Windows versions) need to build it from scratch.
-
 ## Build ##
 
 ### Linux and OSX ###
@@ -63,28 +60,12 @@ This process was most recently validated on Windows 10 Enterprise with CMake 3.9
     - If you run into any failures, check these items, then re-run Configure:
         - LIBUSB_PATH (and ENABLE_BACKEND_LIBUSB) - for using libusb
         - FX3_SDK_PATH (and ENABLE_BACKEND_CYAPI) - for using the Cypress driver
-        - LIBPTHREADSWIN32_PATH
 - Adjust options as desired and re-run the "Configure" command as needed. Values in red are new, and should be reviewed before running "Configure" again to get the red out.
 - Click the CMake GUI's "Generate" button.
 - In the ```build``` directory, a Visual Studio solution will now exist.  You can click "Open Project" to get there.
 - Build the solution (right-click `Solution 'bladeRF'` and click "Build Solution")
 - Upon building the solution, build artifacts will be present in: ```build\output\<build type>```
     - ```<build_type>``` may refer to Debug or Release, for example
-
-#### pthreads-win32 ####
-If you are using a newer version of Windows / Visual Studio and are getting ```error C0211: 'timespec': 'struct' type redefinition``` when trying to build bladeRF, you will need to rebuild pthreads-win32. The below process seems to work with pthreads-w32 2.9.1.
-
-- Get full source tree from [pthreads-win32] website, and unpack someplace convenient
-- In Visual Studio, open `pthreads-w32-2-9-1-release\pthreads.2\pthread.dsw` (one-way upgrade is OK)
-- Right-click the solution, select "Retarget solution", hit OK.
-- Change "Solution Configurations" dropdown to "Release" ("Debug" doesn't work, but that's OK)
-- Edit pthread.h to add `#define HAVE_STRUCT_TIMESPEC` and `#define PTW32_ARCHx64` near the top, just below the include guard
-- Build the solution
-
-- Back over in the bladeRF CMake:
-    - File -> Delete Cache
-    - Redo the "Configure" dance as before
-    - Point `LIBPTHREADSWIN32_PATH` to the `pthreads-w32-2-9-1-release\pthreads.2` directory you were just working in
 
 ## CMake Options and Flags ##
 
@@ -120,4 +101,3 @@ more information.
 [CMake documentation]: http://www.cmake.org/cmake/help/documentation.html (Cmake documentation)
 [Cypress FX3 SDK]: http://www.cypress.com/?rID=57990 (Cypress FX3 SDK)
 [redhat144967]: https://bugzilla.redhat.com/show_bug.cgi?id=144967 (Red Hat Bugzilla - Bug 144967)
-[pthreads-win32]: https://sourceware.org/pthreads-win32/ (POSIX Threads for Win32)

@@ -32,6 +32,7 @@ library nuand;
     use nuand.fifo_readwrite_p.all;
     use nuand.common_dcfifo_p.all;
     use nuand.bladerf_p.all;
+    use nuand.fx3_gpif_p.all;
 
 entity fx3_gpif_meta_tb is
     generic (
@@ -683,8 +684,10 @@ begin
     end process tx_sample_start_check;
 
     look_for_dropped_tx_samples : process(tx_clock) is
+        constant HEADER_LEN               : integer := 4; -- In clk cycles
         constant MESSAGES_PER_ITERATION   : natural := 3; --Provided in fx3_model
         variable current_message_count    : natural := 1;
+        variable valid_sample_count        : natural := 0;
         variable iq_value                 : signed (15 downto 0) := x"0000";
         variable expected_sample_q        : signed (15 downto 0);
         variable expected_sample_i        : signed (15 downto 0);
@@ -695,6 +698,7 @@ begin
                 and dac_streams(i).data_v  = '1'
                 and fx3_control.tx_enable  = '1' )
             then
+                valid_sample_count := valid_sample_count + 1;
                 expected_sample_i := iq_value;
                 expected_sample_q := to_signed(current_message_count, 8) & (iq_value(7 downto 0) + 1);
 
@@ -709,7 +713,7 @@ begin
 
                 -- Set iq values based on blocks received
                 -- See tx_sample_stream's encoding scheme in fx3_model.vhd
-                if( iq_value = x"03F6" ) then
+                if( valid_sample_count mod (GPIF_BUF_SIZE_SS-HEADER_LEN) = 0 ) then
                     iq_value  := x"0000";
                     if( current_message_count < MESSAGES_PER_ITERATION ) then
                         current_message_count := current_message_count + 1;

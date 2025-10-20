@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...3.27)
 project(bladeRF C)
 
 ################################################################################
 # Project configuration
 ################################################################################
+add_compile_definitions(NUAND_MODIFICATIONS=1)
 
 # All build output lands in this directory:
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
@@ -230,29 +231,6 @@ add_custom_target(uninstall
 # Windows-only, Post build: Copy libraries to our build output directory
 ################################################################################
 if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
-    find_package(LibPThreadsWin32)
-    if(LIBPTHREADSWIN32_FOUND)
-        set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll")
-
-        add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${LIBPTHREADSWIN32_LIB_COPYING}"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
-            COMMENT "Copying pthreads-win32 license to output directory..."
-        )
-
-        add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${LIBPTHREADSWIN32_DLL}"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
-            COMMENT "Copying pthreadVC2.dll to output directory..."
-        )
-    endif(LIBPTHREADSWIN32_FOUND)
-
     if(LIBUSB_FOUND)
         set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/libusb/COPYING"

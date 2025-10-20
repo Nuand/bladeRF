@@ -48,9 +48,10 @@
 #endif
 
 #include <Windows.h>
+#include <time.h>
 #include <stdint.h>
 #include "host_config.h"
-#include "pthread.h"
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -36,7 +36,9 @@ LIBAD936X_DIR       := ../../../../fpga/ip/analogdevicesinc/no_OS
 
 INC_DIRS            += $(LIBAD936X_BUILDDIR) \
                        ../$(LIBAD936X_DIR)/include \
-                       ../../../../../../host/common/include
+                       ../../../../../../host/common/include \
+                       ../../../../../../host/build/common/thirdparty/ad936x/ \
+                       ../../../../../../thirdparty/analogdevicesinc/no-OS_local/platform_bladerf2/
 
 LIB_DIRS            += $(LIBAD936X_BUILDDIR)
 LDDEPS              += $(LIBAD936X_BUILDDIR)/libad936x.a
@@ -80,3 +82,6 @@ $(LIBAD936X_BUILDDIR)/Makefile: $(LIBAD936X_MAKE_DEP)
 $(LIBAD936X_BUILDDIR)/libad936x.a: $(LIBAD936X_BUILD_DEP)
 	@$(ECHO) Info: Building libad936x
 	@$(MAKE) --no-print-directory -C $(LIBAD936X_BUILDDIR) ad936x
+
+# Ensure libad936x is built before the application objects that depend on its headers
+$(APP_OBJS): $(LIBAD936X_BUILDDIR)/libad936x.a

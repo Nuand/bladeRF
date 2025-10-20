@@ -1,0 +1,7 @@
+set frequency 915M
+set samplerate 20M
+set rx_mux 12BIT_COUNTER
+set bitmode packed
+rx config file=/tmp/data.csv format=csv n=200k
+rx start
+rx wait

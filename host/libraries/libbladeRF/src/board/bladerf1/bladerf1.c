@@ -576,7 +576,7 @@ static int bladerf1_initialize(struct bladerf *dev)
     if (status < 0) {
 #if LOGGING_ENABLED
         if (status == BLADERF_ERR_UPDATE_FPGA) {
-            log_warning("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
+            log_error("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
                         "requires FPGA v%u.%u.%u or later. Please load a "
                         "different FPGA version before continuing.\n\n",
                         board_data->fpga_version.major,
@@ -589,7 +589,7 @@ static int bladerf1_initialize(struct bladerf *dev)
                         required_fpga_version.minor,
                         required_fpga_version.patch);
         } else if (status == BLADERF_ERR_UPDATE_FW) {
-            log_warning("FPGA v%u.%u.%u was detected, which requires firmware "
+            log_error("FPGA v%u.%u.%u was detected, which requires firmware "
                         "v%u.%u.%u or later. The device firmware is currently "
                         "v%u.%u.%u. Please upgrade the device firmware before "
                         "continuing.\n\n",
@@ -604,6 +604,16 @@ static int bladerf1_initialize(struct bladerf *dev)
                         board_data->fw_version.patch);
         }
 #endif
+
+        if (version_greater_or_equal(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION) &&
+            version_less_than(&board_data->fpga_version, &FPGA_LARGER_BUFFER_VERSION)) {
+            return BLADERF_ERR_UPDATE_FPGA;
+        }
+
+        if (version_greater_or_equal(&board_data->fpga_version, &FPGA_LARGER_BUFFER_VERSION) &&
+            version_less_than(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION)) {
+            return BLADERF_ERR_UPDATE_FW;
+        }
     }
 
     /* Detect AGC FPGA bug and report warning */
@@ -814,6 +824,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     struct bladerf1_board_data *board_data;
     struct bladerf_version required_fw_version;
     bladerf_dev_speed usb_speed;
+    bool use_legacy_msg_size = false;
     char filename[FILENAME_MAX];
     char *full_path;
     int status;
@@ -899,18 +910,31 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         log_debug("Failed to get device speed: %s\n", bladerf_strerror(status));
         return status;
     }
+
+    use_legacy_msg_size = version_less_than(&board_data->fw_version, &FW_LARGER_BUFFER_VERSION);
     switch (usb_speed) {
         case BLADERF_DEVICE_SPEED_SUPER:
             board_data->msg_size = USB_MSG_SIZE_SS;
+            if (use_legacy_msg_size)
+                board_data->msg_size = USB_MSG_SIZE_SS_LEGACY;
             break;
 
         case BLADERF_DEVICE_SPEED_HIGH:
             board_data->msg_size = USB_MSG_SIZE_HS;
+            if (use_legacy_msg_size)
+                board_data->msg_size = USB_MSG_SIZE_HS_LEGACY;
             break;
 
         default:
             log_error("Unsupported device speed: %d\n", usb_speed);
             return BLADERF_ERR_UNEXPECTED;
+    }
+
+    log_debug("Size of a host<->FPGA message: %zu bytes\n", board_data->msg_size);
+    if (use_legacy_msg_size) {
+        log_warning("Using legacy message size. Consider upgrading firmware >= v%u.%u.%u and fpga >= v%u.%u.%u\n",
+            FW_LARGER_BUFFER_VERSION.major, FW_LARGER_BUFFER_VERSION.minor, FW_LARGER_BUFFER_VERSION.patch,
+            FPGA_LARGER_BUFFER_VERSION.major, FPGA_LARGER_BUFFER_VERSION.minor, FPGA_LARGER_BUFFER_VERSION.patch);
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
@@ -1345,6 +1369,18 @@ static int bladerf1_enable_module(struct bladerf *dev,
     }
 
     lms_enable_rffe(dev, ch, enable);
+
+    if (enable && !BLADERF_CHANNEL_IS_TX(ch)) {
+        struct bladerf_sync *sync = &board_data->sync[ch];
+
+        if (sync->initialized) {
+            status = sync_prime_stream(sync, 0);
+            if (status != 0) {
+                return status;
+            }
+        }
+    }
+
     status = dev->backend->enable_module(
         dev, BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX, enable);
 

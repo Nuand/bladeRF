@@ -25,7 +25,7 @@
 #ifndef WIN_GETTIMEOFDAY_H_
 #define WIN_GETTIMEOFDAY_H_
 
-#include <pthread.h>
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {

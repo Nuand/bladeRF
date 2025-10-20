@@ -31,11 +31,11 @@
 #include <inttypes.h>
 #include <libbladeRF.h>
 #include <getopt.h>
-#include <pthread.h>
 #include "conversions.h"
 #include "test_timestamps.h"
 #include "test_txrx_hwloop.h"
 #include "minmax.h"
+#include "thread.h"
 
 #ifdef _WIN32
 #include "gettimeofday.h"
@@ -63,6 +63,12 @@ static void init_app_params(struct app_params *p, struct test_case *tc) {
     tc->fill = 50; //percent
     tc->init_ts_delay = 200000;
     tc->gain = 30;
+    
+    // Initialize gain parameters
+    tc->tx_gain_set = false;
+    tc->rx_gain_set = false;
+    tc->tx_gain = 0;
+    tc->rx_gain = 0;
 
     memset(p, 0, sizeof(p[0]));
     p->samplerate = 1e6;
@@ -97,8 +103,8 @@ int main(int argc, char *argv[]) {
     bladerf_log_level log_level;
 
     /** Threading */
-    pthread_t thread_rx;
-    pthread_t thread_loopcompare;
+    THREAD thread_rx;
+    THREAD thread_loopcompare;
     thread_args args_loopbackcompare;
     thread_args args_rx;
 
@@ -162,6 +168,24 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Invalid number of iterations %s\n", optarg);
                     return -1;
                 }
+                break;
+
+            case 'g':
+                test.tx_gain = str2uint(optarg, 0, UINT_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid TX gain: %s\n", optarg);
+                    return -1;
+                }
+                test.tx_gain_set = true;
+                break;
+
+            case 'G':
+                test.rx_gain = str2uint(optarg, 0, UINT_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid RX gain: %s\n", optarg);
+                    return -1;
+                }
+                test.rx_gain_set = true;
                 break;
 
             case 'v':
@@ -231,14 +255,14 @@ int main(int argc, char *argv[]) {
         args_rx.is_rx_device = true;
         args_rx.dev = dev_rx;
         args_rx.tc  = &test;
-        pthread_create(&thread_rx, NULL, rx_task, &args_rx);
+        THREAD_CREATE(&thread_rx, rx_task, &args_rx);
     }
 
     if (test.compare == true) {
         args_loopbackcompare.is_rx_device = false;
         args_loopbackcompare.dev = dev_tx;
         args_loopbackcompare.tc  = &test;
-        pthread_create(&thread_loopcompare, NULL, rx_task, &args_loopbackcompare);
+        THREAD_CREATE(&thread_loopcompare, rx_task, &args_loopbackcompare);
     }
 
     for (i = 0; i < test.iterations && status == 0; i++) {
@@ -269,6 +293,18 @@ int main(int argc, char *argv[]) {
             buf += 2 * to_send;
         }
 
+        // Wait for this burst to complete before scheduling the next one
+        if (status == 0 && i < (test.iterations - 1)) {
+            uint64_t burst_end_timestamp = meta.timestamp + test.burst_len;
+            int wait_status = wait_for_timestamp(dev_tx, BLADERF_MODULE_TX, 
+                                                burst_end_timestamp, 1000);
+            if (wait_status != 0) {
+                fprintf(stderr, "Failed to wait for burst %u to complete: %s\n",
+                        (unsigned int)i, bladerf_strerror(wait_status));
+                status = first_error(status, wait_status);
+            }
+        }
+
         meta.timestamp += test.period;
     }
 
@@ -287,12 +323,12 @@ int main(int argc, char *argv[]) {
     printf("TX finished in %.4f seconds\n", time_passed);
 out:
     if (!test.just_tx) {
-        pthread_join(thread_rx, NULL);
+        THREAD_JOIN(thread_rx, NULL);
         bladerf_close(dev_rx);
     }
 
     if (test.compare)
-        pthread_join(thread_loopcompare, NULL);
+        THREAD_JOIN(thread_loopcompare, NULL);
 
     status_out = bladerf_enable_module(dev_tx, BLADERF_MODULE_TX, false);
     if (status_out != 0) {

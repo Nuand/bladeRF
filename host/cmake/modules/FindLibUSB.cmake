@@ -80,6 +80,11 @@ if(PKGCONFIG_LIBUSB_FOUND AND NOT LIBUSB_FOUND)
         mark_as_advanced(${ibase}_LIBRARY)
     endforeach(i)
 
+    # assume we're using vcpkg
+    if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+        set(LIBUSB_LIBRARY_PATH_SUFFIX bin)
+    endif()
+
 else(PKGCONFIG_LIBUSB_FOUND)
     if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         # The libusbx binary distribution contains several libs.

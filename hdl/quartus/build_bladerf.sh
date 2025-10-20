@@ -3,6 +3,41 @@
 # Build a bladeRF fpga image
 ################################################################################
 
+# Ensure we're in the right directory and submodules are initialized
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Initialize and update submodules if needed
+echo "Checking and initializing submodules..."
+cd "$PROJECT_ROOT"
+if [ -f .gitmodules ]; then
+    # Initialize submodules if not already initialized
+    git submodule init
+
+    # Update submodules to ensure they're checked out
+    git submodule update
+
+    echo "Submodules initialized and updated."
+fi
+cd "$SCRIPT_DIR"
+
+cleanup() {
+    # Prevent recursive cleanup calls
+    trap '' INT TERM HUP
+
+    echo "Cleaning up and terminating builds..."
+    if [ -n "${build_pids[*]}" ]; then
+        for pid in "${build_pids[@]}"; do
+            pkill -P $pid 2>/dev/null || true
+        done
+    fi
+
+    exit 1
+}
+
+# Set up trap to catch Ctrl+C and other termination signals
+trap cleanup INT TERM HUP
+
 function print_boards() {
     echo "Supported boards:"
     for i in ../fpga/platforms/*/build/platform.conf ; do
@@ -33,6 +68,7 @@ function usage()
     echo "    -r <rev>              Quartus project revision"
     echo "    -s <size>             FPGA size"
     echo "    -a <stp>              SignalTap STP file"
+    echo "    -H                    Build all hosted configurations"
     echo "    -f                    Force SignalTap STP insertion by temporarily enabling"
     echo "                          the TalkBack feature of Quartus (required for Web Edition)."
     echo "                          The previous setting will be restored afterward."
@@ -44,6 +80,7 @@ function usage()
     echo "       synth                Synthesize the design"
     echo "       full (default)       Fit the design and create programming files"
     echo "    -S <seed>             Fitter seed setting (default: 1)"
+    echo "    -D                    Output directory name won't contain the date"
     echo "    -h                    Show this text"
     echo ""
 
@@ -125,8 +162,9 @@ fi
 nios_rev="Tiny"
 flow="full"
 seed="1"
+omit_date=false
 
-while getopts ":cb:r:s:a:fn:l:S:h" opt; do
+while getopts ":cb:r:s:a:fn:l:S:DhH" opt; do
     case $opt in
         c)
             clear_work_dir=1
@@ -149,6 +187,10 @@ while getopts ":cb:r:s:a:fn:l:S:h" opt; do
             stp=$(readlink -f $OPTARG)
             ;;
 
+        H)
+            build_hosted=1
+            ;;
+
         f)
             echo "Forcing STP insertion"
             force="-force"
@@ -164,6 +206,10 @@ while getopts ":cb:r:s:a:fn:l:S:h" opt; do
 
         S)
             seed=$OPTARG
+            ;;
+
+        D)
+            omit_date=true
             ;;
 
         h)
@@ -182,6 +228,39 @@ while getopts ":cb:r:s:a:fn:l:S:h" opt; do
             ;;
     esac
 done
+
+if [ "$build_hosted" == "1" ]; then
+    mkdir -p build_logs
+    build_pids=()
+
+    echo "Starting parallel builds for all hosted configurations..."
+    for config in "bladeRF 40" "bladeRF 115" "bladeRF-micro A4" "bladeRF-micro A5" "bladeRF-micro A9"; do
+        read -r board size <<< "$config"
+        log_file="build_logs/$board-hosted-$size.log"
+        $0 -b "$board" -r hosted -s "$size" > "$log_file" 2>&1 &
+        build_pids+=($!)
+        echo " → $board $size (PID: ${build_pids[-1]})"
+    done
+
+    echo "Waiting for ${#build_pids[@]} builds to complete..."
+
+    # Monitor build processes
+    failed=0
+    for pid in "${build_pids[@]}"; do
+        if ! wait "$pid"; then
+            failed=1
+        fi
+    done
+
+    if [ "$failed" -ne 0 ]; then
+        echo "One or more builds failed. Check build_logs directory for details."
+        cleanup
+        exit 1
+    fi
+
+    echo "All hosted builds completed successfully!"
+    exit 0
+fi
 
 if [ "$board" == "" ]; then
     echo -e "\nError: board (-b) is required\n" >&2
@@ -446,7 +525,11 @@ if [[ ${flow} == "full" ]]; then
     BUILD_TIME_DONE=$(date -d"$BUILD_TIME_DONE" '+%F_%H.%M.%S')
 
     BUILD_NAME="$rev"x"$size"
-    BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
+    if [ "$omit_date" = false ]; then
+        BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
+    else
+        BUILD_OUTPUT_DIR="$BUILD_NAME"
+    fi
     RBF=$BUILD_NAME.rbf
 
     mkdir -p "$BUILD_OUTPUT_DIR"
@@ -462,6 +545,18 @@ if [[ ${flow} == "full" ]]; then
     sha256sum $RBF > $RBF.sha256sum
     MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
     SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
+
+    GIT_HASH=$(git rev-parse --short HEAD)
+    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    GIT_DIRTY=$(git diff --quiet && echo "clean" || echo "dirty")
+
+    cat << EOF > git_info.txt
+Git Information:
+Commit Hash: $GIT_HASH
+Branch: $GIT_BRANCH
+Working Directory: $GIT_DIRTY
+EOF
+
     popd
 
     echo ""
@@ -472,6 +567,10 @@ if [[ ${flow} == "full" ]]; then
     echo " $RBF checksums:"
     echo "  MD5:    $MD5SUM"
     echo "  SHA256: $SHA256SUM"
+    echo ""
+    echo " Git Information:"
+    echo "  Commit: $GIT_HASH ($GIT_DIRTY)"
+    echo "  Branch: $GIT_BRANCH"
     echo ""
     cat "$BUILD_OUTPUT_DIR/$BUILD_NAME.fit.summary" | sed -e 's/^\(.\)/ \1/g'
     echo "##########################################################################"

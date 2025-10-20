@@ -253,17 +253,21 @@ extern char const *bladerf2_state_to_string[4];
     } while (0)
 
 /**
- * @brief   Null test
+ * @brief   Null test for multiple variables
  *
- * @param   _var  The variable to check
+ * @param   ...  The variables to check
  *
- * @return  RETURN_INVAL if _var is null, continues otherwise
+ * @return  RETURN_INVAL if any var is null, continues otherwise
  */
-#define NULL_CHECK(_var)                    \
-    do {                                    \
-        if (NULL == _var) {                 \
-            RETURN_INVAL(#_var, "is null"); \
-        }                                   \
+#define NULL_CHECK(...) \
+    do { \
+        void *_ptrs[] = { (void*)__VA_ARGS__ }; \
+        const char *_names[] = { #__VA_ARGS__ }; \
+        for (size_t _i = 0; _i < sizeof(_ptrs)/sizeof(_ptrs[0]); _i++) { \
+            if (NULL == _ptrs[_i]) { \
+                RETURN_INVAL(_names[_i], "is null"); \
+            } \
+        } \
     } while (0)
 
 /**

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11) # FetchContent is available in 3.11
+cmake_minimum_required(VERSION 3.11...3.27) # FetchContent is available in 3.11
 project(libbladeRF_test_regression
         VERSION 3.11
         LANGUAGES CXX)
@@ -12,14 +12,9 @@ enable_testing()
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG        v1.13.x
+  GIT_TAG        v1.16.x
 )
 
-FetchContent_GetProperties(googletest)
-if(NOT googletest_POPULATED)
-  FetchContent_Populate(googletest)
-  add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-endif()
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
@@ -28,12 +23,9 @@ set(ABSL_PROPAGATE_CXX_STD ON)
 FetchContent_Declare(
   abseil
   GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
-  GIT_TAG lts_2023_01_25
+  GIT_TAG lts_2025_01_27
 )
-if(NOT abseil_POPULATED)
-  FetchContent_Populate(abseil)
-  add_subdirectory(${abseil_SOURCE_DIR} ${abseil_BINARY_DIR})
-endif()
+FetchContent_MakeAvailable(abseil)
 
 set(INCLUDES
     ./include
@@ -77,6 +69,16 @@ add_custom_target(test_libbladeRF
 
 add_custom_target(test_synthesis
                   COMMAND ${PROJECT_NAME} --gtest_filter="synthesize*" --gtest_output="json"
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(prep_ci
+                  COMMAND ${PROJECT_NAME} --gtest_filter="dump_tests.disk" --gtest_output="json"
+                  DEPENDS ${PROJECT_NAME}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(bitfile_ci
+                  COMMAND ${PROJECT_NAME} --gtest_filter="bitfile_ci/synth_ci*" --gtest_output="json":bitfile_ci.json
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 

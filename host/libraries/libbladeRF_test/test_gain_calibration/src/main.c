@@ -20,7 +20,10 @@
  */
 #include <stdio.h>
 #include <math.h>
-#include <unistd.h>
+#ifdef __WIN32
+#include <io.h>
+#endif
+#include "host_config.h"
 #include "libbladeRF.h"
 #include "file_operations.h"
 

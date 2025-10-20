@@ -897,6 +897,8 @@ endif # QSYS == 1
 	@$(ECHO) "  Run targets:"
 	@$(ECHO) "    download-elf      - Download and run your elf executable"
 	@$(ECHO) "    program-flash     - Program flash contents to the board"
+	@$(ECHO) "    gdb-server        - Start GDB server on port 8888"
+	@$(ECHO) "    elf-gdb           - Connect GDB to running server and load symbols"
 
 # Handy rule to skip making libraries and just make application.
 .PHONY : app
@@ -1004,7 +1006,7 @@ download-elf : $(ELF)
 		$(ECHO) Downloading $(ELF) not supported; \
 	else \
 		$(ECHO) Info: Downloading $(ELF); \
-		$(DOWNLOAD) --go --cpu_name=$(CPU_NAME) $(DOWNLOAD_CABLE_FLAG) $(SOPC_SYSID_FLAG) $(DOWNLOAD_JDI_FLAG) $(WRITE_GMON_OPTION) $(ELF); \
+		$(DOWNLOAD) --cpu_name=$(CPU_NAME) $(DOWNLOAD_CABLE_FLAG) $(SOPC_SYSID_FLAG) $(DOWNLOAD_JDI_FLAG) $(WRITE_GMON_OPTION) $(ELF); \
 	fi
 
 # Delete the target of a rule if it has changed and its commands exit
@@ -1111,3 +1113,13 @@ $(OBJDUMP_NAME) : $(ELF)
 .PHONY: print-elf-name
 print-elf-name:
 	@$(ECHO) $(ELF)
+
+.PHONY : elf-gdb
+elf-gdb : $(ELF)
+	@$(ECHO) Info: Starting GDB for $(ELF)
+	nios2-elf-gdb -ex "target remote localhost:8888" $(ELF)
+
+.PHONY : gdb-server
+gdb-server:
+	@$(ECHO) Info: Starting GDB server on port 8888
+	nios2-gdb-server --tcpport 8888 --tcppersist

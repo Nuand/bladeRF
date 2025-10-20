@@ -57,5 +57,8 @@ host/misc/windows/scripts/work
 env/
 venv/
 ENV/
+__pycache__/
+*.py[cod]
+*$py.class
 
 .vscode/

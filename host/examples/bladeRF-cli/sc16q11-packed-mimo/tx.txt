@@ -1,0 +1,6 @@
+set frequency 915M
+set samplerate 20M
+set bitmode packed
+tx config file=tx_samples.csv format=csv channel=1,2
+tx start
+tx wait

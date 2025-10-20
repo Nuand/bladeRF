@@ -1,7 +1,7 @@
 # This file is part of the bladeRF project:
 #   http://www.github.com/nuand/bladeRF
 #
-# Copyright (c) 2018 Nuand LLC.
+# Copyright (c) 2025 Nuand LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +35,15 @@ RUN zypper --non-interactive install \
     cmake \
     doxygen \
     gcc \
+    gcc-c++ \
     git \
     help2man \
+    libcurl-devel \
     libedit \
     libedit-devel \
     libusb \
     libusb-devel \
+    ncurses-devel \
     pandoc \
     wget
 

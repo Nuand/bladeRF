@@ -54,6 +54,7 @@ static inline int requires_timestamps(bladerf_format format, bool *required)
 
         case BLADERF_FORMAT_SC8_Q7:
         case BLADERF_FORMAT_SC16_Q11:
+        case BLADERF_FORMAT_SC16_Q11_PACKED:
             *required = false;
             break;
 
@@ -121,6 +122,12 @@ int perform_format_config(struct bladerf *dev,
        gpio_val |= BLADERF_GPIO_8BIT_MODE;
     } else {
        gpio_val &= ~BLADERF_GPIO_8BIT_MODE;
+    }
+
+    if (format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+       gpio_val |= BLADERF_GPIO_HIGHLY_PACKED_MODE;
+    } else {
+       gpio_val &= ~BLADERF_GPIO_HIGHLY_PACKED_MODE;
     }
 
     CHECK_STATUS(dev->backend->config_gpio_write(dev, gpio_val));
@@ -305,7 +312,8 @@ bool check_total_sample_rate(struct bladerf *dev)
     bladerf_sample_rate rate_accum = 0;
     size_t active_channels         = 0;
 
-    const bladerf_sample_rate MAX_SAMPLE_THROUGHPUT = 80000000;
+    const bladerf_sample_rate MAX_SAMPLE_THROUGHPUT =
+        (dev->feature == BLADERF_FEATURE_OVERSAMPLE) ? 160000000 : 80000000;
 
     /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);

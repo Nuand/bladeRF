@@ -108,7 +108,20 @@ entity nios_system is
         tx_trigger_ctl_out_port         : out std_logic_vector(7 downto 0);                     -- out_port
         xb_gpio_in_port                 : in  std_logic_vector(31 downto 0) := (others => 'X'); -- in_port
         xb_gpio_out_port                : out std_logic_vector(31 downto 0);                    -- out_port
-        xb_gpio_dir_export              : out std_logic_vector(31 downto 0)                     -- export
+        xb_gpio_dir_export              : out std_logic_vector(31 downto 0);                    -- export
+        arbiter_request                 : in  std_logic_vector(1 downto 0)  := (others => 'X'); -- request
+        arbiter_granted                 : out std_logic_vector(1 downto 0);                     -- granted 
+        arbiter_ack                     : in  std_logic_vector(1 downto 0)  := (others => 'X'); -- ack
+        wbm_wb_clk_i                    : in  std_logic                     := 'X';             -- clk_i
+        wbm_wb_rst_i                    : in  std_logic                     := 'X';             -- rst_i
+        wbm_wb_adr_o                    : out std_logic_vector(31 downto 0);                    -- adr_o
+        wbm_wb_dat_o                    : out std_logic_vector(31 downto 0);                    -- dat_o
+        wbm_wb_dat_i                    : in  std_logic_vector(31 downto 0) := (others => 'X'); -- dat_i
+        wbm_wb_we_o                     : out std_logic;                                        -- we_o
+        wbm_wb_sel_o                    : out std_logic;                                        -- sel_o
+        wbm_wb_stb_o                    : out std_logic;                                        -- stb_o
+        wbm_wb_ack_i                    : in  std_logic                     := 'X';             -- ack_i
+        wbm_wb_cyc_o                    : out std_logic                                         -- cyc_o
     );
 end entity ;
 
@@ -141,6 +154,15 @@ begin
 
     xb_gpio_out_port <= (others =>'0') ;
     xb_gpio_dir_export <= (others =>'0') ;
+
+    arbiter_granted <= (others => '0');
+
+    wbm_wb_adr_o <= (others => '0');
+    wbm_wb_dat_o <= (others => '0');
+    wbm_wb_we_o  <= '0';
+    wbm_wb_sel_o <= '0';
+    wbm_wb_stb_o <= '0';
+    wbm_wb_cyc_o <= '0';
 
 end architecture ;
 

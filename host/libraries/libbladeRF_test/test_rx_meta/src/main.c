@@ -57,7 +57,7 @@ int16_t *init(struct bladerf *dev, int16_t num_samples, bladerf_format format,
      * restricted to multiples of any particular size.
      *
      * The value for `num_samples` has no major restrictions here, while the
-     * `buffer_size` below must be a multiple of 1024.
+     * `buffer_size` below must be a multiple of 2048.
      */
     int16_t *samples;
 

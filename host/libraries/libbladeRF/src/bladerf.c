@@ -24,6 +24,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+#endif
 
 #include <libbladeRF.h>
 
@@ -827,11 +833,8 @@ int bladerf_set_frequency(struct bladerf *dev,
     MUTEX_LOCK(&dev->lock);
 
     status = dev->board->set_frequency(dev, ch, frequency);
-    bladerf_gain_mode gain_mode;
 
-    dev->board->get_gain_mode(dev, ch, &gain_mode);
-
-    if ((dev->gain_tbls[ch].enabled && status == 0) && (gain_mode == BLADERF_GAIN_MGC)) {
+    if (dev->gain_tbls[ch].enabled && status == 0) {
         status = apply_gain_correction(dev, ch, frequency);
         if (status != 0) {
             log_error("Failed to set gain correction\n");
@@ -1116,6 +1119,12 @@ int bladerf_init_stream(struct bladerf_stream **stream,
             log_error("bladeRF 2.0 required for 8bit format\n");
             return BLADERF_ERR_UNSUPPORTED;
         }
+    }
+
+    if (format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+        log_error("%s: Async interface does not support SC16_Q11_PACKED format\n", __FUNCTION__);
+        MUTEX_UNLOCK(&dev->lock);
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     status = dev->board->init_stream(stream, dev, callback, buffers,
@@ -1784,6 +1793,28 @@ int bladerf_lock_otp(struct bladerf *dev)
 /* Helpers & Miscellaneous */
 /******************************************************************************/
 
+const char * bladerf_format_to_string(bladerf_format format)
+{
+    switch (format) {
+        case BLADERF_FORMAT_SC8_Q7:
+            return "BLADERF_FORMAT_SC8_Q7";
+        case BLADERF_FORMAT_SC8_Q7_META:
+            return "BLADERF_FORMAT_SC8_Q7_META";
+        case BLADERF_FORMAT_SC16_Q11_PACKED:
+            return "BLADERF_FORMAT_SC16_Q11_PACKED";
+        case BLADERF_FORMAT_SC16_Q11:
+            return "BLADERF_FORMAT_SC16_Q11";
+        case BLADERF_FORMAT_SC16_Q11_META:
+            return "BLADERF_FORMAT_SC16_Q11_META";
+        case BLADERF_FORMAT_PACKET_META:
+            return "BLADERF_FORMAT_PACKET_META";
+
+        default:
+            assert(!"Invalid format");
+            return "UNKNOWN";
+    }
+}
+
 const char *bladerf_strerror(int error)
 {
     switch (error) {
@@ -2076,36 +2107,41 @@ int bladerf_xb300_get_output_power(struct bladerf *dev, float *val)
 /* Features */
 /******************************************************************************/
 
+static const char *feature2str(bladerf_feature feature)
+{
+    switch (feature) {
+        case BLADERF_FEATURE_DEFAULT: return "DEFAULT";
+        case BLADERF_FEATURE_OVERSAMPLE: return "OVERSAMPLE";
+        default: return "UNKNOWN FEATURE";
+    }
+}
+
+static int validate_board_compatibility(const char *board_name, bladerf_feature feature)
+{
+    if (strcmp(board_name, "bladerf2") != 0 && feature == BLADERF_FEATURE_OVERSAMPLE) {
+        log_error("BladeRF2 required for %s feature\n", feature2str(feature));
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+    return 0;
+}
+
 int bladerf_enable_feature(struct bladerf *dev, bladerf_feature feature, bool enable)
 {
-    int status;
-    MUTEX_LOCK(&dev->lock);
+    log_verbose("%s feature %s\n", enable ? "Enabling" : "Disabling", feature2str(feature));
+    int status = 0;
+    CHECK_NULL(dev);
 
-    status = 0;
+    const char *board_name = bladerf_get_board_name(dev);
 
-    if(feature == BLADERF_FEATURE_DEFAULT) {
-        dev->feature = 0;
-    } else {
-        if(feature == BLADERF_FEATURE_OVERSAMPLE) {
-            if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
-                log_error("BladeRF2 required for OVERSAMPLE feature\n");
-                status = BLADERF_ERR_UNSUPPORTED;
-            }
-        } else {
-            /* Unknown / Unsupported feature */
-            status = BLADERF_ERR_UNSUPPORTED;
-        }
-
-        if (status == 0) {
-            if (enable) {
-                dev->feature |= feature;
-            } else {
-                dev->feature &= ~feature;
-            }
-        }
+    if (enable == false) {
+        dev->feature = BLADERF_FEATURE_DEFAULT;
+        return 0;
     }
 
-    MUTEX_UNLOCK(&dev->lock);
+    CHECK_STATUS(validate_board_compatibility(board_name, feature));
+    dev->feature = feature;
+
+error:
     return status;
 }
 
@@ -2129,7 +2165,7 @@ int bladerf_set_oversample_register_config(struct bladerf *dev) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    bladerf_set_rfic_register(dev,0x003,0x54); // OC Register
+    bladerf_set_rfic_register(dev,0x003,0xD4); // OC Register
 
     /* TX Register Assignments */
     bladerf_set_rfic_register(dev,0x02,0xc0);  // TX Enable and Filter Control

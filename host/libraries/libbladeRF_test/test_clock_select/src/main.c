@@ -27,8 +27,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
+#include "getopt.h"
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <unistd.h>
+#endif
 #include <time.h>
 #include <signal.h>
 #include "libbladeRF.h"
@@ -173,7 +175,12 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Attempting to reopen device...\n");
             bladerf_close(dev);
             dev = NULL;
-            sleep(3);
+            /* Wait for device to be ready */
+#ifdef _WIN32
+            Sleep(3000);  // Windows uses milliseconds
+#else
+            sleep(3);     // Unix uses seconds
+#endif
             CHECK_STATUS(bladerf_open(&dev, device_string));
         }
 

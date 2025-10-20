@@ -39,6 +39,7 @@
 #include "board/board.h"
 #include "helpers/timeout.h"
 #include "helpers/have_cap.h"
+#include "backend/usb/usb.h"
 
 #ifdef ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
 static inline void dump_buf_states(struct bladerf_sync *s)
@@ -141,6 +142,10 @@ int sync_init(struct bladerf_sync *sync,
 {
     int status = 0;
     size_t i, bytes_per_sample;
+    size_t bytes_per_buffer;
+    size_t gpif_buffer_size = USB_MSG_SIZE_SS;
+    size_t valid_buffer_size = gpif_buffer_size;
+    struct bladerf_version fx3_version = FW_LARGER_BUFFER_VERSION;
 
     if (num_transfers >= num_buffers) {
         return BLADERF_ERR_INVAL;
@@ -168,27 +173,42 @@ int sync_init(struct bladerf_sync *sync,
         }
     }
 
-    switch (format) {
-        case BLADERF_FORMAT_SC8_Q7:
-        case BLADERF_FORMAT_SC8_Q7_META:
-            bytes_per_sample = 2;
-            break;
-
-        case BLADERF_FORMAT_SC16_Q11:
-        case BLADERF_FORMAT_SC16_Q11_META:
-        case BLADERF_FORMAT_PACKET_META:
-            bytes_per_sample = 4;
-            break;
-
-        default:
-            log_debug("Invalid format value: %d\n", format);
-            return BLADERF_ERR_INVAL;
+    status = dev->board->get_fw_version(dev, &fx3_version);
+    if (status != 0) {
+        log_error("Failed to get FX3 firmware version: %s\n",
+                  bladerf_strerror(status));
+        return status;
     }
 
-    /* bladeRF GPIF DMA requirement */
-    if ((bytes_per_sample * buffer_size) % 4096 != 0) {
-        assert(!"Invalid buffer size");
-        return BLADERF_ERR_INVAL;
+    if (fx3_version.major <= FW_LARGER_BUFFER_VERSION.major &&
+        fx3_version.minor < FW_LARGER_BUFFER_VERSION.minor) {
+        gpif_buffer_size = USB_MSG_SIZE_SS_LEGACY;
+    }
+
+    log_debug("FX3 firmware %u.%u.%u GPIF buffer size: %zu%s\n",
+        fx3_version.major, fx3_version.minor, fx3_version.patch,
+        gpif_buffer_size, gpif_buffer_size == USB_MSG_SIZE_SS_LEGACY ? " (legacy)" : "");
+
+    if (format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+        valid_buffer_size = 3*gpif_buffer_size;
+    }
+
+    bytes_per_sample = samples_to_bytes(format, 1);
+    bytes_per_buffer = samples_to_bytes(format, buffer_size);
+    if (bytes_per_buffer < valid_buffer_size || bytes_per_buffer % valid_buffer_size != 0) {
+        size_t original_size = buffer_size;
+
+        /* Round up to the next multiple of valid_buffer_size, ensuring at least one GPIF buffer */
+        buffer_size = bytes_per_buffer == 0 ? valid_buffer_size / bytes_per_sample :
+                     ((bytes_per_buffer + valid_buffer_size - 1) / valid_buffer_size)
+                     * (valid_buffer_size / bytes_per_sample);
+
+        log_warning("Requested buffer size %zu samples (%zu bytes) is invalid. "
+                    "Adjusting to %zu samples (%zu bytes).\n",
+                    original_size, samples_to_bytes(format, original_size),
+                    buffer_size, samples_to_bytes(format, buffer_size));
+
+        bytes_per_buffer = samples_to_bytes(format, buffer_size);
     }
 
     /* Deinitialize sync handle if it's initialized */
@@ -237,7 +257,7 @@ int sync_init(struct bladerf_sync *sync,
                 __FUNCTION__, sync->meta.samples_per_msg);
 
     MUTEX_INIT(&sync->buf_mgmt.lock);
-    pthread_cond_init(&sync->buf_mgmt.buf_ready, NULL);
+    COND_INIT(&sync->buf_mgmt.buf_ready);
 
     sync->buf_mgmt.status = (sync_buffer_status*) malloc(num_buffers * sizeof(sync_buffer_status));
     if (sync->buf_mgmt.status == NULL) {
@@ -250,6 +270,22 @@ int sync_init(struct bladerf_sync *sync,
         status = BLADERF_ERR_MEM;
         goto error;
     }
+
+    if ((layout & BLADERF_DIRECTION_MASK) == BLADERF_RX) {
+        sync->buf_mgmt.buffer_seq =
+            (uint32_t *)malloc(num_buffers * sizeof(uint32_t));
+        if (sync->buf_mgmt.buffer_seq == NULL) {
+            status = BLADERF_ERR_MEM;
+            goto error;
+        }
+    } else {
+        sync->buf_mgmt.buffer_seq = NULL;
+    }
+
+    sync->buf_mgmt.expected_seq = 0;
+    sync->buf_mgmt.next_seq     = 0;
+    sync->buf_mgmt.reorder_len  = 0;
+    sync->buf_mgmt.reorder_limit = 0;
 
     switch (layout & BLADERF_DIRECTION_MASK) {
         case BLADERF_RX:
@@ -269,6 +305,8 @@ int sync_init(struct bladerf_sync *sync,
 
             sync->meta.msg_timestamp = 0;
             sync->meta.msg_flags = 0;
+
+            sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
             break;
 
@@ -312,13 +350,21 @@ void sync_deinit(struct bladerf_sync *sync)
         sync_worker_deinit(sync->worker, &sync->buf_mgmt.lock,
                            &sync->buf_mgmt.buf_ready);
 
-        if (sync->buf_mgmt.actual_lengths) {
-            free(sync->buf_mgmt.actual_lengths);
-        }
         /* De-allocate our buffer management resources */
         if (sync->buf_mgmt.status) {
             MUTEX_DESTROY(&sync->buf_mgmt.lock);
             free(sync->buf_mgmt.status);
+            sync->buf_mgmt.status = NULL;
+        }
+
+        if (sync->buf_mgmt.actual_lengths) {
+            free(sync->buf_mgmt.actual_lengths);
+            sync->buf_mgmt.actual_lengths = NULL;
+        }
+
+        if (sync->buf_mgmt.buffer_seq) {
+            free(sync->buf_mgmt.buffer_seq);
+            sync->buf_mgmt.buffer_seq = NULL;
         }
 
         MUTEX_DESTROY(&sync->lock);
@@ -333,22 +379,18 @@ static int wait_for_buffer(struct buffer_mgmt *b,
                            unsigned int dbg_idx)
 {
     int status;
-    struct timespec timeout;
 
     if (timeout_ms == 0) {
         log_verbose("%s: Infinite wait for buffer[%d] (status: %d).\n",
                     dbg_name, dbg_idx, b->status[dbg_idx]);
-        status = pthread_cond_wait(&b->buf_ready, &b->lock);
+        status = COND_WAIT(&b->buf_ready, &b->lock);
     } else {
         log_verbose("%s: Timed wait for buffer[%d] (status: %d).\n", dbg_name,
                     dbg_idx, b->status[dbg_idx]);
-        status = populate_abs_timeout(&timeout, timeout_ms);
-        if (status == 0) {
-            status = pthread_cond_timedwait(&b->buf_ready, &b->lock, &timeout);
-        }
+        status = COND_TIMED_WAIT(&b->buf_ready, &b->lock, timeout_ms);
     }
 
-    if (status == ETIMEDOUT) {
+    if (status == THREAD_TIMEOUT) {
         log_error("%s: Timed out waiting for buf_ready after %d ms\n",
                   __FUNCTION__, timeout_ms);
         status = BLADERF_ERR_TIMEOUT;
@@ -362,6 +404,43 @@ static int wait_for_buffer(struct buffer_mgmt *b,
 #ifndef SYNC_WORKER_START_TIMEOUT_MS
 #   define SYNC_WORKER_START_TIMEOUT_MS 250
 #endif
+
+int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms)
+{
+    int status;
+    unsigned int wait_ms = timeout_ms ? timeout_ms : SYNC_WORKER_START_TIMEOUT_MS;
+
+    if (sync == NULL || !sync->initialized) {
+        return 0;
+    }
+
+    if ((sync->stream_config.layout & BLADERF_DIRECTION_MASK) != BLADERF_RX) {
+        return 0;
+    }
+
+    if (sync->worker == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    switch (sync_worker_get_state(sync->worker, NULL)) {
+        case SYNC_WORKER_STATE_RUNNING:
+            return 0;
+
+        case SYNC_WORKER_STATE_IDLE:
+            break;
+
+        default:
+            return BLADERF_ERR_UNEXPECTED;
+    }
+
+    sync_worker_submit_request(sync->worker, SYNC_WORKER_START);
+
+    status = sync_worker_wait_for_state(sync->worker,
+                                        SYNC_WORKER_STATE_RUNNING,
+                                        wait_ms);
+
+    return status;
+}
 
 /* Returns # of timestamps (or time steps) left in a message */
 static inline unsigned int ts_remaining(struct bladerf_sync *s)
@@ -539,6 +618,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
+                    case BLADERF_FORMAT_SC16_Q11_PACKED:
                     case BLADERF_FORMAT_SC8_Q7:
                         s->state = SYNC_STATE_USING_BUFFER;
                         break;
@@ -570,9 +650,24 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                 samples_to_copy = uint_min(num_samples - samples_returned,
                                            samples_per_buffer - b->partial_off);
 
-                memcpy(samples_dest + samples2bytes(s, samples_returned),
-                       buf_src + samples2bytes(s, b->partial_off),
-                       samples2bytes(s, samples_to_copy));
+                if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+                    // Unpack SC12Q11 samples to SC16Q11 directly into destination buffer
+                    size_t zz, jj;
+                    uint8_t *meta_sample_ptr = buf_src + samples2bytes(s, b->partial_off);
+                    int16_t *dest_ptr = (int16_t*)(samples_dest + (4*samples_returned));
+                    for (zz = 0, jj = 0; zz < 2*samples_to_copy; zz+=4, jj+=3) {
+                        dest_ptr[zz+0] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+0] & 0x0FFF) << 4) >> 4;
+                        dest_ptr[zz+1] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+1] & 0x00FF) << 8) >> 4
+                            | ((((uint16_t*)(meta_sample_ptr))[jj+0] & 0xF000) >> 12);
+                        dest_ptr[zz+2] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+2] & 0x000F) << 12) >> 4
+                            | ((((uint16_t*)(meta_sample_ptr))[jj+1] & 0xFF00)) >> 8;
+                        dest_ptr[zz+3] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+2] & 0xFFF0)) >> 4;
+                    }
+                } else {
+                    memcpy(samples_dest + samples2bytes(s, samples_returned),
+                        buf_src + samples2bytes(s, b->partial_off),
+                        samples2bytes(s, samples_to_copy));
+                }
 
                 b->partial_off += samples_to_copy;
                 samples_returned += samples_to_copy;
@@ -766,8 +861,10 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                 buf_src = (uint8_t*)b->buffers[b->cons_i];
 
-                pkt_len_dwords = metadata_get_packet_len(buf_src);
+                user_meta->flags = metadata_get_packet_flags(buf_src);
+                user_meta->timestamp = metadata_get_timestamp(buf_src);
 
+                pkt_len_dwords = metadata_get_packet_len(buf_src);
                 if (pkt_len_dwords > 0) {
                    samples_returned += num_samples;
                    user_meta->actual_count = pkt_len_dwords;
@@ -1054,6 +1151,7 @@ int sync_tx(struct bladerf_sync *s,
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
+                    case BLADERF_FORMAT_SC16_Q11_PACKED:
                     case BLADERF_FORMAT_SC8_Q7:
                         s->state = SYNC_STATE_USING_BUFFER;
                         break;
@@ -1087,9 +1185,24 @@ int sync_tx(struct bladerf_sync *s,
                 samples_to_copy = uint_min(num_samples - samples_written,
                                            samples_per_buffer - b->partial_off);
 
-                memcpy(buf_dest + samples2bytes(s, b->partial_off),
-                       samples_src + samples2bytes(s, samples_written),
-                       samples2bytes(s, samples_to_copy));
+                if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+                    // Pack SC16Q11 samples to SC12Q11 directly into destination buffer
+                    size_t zz, jj;
+                    uint8_t *packed_dest = buf_dest + samples2bytes(s, b->partial_off);
+                    int16_t const *src_ptr = (int16_t const *)(samples_src + 2*sizeof(int16_t)*samples_written);
+                    for (zz = 0, jj = 0; zz < samples_to_copy * 2; zz += 4, jj += 3) {
+                        ((uint16_t*)packed_dest)[jj+0] = src_ptr[zz+0] & 0x0FFF;
+                        ((uint16_t*)packed_dest)[jj+0] |= (src_ptr[zz+1] << 12) & 0xF000;
+                        ((uint16_t*)packed_dest)[jj+1] = (src_ptr[zz+1] >> 4) & 0x00FF;
+                        ((uint16_t*)packed_dest)[jj+1] |= (src_ptr[zz+2] << 8) & 0xFF00;
+                        ((uint16_t*)packed_dest)[jj+2] = (src_ptr[zz+2] >> 8) & 0x000F;
+                        ((uint16_t*)packed_dest)[jj+2] |= (src_ptr[zz+3] << 4) & 0xFFF0;
+                    }
+                } else {
+                    memcpy(buf_dest + samples2bytes(s, b->partial_off),
+                           samples_src + samples2bytes(s, samples_written),
+                           samples2bytes(s, samples_to_copy));
+                }
 
                 b->partial_off += samples_to_copy;
                 samples_written += samples_to_copy;
