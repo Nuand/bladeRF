@@ -260,7 +260,5 @@ void *sync_idx2buf(struct buffer_mgmt *b, unsigned int idx);
 
 int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms);
 
-int sync_reset_timestamp(struct bladerf_sync *sync,
-                            bladerf_direction dir);
 
 #endif

@@ -1248,7 +1248,7 @@ int bladerf_sync_rx(struct bladerf *dev,
 }
 
 int bladerf_sync_reset_timestamp(struct bladerf *dev,
-                                 bladerf_direction dir`)
+                                 bladerf_direction dir)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
