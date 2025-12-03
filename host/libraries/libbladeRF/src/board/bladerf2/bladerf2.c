@@ -2201,6 +2201,14 @@ static int bladerf2_sync_config(struct bladerf *dev,
     return status;
 }
 
+static int bladerf2_sync_reset_timestamp(struct bladerf *dev,
+                                     bladerf_direction dir)
+{
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    struct bladerf2_board_data *board_data = dev->board_data;
+    return sync_reset_timestamp(&board_data->sync[dir]);
+}
+
 static int bladerf2_sync_tx(struct bladerf *dev,
                             void const *samples,
                             unsigned int num_samples,
@@ -2951,6 +2959,7 @@ struct board_fns const bladerf2_board_fns = {
     FIELD_INIT(.set_stream_timeout, bladerf2_set_stream_timeout),
     FIELD_INIT(.get_stream_timeout, bladerf2_get_stream_timeout),
     FIELD_INIT(.sync_config, bladerf2_sync_config),
+    FIELD_INIT(.sync_reset_timestamp, bladerf2_sync_reset_timestamp),
     FIELD_INIT(.sync_tx, bladerf2_sync_tx),
     FIELD_INIT(.sync_rx, bladerf2_sync_rx),
     FIELD_INIT(.get_timestamp, bladerf2_get_timestamp),

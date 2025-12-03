@@ -252,10 +252,15 @@ int sync_tx(struct bladerf_sync *sync,
             struct bladerf_metadata *metadata,
             unsigned int timeout_ms);
 
+int sync_reset_timestamp(struct bladerf_sync *sync);
+
 unsigned int sync_buf2idx(struct buffer_mgmt *b, void *addr);
 
 void *sync_idx2buf(struct buffer_mgmt *b, unsigned int idx);
 
 int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms);
+
+int sync_reset_timestamp(struct bladerf_sync *sync,
+                            bladerf_direction dir);
 
 #endif

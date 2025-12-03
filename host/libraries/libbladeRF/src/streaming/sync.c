@@ -1053,6 +1053,24 @@ static inline int handle_tx_parameters(struct bladerf_metadata *user_meta,
     return 0;
 }
 
+int sync_reset_timestamp(struct bladerf_sync *sync)
+{
+    int status = 0;
+
+    if (sync == NULL || !sync->initialized) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    MUTEX_LOCK(&sync->lock);
+
+    sync->meta.curr_timestamp = 0;
+
+    MUTEX_UNLOCK(&sync->lock);
+
+    return status;
+
+}
+
 int sync_tx(struct bladerf_sync *s,
             void const *samples,
             unsigned int num_samples,

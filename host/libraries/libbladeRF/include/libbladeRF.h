@@ -2781,6 +2781,9 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
                                   unsigned int num_transfers,
                                   unsigned int stream_timeout);
 
+API_EXPORT
+int CALL_CONV bladerf_sync_reset_timestamp(struct bladerf *dev,
+                                         bladerf_direction dir);                                  
 /**
  * Transmit IQ samples.
  *

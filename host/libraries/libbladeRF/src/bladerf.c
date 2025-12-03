@@ -1247,6 +1247,17 @@ int bladerf_sync_rx(struct bladerf *dev,
     return dev->board->sync_rx(dev, samples, num_samples, metadata, timeout_ms);
 }
 
+int bladerf_sync_reset_timestamp(struct bladerf *dev,
+                                 bladerf_direction dir`)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->sync_reset_timestamp(dev, dir);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
 int bladerf_get_timestamp(struct bladerf *dev,
                           bladerf_direction dir,
                           bladerf_timestamp *timestamp)

@@ -398,6 +398,8 @@ struct board_fns {
                    unsigned int num_samples,
                    struct bladerf_metadata *metadata,
                    unsigned int timeout_ms);
+    int (*sync_reset_timestamp)(struct bladerf *dev,
+                                bladerf_direction dir);
     int (*get_timestamp)(struct bladerf *dev,
                          bladerf_direction dir,
                          bladerf_timestamp *timestamp);
