@@ -10,6 +10,7 @@ set options { \
     { "stp.arg"      ""        "SignalTap II file to use" } \
     { "force.arg"    ""        "Force enable TalkBack to use SignalTapII" } \
     { "seed.arg"     ""        "Specify fitter seed" } \
+    { "lowlatency"   ""        "Use smaller GPIF buffers for lower latency (pre-2.5.0 behavior)" } \
 }
 
 # Parse the command arguments, store them into 'opts'
@@ -68,6 +69,16 @@ if { $opts(flow) != "gen" &&
 
 # Open the project with the specific revision
 project_open -revision $opts(rev) $opts(projname)
+
+# Configure GPIF buffer sizes via package file selection
+# Low-latency mode: HS=256, SS=512 (pre-0.16.0/2.5.0 behavior)
+# High-throughput mode: HS=1024, SS=2048 (default, 0.16.0/2.5.0+ behavior)
+# Note: build_bladerf.sh swaps the package files before running Quartus
+if { $opts(lowlatency) } {
+    puts "Configuring LOW LATENCY GPIF buffers (HS=256, SS=512)"
+} else {
+    puts "Configuring HIGH THROUGHPUT GPIF buffers (HS=1024, SS=2048)"
+}
 
 # Add signaltap file
 set forced_talkback 0

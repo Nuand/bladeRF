@@ -6,5 +6,12 @@
 #define FIRMWARE_VERSION_MINOR  @VERSION_INFO_MINOR@
 #define FIRMWARE_VERSION_PATCH  @VERSION_INFO_PATCH@
 
+/* GPIF DMA buffer configuration
+ * Low-latency mode:     multiplier=2, count=22 (pre-2.5.0 behavior)
+ * High-throughput mode: multiplier=8, count=11 (2.5.0+ behavior)
+ */
+#define GPIF_DMA_SIZE_MULTIPLIER  @GPIF_DMA_SIZE_MULTIPLIER@
+#define GPIF_DMA_BUFFER_COUNT     @GPIF_DMA_BUFFER_COUNT@
+
 #endif
 

@@ -81,6 +81,7 @@ function usage()
     echo "       full (default)       Fit the design and create programming files"
     echo "    -S <seed>             Fitter seed setting (default: 1)"
     echo "    -D                    Output directory name won't contain the date"
+    echo "    -L                    Build with low-latency GPIF buffer sizes (pre-0.16.0 behavior)"
     echo "    -h                    Show this text"
     echo ""
 
@@ -164,7 +165,7 @@ flow="full"
 seed="1"
 omit_date=false
 
-while getopts ":cb:r:s:a:fn:l:S:DhH" opt; do
+while getopts ":cb:r:s:a:fn:l:S:DLhH" opt; do
     case $opt in
         c)
             clear_work_dir=1
@@ -210,6 +211,10 @@ while getopts ":cb:r:s:a:fn:l:S:DhH" opt; do
 
         D)
             omit_date=true
+            ;;
+
+        L)
+            lowlatency=1
             ;;
 
         h)
@@ -442,6 +447,18 @@ echo "    Building BSP and ${board} application..."
 echo "##########################################################################"
 echo ""
 
+# Configure FPGA version for low-latency mode
+# When -L is set, report version 0.15.3 so libbladeRF uses legacy buffer sizes
+# Version 0.15.3 includes important HDL bug fixes for metadata and timestamp handling
+if [ "$lowlatency" == "1" ]; then
+    echo "Low-latency mode: Setting FPGA version to 0.15.3 for legacy buffer detection"
+    fpga_version_file="${build_dir}/../software/bladeRF_nios/src/fpga_version.h"
+    if [ -f "$fpga_version_file" ]; then
+        sed -i 's/#define FPGA_VERSION_MINOR.*16/#define FPGA_VERSION_MINOR      15/' "$fpga_version_file"
+        sed -i 's/#define FPGA_VERSION_PATCH.*0/#define FPGA_VERSION_PATCH      3/' "$fpga_version_file"
+    fi
+fi
+
 mkdir -p bladeRF_nios_bsp
 if [ -f settings.bsp ]; then
     echo "Skipping creating Nios BSP, settings.bsp already exists"
@@ -508,7 +525,19 @@ quartus_sh --64bit \
            -part     "${DEVICE}" \
            -platdir  "${build_dir}/.."
 
+# Swap GPIF package file for low-latency mode
+if [ "$lowlatency" == "1" ]; then
+    echo "Low-latency mode: Swapping GPIF package file"
+    gpif_pkg_dir="${PROJECT_ROOT}/hdl/fpga/platforms/common/bladerf/vhdl"
+    cp "${gpif_pkg_dir}/fx3_gpif_p_lowlatency.vhd" "${gpif_pkg_dir}/fx3_gpif_p.vhd"
+fi
+
 # Run Quartus flow
+lowlatency_flag=""
+if [ "$lowlatency" == "1" ]; then
+    lowlatency_flag="-lowlatency"
+fi
+
 quartus_sh --64bit \
            -t        "../../build.tcl" \
            -projname "${PROJECT_NAME}" \
@@ -516,7 +545,8 @@ quartus_sh --64bit \
            -flow     "${flow}" \
            -stp      "${stp}" \
            -force    "${force}" \
-           -seed     "${seed}"
+           -seed     "${seed}" \
+           ${lowlatency_flag}
 
 popd
 

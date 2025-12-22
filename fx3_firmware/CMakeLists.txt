@@ -43,13 +43,6 @@ include(Version)
 
 set(VERSION "${VERSION_INFO}")
 
-# Generate firmware version header file
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
-    @ONLY
-)
-
 ################################################################################
 # Configuration options
 ################################################################################
@@ -57,6 +50,51 @@ configure_file(
 option(ENABLE_BLADERF_FIRMWARE
     "Build firmware for the bladeRF 1.0"
     ON
+)
+
+option(LOW_LATENCY_GPIF_BUFFERS
+    "Use smaller GPIF buffer sizes for lower latency (original pre-2.5.0 behavior)"
+    OFF
+)
+
+# GPIF DMA buffer configuration
+# Low-latency mode: 2x multiplier, 22 buffers (original pre-2.5.0)
+# High-throughput mode: 8x multiplier, 11 buffers (2.5.0+)
+if(LOW_LATENCY_GPIF_BUFFERS)
+    set(GPIF_DMA_SIZE_MULTIPLIER 2)
+    set(GPIF_DMA_BUFFER_COUNT 22)
+    # Report firmware version 2.4.0 for libbladeRF legacy buffer detection
+    # (libbladeRF checks FW_LARGER_BUFFER_VERSION: major=2, minor=5, patch=0)
+    set(VERSION_INFO_MINOR 4)
+    message(STATUS "GPIF buffers: LOW LATENCY mode (size*2, count=22)")
+    message(STATUS "Firmware version set to ${VERSION_INFO_MAJOR}.${VERSION_INFO_MINOR}.${VERSION_INFO_PATCH} for legacy detection")
+else()
+    set(GPIF_DMA_SIZE_MULTIPLIER 8)
+    set(GPIF_DMA_BUFFER_COUNT 11)
+    message(STATUS "GPIF buffers: HIGH THROUGHPUT mode (size*8, count=11)")
+endif()
+
+# Regenerate VERSION string for low-latency mode
+# Manually construct VERSION string with correct 2.4.0 version number
+if(LOW_LATENCY_GPIF_BUFFERS)
+    # Extract git info from the original VERSION string
+    string(REGEX MATCH "git-[^-]+" GIT_COMMIT_HASH "${VERSION}")
+    # Check if working directory is dirty
+    if(VERSION MATCHES "dirty")
+        set(VERSION "${VERSION_INFO_MAJOR}.${VERSION_INFO_MINOR}.${VERSION_INFO_PATCH}-${GIT_COMMIT_HASH}-dirty")
+    else()
+        set(VERSION "${VERSION_INFO_MAJOR}.${VERSION_INFO_MINOR}.${VERSION_INFO_PATCH}-${GIT_COMMIT_HASH}")
+    endif()
+    message(STATUS "Firmware VERSION string: ${VERSION}")
+    # Update VERSION_INFO_BASE for output filename
+    set(VERSION_INFO_BASE "${VERSION_INFO_MAJOR}.${VERSION_INFO_MINOR}.${VERSION_INFO_PATCH}")
+endif()
+
+# Generate firmware version header file (must be after GPIF buffer config)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
+    @ONLY
 )
 
 ################################################################################
