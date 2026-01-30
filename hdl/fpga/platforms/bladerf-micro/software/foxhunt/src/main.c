@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#define BLADERF_NIOS_DEBUG
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -204,14 +206,14 @@ int main(void)
 #endif  // BLADERF_NIOS_LIBAD936X
 
     /* Hardcoded channel */
-    bladerf_channel channel = BLADERF_CHANNEL_TX(0);
+    bladerf_channel channel = BLADERF_CHANNEL_RX(0);
 
     /* State */
     bool run_nios    = true; /* Set 'false' to drop out of the loop */
     size_t msg_index = 0;    /* Counter for message index */
 
     bladerf_frequency prev_freq = 0;
-    bladerf_gain prev_gain      = 0;
+    // bladerf_gain prev_gain      = 0;
 
     /* Using a guestimate here... */
     ad56x1_vctcxo_trim_dac_write(0x1ec1);
@@ -264,16 +266,31 @@ int main(void)
             prev_freq = msg.carrier;
         }
 
-        /* Set Gain */
-        if (msg.backoff_dB != prev_gain) {
-            CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_GAIN, channel,
-                                          msg.backoff_dB * 1000));
-            prev_gain = msg.backoff_dB;
+        /* Set Manual Gain Mode */
+        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_GAINMODE, channel, BLADERF_GAIN_MGC));
+
+        /* Test Gain: these will not set until RX is enabled  */
+        /* DBG: Test manual gain control. Set, get, and print 10 gain options */
+        for (uint64_t i = 1; i < 71; i++) {
+            uint64_t actual_gain = 0;
+            CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_GAIN, channel, i));
+            CALL(rfic_command_read_immed(BLADERF_RFIC_COMMAND_GAIN, channel, &actual_gain));
+            DBG("Test gain: %x dB, read back: %x dB\n", i, actual_gain);
         }
 
-        /* Begin TX on this channel if required */
-        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_ENABLE, channel,
-                                      true));
+        CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_ENABLE, channel, true));
+
+        /* Test Gain: These gain assignments register right away */
+        /* DBG: Test manual gain control. Set, get, and print 10 gain options */
+        for (uint64_t i = 1; i < 71; i++) {
+            uint64_t actual_gain = 0;
+            CALL(rfic_command_write_immed(BLADERF_RFIC_COMMAND_GAIN, channel, i));
+
+            // For some reason, actual gain does not want to print, but it is correctly set
+            // by tracking the value written to `actual_gain` here.
+            CALL(rfic_command_read_immed(BLADERF_RFIC_COMMAND_GAIN, channel, &actual_gain));
+            DBG("Test gain: %x dB, read back: %x dB\n", i, actual_gain);
+        }
 
 #ifdef BIASTEE
         /* Enable bias tee on TX side */
