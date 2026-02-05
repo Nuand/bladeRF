@@ -421,6 +421,23 @@ int spi_flash_decode_flash_architecture(struct bladerf *dev,
             }
             break;
 
+        case 0x1F: /* RENESAS */
+            log_verbose( "Found SPI flash manufacturer: RENESAS.\n" );
+            switch( flash_arch->device_id ) {
+                case 0x47:
+                    log_verbose( "Found SPI flash device: AT25FF321A"
+                                 " (32 Mbit).\n" );
+                    flash_arch->tsize_bytes = 32 << 17;
+                    flash_arch->status      = STATUS_SUCCESS;
+                    break;
+                default:
+                    log_debug( "Unknown Renesas flash device ID"
+                               " [0x%02X].\n",
+                               flash_arch->device_id );
+                    status = BLADERF_ERR_UNEXPECTED;
+            }
+            break;
+
         default:
             log_debug( "Unknown flash manufacturer ID.\n" );
             status = BLADERF_ERR_UNEXPECTED;
