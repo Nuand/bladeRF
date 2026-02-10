@@ -32,6 +32,7 @@ add_subdirectory(test_interleaver)
 add_subdirectory(test_rx_meta)
 add_subdirectory(test_fpga_load)
 add_subdirectory(test_flash_id)
+add_subdirectory(test_flash_validate)
 
 option(TEST_REGRESSION "Include regression tests" OFF)
 if(TEST_REGRESSION)
