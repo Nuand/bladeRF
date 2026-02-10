@@ -277,6 +277,11 @@ TEST(TEST_LIBBLADERF, gain_calibration) {
     ASSERT_EQ(0, status);
 }
 
+TEST(TEST_LIBBLADERF, flash_id) {
+    status = std::system("./output/libbladeRF_test_flash_id -v verbose");
+    ASSERT_EQ(0, status);
+}
+
 // ===============================
 // HDL
 // ===============================
