@@ -6,7 +6,7 @@ matplotlib==3.9.2
 numpy==2.1.1
 packaging==24.1
 pandas==2.2.3
-pillow==10.4.0
+pillow==12.1.1
 pyparsing==3.1.4
 python-dateutil==2.9.0.post0
 pytz==2024.2
