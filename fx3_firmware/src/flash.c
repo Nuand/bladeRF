@@ -41,6 +41,33 @@ static CyU3PReturnStatus_t FlashReadStatus(uint8_t *val)
     return status;
 }
 
+static CyU3PReturnStatus_t FlashWriteEnable(void)
+{
+    CyU3PReturnStatus_t status;
+    uint8_t cmd = 0x06; /* Write Enable */
+
+    status = CyU3PSpiSetSsnLine(CyFalse);
+    status = CyU3PSpiTransmitWords(&cmd, 1);
+    status = CyU3PSpiSetSsnLine(CyTrue);
+
+    return status;
+}
+
+static CyU3PReturnStatus_t FlashWaitUntilReady(void)
+{
+    CyU3PReturnStatus_t status;
+    uint8_t read_status;
+
+    do {
+        status = FlashReadStatus(&read_status);
+        if (status != CY_U3P_SUCCESS) {
+            return status;
+        }
+    } while (read_status & 0x01);
+
+    return CY_U3P_SUCCESS;
+}
+
 CyU3PReturnStatus_t NuandLockOtpMacronix() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
     uint8_t location[1];
@@ -76,7 +103,7 @@ CyU3PReturnStatus_t NuandLockOtpMacronix() {
 
 CyU3PReturnStatus_t NuandLockOtpWinbond() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    uint8_t location[4];
+    uint8_t location[2];
     uint8_t val[2];
 
     location[0] = 0x35; // Read Status Register 2
@@ -87,12 +114,23 @@ CyU3PReturnStatus_t NuandLockOtpWinbond() {
 
     val[0] |= 0x8; // Set LB-1
 
+    status = FlashWriteEnable();
+    if (status != CY_U3P_SUCCESS) {
+        return status;
+    }
+
     location[0] = 0x31; // Write Status Register 2
     location[1] = val[0];
 
     status = CyU3PSpiSetSsnLine (CyFalse);
     status = CyU3PSpiTransmitWords (location, 2);
     status = CyU3PSpiSetSsnLine (CyTrue);
+
+    if (status != CY_U3P_SUCCESS) {
+        return status;
+    }
+
+    status = FlashWaitUntilReady();
 
     return status;
 }
