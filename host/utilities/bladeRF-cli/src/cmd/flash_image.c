@@ -82,10 +82,12 @@ static int handle_param(const char *param, char *val,
                     BLADERF_SERIAL_LENGTH - 1);
         }
     } else if (!strcasecmp("address", param)) {
-        p->address = str2uint(param, 0, UINT_MAX, &ok);
+        p->address = str2uint(val, 0, UINT_MAX, &ok);
         if (!ok) {
             cli_err(s, argv0, "Invalid address provided.\n");
             status = CLI_RET_INVPARAM;
+        } else {
+            p->override_address = true;
         }
     } else if (!strcasecmp("type", param)) {
         if (!strcasecmp("raw", val)) {
