@@ -56,6 +56,11 @@ extern bool bladerf_usb_reset_device_on_open;
 #define CTRL_TIMEOUT_MS 1000
 #endif
 
+/* 64KB sector erase worst-case: 2250ms (Renesas AT25FF321A) */
+#ifndef FLASH_ERASE_TIMEOUT_MS
+#define FLASH_ERASE_TIMEOUT_MS 3000
+#endif
+
 #ifndef BULK_TIMEOUT_MS
 #define BULK_TIMEOUT_MS 1000
 #endif
