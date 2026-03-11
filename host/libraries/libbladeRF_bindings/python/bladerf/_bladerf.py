@@ -245,6 +245,28 @@ class ClockSelect(enum.Enum):
     def __str__(self):
         return self.name
 
+class TriggerRole(enum.Enum):
+    Invalid = libbladeRF.BLADERF_TRIGGER_ROLE_INVALID
+    Disabled = libbladeRF.BLADERF_TRIGGER_ROLE_DISABLED
+    Master = libbladeRF.BLADERF_TRIGGER_ROLE_MASTER
+    Slave = libbladeRF.BLADERF_TRIGGER_ROLE_SLAVE
+
+
+class TriggerSignal(enum.Enum):
+    invalid = libbladeRF.BLADERF_TRIGGER_INVALID
+    J71_4 = libbladeRF.BLADERF_TRIGGER_J71_4
+    J51_1 = libbladeRF.BLADERF_TRIGGER_J51_1
+    MINI_EXP_1 = libbladeRF.BLADERF_TRIGGER_MINI_EXP_1
+
+    USER_0 = libbladeRF.BLADERF_TRIGGER_USER_0
+    USER_1 = libbladeRF.BLADERF_TRIGGER_USER_1
+    USER_2 = libbladeRF.BLADERF_TRIGGER_USER_2
+    USER_3 = libbladeRF.BLADERF_TRIGGER_USER_3
+    USER_4 = libbladeRF.BLADERF_TRIGGER_USER_4
+    USER_5 = libbladeRF.BLADERF_TRIGGER_USER_5
+    USER_6 = libbladeRF.BLADERF_TRIGGER_USER_6
+    USER_7 = libbladeRF.BLADERF_TRIGGER_USER_7
+
 
 class RSSI(collections.namedtuple("RSSI", ["preamble", "symbol"])):
     def __str__(self):
@@ -808,8 +830,6 @@ class BladeRF:
 
     loopback = property(get_loopback, set_loopback, doc="Loopback selection")
 
-    # Trigger TBD
-
     # Sample RX Mux
 
     def get_rx_mux(self):
@@ -1105,6 +1125,63 @@ class BladeRF:
         return self.get_pmic_register(PMICRegister.Power)
 
     # Convenience objects
+
+    class _Trigger:
+
+        def __init__(self, dev, channel, signal, role):
+            if isinstance(signal, TriggerSignal):
+                signal = signal.value
+
+            if isinstance(role, TriggerRole):
+                role = role.value
+
+            self.trigger = ffi.new("struct bladerf_trigger *")
+            self.dev = dev
+            self.channel = channel
+            self.signal = signal
+            self.role = role
+
+            ret = libbladeRF.bladerf_trigger_init(
+                self.dev.dev[0], self.channel, self.signal, self.trigger
+            )
+            _check_error(ret)
+
+            self.trigger.role = role
+
+        def arm(self, arm):
+            ret = libbladeRF.bladerf_trigger_arm(
+                self.dev.dev[0], self.trigger, bool(arm), 0, 0
+            )
+            _check_error(ret)
+
+        def fire(self):
+            ret = libbladeRF.bladerf_trigger_fire(self.dev.dev[0], self.trigger)
+            _check_error(ret)
+
+        def state(self):
+            armed = ffi.new("bool *")
+            has_fired = ffi.new("bool *")
+            fire_requested = ffi.new("bool *")
+
+            ret = libbladeRF.bladerf_trigger_state(
+                self.dev.dev[0],
+                self.trigger,
+                armed,
+                has_fired,
+                fire_requested,
+                ffi.NULL,
+                ffi.NULL,
+            )
+            _check_error(ret)
+
+            armed = bool(armed[0])
+            has_fired = bool(has_fired[0])
+            fire_requested = bool(fire_requested[0])
+
+            return armed, has_fired, fire_requested
+
+    def Trigger(self, ch, signal, role):
+        return self._Trigger(self, ch, signal, role)
 
     class _Channel:
         """Container for bladeRF channel properties"""
