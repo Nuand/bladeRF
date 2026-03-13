@@ -504,6 +504,9 @@ int rxtx_handle_config_param(struct cli_state *s,
         return CLI_RET_MEM;
     }
 
+    /* Default is bin, update the sample size in case no format=bin configuration is indicated */
+    rxtx_set_file_format(rxtx, (s->sample_format == BLADERF_FORMAT_SC8_Q7) ? RXTX_FMT_BIN_SC8Q7 : RXTX_FMT_BIN_SC16Q11);
+
     *val = strchr(param, '=');
 
     if (!*val || strlen(&(*val)[1]) < 1) {
