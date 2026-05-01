@@ -5,6 +5,7 @@
 #include "minmax.h"
 #include "misc.h"
 #include "conversions.h"
+#include "helpers/version.h"
 
 #include "bladeRF.h"
 #include "board/board.h"
@@ -266,6 +267,19 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
 
     padding_len = (len % page_size == 0) ? 0 : page_size - (len % page_size);
     if (len + padding_len + page_size > flash_len) {
+        struct bladerf_version fw_version;
+
+        status = dev->board->get_fw_version(dev, &fw_version);
+        if (status != 0) {
+            return status;
+        }
+
+        if (version_fields_less_than(&fw_version, 2, 6, 1)) {
+            log_error("Compressed FPGA autoload requires FX3 firmware v2.6.1 "
+                      "or later; device has v%u.%u.%u\n",
+                      fw_version.major, fw_version.minor, fw_version.patch);
+            return BLADERF_ERR_UPDATE_FW;
+        }
 
         status = packbits_encode(bitstream, len, &compressed_bitstream,
                                  &stored_len);

@@ -5,6 +5,12 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.6.1 (2026-02-10)
+--------------------------------
+ * Add Renesas AT25FF321A SPI flash support
+ * Add Renesas OTP security register read/write/lock
+ * Add PackBits PB1 compressed FPGA autoload support
+
 v2.6.0 (2025-05-06)
 --------------------------------
  * Increase GPIF buffer size for increase performance
