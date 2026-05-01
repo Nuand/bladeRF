@@ -113,11 +113,99 @@ static inline void fill_fpga_metadata_page(struct bladerf *dev,
                        &idx, "LEN", len_str);
 }
 
+/**
+ * Fill FPGA autoload metadata for a PackBits-compressed bitstream.
+ */
+static inline void fill_fpga_packbits_metadata_page(struct bladerf *dev,
+                                                    uint8_t *metadata,
+                                                    size_t uncompressed_len,
+                                                    size_t compressed_len)
+{
+    char clen_str[12];
+    char ulen_str[12];
+    int idx = 0;
+
+    memset(clen_str, 0, sizeof(clen_str));
+    memset(ulen_str, 0, sizeof(ulen_str));
+    memset(metadata, 0xff, dev->flash_arch->psize_bytes);
+
+    snprintf(ulen_str, sizeof(ulen_str), "%u", (unsigned int)uncompressed_len);
+    snprintf(clen_str, sizeof(clen_str), "%u", (unsigned int)compressed_len);
+
+    binkv_encode_field((char *)metadata, dev->flash_arch->psize_bytes,
+                       &idx, "FMT", "PB1");
+    binkv_encode_field((char *)metadata, dev->flash_arch->psize_bytes,
+                       &idx, "ULEN", ulen_str);
+    binkv_encode_field((char *)metadata, dev->flash_arch->psize_bytes,
+                       &idx, "CLEN", clen_str);
+}
+
+/**
+ * Compress FPGA autoload data with a small PackBits-compatible encoding.
+ */
+static int packbits_encode(const uint8_t *in, size_t len,
+                           uint8_t **out, size_t *out_len)
+{
+    const size_t overhead = (len + 127) / 128;
+    size_t max_len;
+    size_t i = 0;
+    size_t o = 0;
+    uint8_t *buf;
+
+    if (len > UINT32_MAX || overhead > UINT32_MAX - len) {
+        return BLADERF_ERR_INVAL;
+    }
+    max_len = len + overhead;
+
+    buf = malloc(max_len);
+    if (buf == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    while (i < len) {
+        size_t run = 1;
+        size_t lit;
+
+        while (i + run < len && run < 130 && in[i] == in[i + run]) {
+            ++run;
+        }
+
+        if (run >= 3) {
+            buf[o++] = 0x80 | (uint8_t)(run - 3);
+            buf[o++] = in[i];
+            i += run;
+        } else {
+            lit = i;
+            i += run;
+
+            while (i < len && i - lit < 128) {
+                run = 1;
+                while (i + run < len && run < 130 && in[i] == in[i + run]) {
+                    ++run;
+                }
+                if (run >= 3 || i - lit + run > 128) {
+                    break;
+                }
+                i += run;
+            }
+
+            buf[o++] = (uint8_t)(i - lit - 1);
+            memcpy(buf + o, in + lit, i - lit);
+            o += i - lit;
+        }
+    }
+
+    *out = buf;
+    *out_len = o;
+    return 0;
+}
+
 static inline size_t get_flash_eb_len_fpga(struct bladerf *dev)
 {
     int status;
     size_t fpga_bytes;
     size_t eb_count;
+    size_t max_eb_count;
 
     status = dev->board->get_fpga_bytes(dev, &fpga_bytes);
     if (status < 0) {
@@ -131,6 +219,12 @@ static inline size_t get_flash_eb_len_fpga(struct bladerf *dev)
         ++eb_count;
     }
 
+    max_eb_count = dev->flash_arch->num_ebs -
+                   (BLADERF_FLASH_ADDR_FPGA / dev->flash_arch->ebsize_bytes);
+    if (eb_count > max_eb_count) {
+        eb_count = max_eb_count;
+    }
+
     return eb_count;
 }
 
@@ -140,10 +234,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
                                    const uint8_t *bitstream,
                                    size_t len)
 {
-    /* Pad data to be page-aligned */
     const uint32_t page_size = dev->flash_arch->psize_bytes;
-    const uint32_t padding_len =
-        (len % page_size == 0) ? 0 : page_size - (len % page_size);
 
     /** Flash page where FPGA metadata and bitstream start */
     const uint32_t flash_page_fpga =
@@ -153,42 +244,86 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
     const uint32_t flash_eb_fpga =
         BLADERF_FLASH_ADDR_FPGA / dev->flash_arch->ebsize_bytes;
 
-    /** Length of entire FPGA region, in units of erase blocks */
-    const uint32_t flash_eb_len_fpga = (uint32_t)get_flash_eb_len_fpga(dev);
-
     assert(METADATA_LEN <= page_size);
 
     int status;
+    bool compressed = false;
+    uint32_t flash_len;
+    uint32_t flash_eb_len_fpga;
     uint8_t *readback_buf;
+    uint8_t *compressed_bitstream = NULL;
     uint8_t *padded_bitstream;
+    const uint8_t *stored_bitstream = bitstream;
     uint8_t metadata[METADATA_LEN];
+    size_t stored_len = len;
+    size_t padding_len;
     uint32_t padded_bitstream_len;
 
-    if (len >= (UINT32_MAX - padding_len)) {
+    if (dev->flash_arch->tsize_bytes <= BLADERF_FLASH_ADDR_FPGA) {
+        return BLADERF_ERR_INVAL;
+    }
+    flash_len = dev->flash_arch->tsize_bytes - BLADERF_FLASH_ADDR_FPGA;
+
+    padding_len = (len % page_size == 0) ? 0 : page_size - (len % page_size);
+    if (len + padding_len + page_size > flash_len) {
+
+        status = packbits_encode(bitstream, len, &compressed_bitstream,
+                                 &stored_len);
+        if (status != 0) {
+            return status;
+        }
+
+        stored_bitstream = compressed_bitstream;
+        compressed = true;
+        padding_len = (stored_len % page_size == 0) ?
+                      0 : page_size - (stored_len % page_size);
+    }
+
+    if (stored_len >= UINT32_MAX - padding_len ||
+        stored_len + padding_len + page_size > flash_len) {
+        free(compressed_bitstream);
         return BLADERF_ERR_INVAL;
     }
 
-    padded_bitstream_len = (uint32_t)len + padding_len;
+    padded_bitstream_len = (uint32_t)(stored_len + padding_len);
+    if (compressed) {
+        log_info("FPGA bitstream compression: %zu bytes -> %zu bytes; "
+                 "%zu bytes left in flash after padding\n",
+                 len, stored_len,
+                 (size_t)flash_len - page_size - padded_bitstream_len);
+    }
+
+    flash_eb_len_fpga =
+        (uint32_t)((padded_bitstream_len + page_size +
+                    dev->flash_arch->ebsize_bytes - 1) /
+                   dev->flash_arch->ebsize_bytes);
 
     /* Fill in metadata with the *actual* FPGA bitstream length */
-    fill_fpga_metadata_page(dev, metadata, len);
+    if (compressed) {
+        fill_fpga_packbits_metadata_page(dev, metadata, len, stored_len);
+    } else {
+        fill_fpga_metadata_page(dev, metadata, len);
+    }
 
     readback_buf = malloc(padded_bitstream_len);
     if (readback_buf == NULL) {
+        free(compressed_bitstream);
         return BLADERF_ERR_MEM;
     }
 
     padded_bitstream = malloc(padded_bitstream_len);
     if (padded_bitstream == NULL) {
         free(readback_buf);
+        free(compressed_bitstream);
         return BLADERF_ERR_MEM;
     }
 
     /* Copy bitstream */
-    memcpy(padded_bitstream, bitstream, len);
+    memcpy(padded_bitstream, stored_bitstream, stored_len);
 
     /* Clear the padded region */
-    memset(padded_bitstream + len, 0xFF, padded_bitstream_len - len);
+    memset(padded_bitstream + stored_len, 0xFF,
+           padded_bitstream_len - stored_len);
 
     /* Erase FPGA metadata and bitstream region */
     status = spi_flash_erase(dev, flash_eb_fpga, flash_eb_len_fpga);
@@ -235,6 +370,7 @@ int spi_flash_write_fpga_bitstream(struct bladerf *dev,
 
 error:
     free(padded_bitstream);
+    free(compressed_bitstream);
     free(readback_buf);
     return status;
 }

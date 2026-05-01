@@ -1015,6 +1015,21 @@ void bladeRFAppThread_Entry( uint32_t input)
         if (!NuandExtractField((void*)glAutoLoad, 0x100, "LEN", (char *)&fpga_len, 10)) {
             fpga_len[10] = 0;
             NuandLoadFromFlash(atoi(fpga_len));
+        } else {
+            char compressed_len[11] = {0};
+            char format[4] = {0};
+            if (!NuandExtractField((void*)glAutoLoad, 0x100, "FMT", format, 3) &&
+                format[0] == 'P' && format[1] == 'B' &&
+                format[2] == '1' && format[3] == 0 &&
+                !NuandExtractField((void*)glAutoLoad, 0x100,
+                                   "ULEN", (char *)&fpga_len, 10) &&
+                !NuandExtractField((void*)glAutoLoad, 0x100,
+                                   "CLEN", (char *)&compressed_len, 10)) {
+                fpga_len[10] = 0;
+                compressed_len[10] = 0;
+                NuandLoadCompressedFromFlash(atoi(fpga_len),
+                                             atoi(compressed_len));
+            }
         }
     }
 
