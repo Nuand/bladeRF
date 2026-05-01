@@ -211,13 +211,30 @@ CyU3PReturnStatus_t NuandWriteOtp(size_t offset, size_t size, void *buf) {
 
 CyU3PReturnStatus_t NuandFlashInit() {
     CyU3PReturnStatus_t status;
+    uint8_t mfn;
 
     NuandGPIOReconfigure(CyFalse, CyTrue);
 
     status = CyFxSpiInit();
 
-    if (NuandGetSPIManufacturer() == 0xEF) {
+    mfn = NuandGetSPIManufacturer();
+
+    if (mfn == 0xEF || mfn == 0x1F) {
         CyU3PSpiSetClock(30000000);
+    }
+
+    if (mfn == 0x1F) {
+        uint8_t location[1];
+
+        location[0] = 0x06; /* Write Enable */
+        CyU3PSpiSetSsnLine(CyFalse);
+        CyU3PSpiTransmitWords(location, 1);
+        CyU3PSpiSetSsnLine(CyTrue);
+
+        location[0] = 0x98; /* Global Block Unlock */
+        CyU3PSpiSetSsnLine(CyFalse);
+        status = CyU3PSpiTransmitWords(location, 1);
+        CyU3PSpiSetSsnLine(CyTrue);
     }
 
     glAppMode = MODE_FW_CONFIG;

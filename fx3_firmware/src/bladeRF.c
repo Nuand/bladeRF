@@ -185,7 +185,8 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
 }
 
 uint16_t NuandGetProductID() {
-    if (NuandGetSPIManufacturer() == 0xEF) {
+    uint8_t mfn = NuandGetSPIManufacturer();
+    if (mfn == 0xEF || mfn == 0x1F) {
         return USB_NUAND_BLADERF2_PRODUCT_ID;
     }
     return USB_NUAND_BLADERF_PRODUCT_ID;
