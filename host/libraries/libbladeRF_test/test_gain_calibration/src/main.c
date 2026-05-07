@@ -64,6 +64,9 @@ int main(int argc, char *argv[]) {
     struct bladerf *dev;
     char *devstr = NULL;
     const char *rx_cal_file = "rx_sweep.csv";
+    const char *rx_multi_cal_file = "rx_sweep_multi_channel.csv";
+    const bladerf_channel rx0 = BLADERF_CHANNEL_RX(0);
+    const bladerf_channel rx1 = BLADERF_CHANNEL_RX(1);
     const char *tx_cal_file = "tx_sweep.csv";
     bladerf_channel ch;
 
@@ -77,7 +80,24 @@ int main(int argc, char *argv[]) {
 
     CHECK(bladerf_open(&dev, devstr));
 
-    ch = BLADERF_CHANNEL_RX(0);
+    CHECK(bladerf_load_gain_calibration(dev, rx0, rx_multi_cal_file));
+    CHECK(bladerf_get_gain_calibration(dev, rx0, &cal[rx0]));
+
+    CHECK(bladerf_load_gain_calibration(dev, rx1, rx_multi_cal_file));
+    CHECK(bladerf_get_gain_calibration(dev, rx1, &cal[rx1]));
+
+    if (cal[rx0]->n_entries != 2 || cal[rx1]->n_entries != 2 ||
+        fabs(cal[rx0]->entries[0].gain_corr - cal[rx1]->entries[0].gain_corr) < 0.000001) {
+        fprintf(stderr, "[Error] Multi-RX gain table load failed\n");
+        fprintf(stderr, "   RX0 entries:      %u\n", cal[rx0]->n_entries);
+        fprintf(stderr, "   RX1 entries:      %u\n", cal[rx1]->n_entries);
+        fprintf(stderr, "   RX0 first corr:   %f\n", cal[rx0]->entries[0].gain_corr);
+        fprintf(stderr, "   RX1 first corr:   %f\n", cal[rx1]->entries[0].gain_corr);
+        status = EXIT_FAILURE;
+        goto out;
+    }
+
+    ch = rx0;
     CHECK(bladerf_load_gain_calibration(dev, ch, rx_cal_file));
     CHECK(bladerf_get_gain_calibration(dev, ch, &cal[ch]));
     CHECK(test_serial_based_autoload(dev, ch));
@@ -117,7 +137,7 @@ int main(int argc, char *argv[]) {
     }
     printf("\n");
 
-    ch = BLADERF_CHANNEL_RX(0);
+    ch = rx0;
     bladerf_get_frequency_range(dev, ch, &freq_range);
     CHECK(bladerf_set_gain(dev, ch, TARGET_GAIN));
     CHECK(bladerf_enable_module(dev, ch, true));

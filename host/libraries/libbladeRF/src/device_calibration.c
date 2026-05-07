@@ -87,6 +87,89 @@ static size_t count_csv_entries(const char *filename) {
     return count - 2; // Subtract 2 to account for the serial number and header lines
 }
 
+static uint8_t gain_cal_channel_index(bladerf_channel ch)
+{
+    return (uint8_t)(ch >> 1);
+}
+
+static bool gain_cal_entry_matches_channel(bladerf_channel ch,
+                                           uint8_t chain,
+                                           bladerf_gain gain,
+                                           bool use_indexed_rx_chain)
+{
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        return chain == 0 && gain == 60;
+    }
+
+    return chain == (use_indexed_rx_chain ? gain_cal_channel_index(ch) : (uint8_t)ch)
+           && gain == 0;
+}
+
+static int load_gain_cal_entries_from_image(const struct bladerf_image *image,
+                                            struct bladerf_gain_cal_tbl *tbl,
+                                            bladerf_channel ch,
+                                            size_t entry_size,
+                                            bool use_indexed_rx_chain,
+                                            size_t *entry_counter)
+{
+    uint64_t frequency;
+    float power;
+    size_t offset = BLADERF_SERIAL_LENGTH;
+    uint64_t cw_freq;
+    uint8_t chain;
+    bladerf_gain gain;
+    int32_t rssi;
+    float vsg_power;
+    bladerf_frequency signal_freq;
+    size_t num_entries = (image->length - BLADERF_SERIAL_LENGTH) / entry_size;
+
+    *entry_counter = 0;
+
+    for (uint64_t i = 0; i < num_entries; i++) {
+        if (BLADERF_CHANNEL_IS_TX(ch)) {
+            memcpy(&chain, &image->data[offset], sizeof(chain));
+            offset += sizeof(chain);
+            memcpy(&gain, &image->data[offset], sizeof(gain));
+            offset += sizeof(gain);
+            memcpy(&cw_freq, &image->data[offset], sizeof(cw_freq));
+            offset += sizeof(cw_freq);
+            memcpy(&frequency, &image->data[offset], sizeof(frequency));
+            offset += sizeof(frequency);
+            memcpy(&power, &image->data[offset], sizeof(power));
+            offset += sizeof(power);
+        } else {
+            memcpy(&chain, &image->data[offset], sizeof(chain));
+            offset += sizeof(chain);
+            memcpy(&gain, &image->data[offset], sizeof(gain));
+            offset += sizeof(gain);
+            memcpy(&vsg_power, &image->data[offset], sizeof(vsg_power));
+            offset += sizeof(vsg_power);
+            memcpy(&signal_freq, &image->data[offset], sizeof(signal_freq));
+            offset += sizeof(signal_freq);
+            memcpy(&frequency, &image->data[offset], sizeof(frequency));
+            offset += sizeof(frequency);
+            memcpy(&rssi, &image->data[offset], sizeof(rssi));
+            offset += sizeof(rssi);
+            memcpy(&power, &image->data[offset], sizeof(power));
+            offset += sizeof(power);
+        }
+
+        if (gain_cal_entry_matches_channel(ch, chain, gain, use_indexed_rx_chain)) {
+            if (*entry_counter >= tbl->n_entries) {
+                log_error("Calibration table has too many entries\n");
+                return BLADERF_ERR_MEM;
+            }
+
+            tbl->entries[*entry_counter].freq = frequency;
+            tbl->entries[*entry_counter].gain_corr =
+                BLADERF_CHANNEL_IS_TX(ch) ? power : power - vsg_power;
+            (*entry_counter)++;
+        }
+    }
+
+    return 0;
+}
+
 int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *binary_path, bladerf_channel ch)
 {
     int status = 0;
@@ -287,22 +370,11 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     }
 
     bladerf_gain current_gain;
-    uint64_t frequency;
-    float power;
-    size_t entry_counter;
-    size_t offset;
+    size_t entry_counter = 0;
     int status = 0;
-
-    uint64_t cw_freq;
-    uint8_t chain;
-    bladerf_gain gain;
-    int32_t rssi;
-    float vsg_power;
-    bladerf_frequency signal_freq;
 
     struct bladerf_image *image = NULL;
     size_t entry_size;
-    size_t num_entries;
     char device_serial[BLADERF_SERIAL_LENGTH];
     char file_serial[BLADERF_SERIAL_LENGTH];
 
@@ -327,8 +399,18 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
     }
 
     entry_size = (BLADERF_CHANNEL_IS_TX(ch))
-        ? sizeof(chain) + sizeof(gain) + sizeof(cw_freq) + sizeof(frequency) + sizeof(power)
-        : sizeof(chain) + sizeof(gain) + sizeof(vsg_power) + sizeof(signal_freq) + sizeof(frequency) + sizeof(rssi) + sizeof(power);
+        ? sizeof(uint8_t)        /* chain */
+          + sizeof(bladerf_gain) /* gain */
+          + sizeof(uint64_t)     /* cw_freq */
+          + sizeof(uint64_t)     /* frequency */
+          + sizeof(float)        /* power */
+        : sizeof(uint8_t)        /* chain */
+          + sizeof(bladerf_gain) /* gain */
+          + sizeof(float)        /* vsg_power */
+          + sizeof(uint64_t)     /* signal_freq */
+          + sizeof(uint64_t)     /* frequency */
+          + sizeof(int32_t)      /* rssi */
+          + sizeof(float);       /* power */
 
     image = bladerf_alloc_image(dev, BLADERF_IMAGE_TYPE_GAIN_CAL, 0, 0);
     status = bladerf_image_read(image, binary_path);
@@ -355,53 +437,23 @@ int load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const char *b
         log_warning("Calibration file serial (%s) does not match device serial (%s)\n", file_serial, device_serial);
     }
 
-    offset = BLADERF_SERIAL_LENGTH;
-    entry_counter = 0;
-    num_entries = (image->length - BLADERF_SERIAL_LENGTH) / entry_size;
-    for (uint64_t i = 0; i < num_entries; i++) {
-        if (BLADERF_CHANNEL_IS_TX(ch)) {
-            memcpy(&chain, &image->data[offset], sizeof(chain));
-            offset += sizeof(chain);
-            memcpy(&gain, &image->data[offset], sizeof(gain));
-            offset += sizeof(gain);
-            memcpy(&cw_freq, &image->data[offset], sizeof(cw_freq));
-            offset += sizeof(cw_freq);
-            memcpy(&frequency, &image->data[offset], sizeof(frequency));
-            offset += sizeof(frequency);
-            memcpy(&power, &image->data[offset], sizeof(power));
-            offset += sizeof(power);
-        } else {
-            memcpy(&chain, &image->data[offset], sizeof(chain));
-            offset += sizeof(chain);
-            memcpy(&gain, &image->data[offset], sizeof(gain));
-            offset += sizeof(gain);
-            memcpy(&vsg_power, &image->data[offset], sizeof(vsg_power));
-            offset += sizeof(vsg_power);
-            memcpy(&signal_freq, &image->data[offset], sizeof(signal_freq));
-            offset += sizeof(signal_freq);
-            memcpy(&frequency, &image->data[offset], sizeof(frequency));
-            offset += sizeof(frequency);
-            memcpy(&rssi, &image->data[offset], sizeof(rssi));
-            offset += sizeof(rssi);
-            memcpy(&power, &image->data[offset], sizeof(power));
-            offset += sizeof(power);
-        }
+    status = load_gain_cal_entries_from_image(
+        image, &gain_tbls[ch], ch, entry_size, false, &entry_counter);
+    if (status != 0) {
+        goto error;
+    }
 
-        if (BLADERF_CHANNEL_IS_TX(ch) && chain == 0 && gain == 60) {
-            gain_tbls[ch].entries[entry_counter].freq = frequency;
-            gain_tbls[ch].entries[entry_counter].gain_corr = power;
-            entry_counter++;
-        }
-
-        if (!BLADERF_CHANNEL_IS_TX(ch) && chain == 0 && gain == 0) {
-            gain_tbls[ch].entries[entry_counter].freq = frequency;
-            gain_tbls[ch].entries[entry_counter].gain_corr = power - vsg_power;
-            entry_counter++;
+    if (entry_counter == 0 && !BLADERF_CHANNEL_IS_TX(ch) &&
+        gain_cal_channel_index(ch) != (uint8_t)ch) {
+        status = load_gain_cal_entries_from_image(
+            image, &gain_tbls[ch], ch, entry_size, true, &entry_counter);
+        if (status != 0) {
+            goto error;
         }
     }
 
     if (entry_counter == 0) {
-        log_error("No valid entries found: %s\n", binary_path);
+        log_error("No valid entries found for channel %u: %s\n", ch, binary_path);
         status = BLADERF_ERR_UNEXPECTED;
         goto error;
     }
