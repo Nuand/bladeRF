@@ -68,5 +68,86 @@ class FeatureTest(unittest.TestCase):
         self.assertEqual(calls, [(_bladerf.Feature.OVERSAMPLE.value, True)])
 
 
+class TriggerTest(unittest.TestCase):
+    def test_trigger_control_round_trip(self):
+        calls = []
+
+        class Lib:
+            @staticmethod
+            def bladerf_trigger_init(dev, ch, signal, trigger):
+                trigger.channel = ch
+                trigger.role = _bladerf.TriggerRole.Disabled.value
+                trigger.signal = signal
+                return 0
+
+            @staticmethod
+            def bladerf_trigger_arm(dev, trigger, arm, resv1, resv2):
+                calls.append(("arm", bool(arm), resv1, resv2))
+                return 0
+
+            @staticmethod
+            def bladerf_trigger_fire(dev, trigger):
+                calls.append(("fire", trigger.channel))
+                return 0
+
+            @staticmethod
+            def bladerf_trigger_state(dev, trigger, armed, fired, requested,
+                                      resv1, resv2):
+                armed[0] = True
+                fired[0] = False
+                requested[0] = True
+                return 0
+
+            @staticmethod
+            def bladerf_read_trigger(dev, ch, signal, value):
+                value[0] = 0xa5
+                return 0
+
+            @staticmethod
+            def bladerf_write_trigger(dev, ch, signal, value):
+                calls.append(("write", ch, signal, value))
+                return 0
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            device = _device()
+            trigger = device.trigger_init(
+                _bladerf.CHANNEL_RX(0),
+                _bladerf.TriggerSignal.MiniExp1,
+            )
+            trigger.role = _bladerf.TriggerRole.Master
+            trigger.options = 7
+            device.trigger_arm(trigger, True, 1, 2)
+            device.trigger_fire(trigger)
+            state = device.trigger_state(trigger)
+            value = device.read_trigger(
+                trigger.channel,
+                _bladerf.TriggerSignal.MiniExp1,
+            )
+            device.write_trigger(
+                trigger.channel,
+                _bladerf.TriggerSignal.MiniExp1,
+                0x5a,
+            )
+
+        self.assertEqual(trigger.role, _bladerf.TriggerRole.Master)
+        self.assertEqual(trigger.signal, _bladerf.TriggerSignal.MiniExp1)
+        self.assertEqual(trigger.options, 7)
+        self.assertEqual(state, _bladerf.TriggerState(True, False, True))
+        self.assertEqual(value, 0xa5)
+        self.assertEqual(
+            calls,
+            [
+                ("arm", True, 1, 2),
+                ("fire", _bladerf.CHANNEL_RX(0)),
+                (
+                    "write",
+                    _bladerf.CHANNEL_RX(0),
+                    _bladerf.TriggerSignal.MiniExp1.value,
+                    0x5a,
+                ),
+            ],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

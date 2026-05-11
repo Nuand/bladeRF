@@ -232,6 +232,78 @@ class Loopback(enum.Enum):
         return self.name
 
 
+class TriggerRole(enum.Enum):
+    Invalid = libbladeRF.BLADERF_TRIGGER_ROLE_INVALID
+    Disabled = libbladeRF.BLADERF_TRIGGER_ROLE_DISABLED
+    Master = libbladeRF.BLADERF_TRIGGER_ROLE_MASTER
+    Slave = libbladeRF.BLADERF_TRIGGER_ROLE_SLAVE
+
+
+class TriggerSignal(enum.Enum):
+    Invalid = libbladeRF.BLADERF_TRIGGER_INVALID
+    J71_4 = libbladeRF.BLADERF_TRIGGER_J71_4
+    J51_1 = libbladeRF.BLADERF_TRIGGER_J51_1
+    MiniExp1 = libbladeRF.BLADERF_TRIGGER_MINI_EXP_1
+    User0 = libbladeRF.BLADERF_TRIGGER_USER_0
+    User1 = libbladeRF.BLADERF_TRIGGER_USER_1
+    User2 = libbladeRF.BLADERF_TRIGGER_USER_2
+    User3 = libbladeRF.BLADERF_TRIGGER_USER_3
+    User4 = libbladeRF.BLADERF_TRIGGER_USER_4
+    User5 = libbladeRF.BLADERF_TRIGGER_USER_5
+    User6 = libbladeRF.BLADERF_TRIGGER_USER_6
+    User7 = libbladeRF.BLADERF_TRIGGER_USER_7
+
+
+class TriggerState(collections.namedtuple("TriggerState", [
+                    "is_armed", "has_fired", "fire_requested"])):
+    pass
+
+
+class Trigger:
+    def __init__(self, trigger=None):
+        self._trigger = trigger or ffi.new("struct bladerf_trigger *")
+
+    @property
+    def struct(self):
+        return self._trigger
+
+    @property
+    def channel(self):
+        return self._trigger.channel
+
+    @channel.setter
+    def channel(self, ch):
+        self._trigger.channel = ch
+
+    @property
+    def role(self):
+        return TriggerRole(self._trigger.role)
+
+    @role.setter
+    def role(self, role):
+        if isinstance(role, TriggerRole):
+            role = role.value
+        self._trigger.role = role
+
+    @property
+    def signal(self):
+        return TriggerSignal(self._trigger.signal)
+
+    @signal.setter
+    def signal(self, signal):
+        if isinstance(signal, TriggerSignal):
+            signal = signal.value
+        self._trigger.signal = signal
+
+    @property
+    def options(self):
+        return self._trigger.options
+
+    @options.setter
+    def options(self, options):
+        self._trigger.options = options
+
+
 class RXMux(enum.Enum):
     Invalid = libbladeRF.BLADERF_RX_MUX_INVALID
     Baseband = libbladeRF.BLADERF_RX_MUX_BASEBAND
@@ -814,8 +886,6 @@ class BladeRF:
 
     loopback = property(get_loopback, set_loopback, doc="Loopback selection")
 
-    # Trigger TBD
-
     # Sample RX Mux
 
     def get_rx_mux(self):
@@ -831,6 +901,52 @@ class BladeRF:
         _check_error(ret)
 
     rx_mux = property(get_rx_mux, set_rx_mux, doc="RX Multiplexer selection")
+
+    # Trigger
+
+    def trigger_init(self, ch, signal):
+        if isinstance(signal, TriggerSignal):
+            signal = signal.value
+        trigger = ffi.new("struct bladerf_trigger *")
+        ret = libbladeRF.bladerf_trigger_init(self.dev[0], ch, signal, trigger)
+        _check_error(ret)
+        return Trigger(trigger)
+
+    def trigger_arm(self, trigger, arm, resv1=0, resv2=0):
+        ret = libbladeRF.bladerf_trigger_arm(self.dev[0], trigger.struct,
+                                             arm, resv1, resv2)
+        _check_error(ret)
+
+    def trigger_fire(self, trigger):
+        ret = libbladeRF.bladerf_trigger_fire(self.dev[0], trigger.struct)
+        _check_error(ret)
+
+    def trigger_state(self, trigger):
+        is_armed = ffi.new("bool *")
+        has_fired = ffi.new("bool *")
+        fire_requested = ffi.new("bool *")
+        resv1 = ffi.new("uint64_t *")
+        resv2 = ffi.new("uint64_t *")
+        ret = libbladeRF.bladerf_trigger_state(self.dev[0], trigger.struct,
+                                               is_armed, has_fired,
+                                               fire_requested, resv1, resv2)
+        _check_error(ret)
+        return TriggerState(bool(is_armed[0]), bool(has_fired[0]),
+                            bool(fire_requested[0]))
+
+    def read_trigger(self, ch, signal):
+        if isinstance(signal, TriggerSignal):
+            signal = signal.value
+        val = ffi.new("uint8_t *")
+        ret = libbladeRF.bladerf_read_trigger(self.dev[0], ch, signal, val)
+        _check_error(ret)
+        return val[0]
+
+    def write_trigger(self, ch, signal, val):
+        if isinstance(signal, TriggerSignal):
+            signal = signal.value
+        ret = libbladeRF.bladerf_write_trigger(self.dev[0], ch, signal, val)
+        _check_error(ret)
 
     # Feature
 
