@@ -21,12 +21,19 @@
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 PYTHON_BINDINGS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PYTHON_BINDINGS))
 
 from bladerf import _bladerf  # noqa: E402
+
+
+def _device():
+    device = _bladerf.BladeRF.__new__(_bladerf.BladeRF)
+    device.dev = _bladerf.ffi.new("struct bladerf *[1]")
+    return device
 
 
 class FormatTest(unittest.TestCase):
@@ -36,6 +43,29 @@ class FormatTest(unittest.TestCase):
             [0, 1, 2, 3, 4, 5],
         )
         self.assertEqual(_bladerf.Format.SC16_Q11_PACKED.value, 1)
+
+
+class FeatureTest(unittest.TestCase):
+    def test_feature_round_trip(self):
+        calls = []
+
+        class Lib:
+            @staticmethod
+            def bladerf_get_feature(dev, feature):
+                feature[0] = _bladerf.Feature.OVERSAMPLE.value
+                return 0
+
+            @staticmethod
+            def bladerf_enable_feature(dev, feature, enable):
+                calls.append((feature, enable))
+                return 0
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            device = _device()
+            self.assertEqual(device.feature, _bladerf.Feature.OVERSAMPLE)
+            device.enable_feature(_bladerf.Feature.OVERSAMPLE)
+
+        self.assertEqual(calls, [(_bladerf.Feature.OVERSAMPLE.value, True)])
 
 
 if __name__ == "__main__":

@@ -211,6 +211,11 @@ class Format(enum.Enum):
     SC8_Q7_META = libbladeRF.BLADERF_FORMAT_SC8_Q7_META
 
 
+class Feature(enum.Enum):
+    DEFAULT = libbladeRF.BLADERF_FEATURE_DEFAULT
+    OVERSAMPLE = libbladeRF.BLADERF_FEATURE_OVERSAMPLE
+
+
 class Loopback(enum.Enum):
     Disabled = libbladeRF.BLADERF_LB_NONE
     Firmware = libbladeRF.BLADERF_LB_FIRMWARE
@@ -826,6 +831,22 @@ class BladeRF:
         _check_error(ret)
 
     rx_mux = property(get_rx_mux, set_rx_mux, doc="RX Multiplexer selection")
+
+    # Feature
+
+    def get_feature(self):
+        feature = ffi.new("bladerf_feature *")
+        ret = libbladeRF.bladerf_get_feature(self.dev[0], feature)
+        _check_error(ret)
+        return Feature(feature[0])
+
+    def enable_feature(self, feature, enable=True):
+        if isinstance(feature, Feature):
+            feature = feature.value
+        ret = libbladeRF.bladerf_enable_feature(self.dev[0], feature, enable)
+        _check_error(ret)
+
+    feature = property(get_feature, doc="Currently enabled feature")
 
     # DC/Phase/Gain Correction
 
