@@ -229,6 +229,71 @@ int rfic_host_start_tx_recal_update(struct bladerf *dev,
     return 0;
 }
 
+/******************************************************************************/
+/* TX mute (per-device)                                                       */
+/*                                                                            */
+/* These mirror txmute_get/txmute_set in fpga_common/src/ad936x_helpers.c,    */
+/* but keep the gating state in struct bladerf2_board_data rather than a      */
+/* process-wide static so that two bladeRFs opened in the same process do not */
+/* alias each other's mute-state bookkeeping. The fpga_common variants remain */
+/* in use by the NIOS II RFIC controller, which only ever sees one device.    */
+/******************************************************************************/
+
+static int _host_txmute_get(struct bladerf *dev,
+                            bladerf_channel ch,
+                            bool *state)
+{
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int rfic_ch                            = (ch >> 1);
+
+    *state = board_data->tx_mute_state[rfic_ch];
+    return 0;
+}
+
+static int _host_txmute_set(struct bladerf *dev,
+                            bladerf_channel ch,
+                            bool state)
+{
+    struct bladerf2_board_data *board_data = dev->board_data;
+    struct ad9361_rf_phy *phy              = board_data->phy;
+    int rfic_ch                            = (ch >> 1);
+    uint32_t const MUTED_ATTEN             = 89750;
+    uint32_t atten, cached;
+    int status;
+
+    if (board_data->tx_mute_state[rfic_ch] == state) {
+        return 0;
+    }
+
+    if (state) {
+        uint32_t readval;
+
+        status = ad9361_get_tx_attenuation(phy, rfic_ch, &readval);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        cached = readval;
+        atten  = MUTED_ATTEN;
+    } else {
+        cached = txmute_get_cached(phy, ch);
+        atten  = cached;
+    }
+
+    status = ad9361_set_tx_attenuation(phy, rfic_ch, atten);
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    status = txmute_set_cached(phy, ch, cached);
+    if (status < 0) {
+        return status;
+    }
+
+    board_data->tx_mute_state[rfic_ch] = state;
+    return 0;
+}
+
 static int _rfic_host_initialize(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
@@ -425,7 +490,7 @@ static int _rfic_host_enable_module(struct bladerf *dev,
 
         /* Set/unset TX mute */
         if (BLADERF_CHANNEL_IS_TX(ch)) {
-            txmute_set(phy, ch, !enable);
+            _host_txmute_set(dev, ch, !enable);
         }
     }
 
@@ -786,7 +851,7 @@ static int _rfic_host_get_gain(struct bladerf *dev,
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         bool muted;
 
-        CHECK_STATUS(txmute_get(phy, ch, &muted));
+        CHECK_STATUS(_host_txmute_get(dev, ch, &muted));
 
         if (muted) {
             struct bladerf_range const *range = NULL;
@@ -824,7 +889,7 @@ static int _rfic_host_set_gain(struct bladerf *dev,
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         bool muted;
 
-        CHECK_STATUS(txmute_get(phy, ch, &muted));
+        CHECK_STATUS(_host_txmute_get(dev, ch, &muted));
 
         if (muted) {
             struct bladerf_range const *range = NULL;
@@ -1091,11 +1156,8 @@ static int _rfic_host_get_txmute(struct bladerf *dev,
                                  bladerf_channel ch,
                                  bool *state)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        return txmute_get(phy, ch, state);
+        return _host_txmute_get(dev, ch, state);
     }
 
     return BLADERF_ERR_UNSUPPORTED;
@@ -1105,11 +1167,8 @@ static int _rfic_host_set_txmute(struct bladerf *dev,
                                  bladerf_channel ch,
                                  bool state)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
-
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        return txmute_set(phy, ch, state);
+        return _host_txmute_set(dev, ch, state);
     }
 
     return BLADERF_ERR_UNSUPPORTED;
