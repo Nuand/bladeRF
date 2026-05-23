@@ -186,6 +186,11 @@ struct bladerf2_board_data {
     bladerf_rfic_rxfir rxfir;
     bladerf_rfic_txfir txfir;
 
+    /* Per-device TX mute state, indexed by RFIC channel (0,1). Tracked here
+     * rather than as a process-wide static so that multiple bladeRFs opened in
+     * the same process don't share the same mute-gating bookkeeping. */
+    bool tx_mute_state[2];
+
     /* If true, RFIC control will be fully de-initialized on close, instead of
      * just put into a standby state. */
     bool rfic_reset_on_close;
