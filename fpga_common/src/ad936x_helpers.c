@@ -33,7 +33,15 @@
 #include "ad936x_helpers.h"
 #include "bladerf2_common.h"
 
+/* The NIOS II RFIC controller only ever serves one bladeRF, so a single
+ * file-scope state array suffices there. On the host, where multiple
+ * bladeRFs may be open in the same process, the equivalent per-device
+ * bookkeeping lives in struct bladerf2_board_data (see _host_txmute_get/
+ * _host_txmute_set in board/bladerf2/rfic_host.c); the symbols below are
+ * therefore not built into the host library. */
+#if defined(BLADERF_NIOS_BUILD)
 static bool tx_mute_state[2] = { false };
+#endif
 
 uint32_t txmute_get_cached(struct ad9361_rf_phy *phy, bladerf_channel ch)
 {
@@ -63,6 +71,7 @@ int txmute_set_cached(struct ad9361_rf_phy *phy,
     }
 }
 
+#if defined(BLADERF_NIOS_BUILD)
 int txmute_get(struct ad9361_rf_phy *phy, bladerf_channel ch, bool *state)
 {
     int rfic_ch = (ch >> 1);
@@ -115,6 +124,7 @@ int txmute_set(struct ad9361_rf_phy *phy, bladerf_channel ch, bool state)
 
     return 0;
 }
+#endif  /* BLADERF_NIOS_BUILD */
 
 int set_ad9361_port_by_freq(struct ad9361_rf_phy *phy,
                             bladerf_channel ch,
