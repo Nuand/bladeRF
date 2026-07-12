@@ -1063,19 +1063,10 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     struct bladerf2_board_data *board_data = dev->board_data;
     struct controller_fns const *rfic      = board_data->rfic;
     struct bladerf_range const *range      = NULL;
-    struct rfic_host_tx_recal_state tx_recal = {
-        .tx_spdt_bits = 0,
-        .tx_frequency = 0,
-        .tx_port = 0,
-        .restore_tx_frequency = false,
-        .restore_tx_port = false,
-    };
     bladerf_sample_rate current;
     bool old_low, new_low;
-    bool tx_recal_started = false;
     bladerf_rfic_rxfir rxfir;
     bladerf_rfic_txfir txfir;
-    int status = 0;
 
     /* Range checking */
     CHECK_STATUS(dev->board->get_sample_rate_range(dev, ch, &range));
@@ -1109,15 +1100,11 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
             rfic->get_filter(dev, BLADERF_CHANNEL_TX(0), NULL, &txfir));
     }
 
-    if (rfic->command_mode == RFIC_COMMAND_HOST) {
-        CHECK_STATUS(rfic_host_start_tx_recal_update(dev, &tx_recal));
-        tx_recal_started = true;
-    }
-
     /* If the requested sample rate is below the native range, we must implement
      * a 4x decimation/interpolation filter on the RFIC. */
     if (new_low) {
         bool fir_set_failed = false;
+        int status;
 
         if (rxfir != BLADERF_RFIC_RXFIR_DEC4 ||
             txfir != BLADERF_RFIC_TXFIR_INT4) {
@@ -1126,10 +1113,7 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
 
             /* Intermidiate sample rate assignment to circumvent rfic->set_filter error */
             if ((current > 40e6 && rate < 2083334) || (rate > 40e6 && current < 2083334)) {
-                status = rfic->set_sample_rate(dev, ch, 30e6);
-                if (status < 0) {
-                    goto out;
-                }
+                CHECK_STATUS(rfic->set_sample_rate(dev, ch, 30e6));
             }
 
             status = rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
@@ -1153,18 +1137,12 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         if (fir_set_failed) {
             log_debug("%s: attempting to reset filters to default...\n",
                       __FUNCTION__);
-            status = rfic->set_filter(dev, BLADERF_CHANNEL_RX(0), BLADERF_RFIC_RXFIR_DEFAULT, 0);
-            if (status < 0) {
-                goto out;
-            }
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
+                                          BLADERF_RFIC_RXFIR_DEFAULT, 0));
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0,
+                                          BLADERF_RFIC_TXFIR_DEFAULT));
 
-            status = rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0, BLADERF_RFIC_TXFIR_DEFAULT);
-            if (status < 0) {
-                goto out;
-            }
-
-            status = BLADERF_ERR_UNEXPECTED;
-            goto out;
+            return BLADERF_ERR_UNEXPECTED;
         }
     }
 
@@ -1175,10 +1153,7 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     }
 
     /* Set the sample rate */
-    status = rfic->set_sample_rate(dev, ch, rate);
-    if (status < 0) {
-        goto out;
-    }
+    CHECK_STATUS(rfic->set_sample_rate(dev, ch, rate));
 
     /* If the previous sample rate was below the native range, but the new one
      * isn't, switch back to the default filters. */
@@ -1188,36 +1163,16 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
             log_debug("%s: disabling 4x decimation/interpolation filters\n",
                       __FUNCTION__);
 
-            status = rfic->set_filter(dev, BLADERF_CHANNEL_RX(0), BLADERF_RFIC_RXFIR_DEFAULT, 0);
-            if (status < 0) {
-                goto out;
-            }
-
-            status = rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0, BLADERF_RFIC_TXFIR_DEFAULT);
-            if (status < 0) {
-                goto out;
-            }
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
+                                          BLADERF_RFIC_RXFIR_DEFAULT, 0));
+            CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0,
+                                          BLADERF_RFIC_TXFIR_DEFAULT));
         }
     }
 
     /* If requested, fetch the new sample rate and return it. */
     if (actual != NULL) {
-        status = dev->board->get_sample_rate(dev, ch, actual);
-        if (status < 0) {
-            goto out;
-        }
-    }
-
-    status = 0;
-
-out:
-    if (tx_recal_started) {
-        status = rfic_host_finish_tx_recal_update(
-            dev, &tx_recal, status, "sample-rate");
-    }
-
-    if (status < 0) {
-        return status;
+        CHECK_STATUS(dev->board->get_sample_rate(dev, ch, actual));
     }
 
     /* Warn the user if this isn't achievable */
@@ -1260,33 +1215,13 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    struct bladerf2_board_data *board_data = dev->board_data;
-    struct rfic_host_tx_recal_state tx_recal = {
-        .tx_spdt_bits = 0,
-        .tx_frequency = 0,
-        .tx_port = 0,
-        .restore_tx_frequency = false,
-        .restore_tx_port = false,
-    };
-    bool tx_recal_started = false;
-    int status;
-
     if (dev->feature == BLADERF_FEATURE_OVERSAMPLE) {
         log_warning("bandwidth assignements with oversample feature enabled yields unkown results\n");
     }
 
-    if (board_data->rfic->command_mode == RFIC_COMMAND_HOST) {
-        CHECK_STATUS(rfic_host_start_tx_recal_update(dev, &tx_recal));
-        tx_recal_started = true;
-    }
+    struct bladerf2_board_data *board_data = dev->board_data;
 
-    status = board_data->rfic->set_bandwidth(dev, ch, bandwidth, actual);
-
-    if (tx_recal_started) {
-        status = rfic_host_finish_tx_recal_update(dev, &tx_recal, status, "bandwidth");
-    }
-
-    return status;
+    return board_data->rfic->set_bandwidth(dev, ch, bandwidth, actual);
 }
 
 

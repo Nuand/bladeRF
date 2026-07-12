@@ -1051,11 +1051,6 @@ struct bladerf_rational_rate {
  * @note This requires the sample rate is an integer value of Hz.  Use
  *       bladerf_set_rational_sample_rate() for more arbitrary values.
  *
- * @warning On AD9361-based devices, changing the sample rate may rerun
- *          internal calibrations that can momentarily produce observable TX
- *          artifacts. Disable or isolate sensitive external TX front-end
- *          hardware before changing this setting while TX is connected.
- *
  * @see Use bladerf_get_sample_rate_range() to determine the range of supported
  *      sample rates.
  *
@@ -1161,11 +1156,6 @@ typedef unsigned int bladerf_bandwidth;
  * The underlying device is capable of a discrete set of bandwidth values. The
  * caller should check the `actual` parameter to determine which of these
  * discrete bandwidth values is actually used for the requested bandwidth.
- *
- * @warning On AD9361-based devices, changing the bandwidth may rerun internal
- *          calibrations that can momentarily produce observable TX artifacts.
- *          Disable or isolate sensitive external TX front-end hardware before
- *          changing this setting while TX is connected.
  *
  * @see Use bladerf_get_bandwidth_range() to determine the range of supported
  *      bandwidths.

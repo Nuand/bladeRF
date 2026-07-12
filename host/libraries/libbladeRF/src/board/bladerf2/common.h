@@ -196,31 +196,6 @@ struct bladerf_rfic_status_register {
     size_t write_queue_length;
 };
 
-struct rfic_host_tx_recal_state {
-    uint32_t tx_spdt_bits;
-    bladerf_frequency tx_frequency;
-    uint32_t tx_port;
-    bool restore_tx_frequency;
-    bool restore_tx_port;
-};
-
-/**
- * Disconnect the hosted TX path before an RFIC update that can retrigger
- * TX recalibration state.
- */
-int rfic_host_start_tx_recal_update(struct bladerf *dev,
-                                    struct rfic_host_tx_recal_state *tx_recal);
-
-/**
- * Restore the hosted TX path after an RFIC update that can retrigger
- * TX recalibration state.
- */
-int rfic_host_finish_tx_recal_update(
-    struct bladerf *dev,
-    struct rfic_host_tx_recal_state const *tx_recal,
-    int status,
-    char const *update);
-
 
 /******************************************************************************/
 /* Externs */
