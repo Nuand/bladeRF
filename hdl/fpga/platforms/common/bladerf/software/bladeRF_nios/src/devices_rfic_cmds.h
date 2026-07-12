@@ -74,6 +74,4 @@ bool _rfic_cmd_rd_txmute(struct rfic_state *, bladerf_channel, uint32_t *);
 
 bool _rfic_cmd_wr_fastlock(struct rfic_state *, bladerf_channel, uint32_t);
 
-bool _rfic_cmd_wr_tx_recal(struct rfic_state *, bladerf_channel, uint32_t);
-
 #endif  // BLADERF_NIOS_DEVICES_RFIC_CMDS_H_

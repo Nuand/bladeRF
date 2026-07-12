@@ -144,11 +144,6 @@ struct rfic_command_fns const funcs[] = {
         FIELD_INIT(.bitmask,
             RFIC_CMD_INIT_REQD | RFIC_CMD_CHAN_TX | RFIC_CMD_CHAN_RX),
     },
-    {
-        FIELD_INIT(.command, BLADERF_RFIC_COMMAND_TX_RECAL),
-        FIELD_INIT(.write32, _rfic_cmd_wr_tx_recal),
-        FIELD_INIT(.bitmask, RFIC_CMD_INIT_REQD | RFIC_CMD_CHAN_SYSTEM),
-    },
     // clang-format on
 };
 

@@ -90,9 +90,8 @@ static int _rfic_fpga_get_status(
     status = _rfic_cmd_read(dev, BLADERF_CHANNEL_INVALID,
                             BLADERF_RFIC_COMMAND_STATUS, &sreg);
 
-    rfic_status->rfic_initialized    = ((sreg >> 0) & 0x1);
-    rfic_status->write_queue_success = ((sreg >> 1) & 0x1);
-    rfic_status->write_queue_length  = ((sreg >> 8) & 0xFF);
+    rfic_status->rfic_initialized   = ((sreg >> 0) & 0x1);
+    rfic_status->write_queue_length = ((sreg >> 8) & 0xFF);
 
     return status;
 }
@@ -119,7 +118,6 @@ static int _rfic_fpga_get_status_wqlen(struct bladerf *dev)
 
 static int _rfic_fpga_spinwait(struct bladerf *dev)
 {
-    struct bladerf_rfic_status_register rfic_status;
     size_t const TRIES       = 30;
     unsigned int const DELAY = 100;
     size_t count             = 0;
@@ -136,60 +134,10 @@ static int _rfic_fpga_spinwait(struct bladerf *dev)
     /* If it's simply taking too long to dequeue the command, status will
      * have the number of items in the queue. Bonk this down to a timeout. */
     if (jobs > 0) {
-        return BLADERF_ERR_TIMEOUT;
-    } else if (jobs < 0) {
-        return jobs;
+        jobs = BLADERF_ERR_TIMEOUT;
     }
 
-    CHECK_STATUS(_rfic_fpga_get_status(dev, &rfic_status));
-
-    return rfic_status.write_queue_success ? 0 : BLADERF_ERR_FPGA_OP;
-}
-
-static int _rfic_fpga_require_tx_recal(struct bladerf *dev)
-{
-    struct bladerf2_board_data *board_data = dev->board_data;
-
-    if (version_fields_less_than(&board_data->fpga_version, 0, 16, 1)) {
-        log_error("FPGA v%u.%u.%u does not support guarded TX recalibration; "
-                  "update to FPGA v0.16.1 or use host-based tuning.\n",
-                  board_data->fpga_version.major,
-                  board_data->fpga_version.minor,
-                  board_data->fpga_version.patch);
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    return 0;
-}
-
-int rfic_fpga_start_tx_recal_update(struct bladerf *dev)
-{
-    CHECK_STATUS(_rfic_fpga_require_tx_recal(dev));
-
-    return _rfic_cmd_write(dev, BLADERF_CHANNEL_INVALID,
-                           BLADERF_RFIC_COMMAND_TX_RECAL,
-                           BLADERF_RFIC_TX_RECAL_START);
-}
-
-int rfic_fpga_finish_tx_recal_update(struct bladerf *dev,
-                                     int status,
-                                     char const *update)
-{
-    int restore_status;
-
-    restore_status = _rfic_cmd_write(dev, BLADERF_CHANNEL_INVALID,
-                                     BLADERF_RFIC_COMMAND_TX_RECAL,
-                                     BLADERF_RFIC_TX_RECAL_FINISH);
-    if (restore_status < 0) {
-        if (0 == status) {
-            status = restore_status;
-        } else {
-            log_error("%s: failed to restore TX after %s update: %s\n",
-                      __FUNCTION__, update, bladerf_strerror(restore_status));
-        }
-    }
-
-    return status;
+    return jobs;
 }
 
 

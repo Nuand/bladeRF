@@ -273,9 +273,6 @@ typedef enum {
      */
     BLADERF_RFIC_COMMAND_FASTLOCK = 0x0B,
 
-    /** Guard TX during RFIC updates that can retrigger TX calibration. (Write) */
-    BLADERF_RFIC_COMMAND_TX_RECAL = 0x0C,
-
     /** User-defined functionality (placeholder 1) */
     BLADERF_RFIC_COMMAND_USER_001 = 0x80,
 
@@ -284,11 +281,6 @@ typedef enum {
 
     /* Do not add additional commands beyond 0xFF */
 } bladerf_rfic_command;
-
-typedef enum {
-    BLADERF_RFIC_TX_RECAL_START,
-    BLADERF_RFIC_TX_RECAL_FINISH,
-} bladerf_rfic_tx_recal;
 
 /** NIOS_PKT_16x64_RFIC_STATUS return structure
  *

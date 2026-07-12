@@ -48,17 +48,6 @@ typedef uint8_t command_bitmask;
 #define RFIC_CMD_CHAN_RX 8     /**< Command valid for RX channels */
 
 /**
- * Saved TX state while RFIC updates that can retrigger TX calibration run.
- */
-struct rfic_tx_recal_state {
-    uint32_t tx_spdt_bits;
-    bladerf_frequency tx_frequency;
-    uint32_t tx_port;
-    bool restore_tx_frequency;
-    bool restore_tx_port;
-};
-
-/**
  * RFIC command handler state structure
  */
 struct rfic_state {
@@ -80,9 +69,6 @@ struct rfic_state {
 
     /* TX mute state at standby */
     bool tx_mute_state[2];
-
-    /* TX recalibration guard state */
-    struct rfic_tx_recal_state tx_recal;
 };
 
 
@@ -254,9 +240,6 @@ static inline char const *_rfic_cmdstr(uint8_t cmd)
 
         case BLADERF_RFIC_COMMAND_FASTLOCK:
             return "FASTLOCK";
-
-        case BLADERF_RFIC_COMMAND_TX_RECAL:
-            return "TXRECAL ";
 
         default:
             return "        ";

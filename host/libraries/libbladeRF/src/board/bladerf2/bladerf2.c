@@ -1112,9 +1112,6 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     if (rfic->command_mode == RFIC_COMMAND_HOST) {
         CHECK_STATUS(rfic_host_start_tx_recal_update(dev, &tx_recal));
         tx_recal_started = true;
-    } else if (rfic->command_mode == RFIC_COMMAND_FPGA) {
-        CHECK_STATUS(rfic_fpga_start_tx_recal_update(dev));
-        tx_recal_started = true;
     }
 
     /* If the requested sample rate is below the native range, we must implement
@@ -1215,13 +1212,8 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
 
 out:
     if (tx_recal_started) {
-        if (rfic->command_mode == RFIC_COMMAND_HOST) {
-            status = rfic_host_finish_tx_recal_update(
-                dev, &tx_recal, status, "sample-rate");
-        } else {
-            status = rfic_fpga_finish_tx_recal_update(
-                dev, status, "sample-rate");
-        }
+        status = rfic_host_finish_tx_recal_update(
+            dev, &tx_recal, status, "sample-rate");
     }
 
     if (status < 0) {
@@ -1286,20 +1278,12 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
     if (board_data->rfic->command_mode == RFIC_COMMAND_HOST) {
         CHECK_STATUS(rfic_host_start_tx_recal_update(dev, &tx_recal));
         tx_recal_started = true;
-    } else if (board_data->rfic->command_mode == RFIC_COMMAND_FPGA) {
-        CHECK_STATUS(rfic_fpga_start_tx_recal_update(dev));
-        tx_recal_started = true;
     }
 
     status = board_data->rfic->set_bandwidth(dev, ch, bandwidth, actual);
 
     if (tx_recal_started) {
-        if (board_data->rfic->command_mode == RFIC_COMMAND_HOST) {
-            status = rfic_host_finish_tx_recal_update(
-                dev, &tx_recal, status, "bandwidth");
-        } else {
-            status = rfic_fpga_finish_tx_recal_update(dev, status, "bandwidth");
-        }
+        status = rfic_host_finish_tx_recal_update(dev, &tx_recal, status, "bandwidth");
     }
 
     return status;
