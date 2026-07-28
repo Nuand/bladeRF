@@ -31,6 +31,7 @@ sys.path.insert(0, str(PYTHON_BINDINGS))
 
 import bladerf  # noqa: E402
 from bladerf import _bladerf  # noqa: E402
+from bladerf import _tool  # noqa: E402
 
 
 def _device():
@@ -41,6 +42,21 @@ def _device():
 
 
 class PackagingTest(unittest.TestCase):
+    def test_build_metadata_has_one_version_source(self):
+        pyproject = (PYTHON_BINDINGS / "pyproject.toml").read_text()
+        setup = (PYTHON_BINDINGS / "setup.py").read_text()
+
+        self.assertEqual(bladerf.__version__, "1.5.0")
+        self.assertEqual(_tool.__version__, bladerf.__version__)
+        self.assertIn("[build-system]", pyproject)
+        self.assertIn('dynamic = ["version"]', pyproject)
+        self.assertIn(
+            'version = {attr = "bladerf.__version__"}',
+            pyproject,
+        )
+        self.assertIn('include = ["bladerf*"]', pyproject)
+        self.assertNotIn("version=", setup)
+
     def test_setup_check_has_no_warnings(self):
         result = subprocess.run(
             [sys.executable, "setup.py", "check", "--strict"],

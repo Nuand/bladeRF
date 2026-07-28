@@ -21,10 +21,7 @@
 import io
 import argparse
 
-from bladerf import _bladerf
-
-
-__version__ = "1.1.0"
+from bladerf import __version__, _bladerf
 
 
 def _bool_to_onoff(val):

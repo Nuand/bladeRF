@@ -32,6 +32,8 @@ Basic usage:
 >>> b = bladerf.BladeRF()
 """
 
+__version__ = "1.5.0"
+
 from bladerf import _bladerf
 from bladerf import _tool
 
@@ -71,10 +73,11 @@ CHANNEL_TX = _bladerf.CHANNEL_TX
 main = _tool.main
 
 __all__ = [
-    'BladeRF', 'BladeRFError', 'ChannelLayout', 'ClockSelect', 'Direction',
-    'Feature', 'Format', 'GainMode', 'Loopback', 'Metadata', 'MetadataFlags',
-    'MetadataStatus', 'RationalRate', 'Trigger', 'TriggerRole', 'TriggerSignal',
-    'TuningMode', 'VCTCXOTamerMode', 'allocate_buffer', 'get_bootloader_list',
-    'get_device_list', 'load_fw_from_bootloader', 'sample_buffer_size',
-    'set_verbosity', 'version', 'RX', 'TX', 'CHANNEL_RX', 'CHANNEL_TX', 'main',
+    '__version__', 'BladeRF', 'BladeRFError', 'ChannelLayout', 'ClockSelect',
+    'Direction', 'Feature', 'Format', 'GainMode', 'Loopback', 'Metadata',
+    'MetadataFlags', 'MetadataStatus', 'RationalRate', 'Trigger', 'TriggerRole',
+    'TriggerSignal', 'TuningMode', 'VCTCXOTamerMode', 'allocate_buffer',
+    'get_bootloader_list', 'get_device_list', 'load_fw_from_bootloader',
+    'sample_buffer_size', 'set_verbosity', 'version', 'RX', 'TX', 'CHANNEL_RX',
+    'CHANNEL_TX', 'main',
 ]
