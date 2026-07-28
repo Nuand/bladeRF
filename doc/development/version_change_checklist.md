@@ -107,11 +107,35 @@ MATLAB Bindings
 Python Bindings
 ================================================================================
 
+* [ ] Run the Python regression suite:
+    * ```cd host/libraries/libbladeRF_bindings/python```
+    * ```python3 -m unittest discover -s tests -v```
+
+* [ ] Build and validate the Python distributions:
+    * ```python3 -m build```
+    * ```python3 -m twine check dist/*```
+
 * [ ] Regenerate ```_cdef.py``` if required:
     * ```cd host/libraries/libbladeRF_bindings/python```
-    * ```python3 scripts/import_header.py ../../libbladeRF/include/libbladeRF.h > bladerf/_cdef.py```
+    * ```
+      python3 scripts/import_header.py \
+          ../../libbladeRF/include/libbladeRF.h > bladerf/_cdef.py
+      ```
 
-* [ ] Update the version number in the ```setup.py``` file
+* [ ] Run the Python regression suite again to verify the generated CFFI
+      declarations match the current libbladeRF header.
+
+* [ ] Run the Python hardware regression suite when two devices are available:
+    * ```export BLADERF_TEST_MASTER_SERIAL=<clock-source-serial>```
+    * ```export BLADERF_TEST_SLAVE_SERIAL=<external-clock-serial>```
+    * ```python3 tests/test_hardware.py```
+    * When `mini_exp[1]`, ground, and the shared SMB clock are connected:
+      ```export BLADERF_TEST_TRIGGER_CROSSOVER=1```
+    * Run ```python3 tests/test_hardware.py``` again to include the external
+      trigger regression.
+
+* [ ] Update ```bladerf.__version__```. Package metadata and
+      ```bladerf-tool``` obtain the version from that one source.
 
 * [ ] Update the ```CHANGELOG``` file
 

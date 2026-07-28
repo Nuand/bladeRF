@@ -5,6 +5,22 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.5.0 (2026-07-28)
+--------------------------------
+ * keep CFFI declarations synchronized with the current libbladeRF header
+ * expose packed SC16, feature control, trigger control, and gain calibration
+ * expose rational rates, stream helpers, metadata, timestamps, and device modes
+ * validate synchronous buffers using the public sample representation and
+   total interleaved sample count
+ * add Python API, header parity, packed RX, and deterministic RX X2 hardware
+   regressions (#1068)
+ * remove deprecated setup metadata and fail packaging checks on warnings
+ * document Windows DLL dependency lookup failures (#989)
+ * add public lifecycle and synchronous sample buffer helpers
+ * provide actionable native library loading failures and override support
+ * use one version source with PEP 517 build metadata
+ * document the bladerf-tool RX and TX sample file format
+
 v1.4.0 (2025-05-06)
 --------------------------------
  * add support for SC16_Q11_META format
