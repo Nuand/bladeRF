@@ -68,6 +68,21 @@ class PackagingTest(unittest.TestCase):
         self.assertNotIn("Warning", result.stderr)
 
 
+class ToolTest(unittest.TestCase):
+    def test_stream_help_describes_sample_format(self):
+        for command in ("rx", "tx"):
+            with self.subTest(command=command):
+                result = subprocess.run(
+                    [sys.executable, "-m", "bladerf._tool", command, "--help"],
+                    cwd=PYTHON_BINDINGS,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("SC16 Q11", result.stdout)
+                self.assertNotIn("FIXME", result.stdout)
+
+
 class LibraryLoadingTest(unittest.TestCase):
     def test_library_override_failure_explains_recovery(self):
         missing_library = "/missing/libbladeRF-for-test.so"

@@ -324,6 +324,7 @@ def cmd_version(**kwargs):
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='subcommands')
+    stream_format = "little-endian signed 16-bit SC16 Q11 I/Q pairs"
 
     parser.add_argument('--device', '-d', help='device identifier')
 
@@ -356,8 +357,8 @@ def main():
     parser_erase_fpga.set_defaults(func=cmd_erase_fpga)
 
     parser_rx = subparsers.add_parser('rx', help='receive samples',
-                                      description='Receive IQ samples. '
-                                                  'Sample format is FIXME.')
+                                      description='Receive {}.'.format(
+                                          stream_format))
     parser_rx.add_argument('outfile', metavar='filename',
                            help="IQ samples filename ('-' for stdout)",
                            type=argparse.FileType('wb'))
@@ -371,8 +372,8 @@ def main():
     parser_rx.set_defaults(func=cmd_rx)
 
     parser_tx = subparsers.add_parser('tx', help='transmit samples',
-                                      description='Transmit IQ samples. '
-                                                  'Sample format is FIXME.')
+                                      description='Transmit {}.'.format(
+                                          stream_format))
     parser_tx.add_argument('infile', metavar='filename',
                            help="IQ samples filename ('-' for stdin)",
                            type=argparse.FileType('rb'))
