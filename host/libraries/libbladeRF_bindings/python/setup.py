@@ -7,8 +7,6 @@ https://github.com/pypa/sampleproject
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
-# To use a consistent encoding
-from codecs import open
 from os import path
 
 here = path.abspath(path.dirname(__file__))
@@ -35,7 +33,6 @@ setup(
         'Topic :: Communications :: Ham Radio',
         'Topic :: Scientific/Engineering',
         'Topic :: Software Development :: Libraries :: Python Modules',
-        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
     ],
     keywords='bladerf sdr cffi radio libbladerf',

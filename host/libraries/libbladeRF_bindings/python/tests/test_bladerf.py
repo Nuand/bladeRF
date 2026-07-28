@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -34,6 +35,18 @@ def _device():
     device = _bladerf.BladeRF.__new__(_bladerf.BladeRF)
     device.dev = _bladerf.ffi.new("struct bladerf *[1]")
     return device
+
+
+class PackagingTest(unittest.TestCase):
+    def test_setup_check_has_no_warnings(self):
+        result = subprocess.run(
+            [sys.executable, "setup.py", "check", "--strict"],
+            cwd=PYTHON_BINDINGS,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("Warning", result.stderr)
 
 
 class FormatTest(unittest.TestCase):
