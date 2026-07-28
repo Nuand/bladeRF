@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import os
 import subprocess
 import sys
 import unittest
@@ -49,6 +50,25 @@ class PackagingTest(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("Warning", result.stderr)
+
+
+class LibraryLoadingTest(unittest.TestCase):
+    def test_library_override_failure_explains_recovery(self):
+        missing_library = "/missing/libbladeRF-for-test.so"
+        environment = os.environ.copy()
+        environment["BLADERF_LIBRARY"] = missing_library
+        result = subprocess.run(
+            [sys.executable, "-c", "import bladerf"],
+            cwd=PYTHON_BINDINGS,
+            env=environment,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(missing_library, result.stderr)
+        self.assertIn("BLADERF_LIBRARY", result.stderr)
+        self.assertIn("Install libbladeRF", result.stderr)
 
 
 class PublicAPITest(unittest.TestCase):

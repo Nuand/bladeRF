@@ -33,12 +33,31 @@ ffi = cffi.FFI()
 
 ffi.cdef(header)
 
-if platform == "win32":
-      libbladeRF = ffi.dlopen("bladerf.dll")
-elif platform == "darwin":
-    libbladeRF = ffi.dlopen("libbladeRF.dylib")
-else:
-    libbladeRF = ffi.dlopen("libbladeRF.so")
+
+def _library_name():
+    override = os.environ.get("BLADERF_LIBRARY")
+    if override:
+        return override
+    if platform == "win32":
+        return "bladerf.dll"
+    if platform == "darwin":
+        return "libbladeRF.dylib"
+    return "libbladeRF.so"
+
+
+def _load_library():
+    library = _library_name()
+    try:
+        return ffi.dlopen(library)
+    except OSError as error:
+        raise ImportError(
+            "Unable to load libbladeRF from {!r}. Install libbladeRF and "
+            "ensure it and its dependencies are on the native library search "
+            "path, or set BLADERF_LIBRARY to its full path.".format(library)
+        ) from error
+
+
+libbladeRF = _load_library()
 
 
 ###############################################################################

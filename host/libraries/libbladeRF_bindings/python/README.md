@@ -8,6 +8,10 @@ interface.
 - To install system-wide: `sudo python3 setup.py install`
 - To install for your user: `python3 setup.py install`
 
+Set `BLADERF_LIBRARY` to the full path of the libbladeRF shared library when it
+is installed outside the native loader's search path. Import failures report
+the attempted library name or path and retain the native loader error.
+
 # Usage: Python module #
 
 A Python module is provided. To use, `import bladerf` and then instantiate the
