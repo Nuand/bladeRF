@@ -247,6 +247,76 @@ class StreamHelperTest(unittest.TestCase):
         )
 
 
+class MetadataTest(unittest.TestCase):
+    def test_metadata_and_timestamp_round_trip(self):
+        calls = []
+
+        class Lib:
+            @staticmethod
+            def bladerf_get_timestamp(dev, direction, timestamp):
+                calls.append(("timestamp", direction))
+                timestamp[0] = 123456
+                return 0
+
+            @staticmethod
+            def bladerf_sync_tx(dev, samples, count, metadata, timeout):
+                calls.append(("tx", count, metadata.timestamp, metadata.flags))
+                return 0
+
+            @staticmethod
+            def bladerf_sync_rx(dev, samples, count, metadata, timeout):
+                metadata.timestamp = 654321
+                metadata.status = 1 << 16
+                metadata.actual_count = count
+                return 0
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            device = _device()
+            timestamp = device.get_timestamp(_bladerf.Direction.RX)
+            tx_metadata = _bladerf.Metadata(
+                123456,
+                _bladerf.MetadataFlags.TX_BURST_START
+                | _bladerf.MetadataFlags.TX_NOW,
+                _bladerf.MetadataStatus.NONE,
+                0,
+            )
+            device.sync_tx(bytearray(16), 4, 1000, tx_metadata)
+            rx_metadata = device.sync_rx(
+                bytearray(16),
+                4,
+                1000,
+                _bladerf.Metadata(
+                    0,
+                    _bladerf.MetadataFlags.RX_NOW,
+                    _bladerf.MetadataStatus.NONE,
+                    0,
+                ),
+            )
+
+        self.assertEqual(timestamp, 123456)
+        self.assertEqual(rx_metadata.timestamp, 654321)
+        self.assertEqual(rx_metadata.actual_count, 4)
+        self.assertEqual(
+            rx_metadata.status,
+            _bladerf.MetadataStatus.RX_HW_MINIEXP1,
+        )
+        self.assertEqual(
+            calls,
+            [
+                ("timestamp", _bladerf.Direction.RX.value),
+                (
+                    "tx",
+                    4,
+                    123456,
+                    int(
+                        _bladerf.MetadataFlags.TX_BURST_START
+                        | _bladerf.MetadataFlags.TX_NOW
+                    ),
+                ),
+            ],
+        )
+
+
 class DeviceModeTest(unittest.TestCase):
     def test_vctcxo_tamer_and_tuning_modes(self):
         calls = []

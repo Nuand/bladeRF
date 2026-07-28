@@ -252,6 +252,46 @@ class Format(enum.Enum):
     SC8_Q7_META = libbladeRF.BLADERF_FORMAT_SC8_Q7_META
 
 
+class MetadataFlags(enum.IntFlag):
+    NONE = 0
+    TX_BURST_START = 1 << 0
+    TX_BURST_END = 1 << 1
+    TX_NOW = 1 << 2
+    TX_UPDATE_TIMESTAMP = 1 << 3
+    RX_NOW = 1 << 31
+
+
+class MetadataStatus(enum.IntFlag):
+    NONE = 0
+    OVERRUN = 1 << 0
+    UNDERRUN = 1 << 1
+    RX_HW_UNDERFLOW = 1 << 0
+    RX_HW_MINIEXP1 = 1 << 16
+    RX_HW_MINIEXP2 = 1 << 17
+
+
+class Metadata(collections.namedtuple(
+        "Metadata", ["timestamp", "flags", "status", "actual_count"])):
+    @staticmethod
+    def from_struct(metadata):
+        return Metadata(
+            metadata.timestamp,
+            MetadataFlags(metadata.flags),
+            MetadataStatus(metadata.status),
+            metadata.actual_count,
+        )
+
+    def to_struct(self):
+        metadata = ffi.new("struct bladerf_metadata *")
+        metadata.timestamp = self.timestamp
+        metadata.flags = int(self.flags)
+        metadata.status = int(self.status)
+        metadata.actual_count = self.actual_count
+        return metadata
+
+    struct = property(to_struct)
+
+
 class Feature(enum.Enum):
     DEFAULT = libbladeRF.BLADERF_FEATURE_DEFAULT
     OVERSAMPLE = libbladeRF.BLADERF_FEATURE_OVERSAMPLE
@@ -739,6 +779,15 @@ class BladeRF:
         ret = libbladeRF.bladerf_enable_module(self.dev[0], ch, bool(enable))
         _check_error(ret)
 
+    def get_timestamp(self, direction):
+        if isinstance(direction, Direction):
+            direction = direction.value
+        timestamp = ffi.new("bladerf_timestamp *")
+        ret = libbladeRF.bladerf_get_timestamp(
+            self.dev[0], direction, timestamp)
+        _check_error(ret)
+        return timestamp[0]
+
     # Gain
 
     def set_gain(self, ch, gain):
@@ -1105,20 +1154,27 @@ class BladeRF:
         _check_error(ret)
 
     def sync_tx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
+        meta_struct = meta.struct if isinstance(meta, Metadata) else ffi.cast(
+            "struct bladerf_metadata *", meta)
         ret = libbladeRF.bladerf_sync_tx(self.dev[0],
                                          ffi.from_buffer(buf),
                                          num_samples,
-                                         ffi.cast("struct bladerf_metadata *", meta),
+                                         meta_struct,
                                          timeout_ms or 0)
         _check_error(ret)
 
     def sync_rx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
+        is_metadata = isinstance(meta, Metadata)
+        meta_struct = meta.struct if is_metadata else ffi.cast(
+            "struct bladerf_metadata *", meta)
         ret = libbladeRF.bladerf_sync_rx(self.dev[0],
                                          ffi.from_buffer(buf),
                                          num_samples,
-                                         meta,
+                                         meta_struct,
                                          timeout_ms or 0)
         _check_error(ret)
+        if is_metadata:
+            return Metadata.from_struct(meta_struct[0])
 
     def set_stream_timeout(self, direction, timeout_ms):
         if isinstance(direction, Direction):
