@@ -103,6 +103,8 @@ def parse_header(filename):
 
 def ast_to_c(ast):
     gen = MyCGenerator()
+    ast.ext = [declaration for declaration in ast.ext
+               if 'bladerf' in gen.visit(declaration)]
     return gen.visit(ast)
 
 

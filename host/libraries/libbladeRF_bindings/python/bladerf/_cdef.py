@@ -289,6 +289,8 @@ header = """
     bladerf_channel ch);
   int bladerf_get_quick_tune(struct bladerf *dev, bladerf_channel ch,
     struct bladerf_quick_tune *quick_tune);
+  int bladerf_print_quick_tune(struct bladerf *dev, const struct
+    bladerf_quick_tune *qt);
   typedef int16_t bladerf_correction_value;
   typedef enum
   {
@@ -310,6 +312,7 @@ header = """
     BLADERF_FORMAT_SC8_Q7,
     BLADERF_FORMAT_SC8_Q7_META
   } bladerf_format;
+  const char *bladerf_format_to_string(bladerf_format format);
   struct bladerf_metadata
   {
     bladerf_timestamp timestamp;
@@ -378,7 +381,8 @@ header = """
     BLADERF_IMAGE_TYPE_TX_DC_CAL,
     BLADERF_IMAGE_TYPE_RX_IQ_CAL,
     BLADERF_IMAGE_TYPE_TX_IQ_CAL,
-    BLADERF_IMAGE_TYPE_FPGA_A5
+    BLADERF_IMAGE_TYPE_FPGA_A5,
+    BLADERF_IMAGE_TYPE_GAIN_CAL
   } bladerf_image_type;
   struct bladerf_image
   {
@@ -398,6 +402,8 @@ header = """
   struct bladerf_image *bladerf_alloc_cal_image(struct bladerf *dev,
     bladerf_fpga_size fpga_size, uint16_t vctcxo_trim);
   void bladerf_free_image(struct bladerf_image *image);
+  int bladerf_image_print_metadata(const struct bladerf_image *image);
+  const char *bladerf_image_type_to_string(bladerf_image_type type);
   int bladerf_image_write(struct bladerf *dev, struct bladerf_image
     *image, const char *file);
   int bladerf_image_read(struct bladerf_image *image, const char *file);
@@ -465,6 +471,40 @@ header = """
     feature, bool enable);
   int bladerf_get_feature(struct bladerf *dev, bladerf_feature
     *feature);
+  struct bladerf_gain_cal_entry
+  {
+    bladerf_frequency freq;
+    double gain_corr;
+  };
+  struct bladerf_gain_cal_tbl
+  {
+    struct bladerf_version version;
+    bladerf_channel ch;
+    bool enabled;
+    uint32_t n_entries;
+    bladerf_frequency start_freq;
+    bladerf_frequency stop_freq;
+    struct bladerf_gain_cal_entry *entries;
+    bladerf_gain gain_target;
+    size_t file_path_len;
+    char *file_path;
+    enum gain_cal_state
+    {
+      BLADERF_GAIN_CAL_UNINITIALIZED,
+      BLADERF_GAIN_CAL_LOADED,
+      BLADERF_GAIN_CAL_UNLOADED
+    } state;
+  };
+  int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel
+    ch, const char *cal_file_loc);
+  int bladerf_print_gain_calibration(struct bladerf *dev,
+    bladerf_channel ch, bool with_entries);
+  int bladerf_enable_gain_calibration(struct bladerf *dev,
+    bladerf_channel ch, bool en);
+  int bladerf_get_gain_calibration(struct bladerf *dev, bladerf_channel
+    ch, const struct bladerf_gain_cal_tbl **tbl);
+  int bladerf_get_gain_target(struct bladerf *dev, bladerf_channel ch,
+    int *gain_target);
   typedef enum
   {
     BLADERF_XB_NONE = 0,
