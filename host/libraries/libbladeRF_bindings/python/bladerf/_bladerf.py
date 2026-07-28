@@ -829,7 +829,13 @@ class BladeRF:
         return actual_rate[0]
 
     def set_rational_sample_rate(self, ch, rational_rate):
-        raise NotImplementedError()
+        if not isinstance(rational_rate, RationalRate):
+            rational_rate = RationalRate(*rational_rate)
+        actual_rate = ffi.new("struct bladerf_rational_rate *")
+        ret = libbladeRF.bladerf_set_rational_sample_rate(
+            self.dev[0], ch, rational_rate.struct, actual_rate)
+        _check_error(ret)
+        return RationalRate.from_struct(actual_rate[0])
 
     def get_sample_rate(self, ch):
         rate = ffi.new("bladerf_sample_rate *")
@@ -838,7 +844,11 @@ class BladeRF:
         return rate[0]
 
     def get_rational_sample_rate(self, ch):
-        raise NotImplementedError()
+        rate = ffi.new("struct bladerf_rational_rate *")
+        ret = libbladeRF.bladerf_get_rational_sample_rate(
+            self.dev[0], ch, rate)
+        _check_error(ret)
+        return RationalRate.from_struct(rate[0])
 
     def get_sample_rate_range(self, ch):
         _range_ptr = ffi.new("struct bladerf_range **")
@@ -1049,10 +1059,24 @@ class BladeRF:
     # Streaming format
 
     def interleave_stream_buffer(self, layout, format, buffer_size, samples):
-        raise NotImplementedError()
+        if isinstance(layout, ChannelLayout):
+            layout = layout.value
+        if isinstance(format, Format):
+            format = format.value
+        ret = libbladeRF.bladerf_interleave_stream_buffer(
+            layout, format, buffer_size,
+            ffi.from_buffer(samples, require_writable=True))
+        _check_error(ret)
 
     def deinterleave_stream_buffer(self, layout, format, buffer_size, samples):
-        raise NotImplementedError()
+        if isinstance(layout, ChannelLayout):
+            layout = layout.value
+        if isinstance(format, Format):
+            format = format.value
+        ret = libbladeRF.bladerf_deinterleave_stream_buffer(
+            layout, format, buffer_size,
+            ffi.from_buffer(samples, require_writable=True))
+        _check_error(ret)
 
     # Streaming
 
@@ -1082,6 +1106,22 @@ class BladeRF:
                                          meta,
                                          timeout_ms or 0)
         _check_error(ret)
+
+    def set_stream_timeout(self, direction, timeout_ms):
+        if isinstance(direction, Direction):
+            direction = direction.value
+        ret = libbladeRF.bladerf_set_stream_timeout(
+            self.dev[0], direction, timeout_ms)
+        _check_error(ret)
+
+    def get_stream_timeout(self, direction):
+        if isinstance(direction, Direction):
+            direction = direction.value
+        timeout_ms = ffi.new("unsigned int *")
+        ret = libbladeRF.bladerf_get_stream_timeout(
+            self.dev[0], direction, timeout_ms)
+        _check_error(ret)
+        return timeout_ms[0]
 
     # FPGA/Firmware Loading/Flashing
 
