@@ -658,6 +658,7 @@ class BladeRF:
     # Open, close, devinfo
 
     def open(self, device_identifier=None, devinfo=None):
+        self._sync_configs = {}
         if devinfo is not None:
             ret = libbladeRF.bladerf_open_with_devinfo(self.dev,
                                                        devinfo.struct)
@@ -1144,20 +1145,45 @@ class BladeRF:
 
     def sync_config(self, layout, fmt, num_buffers, buffer_size, num_transfers,
                     stream_timeout):
+        layout_value = (layout.value
+                        if isinstance(layout, ChannelLayout) else layout)
+        format_value = fmt.value if isinstance(fmt, Format) else fmt
         ret = libbladeRF.bladerf_sync_config(self.dev[0],
-                                             layout.value,
-                                             fmt.value,
+                                             layout_value,
+                                             format_value,
                                              num_buffers,
                                              buffer_size,
                                              num_transfers,
                                              stream_timeout)
         _check_error(ret)
+        if not hasattr(self, "_sync_configs"):
+            self._sync_configs = {}
+        self._sync_configs[layout_value & 1] = (layout_value, format_value)
+
+    def _sync_buffer(self, direction, buf, num_samples):
+        samples = ffi.from_buffer(buf, require_writable=direction == RX)
+        config = getattr(self, "_sync_configs", {}).get(direction)
+        if config is None:
+            return samples
+
+        _, format = config
+        bytes_per_sample = {
+            Format.SC8_Q7.value: 2,
+            Format.SC8_Q7_META.value: 2,
+        }.get(format, 4)
+        required = num_samples * bytes_per_sample
+        if ffi.sizeof(samples) < required:
+            raise ValueError(
+                "{}-byte buffer is too small; {} bytes required for {} "
+                "samples".format(ffi.sizeof(samples), required, num_samples)
+            )
+        return samples
 
     def sync_tx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
         meta_struct = meta.struct if isinstance(meta, Metadata) else ffi.cast(
             "struct bladerf_metadata *", meta)
         ret = libbladeRF.bladerf_sync_tx(self.dev[0],
-                                         ffi.from_buffer(buf),
+                                         self._sync_buffer(TX, buf, num_samples),
                                          num_samples,
                                          meta_struct,
                                          timeout_ms or 0)
@@ -1168,7 +1194,7 @@ class BladeRF:
         meta_struct = meta.struct if is_metadata else ffi.cast(
             "struct bladerf_metadata *", meta)
         ret = libbladeRF.bladerf_sync_rx(self.dev[0],
-                                         ffi.from_buffer(buf),
+                                         self._sync_buffer(RX, buf, num_samples),
                                          num_samples,
                                          meta_struct,
                                          timeout_ms or 0)

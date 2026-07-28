@@ -317,6 +317,53 @@ class MetadataTest(unittest.TestCase):
         )
 
 
+class SyncBufferTest(unittest.TestCase):
+    def test_rx_buffer_size_uses_total_sample_count(self):
+        calls = []
+
+        class Lib:
+            @staticmethod
+            def bladerf_sync_config(*args):
+                return 0
+
+            @staticmethod
+            def bladerf_sync_rx(dev, samples, count, metadata, timeout):
+                calls.append(count)
+                return 0
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            device = _device()
+            device.sync_config(
+                _bladerf.ChannelLayout.RX_X2,
+                _bladerf.Format.SC16_Q11,
+                16,
+                8192,
+                8,
+                3500,
+            )
+            device.sync_rx(bytearray(8192), 2048)
+            with self.assertRaisesRegex(ValueError, "8192 bytes required"):
+                device.sync_rx(bytearray(8191), 2048)
+            with self.assertRaises((TypeError, BufferError)):
+                device.sync_rx(bytes(8192), 2048)
+
+            device.sync_config(
+                _bladerf.ChannelLayout.RX_X1,
+                _bladerf.Format.SC16_Q11_PACKED,
+                16,
+                8192,
+                8,
+                3500,
+            )
+            device.sync_rx(bytearray(8192), 2048)
+            with self.assertRaisesRegex(ValueError, "8192 bytes required"):
+                device.sync_rx(bytearray(6144), 2048)
+            with self.assertRaisesRegex(ValueError, "8192 bytes required"):
+                device.sync_rx(bytearray(8191), 2048)
+
+        self.assertEqual(calls, [2048, 2048])
+
+
 class DeviceModeTest(unittest.TestCase):
     def test_vctcxo_tamer_and_tuning_modes(self):
         calls = []
