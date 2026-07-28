@@ -655,9 +655,18 @@ class BladeRF:
     def __repr__(self):
         return '<BladeRF({!r})>'.format(self.devinfo)
 
+    def __enter__(self):
+        self._handle
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
     # Open, close, devinfo
 
     def open(self, device_identifier=None, devinfo=None):
+        if self.is_open:
+            self.close()
         self._sync_configs = {}
         if devinfo is not None:
             ret = libbladeRF.bladerf_open_with_devinfo(self.dev,
@@ -669,11 +678,24 @@ class BladeRF:
         _check_error(ret)
 
     def close(self):
-        libbladeRF.bladerf_close(self.dev[0])
+        if self.is_open:
+            libbladeRF.bladerf_close(self.dev[0])
+            self.dev[0] = ffi.NULL
+            self._sync_configs = {}
+
+    @property
+    def is_open(self):
+        return self.dev[0] != ffi.NULL
+
+    @property
+    def _handle(self):
+        if not self.is_open:
+            raise NoDevError("Device is closed")
+        return self.dev[0]
 
     def get_devinfo(self):
         devinfo = ffi.new("struct bladerf_devinfo *")
-        ret = libbladeRF.bladerf_get_devinfo(self.dev[0], devinfo)
+        ret = libbladeRF.bladerf_get_devinfo(self._handle, devinfo)
         _check_error(ret)
         return DevInfo.from_struct(devinfo)
 
@@ -683,14 +705,14 @@ class BladeRF:
     # Device properties
 
     def get_device_speed(self):
-        return DeviceSpeed(libbladeRF.bladerf_device_speed(self.dev[0]))
+        return DeviceSpeed(libbladeRF.bladerf_device_speed(self._handle))
 
     device_speed = property(get_device_speed,
                             doc="USB speed of the open device")
 
     def get_serial_struct(self):
         serial = ffi.new("struct bladerf_serial *")
-        ret = libbladeRF.bladerf_get_serial_struct(self.dev[0], serial)
+        ret = libbladeRF.bladerf_get_serial_struct(self._handle, serial)
         _check_error(ret)
         return Serial.from_struct(serial)
 
@@ -702,7 +724,7 @@ class BladeRF:
 
     def get_fpga_size(self):
         fpga_size = ffi.new("bladerf_fpga_size *")
-        ret = libbladeRF.bladerf_get_fpga_size(self.dev[0], fpga_size)
+        ret = libbladeRF.bladerf_get_fpga_size(self._handle, fpga_size)
         _check_error(ret)
         return fpga_size[0]
 
@@ -711,7 +733,7 @@ class BladeRF:
     def get_flash_size(self):
         flash_size = ffi.new("uint32_t *")
         is_guess = ffi.new("bool *")
-        ret = libbladeRF.bladerf_get_flash_size(self.dev[0], flash_size,
+        ret = libbladeRF.bladerf_get_flash_size(self._handle, flash_size,
                                                 is_guess)
         _check_error(ret)
         return (flash_size[0], is_guess[0])
@@ -719,7 +741,7 @@ class BladeRF:
     flash_size = property(get_flash_size, doc="Flash size in bytes")
 
     def is_fpga_configured(self):
-        ret = libbladeRF.bladerf_is_fpga_configured(self.dev[0])
+        ret = libbladeRF.bladerf_is_fpga_configured(self._handle)
         _check_error(ret)
         return bool(ret)
 
@@ -728,7 +750,7 @@ class BladeRF:
 
     def get_fpga_version(self):
         version = ffi.new("struct bladerf_version *")
-        ret = libbladeRF.bladerf_fpga_version(self.dev[0], version)
+        ret = libbladeRF.bladerf_fpga_version(self._handle, version)
         _check_error(ret)
         return Version.from_struct(version)
 
@@ -736,33 +758,33 @@ class BladeRF:
 
     def get_fw_version(self):
         version = ffi.new("struct bladerf_version *")
-        ret = libbladeRF.bladerf_fw_version(self.dev[0], version)
+        ret = libbladeRF.bladerf_fw_version(self._handle, version)
         _check_error(ret)
         return Version.from_struct(version)
 
     fw_version = property(get_fw_version, doc="Firmware version information")
 
     def get_board_name(self):
-        board_name = libbladeRF.bladerf_get_board_name(self.dev[0])
+        board_name = libbladeRF.bladerf_get_board_name(self._handle)
         return ffi.string(board_name).decode()
 
     board_name = property(get_board_name,
                           doc="The board model name, as a string")
 
     def trim_dac_write(self, val):
-        libbladeRF.bladerf_trim_dac_write(self.dev[0], val)
+        libbladeRF.bladerf_trim_dac_write(self._handle, val)
 
     def trim_dac_read(self):
         try:
             trim_val = ffi.new("uint16_t *")
-            ret = libbladeRF.bladerf_trim_dac_read(self.dev[0], trim_val)
+            ret = libbladeRF.bladerf_trim_dac_read(self._handle, trim_val)
             _check_error(ret)
             return trim_val[0]
         except UnsupportedError:
             return None
 
     def get_channel_count(self, direction):
-        return libbladeRF.bladerf_get_channel_count(self.dev[0], direction)
+        return libbladeRF.bladerf_get_channel_count(self._handle, direction)
 
     @property
     def rx_channel_count(self):
@@ -777,7 +799,7 @@ class BladeRF:
     # Enable/Disable
 
     def enable_module(self, ch, enable):
-        ret = libbladeRF.bladerf_enable_module(self.dev[0], ch, bool(enable))
+        ret = libbladeRF.bladerf_enable_module(self._handle, ch, bool(enable))
         _check_error(ret)
 
     def get_timestamp(self, direction):
@@ -785,30 +807,30 @@ class BladeRF:
             direction = direction.value
         timestamp = ffi.new("bladerf_timestamp *")
         ret = libbladeRF.bladerf_get_timestamp(
-            self.dev[0], direction, timestamp)
+            self._handle, direction, timestamp)
         _check_error(ret)
         return timestamp[0]
 
     # Gain
 
     def set_gain(self, ch, gain):
-        ret = libbladeRF.bladerf_set_gain(self.dev[0], ch, gain)
+        ret = libbladeRF.bladerf_set_gain(self._handle, ch, gain)
         _check_error(ret)
 
     def get_gain(self, ch):
         gain = ffi.new("bladerf_gain *")
-        ret = libbladeRF.bladerf_get_gain(self.dev[0], ch, gain)
+        ret = libbladeRF.bladerf_get_gain(self._handle, ch, gain)
         _check_error(ret)
         return gain[0]
 
     def set_gain_mode(self, ch, mode):
-        ret = libbladeRF.bladerf_set_gain_mode(self.dev[0], ch, int(mode))
+        ret = libbladeRF.bladerf_set_gain_mode(self._handle, ch, int(mode))
         _check_error(ret)
 
     def get_gain_mode(self, ch):
         try:
             mode = ffi.new("bladerf_gain_mode *")
-            ret = libbladeRF.bladerf_get_gain_mode(self.dev[0], ch, mode)
+            ret = libbladeRF.bladerf_get_gain_mode(self._handle, ch, mode)
             _check_error(ret)
             return GainMode(mode[0])
         except UnsupportedError:
@@ -816,69 +838,69 @@ class BladeRF:
 
     def get_gain_modes(self, ch):
         modes_arr = ffi.new("struct bladerf_gain_modes **")
-        ret = libbladeRF.bladerf_get_gain_modes(self.dev[0], ch, modes_arr)
+        ret = libbladeRF.bladerf_get_gain_modes(self._handle, ch, modes_arr)
         _check_error(ret)
         return [GainMode(modes_arr[0][i].mode) for i in range(ret)]
 
     def get_gain_range(self, ch):
         _range_ptr = ffi.new("struct bladerf_range **")
-        ret = libbladeRF.bladerf_get_gain_range(self.dev[0], ch, _range_ptr)
+        ret = libbladeRF.bladerf_get_gain_range(self._handle, ch, _range_ptr)
         _check_error(ret)
         return Range.from_struct(_range_ptr[0])
 
     def set_gain_stage(self, ch, stage, gain):
-        ret = libbladeRF.bladerf_set_gain_stage(self.dev[0], ch,
+        ret = libbladeRF.bladerf_set_gain_stage(self._handle, ch,
                                                 stage.encode(), gain)
         _check_error(ret)
 
     def get_gain_stage(self, ch, stage):
         gain = ffi.new("bladerf_gain *")
-        ret = libbladeRF.bladerf_get_gain_stage(self.dev[0], ch,
+        ret = libbladeRF.bladerf_get_gain_stage(self._handle, ch,
                                                 stage.encode(), gain)
         _check_error(ret)
         return gain[0]
 
     def get_gain_stage_range(self, ch, stage):
         _range_ptr = ffi.new("struct bladerf_range **")
-        ret = libbladeRF.bladerf_get_gain_stage_range(self.dev[0], ch,
+        ret = libbladeRF.bladerf_get_gain_stage_range(self._handle, ch,
                                                       stage.encode(),
                                                       _range_ptr)
         _check_error(ret)
         return Range.from_struct(_range_ptr[0])
 
     def get_gain_stages(self, ch):
-        ret = libbladeRF.bladerf_get_gain_stages(self.dev[0], ch, ffi.NULL, 0)
+        ret = libbladeRF.bladerf_get_gain_stages(self._handle, ch, ffi.NULL, 0)
         _check_error(ret)
         stages_arr = ffi.new("const char *[]", ret)
-        ret = libbladeRF.bladerf_get_gain_stages(self.dev[0], ch, stages_arr,
+        ret = libbladeRF.bladerf_get_gain_stages(self._handle, ch, stages_arr,
                                                  ret)
         _check_error(ret)
         return [ffi.string(stages_arr[i]).decode() for i in range(ret)]
 
     def load_gain_calibration(self, ch, cal_file_loc):
         ret = libbladeRF.bladerf_load_gain_calibration(
-            self.dev[0], ch, os.fsencode(cal_file_loc))
+            self._handle, ch, os.fsencode(cal_file_loc))
         _check_error(ret)
 
     def print_gain_calibration(self, ch, with_entries=False):
         ret = libbladeRF.bladerf_print_gain_calibration(
-            self.dev[0], ch, bool(with_entries))
+            self._handle, ch, bool(with_entries))
         _check_error(ret)
 
     def enable_gain_calibration(self, ch, enable=True):
         ret = libbladeRF.bladerf_enable_gain_calibration(
-            self.dev[0], ch, bool(enable))
+            self._handle, ch, bool(enable))
         _check_error(ret)
 
     def get_gain_calibration(self, ch):
         table = ffi.new("const struct bladerf_gain_cal_tbl **")
-        ret = libbladeRF.bladerf_get_gain_calibration(self.dev[0], ch, table)
+        ret = libbladeRF.bladerf_get_gain_calibration(self._handle, ch, table)
         _check_error(ret)
         return GainCalibration.from_struct(table[0])
 
     def get_gain_target(self, ch):
         gain_target = ffi.new("bladerf_gain *")
-        ret = libbladeRF.bladerf_get_gain_target(self.dev[0], ch, gain_target)
+        ret = libbladeRF.bladerf_get_gain_target(self._handle, ch, gain_target)
         _check_error(ret)
         return gain_target[0]
 
@@ -886,7 +908,7 @@ class BladeRF:
 
     def set_sample_rate(self, ch, rate):
         actual_rate = ffi.new("bladerf_sample_rate *")
-        ret = libbladeRF.bladerf_set_sample_rate(self.dev[0], ch, int(rate),
+        ret = libbladeRF.bladerf_set_sample_rate(self._handle, ch, int(rate),
                                                  actual_rate)
         _check_error(ret)
         return actual_rate[0]
@@ -896,26 +918,26 @@ class BladeRF:
             rational_rate = RationalRate(*rational_rate)
         actual_rate = ffi.new("struct bladerf_rational_rate *")
         ret = libbladeRF.bladerf_set_rational_sample_rate(
-            self.dev[0], ch, rational_rate.struct, actual_rate)
+            self._handle, ch, rational_rate.struct, actual_rate)
         _check_error(ret)
         return RationalRate.from_struct(actual_rate[0])
 
     def get_sample_rate(self, ch):
         rate = ffi.new("bladerf_sample_rate *")
-        ret = libbladeRF.bladerf_get_sample_rate(self.dev[0], ch, rate)
+        ret = libbladeRF.bladerf_get_sample_rate(self._handle, ch, rate)
         _check_error(ret)
         return rate[0]
 
     def get_rational_sample_rate(self, ch):
         rate = ffi.new("struct bladerf_rational_rate *")
         ret = libbladeRF.bladerf_get_rational_sample_rate(
-            self.dev[0], ch, rate)
+            self._handle, ch, rate)
         _check_error(ret)
         return RationalRate.from_struct(rate[0])
 
     def get_sample_rate_range(self, ch):
         _range_ptr = ffi.new("struct bladerf_range **")
-        ret = libbladeRF.bladerf_get_sample_rate_range(self.dev[0], ch,
+        ret = libbladeRF.bladerf_get_sample_rate_range(self._handle, ch,
                                                        _range_ptr)
         _check_error(ret)
         return Range.from_struct(_range_ptr[0])
@@ -924,20 +946,20 @@ class BladeRF:
 
     def set_bandwidth(self, ch, bandwidth):
         actual_bandwidth = ffi.new("bladerf_bandwidth *")
-        ret = libbladeRF.bladerf_set_bandwidth(self.dev[0], ch, int(bandwidth),
+        ret = libbladeRF.bladerf_set_bandwidth(self._handle, ch, int(bandwidth),
                                                actual_bandwidth)
         _check_error(ret)
         return actual_bandwidth[0]
 
     def get_bandwidth(self, ch):
         bandwidth = ffi.new("bladerf_bandwidth *")
-        ret = libbladeRF.bladerf_get_bandwidth(self.dev[0], ch, bandwidth)
+        ret = libbladeRF.bladerf_get_bandwidth(self._handle, ch, bandwidth)
         _check_error(ret)
         return bandwidth[0]
 
     def get_bandwidth_range(self, ch):
         _range_ptr = ffi.new("struct bladerf_range **")
-        ret = libbladeRF.bladerf_get_bandwidth_range(self.dev[0], ch,
+        ret = libbladeRF.bladerf_get_bandwidth_range(self._handle, ch,
                                                      _range_ptr)
         _check_error(ret)
         return Range.from_struct(_range_ptr[0])
@@ -945,22 +967,22 @@ class BladeRF:
     # Frequency
 
     def set_frequency(self, ch, frequency):
-        ret = libbladeRF.bladerf_set_frequency(self.dev[0], ch, int(frequency))
+        ret = libbladeRF.bladerf_set_frequency(self._handle, ch, int(frequency))
         _check_error(ret)
 
     def get_frequency(self, ch):
         frequency = ffi.new("bladerf_frequency *")
-        ret = libbladeRF.bladerf_get_frequency(self.dev[0], ch, frequency)
+        ret = libbladeRF.bladerf_get_frequency(self._handle, ch, frequency)
         _check_error(ret)
         return frequency[0]
 
     def select_band(self, ch, frequency):
-        ret = libbladeRF.bladerf_select_band(self.dev[0], ch, int(frequency))
+        ret = libbladeRF.bladerf_select_band(self._handle, ch, int(frequency))
         _check_error(ret)
 
     def get_frequency_range(self, ch):
         _range_ptr = ffi.new("struct bladerf_range **")
-        ret = libbladeRF.bladerf_get_frequency_range(self.dev[0], ch,
+        ret = libbladeRF.bladerf_get_frequency_range(self._handle, ch,
                                                      _range_ptr)
         _check_error(ret)
         return Range.from_struct(_range_ptr[0])
@@ -968,13 +990,13 @@ class BladeRF:
     # RF Ports
 
     def set_rf_port(self, ch, port):
-        ret = libbladeRF.bladerf_set_rf_port(self.dev[0], ch, port.encode())
+        ret = libbladeRF.bladerf_set_rf_port(self._handle, ch, port.encode())
         _check_error(ret)
 
     def get_rf_port(self, ch):
         try:
             port = ffi.new("const char *[1]")
-            ret = libbladeRF.bladerf_get_rf_port(self.dev[0], ch, port)
+            ret = libbladeRF.bladerf_get_rf_port(self._handle, ch, port)
             _check_error(ret)
             return ffi.string(port[0]).decode()
         except UnsupportedError:
@@ -982,11 +1004,11 @@ class BladeRF:
 
     def get_rf_ports(self, ch):
         try:
-            count = libbladeRF.bladerf_get_rf_ports(self.dev[0], ch, ffi.NULL,
+            count = libbladeRF.bladerf_get_rf_ports(self._handle, ch, ffi.NULL,
                                                     0)
             _check_error(count)
             ports_arr = ffi.new("const char *[]", count)
-            ret = libbladeRF.bladerf_get_rf_ports(self.dev[0], ch, ports_arr,
+            ret = libbladeRF.bladerf_get_rf_ports(self._handle, ch, ports_arr,
                                                   count)
             _check_error(ret)
             return [ffi.string(ports_arr[i]).decode() for i in range(ret)]
@@ -996,10 +1018,10 @@ class BladeRF:
     # Sample Loopback
 
     def get_loopback_modes(self):
-        ret = libbladeRF.bladerf_get_loopback_modes(self.dev[0], ffi.NULL)
+        ret = libbladeRF.bladerf_get_loopback_modes(self._handle, ffi.NULL)
         _check_error(ret)
         modes_arr = ffi.new("struct bladerf_loopback_modes *[]", ret)
-        ret = libbladeRF.bladerf_get_loopback_modes(self.dev[0], modes_arr)
+        ret = libbladeRF.bladerf_get_loopback_modes(self._handle, modes_arr)
         _check_error(ret)
         return [Loopback(modes_arr[0][i].mode) for i in range(ret)]
 
@@ -1009,20 +1031,20 @@ class BladeRF:
     def is_loopback_mode_supported(self, lb):
         if isinstance(lb, Loopback):
             lb = lb.value
-        ret = libbladeRF.bladerf_is_loopback_mode_supported(self.dev[0], lb)
+        ret = libbladeRF.bladerf_is_loopback_mode_supported(self._handle, lb)
         _check_error(ret)
         return bool(ret)
 
     def get_loopback(self):
         lb = ffi.new("bladerf_loopback *")
-        ret = libbladeRF.bladerf_get_loopback(self.dev[0], lb)
+        ret = libbladeRF.bladerf_get_loopback(self._handle, lb)
         _check_error(ret)
         return Loopback(lb[0])
 
     def set_loopback(self, lb):
         if isinstance(lb, Loopback):
             lb = lb.value
-        ret = libbladeRF.bladerf_set_loopback(self.dev[0], lb)
+        ret = libbladeRF.bladerf_set_loopback(self._handle, lb)
         _check_error(ret)
 
     loopback = property(get_loopback, set_loopback, doc="Loopback selection")
@@ -1031,14 +1053,14 @@ class BladeRF:
 
     def get_rx_mux(self):
         mux = ffi.new("bladerf_rx_mux *")
-        ret = libbladeRF.bladerf_get_rx_mux(self.dev[0], mux)
+        ret = libbladeRF.bladerf_get_rx_mux(self._handle, mux)
         _check_error(ret)
         return RXMux(mux[0])
 
     def set_rx_mux(self, rx_mux):
         if isinstance(rx_mux, RXMux):
             rx_mux = rx_mux.value
-        ret = libbladeRF.bladerf_set_rx_mux(self.dev[0], rx_mux)
+        ret = libbladeRF.bladerf_set_rx_mux(self._handle, rx_mux)
         _check_error(ret)
 
     rx_mux = property(get_rx_mux, set_rx_mux, doc="RX Multiplexer selection")
@@ -1049,17 +1071,17 @@ class BladeRF:
         if isinstance(signal, TriggerSignal):
             signal = signal.value
         trigger = ffi.new("struct bladerf_trigger *")
-        ret = libbladeRF.bladerf_trigger_init(self.dev[0], ch, signal, trigger)
+        ret = libbladeRF.bladerf_trigger_init(self._handle, ch, signal, trigger)
         _check_error(ret)
         return Trigger(trigger)
 
     def trigger_arm(self, trigger, arm, resv1=0, resv2=0):
-        ret = libbladeRF.bladerf_trigger_arm(self.dev[0], trigger.struct,
+        ret = libbladeRF.bladerf_trigger_arm(self._handle, trigger.struct,
                                              arm, resv1, resv2)
         _check_error(ret)
 
     def trigger_fire(self, trigger):
-        ret = libbladeRF.bladerf_trigger_fire(self.dev[0], trigger.struct)
+        ret = libbladeRF.bladerf_trigger_fire(self._handle, trigger.struct)
         _check_error(ret)
 
     def trigger_state(self, trigger):
@@ -1068,7 +1090,7 @@ class BladeRF:
         fire_requested = ffi.new("bool *")
         resv1 = ffi.new("uint64_t *")
         resv2 = ffi.new("uint64_t *")
-        ret = libbladeRF.bladerf_trigger_state(self.dev[0], trigger.struct,
+        ret = libbladeRF.bladerf_trigger_state(self._handle, trigger.struct,
                                                is_armed, has_fired,
                                                fire_requested, resv1, resv2)
         _check_error(ret)
@@ -1079,28 +1101,28 @@ class BladeRF:
         if isinstance(signal, TriggerSignal):
             signal = signal.value
         val = ffi.new("uint8_t *")
-        ret = libbladeRF.bladerf_read_trigger(self.dev[0], ch, signal, val)
+        ret = libbladeRF.bladerf_read_trigger(self._handle, ch, signal, val)
         _check_error(ret)
         return val[0]
 
     def write_trigger(self, ch, signal, val):
         if isinstance(signal, TriggerSignal):
             signal = signal.value
-        ret = libbladeRF.bladerf_write_trigger(self.dev[0], ch, signal, val)
+        ret = libbladeRF.bladerf_write_trigger(self._handle, ch, signal, val)
         _check_error(ret)
 
     # Feature
 
     def get_feature(self):
         feature = ffi.new("bladerf_feature *")
-        ret = libbladeRF.bladerf_get_feature(self.dev[0], feature)
+        ret = libbladeRF.bladerf_get_feature(self._handle, feature)
         _check_error(ret)
         return Feature(feature[0])
 
     def enable_feature(self, feature, enable=True):
         if isinstance(feature, Feature):
             feature = feature.value
-        ret = libbladeRF.bladerf_enable_feature(self.dev[0], feature, enable)
+        ret = libbladeRF.bladerf_enable_feature(self._handle, feature, enable)
         _check_error(ret)
 
     feature = property(get_feature, doc="Currently enabled feature")
@@ -1109,13 +1131,13 @@ class BladeRF:
 
     def get_correction(self, ch, corr):
         value = ffi.new("bladerf_correction_value *")
-        ret = libbladeRF.bladerf_get_correction(self.dev[0], ch, corr.value,
+        ret = libbladeRF.bladerf_get_correction(self._handle, ch, corr.value,
                                                 value)
         _check_error(ret)
         return value[0]
 
     def set_correction(self, ch, corr, value):
-        ret = libbladeRF.bladerf_set_correction(self.dev[0], ch, corr.value,
+        ret = libbladeRF.bladerf_set_correction(self._handle, ch, corr.value,
                                                 value)
         _check_error(ret)
 
@@ -1148,7 +1170,7 @@ class BladeRF:
         layout_value = (layout.value
                         if isinstance(layout, ChannelLayout) else layout)
         format_value = fmt.value if isinstance(fmt, Format) else fmt
-        ret = libbladeRF.bladerf_sync_config(self.dev[0],
+        ret = libbladeRF.bladerf_sync_config(self._handle,
                                              layout_value,
                                              format_value,
                                              num_buffers,
@@ -1182,7 +1204,7 @@ class BladeRF:
     def sync_tx(self, buf, num_samples, timeout_ms=None, meta=ffi.NULL):
         meta_struct = meta.struct if isinstance(meta, Metadata) else ffi.cast(
             "struct bladerf_metadata *", meta)
-        ret = libbladeRF.bladerf_sync_tx(self.dev[0],
+        ret = libbladeRF.bladerf_sync_tx(self._handle,
                                          self._sync_buffer(TX, buf, num_samples),
                                          num_samples,
                                          meta_struct,
@@ -1193,7 +1215,7 @@ class BladeRF:
         is_metadata = isinstance(meta, Metadata)
         meta_struct = meta.struct if is_metadata else ffi.cast(
             "struct bladerf_metadata *", meta)
-        ret = libbladeRF.bladerf_sync_rx(self.dev[0],
+        ret = libbladeRF.bladerf_sync_rx(self._handle,
                                          self._sync_buffer(RX, buf, num_samples),
                                          num_samples,
                                          meta_struct,
@@ -1206,7 +1228,7 @@ class BladeRF:
         if isinstance(direction, Direction):
             direction = direction.value
         ret = libbladeRF.bladerf_set_stream_timeout(
-            self.dev[0], direction, timeout_ms)
+            self._handle, direction, timeout_ms)
         _check_error(ret)
 
     def get_stream_timeout(self, direction):
@@ -1214,31 +1236,31 @@ class BladeRF:
             direction = direction.value
         timeout_ms = ffi.new("unsigned int *")
         ret = libbladeRF.bladerf_get_stream_timeout(
-            self.dev[0], direction, timeout_ms)
+            self._handle, direction, timeout_ms)
         _check_error(ret)
         return timeout_ms[0]
 
     # FPGA/Firmware Loading/Flashing
 
     def load_fpga(self, image_path):
-        ret = libbladeRF.bladerf_load_fpga(self.dev[0], image_path.encode())
+        ret = libbladeRF.bladerf_load_fpga(self._handle, image_path.encode())
         _check_error(ret)
 
     def flash_fpga(self, image_path):
-        ret = libbladeRF.bladerf_flash_fpga(self.dev[0], image_path.encode())
+        ret = libbladeRF.bladerf_flash_fpga(self._handle, image_path.encode())
         _check_error(ret)
 
     def erase_stored_fpga(self):
-        ret = libbladeRF.bladerf_erase_stored_fpga(self.dev[0])
+        ret = libbladeRF.bladerf_erase_stored_fpga(self._handle)
         _check_error(ret)
 
     def flash_firmware(self, image_path):
-        ret = libbladeRF.bladerf_flash_firmware(self.dev[0],
+        ret = libbladeRF.bladerf_flash_firmware(self._handle,
                                                 image_path.encode())
         _check_error(ret)
 
     def device_reset(self):
-        ret = libbladeRF.bladerf_device_reset(self.dev[0])
+        ret = libbladeRF.bladerf_device_reset(self._handle)
         _check_error(ret)
 
     # VCTCXO Tamer Mode
@@ -1246,12 +1268,12 @@ class BladeRF:
     def set_vctcxo_tamer_mode(self, mode):
         if isinstance(mode, VCTCXOTamerMode):
             mode = mode.value
-        ret = libbladeRF.bladerf_set_vctcxo_tamer_mode(self.dev[0], mode)
+        ret = libbladeRF.bladerf_set_vctcxo_tamer_mode(self._handle, mode)
         _check_error(ret)
 
     def get_vctcxo_tamer_mode(self):
         mode = ffi.new("bladerf_vctcxo_tamer_mode *")
-        ret = libbladeRF.bladerf_get_vctcxo_tamer_mode(self.dev[0], mode)
+        ret = libbladeRF.bladerf_get_vctcxo_tamer_mode(self._handle, mode)
         _check_error(ret)
         return VCTCXOTamerMode(mode[0])
 
@@ -1259,7 +1281,7 @@ class BladeRF:
 
     def get_vctcxo_trim(self):
         trim = ffi.new("uint16_t *")
-        ret = libbladeRF.bladerf_get_vctcxo_trim(self.dev[0], trim)
+        ret = libbladeRF.bladerf_get_vctcxo_trim(self._handle, trim)
         _check_error(ret)
         return trim[0]
 
@@ -1270,12 +1292,12 @@ class BladeRF:
     def set_tuning_mode(self, mode):
         if isinstance(mode, TuningMode):
             mode = mode.value
-        ret = libbladeRF.bladerf_set_tuning_mode(self.dev[0], mode)
+        ret = libbladeRF.bladerf_set_tuning_mode(self._handle, mode)
         _check_error(ret)
 
     def get_tuning_mode(self):
         mode = ffi.new("bladerf_tuning_mode *")
-        ret = libbladeRF.bladerf_get_tuning_mode(self.dev[0], mode)
+        ret = libbladeRF.bladerf_get_tuning_mode(self._handle, mode)
         _check_error(ret)
         return TuningMode(mode[0])
 
@@ -1286,14 +1308,14 @@ class BladeRF:
     def get_bias_tee(self, ch):
         try:
             state = ffi.new("bool *")
-            ret = libbladeRF.bladerf_get_bias_tee(self.dev[0], ch, state)
+            ret = libbladeRF.bladerf_get_bias_tee(self._handle, ch, state)
             _check_error(ret)
             return bool(state[0])
         except UnsupportedError:
             return None
 
     def set_bias_tee(self, ch, enable):
-        ret = libbladeRF.bladerf_set_bias_tee(self.dev[0], ch, enable)
+        ret = libbladeRF.bladerf_set_bias_tee(self._handle, ch, enable)
         _check_error(ret)
 
     # RFIC
@@ -1301,7 +1323,7 @@ class BladeRF:
     def get_rfic_temperature(self):
         try:
             val = ffi.new("float *")
-            ret = libbladeRF.bladerf_get_rfic_temperature(self.dev[0], val)
+            ret = libbladeRF.bladerf_get_rfic_temperature(self._handle, val)
             _check_error(ret)
             return val[0]
         except UnsupportedError:
@@ -1314,7 +1336,7 @@ class BladeRF:
         try:
             preamble = ffi.new("int32_t *")
             symbol = ffi.new("int32_t *")
-            ret = libbladeRF.bladerf_get_rfic_rssi(self.dev[0], ch,
+            ret = libbladeRF.bladerf_get_rfic_rssi(self._handle, ch,
                                                    preamble, symbol)
             _check_error(ret)
             return RSSI(preamble[0], symbol[0])
@@ -1324,7 +1346,7 @@ class BladeRF:
     def get_rfic_ctrl_out(self):
         try:
             ctrl_out = ffi.new("uint8_t *")
-            ret = libbladeRF.bladerf_get_rfic_ctrl_out(self.dev[0], ctrl_out)
+            ret = libbladeRF.bladerf_get_rfic_ctrl_out(self._handle, ctrl_out)
             _check_error(ret)
             return ctrl_out[0]
         except UnsupportedError:
@@ -1338,7 +1360,7 @@ class BladeRF:
     def get_pll_lock_state(self):
         try:
             locked = ffi.new("bool *")
-            ret = libbladeRF.bladerf_get_pll_lock_state(self.dev[0], locked)
+            ret = libbladeRF.bladerf_get_pll_lock_state(self._handle, locked)
             _check_error(ret)
             return bool(locked[0])
         except UnsupportedError:
@@ -1350,14 +1372,14 @@ class BladeRF:
     def get_pll_enable(self):
         try:
             enable = ffi.new("bool *")
-            ret = libbladeRF.bladerf_get_pll_enable(self.dev[0], enable)
+            ret = libbladeRF.bladerf_get_pll_enable(self._handle, enable)
             _check_error(ret)
             return bool(enable[0])
         except UnsupportedError:
             return None
 
     def set_pll_enable(self, enable):
-        ret = libbladeRF.bladerf_set_pll_enable(self.dev[0], enable)
+        ret = libbladeRF.bladerf_set_pll_enable(self._handle, enable)
         _check_error(ret)
 
     pll_enable = property(get_pll_enable, set_pll_enable,
@@ -1366,14 +1388,14 @@ class BladeRF:
     def get_pll_refclk(self):
         try:
             freq = ffi.new("uint64_t *")
-            ret = libbladeRF.bladerf_get_pll_refclk(self.dev[0], freq)
+            ret = libbladeRF.bladerf_get_pll_refclk(self._handle, freq)
             _check_error(ret)
             return int(freq[0])
         except UnsupportedError:
             return None
 
     def set_pll_refclk(self, freq):
-        ret = libbladeRF.bladerf_set_pll_refclk(self.dev[0], freq)
+        ret = libbladeRF.bladerf_set_pll_refclk(self._handle, freq)
         _check_error(ret)
 
     pll_refclk = property(get_pll_refclk, set_pll_refclk,
@@ -1384,7 +1406,7 @@ class BladeRF:
     def get_power_source(self):
         try:
             val = ffi.new("bladerf_power_sources *")
-            ret = libbladeRF.bladerf_get_power_source(self.dev[0], val)
+            ret = libbladeRF.bladerf_get_power_source(self._handle, val)
             _check_error(ret)
             return PowerSource(val[0])
         except UnsupportedError:
@@ -1398,7 +1420,7 @@ class BladeRF:
     def get_clock_select(self):
         try:
             sel = ffi.new("bladerf_clock_select *")
-            ret = libbladeRF.bladerf_get_clock_select(self.dev[0], sel)
+            ret = libbladeRF.bladerf_get_clock_select(self._handle, sel)
             _check_error(ret)
             return ClockSelect(sel[0])
         except UnsupportedError:
@@ -1407,7 +1429,7 @@ class BladeRF:
     def set_clock_select(self, sel):
         if isinstance(sel, ClockSelect):
             sel = sel.value
-        ret = libbladeRF.bladerf_set_clock_select(self.dev[0], sel)
+        ret = libbladeRF.bladerf_set_clock_select(self._handle, sel)
         _check_error(ret)
 
     clock_select = property(get_clock_select, set_clock_select,
@@ -1418,14 +1440,14 @@ class BladeRF:
     def get_clock_output(self):
         try:
             state = ffi.new("bool *")
-            ret = libbladeRF.bladerf_get_clock_output(self.dev[0], state)
+            ret = libbladeRF.bladerf_get_clock_output(self._handle, state)
             _check_error(ret)
             return bool(state[0])
         except UnsupportedError:
             return None
 
     def set_clock_output(self, enable):
-        ret = libbladeRF.bladerf_set_clock_output(self.dev[0], enable)
+        ret = libbladeRF.bladerf_set_clock_output(self._handle, enable)
         _check_error(ret)
 
     clock_output = property(get_clock_output, set_clock_output,
@@ -1438,7 +1460,7 @@ class BladeRF:
             if not isinstance(reg, PMICRegister):
                 reg = PMICRegister(reg)
             val = ffi.new(reg.ctype)
-            ret = libbladeRF.bladerf_get_pmic_register(self.dev[0], reg.value,
+            ret = libbladeRF.bladerf_get_pmic_register(self._handle, reg.value,
                                                        val)
             _check_error(ret)
             return val[0]

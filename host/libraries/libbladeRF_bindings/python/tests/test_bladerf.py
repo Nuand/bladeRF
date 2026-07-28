@@ -28,12 +28,14 @@ from unittest import mock
 PYTHON_BINDINGS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PYTHON_BINDINGS))
 
+import bladerf  # noqa: E402
 from bladerf import _bladerf  # noqa: E402
 
 
 def _device():
     device = _bladerf.BladeRF.__new__(_bladerf.BladeRF)
     device.dev = _bladerf.ffi.new("struct bladerf *[1]")
+    device.dev[0] = _bladerf.ffi.cast("struct bladerf *", 1)
     return device
 
 
@@ -47,6 +49,57 @@ class PackagingTest(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("Warning", result.stderr)
+
+
+class PublicAPITest(unittest.TestCase):
+    def test_primary_types_are_public(self):
+        primary_types = (
+            "BladeRFError",
+            "ChannelLayout",
+            "ClockSelect",
+            "Direction",
+            "Feature",
+            "Format",
+            "GainMode",
+            "Loopback",
+            "Metadata",
+            "MetadataFlags",
+            "MetadataStatus",
+            "RationalRate",
+            "Trigger",
+            "TriggerRole",
+            "TriggerSignal",
+            "TuningMode",
+            "VCTCXOTamerMode",
+        )
+        for name in primary_types:
+            self.assertIs(getattr(bladerf, name), getattr(_bladerf, name))
+            self.assertIn(name, bladerf.__all__)
+
+
+class DeviceLifecycleTest(unittest.TestCase):
+    def test_context_manager_closes_once_and_rejects_closed_handle(self):
+        calls = []
+
+        class Lib:
+            @staticmethod
+            def bladerf_close(dev):
+                calls.append(dev)
+
+        device = _device()
+        device.dev[0] = _bladerf.ffi.cast("struct bladerf *", 1)
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            with device as opened:
+                self.assertIs(opened, device)
+                self.assertTrue(device.is_open)
+
+            device.close()
+
+        self.assertEqual(len(calls), 1)
+        self.assertFalse(device.is_open)
+        with self.assertRaises(_bladerf.NoDevError):
+            device._handle
 
 
 class FormatTest(unittest.TestCase):

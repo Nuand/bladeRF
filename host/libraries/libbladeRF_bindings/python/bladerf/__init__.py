@@ -37,6 +37,24 @@ from bladerf import _tool
 
 BladeRF = _bladerf.BladeRF
 
+BladeRFError = _bladerf.BladeRFError
+ChannelLayout = _bladerf.ChannelLayout
+ClockSelect = _bladerf.ClockSelect
+Direction = _bladerf.Direction
+Feature = _bladerf.Feature
+Format = _bladerf.Format
+GainMode = _bladerf.GainMode
+Loopback = _bladerf.Loopback
+Metadata = _bladerf.Metadata
+MetadataFlags = _bladerf.MetadataFlags
+MetadataStatus = _bladerf.MetadataStatus
+RationalRate = _bladerf.RationalRate
+Trigger = _bladerf.Trigger
+TriggerRole = _bladerf.TriggerRole
+TriggerSignal = _bladerf.TriggerSignal
+TuningMode = _bladerf.TuningMode
+VCTCXOTamerMode = _bladerf.VCTCXOTamerMode
+
 get_bootloader_list = _bladerf.get_bootloader_list
 get_device_list = _bladerf.get_device_list
 load_fw_from_bootloader = _bladerf.load_fw_from_bootloader
@@ -50,6 +68,11 @@ CHANNEL_TX = _bladerf.CHANNEL_TX
 
 main = _tool.main
 
-__all__ = ['BladeRF', 'get_bootloader_list', 'get_device_list',
-           'load_fw_from_bootloader', 'set_verbosity', 'version', 'RX', 'TX',
-           'CHANNEL_RX', 'CHANNEL_TX', 'main']
+__all__ = [
+    'BladeRF', 'BladeRFError', 'ChannelLayout', 'ClockSelect', 'Direction',
+    'Feature', 'Format', 'GainMode', 'Loopback', 'Metadata', 'MetadataFlags',
+    'MetadataStatus', 'RationalRate', 'Trigger', 'TriggerRole', 'TriggerSignal',
+    'TuningMode', 'VCTCXOTamerMode', 'get_bootloader_list', 'get_device_list',
+    'load_fw_from_bootloader', 'set_verbosity', 'version', 'RX', 'TX',
+    'CHANNEL_RX', 'CHANNEL_TX', 'main',
+]

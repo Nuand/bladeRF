@@ -33,6 +33,7 @@ PYTHON_BINDINGS = Path(os.environ.get(
 ))
 sys.path.insert(0, str(PYTHON_BINDINGS))
 
+import bladerf  # noqa: E402
 from bladerf import _bladerf  # noqa: E402
 
 
@@ -59,6 +60,17 @@ class HardwareTest(unittest.TestCase):
         if SLAVE_SERIAL is None:
             self.skipTest("BLADERF_TEST_SLAVE_SERIAL is not set")
         return _bladerf.BladeRF("*:serial={}".format(SLAVE_SERIAL))
+
+    def test_public_context_manager_lifecycle(self):
+        device_identifier = "*:serial={}".format(MASTER_SERIAL)
+        with bladerf.BladeRF(device_identifier) as device:
+            self.assertTrue(device.is_open)
+            self.assertEqual(device.serial, MASTER_SERIAL)
+
+        self.assertFalse(device.is_open)
+        device.close()
+        with self.assertRaises(bladerf.BladeRFError):
+            device.get_board_name()
 
     def test_cffi_symbols_are_available_with_device_open(self):
         symbols = (
