@@ -68,6 +68,95 @@ class FeatureTest(unittest.TestCase):
         self.assertEqual(calls, [(_bladerf.Feature.OVERSAMPLE.value, True)])
 
 
+class GainCalibrationTest(unittest.TestCase):
+    def test_gain_calibration_round_trip(self):
+        calls = []
+        entries = _bladerf.ffi.new("struct bladerf_gain_cal_entry[]", 2)
+        entries[0].freq = 100000000
+        entries[0].gain_corr = 1.25
+        entries[1].freq = 200000000
+        entries[1].gain_corr = -0.5
+        file_path = _bladerf.ffi.new("char[]", b"rx1.tbl")
+        table = _bladerf.ffi.new("struct bladerf_gain_cal_tbl *")
+        table.version.major = 1
+        table.version.describe = _bladerf.ffi.NULL
+        table.ch = _bladerf.CHANNEL_RX(0)
+        table.enabled = True
+        table.n_entries = 2
+        table.start_freq = entries[0].freq
+        table.stop_freq = entries[1].freq
+        table.entries = entries
+        table.gain_target = 17
+        table.file_path_len = len(b"rx1.tbl")
+        table.file_path = file_path
+        table.state = 1
+
+        class Lib:
+            BLADERF_GAIN_CAL_UNINITIALIZED = 0
+            BLADERF_GAIN_CAL_LOADED = 1
+            BLADERF_GAIN_CAL_UNLOADED = 2
+
+            @staticmethod
+            def bladerf_load_gain_calibration(dev, ch, path):
+                calls.append(("load", ch, path))
+                return 0
+
+            @staticmethod
+            def bladerf_print_gain_calibration(dev, ch, with_entries):
+                calls.append(("print", ch, bool(with_entries)))
+                return 0
+
+            @staticmethod
+            def bladerf_enable_gain_calibration(dev, ch, enable):
+                calls.append(("enable", ch, bool(enable)))
+                return 0
+
+            @staticmethod
+            def bladerf_get_gain_calibration(dev, ch, result):
+                result[0] = table
+                return 0
+
+            @staticmethod
+            def bladerf_get_gain_target(dev, ch, target):
+                target[0] = 17
+                return 0
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            device = _device()
+            channel = _bladerf.CHANNEL_RX(0)
+            device.load_gain_calibration(channel, "rx1.tbl")
+            device.print_gain_calibration(channel, True)
+            device.enable_gain_calibration(channel, True)
+            calibration = device.get_gain_calibration(channel)
+            target = device.get_gain_target(channel)
+
+        self.assertEqual(
+            calibration.entries,
+            (
+                _bladerf.GainCalibrationEntry(100000000, 1.25),
+                _bladerf.GainCalibrationEntry(200000000, -0.5),
+            ),
+        )
+        self.assertEqual(calibration.version.major, 1)
+        self.assertEqual(calibration.version.describe, "")
+        self.assertEqual(calibration.channel, channel)
+        self.assertTrue(calibration.enabled)
+        self.assertEqual(calibration.file_path, "rx1.tbl")
+        self.assertEqual(
+            calibration.state,
+            _bladerf.GainCalibrationState.Loaded,
+        )
+        self.assertEqual(calibration.gain_target, target)
+        self.assertEqual(
+            calls,
+            [
+                ("load", channel, b"rx1.tbl"),
+                ("print", channel, True),
+                ("enable", channel, True),
+            ],
+        )
+
+
 class TriggerTest(unittest.TestCase):
     def test_trigger_control_round_trip(self):
         calls = []

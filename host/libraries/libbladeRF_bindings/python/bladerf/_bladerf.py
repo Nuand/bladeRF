@@ -21,6 +21,7 @@
 
 import enum
 import collections
+import os
 
 import cffi
 
@@ -75,8 +76,10 @@ class Version(collections.namedtuple("Version", [
                 "major", "minor", "patch", "describe"])):
     @staticmethod
     def from_struct(version):
+        description = (ffi.string(version.describe).decode()
+                       if version.describe != ffi.NULL else "")
         return Version(version.major, version.minor, version.patch,
-                       ffi.string(version.describe).decode())
+                       description)
 
     def __str__(self):
         return "v{}.{}.{} (\"{}\")".format(*self)
@@ -161,6 +164,44 @@ class Range(collections.namedtuple("Range", ["min", "max", "step", "scale"])):
     def __repr__(self):
         return '<Range(min={min},max={max},step={step},scale={scale})>'.format(
             **self._asdict())
+
+
+class GainCalibrationState(enum.Enum):
+    Uninitialized = libbladeRF.BLADERF_GAIN_CAL_UNINITIALIZED
+    Loaded = libbladeRF.BLADERF_GAIN_CAL_LOADED
+    Unloaded = libbladeRF.BLADERF_GAIN_CAL_UNLOADED
+
+
+class GainCalibrationEntry(collections.namedtuple(
+        "GainCalibrationEntry", ["frequency", "gain_correction"])):
+    pass
+
+
+class GainCalibration(collections.namedtuple(
+        "GainCalibration", ["version", "channel", "enabled", "start_freq",
+                            "stop_freq", "entries", "gain_target",
+                            "file_path", "state"])):
+    @staticmethod
+    def from_struct(table):
+        entries = tuple(
+            GainCalibrationEntry(entry.freq, entry.gain_corr)
+            for entry in table.entries[0:table.n_entries]
+        )
+        file_path = None
+        if table.file_path != ffi.NULL:
+            file_path = ffi.string(table.file_path,
+                                   table.file_path_len).decode()
+        return GainCalibration(
+            Version.from_struct(table.version),
+            table.ch,
+            bool(table.enabled),
+            table.start_freq,
+            table.stop_freq,
+            entries,
+            table.gain_target,
+            file_path,
+            GainCalibrationState(table.state),
+        )
 
 
 class DeviceSpeed(enum.Enum):
@@ -751,6 +792,33 @@ class BladeRF:
         _check_error(ret)
         return [ffi.string(stages_arr[i]).decode() for i in range(ret)]
 
+    def load_gain_calibration(self, ch, cal_file_loc):
+        ret = libbladeRF.bladerf_load_gain_calibration(
+            self.dev[0], ch, os.fsencode(cal_file_loc))
+        _check_error(ret)
+
+    def print_gain_calibration(self, ch, with_entries=False):
+        ret = libbladeRF.bladerf_print_gain_calibration(
+            self.dev[0], ch, bool(with_entries))
+        _check_error(ret)
+
+    def enable_gain_calibration(self, ch, enable=True):
+        ret = libbladeRF.bladerf_enable_gain_calibration(
+            self.dev[0], ch, bool(enable))
+        _check_error(ret)
+
+    def get_gain_calibration(self, ch):
+        table = ffi.new("const struct bladerf_gain_cal_tbl **")
+        ret = libbladeRF.bladerf_get_gain_calibration(self.dev[0], ch, table)
+        _check_error(ret)
+        return GainCalibration.from_struct(table[0])
+
+    def get_gain_target(self, ch):
+        gain_target = ffi.new("bladerf_gain *")
+        ret = libbladeRF.bladerf_get_gain_target(self.dev[0], ch, gain_target)
+        _check_error(ret)
+        return gain_target[0]
+
     # Sample rate
 
     def set_sample_rate(self, ch, rate):
@@ -1276,6 +1344,22 @@ class BladeRF:
         @gain.setter
         def gain(self, value):
             return self.dev.set_gain(self.channel, value)
+
+        @property
+        def gain_calibration(self):
+            """Loaded gain calibration table"""
+            return self.dev.get_gain_calibration(self.channel)
+
+        @property
+        def gain_target(self):
+            """Gain target including calibration correction"""
+            return self.dev.get_gain_target(self.channel)
+
+        def load_gain_calibration(self, cal_file_loc):
+            return self.dev.load_gain_calibration(self.channel, cal_file_loc)
+
+        def enable_gain_calibration(self, enable=True):
+            return self.dev.enable_gain_calibration(self.channel, enable)
 
         @property
         def gain_mode(self):
