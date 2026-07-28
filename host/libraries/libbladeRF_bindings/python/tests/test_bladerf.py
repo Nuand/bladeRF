@@ -247,6 +247,56 @@ class StreamHelperTest(unittest.TestCase):
         )
 
 
+class DeviceModeTest(unittest.TestCase):
+    def test_vctcxo_tamer_and_tuning_modes(self):
+        calls = []
+
+        class Lib:
+            @staticmethod
+            def bladerf_set_vctcxo_tamer_mode(dev, mode):
+                calls.append(("tamer", mode))
+                return 0
+
+            @staticmethod
+            def bladerf_get_vctcxo_tamer_mode(dev, mode):
+                mode[0] = _bladerf.VCTCXOTamerMode.PPS_1.value
+                return 0
+
+            @staticmethod
+            def bladerf_get_vctcxo_trim(dev, trim):
+                trim[0] = 0x7ff0
+                return 0
+
+            @staticmethod
+            def bladerf_set_tuning_mode(dev, mode):
+                calls.append(("tuning", mode))
+                return 0
+
+            @staticmethod
+            def bladerf_get_tuning_mode(dev, mode):
+                mode[0] = _bladerf.TuningMode.FPGA.value
+                return 0
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            device = _device()
+            device.vctcxo_tamer_mode = _bladerf.VCTCXOTamerMode.PPS_1
+            tamer_mode = device.vctcxo_tamer_mode
+            trim = device.vctcxo
+            device.tuning_mode = _bladerf.TuningMode.FPGA
+            tuning_mode = device.tuning_mode
+
+        self.assertEqual(tamer_mode, _bladerf.VCTCXOTamerMode.PPS_1)
+        self.assertEqual(trim, 0x7ff0)
+        self.assertEqual(tuning_mode, _bladerf.TuningMode.FPGA)
+        self.assertEqual(
+            calls,
+            [
+                ("tamer", _bladerf.VCTCXOTamerMode.PPS_1.value),
+                ("tuning", _bladerf.TuningMode.FPGA.value),
+            ],
+        )
+
+
 class TriggerTest(unittest.TestCase):
     def test_trigger_control_round_trip(self):
         calls = []

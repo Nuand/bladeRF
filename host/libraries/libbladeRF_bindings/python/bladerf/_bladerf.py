@@ -365,6 +365,19 @@ class ClockSelect(enum.Enum):
         return self.name
 
 
+class VCTCXOTamerMode(enum.Enum):
+    Invalid = libbladeRF.BLADERF_VCTCXO_TAMER_INVALID
+    Disabled = libbladeRF.BLADERF_VCTCXO_TAMER_DISABLED
+    PPS_1 = libbladeRF.BLADERF_VCTCXO_TAMER_1_PPS
+    MHz_10 = libbladeRF.BLADERF_VCTCXO_TAMER_10_MHZ
+
+
+class TuningMode(enum.Enum):
+    Invalid = libbladeRF.BLADERF_TUNING_MODE_INVALID
+    Host = libbladeRF.BLADERF_TUNING_MODE_HOST
+    FPGA = libbladeRF.BLADERF_TUNING_MODE_FPGA
+
+
 class RSSI(collections.namedtuple("RSSI", ["preamble", "symbol"])):
     def __str__(self):
         return ("RSSI\n" +
@@ -1149,25 +1162,40 @@ class BladeRF:
     # VCTCXO Tamer Mode
 
     def set_vctcxo_tamer_mode(self, mode):
-        raise NotImplementedError()
+        if isinstance(mode, VCTCXOTamerMode):
+            mode = mode.value
+        ret = libbladeRF.bladerf_set_vctcxo_tamer_mode(self.dev[0], mode)
+        _check_error(ret)
 
     def get_vctcxo_tamer_mode(self):
-        raise NotImplementedError()
+        mode = ffi.new("bladerf_vctcxo_tamer_mode *")
+        ret = libbladeRF.bladerf_get_vctcxo_tamer_mode(self.dev[0], mode)
+        _check_error(ret)
+        return VCTCXOTamerMode(mode[0])
 
     vctcxo_tamer_mode = property(get_vctcxo_tamer_mode, set_vctcxo_tamer_mode)
 
     def get_vctcxo_trim(self):
-        raise NotImplementedError()
+        trim = ffi.new("uint16_t *")
+        ret = libbladeRF.bladerf_get_vctcxo_trim(self.dev[0], trim)
+        _check_error(ret)
+        return trim[0]
 
     vctcxo = property(get_vctcxo_trim)
 
     # Tuning Mode
 
     def set_tuning_mode(self, mode):
-        raise NotImplementedError()
+        if isinstance(mode, TuningMode):
+            mode = mode.value
+        ret = libbladeRF.bladerf_set_tuning_mode(self.dev[0], mode)
+        _check_error(ret)
 
     def get_tuning_mode(self):
-        raise NotImplementedError()
+        mode = ffi.new("bladerf_tuning_mode *")
+        ret = libbladeRF.bladerf_get_tuning_mode(self.dev[0], mode)
+        _check_error(ret)
+        return TuningMode(mode[0])
 
     tuning_mode = property(get_tuning_mode, set_tuning_mode)
 
