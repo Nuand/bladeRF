@@ -337,6 +337,29 @@ class HardwareTest(unittest.TestCase):
                 device.enable_module(channel, False)
             device.close()
 
+    def test_transmit_buffer_with_rf_disabled(self):
+        device = self.open_master()
+        try:
+            device.sync_config(
+                bladerf.ChannelLayout.TX_X1,
+                bladerf.Format.SC16_Q11,
+                16,
+                8192,
+                8,
+                3500,
+            )
+            samples = bladerf.allocate_buffer(
+                2048,
+                bladerf.Format.SC16_Q11,
+            )
+            iq = memoryview(samples).cast("h")
+            for index in range(len(iq)):
+                iq[index] = (index % 2048) - 1024
+
+            device.sync_tx(samples, 2048, 3500)
+        finally:
+            device.close()
+
     def test_feature_control_round_trip(self):
         device = self.open_master()
         original = None

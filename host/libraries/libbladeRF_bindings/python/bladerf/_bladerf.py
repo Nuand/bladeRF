@@ -252,6 +252,29 @@ class Format(enum.Enum):
     SC8_Q7_META = libbladeRF.BLADERF_FORMAT_SC8_Q7_META
 
 
+def sample_buffer_size(num_samples, fmt=Format.SC16_Q11):
+    if num_samples < 0:
+        raise ValueError("num_samples must be non-negative")
+    if isinstance(fmt, Format):
+        fmt = fmt.value
+    bytes_per_sample = {
+        Format.SC16_Q11.value: 4,
+        Format.SC16_Q11_PACKED.value: 4,
+        Format.SC16_Q11_META.value: 4,
+        Format.PACKET_META.value: 4,
+        Format.SC8_Q7.value: 2,
+        Format.SC8_Q7_META.value: 2,
+    }
+    try:
+        return num_samples * bytes_per_sample[fmt]
+    except KeyError:
+        raise ValueError("Unsupported sample format: {}".format(fmt))
+
+
+def allocate_buffer(num_samples, fmt=Format.SC16_Q11):
+    return bytearray(sample_buffer_size(num_samples, fmt))
+
+
 class MetadataFlags(enum.IntFlag):
     NONE = 0
     TX_BURST_START = 1 << 0
@@ -1189,11 +1212,7 @@ class BladeRF:
             return samples
 
         _, format = config
-        bytes_per_sample = {
-            Format.SC8_Q7.value: 2,
-            Format.SC8_Q7_META.value: 2,
-        }.get(format, 4)
-        required = num_samples * bytes_per_sample
+        required = sample_buffer_size(num_samples, format)
         if ffi.sizeof(samples) < required:
             raise ValueError(
                 "{}-byte buffer is too small; {} bytes required for {} "

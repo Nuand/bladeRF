@@ -71,6 +71,8 @@ class PublicAPITest(unittest.TestCase):
             "TriggerSignal",
             "TuningMode",
             "VCTCXOTamerMode",
+            "allocate_buffer",
+            "sample_buffer_size",
         )
         for name in primary_types:
             self.assertIs(getattr(bladerf, name), getattr(_bladerf, name))
@@ -109,6 +111,33 @@ class FormatTest(unittest.TestCase):
             [0, 1, 2, 3, 4, 5],
         )
         self.assertEqual(_bladerf.Format.SC16_Q11_PACKED.value, 1)
+
+
+class SampleBufferTest(unittest.TestCase):
+    def test_allocate_buffer_uses_caller_sample_representation(self):
+        self.assertEqual(
+            _bladerf.sample_buffer_size(
+                2048,
+                _bladerf.Format.SC16_Q11,
+            ),
+            8192,
+        )
+        self.assertEqual(
+            _bladerf.sample_buffer_size(
+                2048,
+                _bladerf.Format.SC16_Q11_PACKED,
+            ),
+            8192,
+        )
+        self.assertEqual(
+            len(_bladerf.allocate_buffer(
+                2048,
+                _bladerf.Format.SC8_Q7,
+            )),
+            4096,
+        )
+        with self.assertRaises(ValueError):
+            _bladerf.allocate_buffer(-1, _bladerf.Format.SC16_Q11)
 
 
 class FeatureTest(unittest.TestCase):
@@ -428,6 +457,35 @@ class SyncBufferTest(unittest.TestCase):
                 device.sync_rx(bytearray(8191), 2048)
 
         self.assertEqual(calls, [2048, 2048])
+
+    def test_tx_buffer_size_uses_total_sample_count(self):
+        calls = []
+
+        class Lib:
+            @staticmethod
+            def bladerf_sync_config(*args):
+                return 0
+
+            @staticmethod
+            def bladerf_sync_tx(dev, samples, count, metadata, timeout):
+                calls.append(count)
+                return 0
+
+        with mock.patch.object(_bladerf, "libbladeRF", Lib):
+            device = _device()
+            device.sync_config(
+                _bladerf.ChannelLayout.TX_X2,
+                _bladerf.Format.SC16_Q11,
+                16,
+                8192,
+                8,
+                3500,
+            )
+            device.sync_tx(bytes(8192), 2048)
+            with self.assertRaisesRegex(ValueError, "8192 bytes required"):
+                device.sync_tx(bytes(8191), 2048)
+
+        self.assertEqual(calls, [2048])
 
 
 class DeviceModeTest(unittest.TestCase):

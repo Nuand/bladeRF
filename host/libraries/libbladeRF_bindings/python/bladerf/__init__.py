@@ -55,9 +55,11 @@ TriggerSignal = _bladerf.TriggerSignal
 TuningMode = _bladerf.TuningMode
 VCTCXOTamerMode = _bladerf.VCTCXOTamerMode
 
+allocate_buffer = _bladerf.allocate_buffer
 get_bootloader_list = _bladerf.get_bootloader_list
 get_device_list = _bladerf.get_device_list
 load_fw_from_bootloader = _bladerf.load_fw_from_bootloader
+sample_buffer_size = _bladerf.sample_buffer_size
 set_verbosity = _bladerf.set_verbosity
 version = _bladerf.version
 
@@ -72,7 +74,7 @@ __all__ = [
     'BladeRF', 'BladeRFError', 'ChannelLayout', 'ClockSelect', 'Direction',
     'Feature', 'Format', 'GainMode', 'Loopback', 'Metadata', 'MetadataFlags',
     'MetadataStatus', 'RationalRate', 'Trigger', 'TriggerRole', 'TriggerSignal',
-    'TuningMode', 'VCTCXOTamerMode', 'get_bootloader_list', 'get_device_list',
-    'load_fw_from_bootloader', 'set_verbosity', 'version', 'RX', 'TX',
-    'CHANNEL_RX', 'CHANNEL_TX', 'main',
+    'TuningMode', 'VCTCXOTamerMode', 'allocate_buffer', 'get_bootloader_list',
+    'get_device_list', 'load_fw_from_bootloader', 'sample_buffer_size',
+    'set_verbosity', 'version', 'RX', 'TX', 'CHANNEL_RX', 'CHANNEL_TX', 'main',
 ]
