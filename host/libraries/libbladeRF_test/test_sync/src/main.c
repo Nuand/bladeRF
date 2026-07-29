@@ -58,6 +58,7 @@ const struct option long_options[] = {
     { "buffer-size",    required_argument,  0,  'B' },
     { "buffer-count",   required_argument,  0,  'C' },
     { "timeout",        required_argument,  0,  'T' },
+    { "format",         required_argument,  0,  3,  },
 
     /* Verbosity options */
     { "verbosity",      required_argument,  0,  1,  },
@@ -124,6 +125,7 @@ static void print_usage(const char *argv0)
     printf("    -B, --buffer-size <n>       # samples per stream buffer. Default = %u.\n", DEFAULT_STREAM_SAMPLES);
     printf("    -C, --buffer-count <n>      # of stream buffers. Default = %u.\n", DEFAULT_STREAM_BUFFERS);
     printf("    -T, --timeout <n>           Stream timeout, in ms. Default = %u.\n", DEFAULT_STREAM_TIMEOUT);
+    printf("    --format <format>           sc16 (default) or packed.\n");
 
     printf("\n");
 
@@ -173,6 +175,18 @@ int handle_cmdline(int argc, char *argv[], struct test_params *p)
                     return -1;
                 } else {
                     bladerf_log_set_verbosity(level);
+                }
+                break;
+
+            case 3:
+                if (strcasecmp(optarg, "sc16") == 0) {
+                    p->format = BLADERF_FORMAT_SC16_Q11;
+                } else if (strcasecmp(optarg, "packed") == 0) {
+                    p->format = BLADERF_FORMAT_SC16_Q11_PACKED;
+                } else {
+                    log_error("Invalid sample format provided: %s\n",
+                              optarg);
+                    return -1;
                 }
                 break;
 

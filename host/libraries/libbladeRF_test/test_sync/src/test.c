@@ -97,6 +97,7 @@ void test_init_params(struct test_params *p)
     p->stream_buffer_count = DEFAULT_STREAM_BUFFERS;
     p->stream_buffer_size = DEFAULT_STREAM_SAMPLES;
     p->timeout_ms = DEFAULT_STREAM_TIMEOUT;
+    p->format = BLADERF_FORMAT_SC16_Q11;
 }
 
 static int init_module(struct bladerf *dev, struct test_params *p,
@@ -213,7 +214,7 @@ void *rx_task(void *args)
 
     status = bladerf_sync_config(task->dev,
                                  BLADERF_MODULE_RX,
-                                 BLADERF_FORMAT_SC16_Q11,
+                                 p->format,
                                  p->stream_buffer_count,
                                  p->stream_buffer_size,
                                  p->num_xfers,
@@ -287,7 +288,7 @@ void *tx_task(void *arg)
 
     status = bladerf_sync_config(task->dev,
                                  BLADERF_MODULE_TX,
-                                 BLADERF_FORMAT_SC16_Q11,
+                                 p->format,
                                  p->stream_buffer_count,
                                  p->stream_buffer_size,
                                  p->num_xfers,
