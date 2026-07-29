@@ -120,6 +120,19 @@ static uint64_t bad_count  = 0;
  * TX Sample Generation
  ******************************************************************************/
 
+static bool sc16_buffer_is_valid(int16_t const *samples, size_t num_samples)
+{
+    size_t i;
+
+    for (i = 0; i < 2 * num_samples; ++i) {
+        if (samples[i] < -2048 || samples[i] > 2047) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void *tx_callback(struct bladerf *dev,
                   struct bladerf_stream *stream,
                   struct bladerf_metadata *meta,
@@ -138,6 +151,14 @@ void *tx_callback(struct bladerf *dev,
     if (meta->status &
         (BLADERF_META_STATUS_OVERRUN | BLADERF_META_STATUS_UNDERRUN)) {
         log_critical("TX over/under flow detected, stopping.\n");
+        return BLADERF_STREAM_SHUTDOWN;
+    }
+
+    if (samples != NULL &&
+        stream->format == BLADERF_FORMAT_SC16_Q11_PACKED &&
+        !sc16_buffer_is_valid(samples, num_samples)) {
+        log_critical("Completed packed TX buffer is not SC16 Q11\n");
+        do_shutdown = true;
         return BLADERF_STREAM_SHUTDOWN;
     }
 
@@ -487,6 +508,8 @@ int main(int argc, char *argv[])
             case 'b':
                 if (strcmp(optarg, "16bit") == 0 || strcmp(optarg, "16") == 0) {
                     bitmode = BLADERF_FORMAT_SC16_Q11;
+                } else if (strcmp(optarg, "packed") == 0) {
+                    bitmode = BLADERF_FORMAT_SC16_Q11_PACKED;
                 } else if (strcmp(optarg, "8bit") == 0 || strcmp(optarg, "8") == 0) {
                     bitmode = BLADERF_FORMAT_SC8_Q7;
                     CONSTANT_PATTERN_I -= 0x200;
@@ -557,8 +580,10 @@ int main(int argc, char *argv[])
                 printf("                             fpga\n");
                 printf("                             rfic\n");
                 printf("  -s, --samplerate <sps>   Specify sample rate.\n");
-                printf("  -b, --bitmode <mode>     Specify 16bit or 8bit mode\n");
+                printf("  -b, --bitmode <mode>     Specify 16bit, packed, "
+                       "or 8bit mode\n");
                 printf("                             16bit or 16 (default)\n");
+                printf("                             packed\n");
                 printf("                             8bit or 8\n");
                 printf("  -c, --count <num>        Specify number of samples "
                        "to test (0 = unlimited).\n");

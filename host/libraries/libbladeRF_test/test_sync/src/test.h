@@ -59,6 +59,7 @@ struct test_params {
     unsigned int stream_buffer_count;
     unsigned int stream_buffer_size;    /* Units of samples */
     unsigned int timeout_ms;
+    bladerf_format format;
 };
 
 void test_init_params(struct test_params *p);
