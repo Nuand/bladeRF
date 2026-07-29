@@ -2805,7 +2805,7 @@ static int bladerf1_stream(struct bladerf_stream *stream, bladerf_channel_layout
 static int bladerf1_submit_stream_buffer(struct bladerf_stream *stream, void *buffer, unsigned int timeout_ms, bool nonblock)
 {
     size_t len;
-    len = async_stream_buf_bytes(stream);
+    len = async_stream_wire_bytes(stream);
     return async_submit_stream_buffer(stream, buffer, &len, timeout_ms, nonblock);
 }
 

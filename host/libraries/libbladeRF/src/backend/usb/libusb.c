@@ -1107,7 +1107,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
             /* Call user callback requesting more data to transmit */
             next_buffer = stream->cb(
                 stream->dev, stream, &metadata, transfer->buffer,
-                bytes_to_samples(stream->format, transfer->actual_length), stream->user_data);
+                wire_bytes_to_samples(stream->format, transfer->actual_length),
+                stream->user_data);
         } else {
             /* Sanity check for debugging purposes */
             if (transfer->length != transfer->actual_length) {
@@ -1117,7 +1118,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
             /* Call user callback requesting more data to transmit */
             next_buffer = stream->cb(
                 stream->dev, stream, &metadata, transfer->buffer,
-                bytes_to_samples(stream->format, transfer->actual_length), stream->user_data);
+                wire_bytes_to_samples(stream->format, transfer->actual_length),
+                stream->user_data);
         }
 
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
@@ -1128,7 +1130,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                   && stream->format == BLADERF_FORMAT_PACKET_META) {
                status = submit_transfer(stream, next_buffer, metadata.actual_count * sizeof(uint32_t));
             } else {
-               status = submit_transfer(stream, next_buffer, async_stream_buf_bytes(stream));
+               status = submit_transfer(stream, next_buffer, async_stream_wire_bytes(stream));
             }
             if (status != 0) {
                 /* If this fails, we probably have a serious problem...so just
@@ -1136,6 +1138,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 stream->state = STREAM_SHUTTING_DOWN;
             }
         }
+    } else {
+        async_recover_stream_buffer(stream, transfer->buffer);
     }
 
 
@@ -1188,13 +1192,15 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t l
     struct bladerf_lusb *lusb = lusb_backend(stream->dev);
     struct lusb_stream_data *stream_data = stream->backend_data;
     struct libusb_transfer *transfer;
-    const size_t bytes_per_buffer = async_stream_buf_bytes(stream);
+    const size_t bytes_per_buffer = async_stream_wire_bytes(stream);
     size_t prev_idx;
     const unsigned char ep =
         (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX ? SAMPLE_EP_OUT : SAMPLE_EP_IN;
 
     transfer = get_next_available_transfer(stream_data);
     assert(transfer != NULL);
+
+    async_prepare_stream_buffer(stream, buffer);
 
     assert(bytes_per_buffer <= INT_MAX);
     libusb_fill_bulk_transfer(transfer,
@@ -1228,6 +1234,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t l
     MUTEX_LOCK(&stream->lock);
 
     if (status != 0) {
+        async_recover_stream_buffer(stream, buffer);
         log_error("Failed to submit transfer in %s: %s\n",
                   __FUNCTION__, libusb_error_name(status));
 
@@ -1375,7 +1382,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
                   && stream->format == BLADERF_FORMAT_PACKET_META) {
                status = submit_transfer(stream, buffer, metadata.actual_count * sizeof(uint32_t));
             } else {
-               status = submit_transfer(stream, buffer, async_stream_buf_bytes(stream));
+               status = submit_transfer(stream, buffer, async_stream_wire_bytes(stream));
             }
 
             /* If we failed to submit any transfers, cancel everything in

@@ -2119,7 +2119,7 @@ static int bladerf2_submit_stream_buffer(struct bladerf_stream *stream,
                                          bool nonblock)
 {
     size_t len;
-    len = async_stream_buf_bytes(stream);
+    len = async_stream_wire_bytes(stream);
     return async_submit_stream_buffer(stream, buffer, &len, timeout_ms, nonblock);
 }
 

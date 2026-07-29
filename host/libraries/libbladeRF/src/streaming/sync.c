@@ -142,7 +142,7 @@ int sync_init(struct bladerf_sync *sync,
 {
     int status = 0;
     size_t i, bytes_per_sample;
-    size_t bytes_per_buffer;
+    size_t valid_buffer_samples;
     size_t gpif_buffer_size = USB_MSG_SIZE_SS;
     size_t valid_buffer_size = gpif_buffer_size;
     struct bladerf_version fx3_version = FW_LARGER_BUFFER_VERSION;
@@ -194,21 +194,25 @@ int sync_init(struct bladerf_sync *sync,
     }
 
     bytes_per_sample = samples_to_bytes(format, 1);
-    bytes_per_buffer = samples_to_bytes(format, buffer_size);
-    if (bytes_per_buffer < valid_buffer_size || bytes_per_buffer % valid_buffer_size != 0) {
-        size_t original_size = buffer_size;
+    valid_buffer_samples =
+        valid_buffer_size / samples_to_wire_bytes(format, 1);
+    if (buffer_size < valid_buffer_samples ||
+        buffer_size % valid_buffer_samples != 0) {
+        size_t const requested_buffer_size = buffer_size;
 
-        /* Round up to the next multiple of valid_buffer_size, ensuring at least one GPIF buffer */
-        buffer_size = bytes_per_buffer == 0 ? valid_buffer_size / bytes_per_sample :
-                     ((bytes_per_buffer + valid_buffer_size - 1) / valid_buffer_size)
-                     * (valid_buffer_size / bytes_per_sample);
+        if (buffer_size == 0) {
+            buffer_size = valid_buffer_samples;
+        } else {
+            buffer_size +=
+                valid_buffer_samples - buffer_size % valid_buffer_samples;
+        }
 
         log_warning("Requested buffer size %zu samples (%zu bytes) is invalid. "
                     "Adjusting to %zu samples (%zu bytes).\n",
-                    original_size, samples_to_bytes(format, original_size),
-                    buffer_size, samples_to_bytes(format, buffer_size));
-
-        bytes_per_buffer = samples_to_bytes(format, buffer_size);
+                    requested_buffer_size,
+                    samples_to_wire_bytes(format, requested_buffer_size),
+                    buffer_size,
+                    samples_to_wire_bytes(format, buffer_size));
     }
 
     /* Deinitialize sync handle if it's initialized */
@@ -650,24 +654,9 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                 samples_to_copy = uint_min(num_samples - samples_returned,
                                            samples_per_buffer - b->partial_off);
 
-                if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_PACKED) {
-                    // Unpack SC12Q11 samples to SC16Q11 directly into destination buffer
-                    size_t zz, jj;
-                    uint8_t *meta_sample_ptr = buf_src + samples2bytes(s, b->partial_off);
-                    int16_t *dest_ptr = (int16_t*)(samples_dest + (4*samples_returned));
-                    for (zz = 0, jj = 0; zz < 2*samples_to_copy; zz+=4, jj+=3) {
-                        dest_ptr[zz+0] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+0] & 0x0FFF) << 4) >> 4;
-                        dest_ptr[zz+1] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+1] & 0x00FF) << 8) >> 4
-                            | ((((uint16_t*)(meta_sample_ptr))[jj+0] & 0xF000) >> 12);
-                        dest_ptr[zz+2] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+2] & 0x000F) << 12) >> 4
-                            | ((((uint16_t*)(meta_sample_ptr))[jj+1] & 0xFF00)) >> 8;
-                        dest_ptr[zz+3] = (int16_t)((((uint16_t*)(meta_sample_ptr))[jj+2] & 0xFFF0)) >> 4;
-                    }
-                } else {
-                    memcpy(samples_dest + samples2bytes(s, samples_returned),
-                        buf_src + samples2bytes(s, b->partial_off),
-                        samples2bytes(s, samples_to_copy));
-                }
+                memcpy(samples_dest + samples2bytes(s, samples_returned),
+                       buf_src + samples2bytes(s, b->partial_off),
+                       samples2bytes(s, samples_to_copy));
 
                 b->partial_off += samples_to_copy;
                 samples_returned += samples_to_copy;
@@ -913,7 +902,7 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
         if (s->stream_config.format == BLADERF_FORMAT_PACKET_META) {
            len = b->actual_lengths[idx];
         } else {
-           len = async_stream_buf_bytes(s->worker->stream);
+           len = async_stream_wire_bytes(s->worker->stream);
         }
         status = async_submit_stream_buffer(s->worker->stream,
                                             b->buffers[idx],
@@ -1185,24 +1174,9 @@ int sync_tx(struct bladerf_sync *s,
                 samples_to_copy = uint_min(num_samples - samples_written,
                                            samples_per_buffer - b->partial_off);
 
-                if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_PACKED) {
-                    // Pack SC16Q11 samples to SC12Q11 directly into destination buffer
-                    size_t zz, jj;
-                    uint8_t *packed_dest = buf_dest + samples2bytes(s, b->partial_off);
-                    int16_t const *src_ptr = (int16_t const *)(samples_src + 2*sizeof(int16_t)*samples_written);
-                    for (zz = 0, jj = 0; zz < samples_to_copy * 2; zz += 4, jj += 3) {
-                        ((uint16_t*)packed_dest)[jj+0] = src_ptr[zz+0] & 0x0FFF;
-                        ((uint16_t*)packed_dest)[jj+0] |= (src_ptr[zz+1] << 12) & 0xF000;
-                        ((uint16_t*)packed_dest)[jj+1] = (src_ptr[zz+1] >> 4) & 0x00FF;
-                        ((uint16_t*)packed_dest)[jj+1] |= (src_ptr[zz+2] << 8) & 0xFF00;
-                        ((uint16_t*)packed_dest)[jj+2] = (src_ptr[zz+2] >> 8) & 0x000F;
-                        ((uint16_t*)packed_dest)[jj+2] |= (src_ptr[zz+3] << 4) & 0xFFF0;
-                    }
-                } else {
-                    memcpy(buf_dest + samples2bytes(s, b->partial_off),
-                           samples_src + samples2bytes(s, samples_written),
-                           samples2bytes(s, samples_to_copy));
-                }
+                memcpy(buf_dest + samples2bytes(s, b->partial_off),
+                       samples_src + samples2bytes(s, samples_written),
+                       samples2bytes(s, samples_to_copy));
 
                 b->partial_off += samples_to_copy;
                 samples_written += samples_to_copy;

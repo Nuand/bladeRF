@@ -1121,15 +1121,13 @@ int bladerf_init_stream(struct bladerf_stream **stream,
         }
     }
 
-    if (format == BLADERF_FORMAT_SC16_Q11_PACKED) {
-        log_error("%s: Async interface does not support SC16_Q11_PACKED format\n", __FUNCTION__);
-        MUTEX_UNLOCK(&dev->lock);
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
     status = dev->board->init_stream(stream, dev, callback, buffers,
                                      num_buffers, format, samples_per_buffer,
                                      num_transfers, data);
+    if (status != 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        return status;
+    }
 
     dev->board->get_sample_rate(dev, BLADERF_MODULE_TX, &tx_samp_rate);
     if (tx_samp_rate) {
