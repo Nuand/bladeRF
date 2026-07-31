@@ -1243,8 +1243,9 @@ typedef uint64_t bladerf_frequency;
  * @note Most API users will not need to use this function, as
  *       bladerf_set_frequency() calls this internally after tuning the device.
  *
- * The high band is used for `frequency` above 1.5 GHz on bladeRF1 and above
- * 3.0 GHz on bladeRF2. Otherwise, the low band is used.
+ * The high band is used for `frequency` above 1.5 GHz on bladeRF1. On
+ * bladeRF2, the high band is used above 2.538 GHz for RX and 3.0 GHz for TX.
+ * Otherwise, the low band is used.
  *
  * @see bladerf_get_frequency_range() to determine the range of supported
  *      frequencies.

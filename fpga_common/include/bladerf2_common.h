@@ -598,7 +598,7 @@ static struct band_port_map const bladerf2_rx_band_port_map[] = {
     {
         FIELD_INIT(.frequency, {
             FIELD_INIT(.min,        70000000UL),
-            FIELD_INIT(.max,        3000000000UL),
+            FIELD_INIT(.max,        2538000000UL),
             FIELD_INIT(.step,       2),
             FIELD_INIT(.scale,      1),
         }),
@@ -608,7 +608,7 @@ static struct band_port_map const bladerf2_rx_band_port_map[] = {
     },
     {
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,        3000000000UL),
+            FIELD_INIT(.min,        2538000000UL),
             FIELD_INIT(.max,        6000000000UL),
             FIELD_INIT(.step,       2),
             FIELD_INIT(.scale,      1),
