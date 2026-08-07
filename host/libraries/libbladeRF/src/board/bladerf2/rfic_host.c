@@ -286,7 +286,7 @@ static int _rfic_host_enable_module(struct bladerf *dev,
 
         /* Set/unset TX mute */
         if (BLADERF_CHANNEL_IS_TX(ch)) {
-            txmute_set(phy, ch, !enable);
+            CHECK_STATUS(txmute_set(phy, ch, !enable));
         }
     }
 
@@ -632,6 +632,21 @@ static int _rfic_host_set_gain_mode(struct bladerf *dev,
 /* These functions handle offset */
 /******************************************************************************/
 
+static int _rfic_host_scale_gain(struct bladerf_range const *range,
+                                 bladerf_channel ch,
+                                 int gain)
+{
+    /*
+     * bladerf_gain uses integer dB, so -90 dB is the only value callers can
+     * use to select the AD9361 DSA's -89.75 dB endpoint.
+     */
+    if (BLADERF_CHANNEL_IS_TX(ch) && gain < -89) {
+        return -89750;
+    }
+
+    return __scale_int(range, clamp_to_range(range, gain));
+}
+
 static int _rfic_host_get_gain(struct bladerf *dev,
                                bladerf_channel ch,
                                int *gain)
@@ -693,7 +708,8 @@ static int _rfic_host_set_gain(struct bladerf *dev,
             CHECK_STATUS(
                 dev->board->get_gain_stage_range(dev, ch, "dsa", &range));
 
-            CHECK_STATUS(txmute_set_cached(phy, ch, -__scale_int(range, val)));
+            CHECK_STATUS(txmute_set_cached(
+                phy, ch, -_rfic_host_scale_gain(range, ch, val)));
         } else {
             CHECK_STATUS(rfic->set_gain_stage(dev, ch, "dsa", val));
         }
@@ -767,11 +783,7 @@ static int _rfic_host_set_gain_stage(struct bladerf *dev,
     CHECK_STATUS(dev->board->get_gain_stage_range(dev, ch, stage, &range));
 
     /* Scale/round/clamp as required */
-    if (BLADERF_CHANNEL_IS_TX(ch) && gain < -89) {
-        val = -89750;
-    } else {
-        val = __scale_int(range, clamp_to_range(range, gain));
-    }
+    val = _rfic_host_scale_gain(range, ch, gain);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         if (strcmp(stage, "dsa") == 0) {
