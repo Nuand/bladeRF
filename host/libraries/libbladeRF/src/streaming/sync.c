@@ -1077,6 +1077,12 @@ int sync_tx(struct bladerf_sync *s,
         return BLADERF_ERR_INVAL;
     }
 
+    if (num_samples % s->meta.samples_per_ts != 0) {
+        log_debug("%s: %u samples %% %u channels != 0\n",
+                  __FUNCTION__, num_samples, s->meta.samples_per_ts);
+        return BLADERF_ERR_INVAL;
+    }
+
     MUTEX_LOCK(&s->lock);
 
     status = handle_tx_parameters(user_meta, s, &op);
@@ -1266,8 +1272,8 @@ int sync_tx(struct bladerf_sync *s,
                                         __FUNCTION__, user_meta->timestamp,
                                         s->meta.curr_timestamp, delta);
 
-                            if (delta < left_in_msg(s)) {
-                                to_zero = (size_t)delta;
+                            if (delta < left_in_msg(s) / s->meta.samples_per_ts) {
+                                to_zero = (size_t)delta * s->meta.samples_per_ts;
 
                                 log_verbose("%s: Padded subset of msg "
                                             "(%" PRIu64 " samples)\n",
@@ -1286,30 +1292,11 @@ int sync_tx(struct bladerf_sync *s,
 
                             s->meta.curr_msg_off += to_zero;
 
-                            /* If we're going to supply the FPGA with a
-                             * discontinuity, it is required that the last three
-                             * samples provided be zero in order to hold the
-                             * DAC @ (0 + 0j).
-                             *
-                             * See "Figure 9: TX data interface" in the LMS6002D
-                             * data sheet for the register stages that create
-                             * this requirement.
-                             *
-                             * If we're ending a burst with < 3 zeros samples at
-                             * the end of the message, we'll need to continue
-                             * onto the next message. At this next message,
-                             * we'll either encounter the requested timestamp or
-                             * zero-fill the message to fulfil this "three zero
-                             * sample" requirement, and set the timestamp
-                             * appropriately at the following message.
-                             */
-                            if (to_zero < 3 && left_in_msg(s) == 0) {
-                                s->meta.curr_timestamp += to_zero;
-                                log_verbose("Ended msg with < 3 zero samples. "
-                                            "Padding into next message.\n");
-                            } else {
-                                s->meta.curr_timestamp = user_meta->timestamp;
-                                op.zero_pad            = false;
+                            s->meta.curr_timestamp +=
+                                to_zero / s->meta.samples_per_ts;
+                            if (s->meta.curr_timestamp ==
+                                user_meta->timestamp) {
+                                op.zero_pad = false;
                             }
                         }
 
@@ -1326,10 +1313,8 @@ int sync_tx(struct bladerf_sync *s,
                                    samples2bytes(s, samples_to_copy));
 
                             s->meta.curr_msg_off += samples_to_copy;
-                            if (s->stream_config.layout == BLADERF_TX_X2)
-                               s->meta.curr_timestamp += samples_to_copy / 2;
-                            else
-                               s->meta.curr_timestamp += samples_to_copy;
+                            s->meta.curr_timestamp +=
+                                samples_to_copy / s->meta.samples_per_ts;
 
                             samples_written += samples_to_copy;
 
@@ -1362,7 +1347,8 @@ int sync_tx(struct bladerf_sync *s,
                                 off);
 
                             s->meta.curr_msg_off += to_zero;
-                            s->meta.curr_timestamp += to_zero;
+                            s->meta.curr_timestamp +=
+                                to_zero / s->meta.samples_per_ts;
                         }
 
                         if (left_in_msg(s) == 0) {

@@ -8,6 +8,12 @@ transmit bursts of samples at a specified timestamp. The timestamp is a
 free-running counter in the FPGA, incrementing at the sample rate specified by
 bladerf_set_sample_rate(), with each outgoing sample.
 
+With a ::BLADERF_TX_X2 layout, one timestamp tick represents one simultaneous
+sample from each channel. The `num_samples` argument to bladerf_sync_tx()
+counts all interleaved complex samples, so it must be divisible by two. A
+buffer spanning <i>N</i> timestamp ticks therefore contains <i>2N</i> complex
+samples ordered as described by ::BLADERF_FORMAT_SC16_Q11.
+
 <h2>Configuring the Synchronous Interface</h2>
 When timestamps are desired, one must enable metadata support. This is done
 through the `format` parameter of the bladerf_sync_config() function:
