@@ -1,0 +1,67 @@
+/**
+
+\page async_rx_packed bladeRF Asynchronous RX
+
+This page describes how to receive samples with the bladeRF
+<a class="el" href="group___f_n___s_t_r_e_a_m_i_n_g___a_s_y_n_c.html">
+Asynchronous Interface</a>. The example supports SC8 Q7 and standard or packed
+SC16 Q11 streams. A complete listing is provided at the end of the page.
+
+<h2>Running the example</h2>
+
+Run the example with `packed` (the default), `sc16`, or `sc8`:
+
+\code
+libbladeRF_example_async_rx [sc8|sc16|packed]
+\endcode
+
+The example opens the first available device and configures RX0 for 915 MHz,
+20 MS/s, 56 MHz bandwidth, and the default gain mode. It captures 8,192,000
+complex samples and writes them to `async_rx.cs8` or `async_rx.cs16` after
+streaming completes. The file contains interleaved signed I and Q values and
+can be opened as complex signed 8-bit or 16-bit data at 20 MS/s in a
+signal-analysis application.
+
+<h2>Selecting a stream format</h2>
+
+::BLADERF_FORMAT_SC8_Q7 uses two transport and callback bytes per complex
+sample. ::BLADERF_FORMAT_SC16_Q11 uses four bytes per complex sample.
+::BLADERF_FORMAT_SC16_Q11_PACKED uses a three-byte SC12 Q11 representation on
+the device transport and converts it to SC16 Q11 in libbladeRF. The callback
+and output file therefore use the same `int16_t` I/Q layout for both SC16
+formats.
+
+The example uses 8192 samples per buffer, which meets the transfer alignment
+requirements of all three formats.
+
+<h2>Receiving asynchronous buffers</h2>
+
+bladerf_init_stream() associates a callback with a set of stream buffers. For
+RX, each callback receives a completed buffer and its number of complex
+samples. Returning the same buffer allows libbladeRF to reuse it. Returning
+::BLADERF_STREAM_SHUTDOWN stops the stream.
+
+The example copies each completed buffer into one capture allocation. The
+callback stops the stream after the requested number of samples is received.
+
+\snippet async_rx.c receive callback
+
+<h2>Starting the stream</h2>
+
+Initialize the stream before enabling RX, then call bladerf_stream() with the
+desired channel layout. bladerf_stream() blocks while callbacks process the
+buffers and returns after the callback requests shutdown.
+
+\snippet async_rx.c start stream
+
+After the stream returns, the example disables RX and writes the completed
+capture to disk outside the callback.
+
+\snippet async_rx.c write capture
+
+<br><hr><br>
+<h2>Complete listing</h2>
+
+\snippet async_rx.c Full listing
+
+*/

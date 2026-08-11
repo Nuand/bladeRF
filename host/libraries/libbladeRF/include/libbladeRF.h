@@ -2877,6 +2877,9 @@ int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
  * These functions are either thread-safe or may be used in a thread-safe
  * manner (per the details noted in the function description).
  *
+ * The \ref async_rx_packed example demonstrates receiving SC8 Q7 and standard
+ * or packed SC16 Q11 samples through an asynchronous stream.
+ *
  * @{
  */
 
@@ -2996,11 +2999,16 @@ typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
  *                              allocated array of buffer pointers.
  * @param[in]   num_buffers     Number of buffers to allocate and return. This
  *                              value must >= the `num_transfers` parameter.
- * @param[in]   format          Sample data format
+ * @param[in]   format          Sample data format. When using
+ *                              ::BLADERF_FORMAT_SC16_Q11_PACKED, callback
+ *                              buffers remain in ::BLADERF_FORMAT_SC16_Q11.
  * @param[in]   samples_per_buffer  Size of allocated buffers, in units of
- *                                  samples Note that the physical size of the
+ *                                  samples. Note that the physical size of the
  *                                  buffer is a function of this and the format
- *                                  parameter.
+ *                                  parameter. For packed SC16 Q11, the
+ *                                  three-byte-per-sample wire size must be a
+ *                                  multiple of the device's transfer buffer
+ *                                  size.
  * @param[in]   num_transfers   Maximum number of transfers that may be
  *                              in-flight simultaneously. This must be <= the
  *                              `num_buffers` parameter.

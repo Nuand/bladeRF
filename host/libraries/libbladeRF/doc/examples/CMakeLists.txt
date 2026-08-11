@@ -21,6 +21,9 @@ include_directories(${INCLUDES})
 add_executable(libbladeRF_example_sync_rxtx sync_rxtx.c example_common.c)
 target_link_libraries(libbladeRF_example_sync_rxtx ${LIBS})
 
+add_executable(libbladeRF_example_async_rx async_rx.c)
+target_link_libraries(libbladeRF_example_async_rx ${LIBS})
+
 add_executable(libbladeRF_example_sync_rx_meta sync_rx_meta.c example_common.c ${SRC})
 target_link_libraries(libbladeRF_example_sync_rx_meta ${LIBS})
 
