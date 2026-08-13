@@ -2075,7 +2075,31 @@ static int bladerf2_init_stream(struct bladerf_stream **stream,
                                 size_t num_transfers,
                                 void *user_data)
 {
+    uint32_t config_gpio;
+
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    CHECK_STATUS(dev->backend->config_gpio_read(dev, &config_gpio));
+    config_gpio &= ~(BLADERF_GPIO_HIGHLY_PACKED_MODE |
+                     BLADERF_GPIO_8BIT_MODE |
+                     BLADERF_GPIO_TIMESTAMP |
+                     BLADERF_GPIO_PACKET);
+
+    if (format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+        config_gpio |= BLADERF_GPIO_HIGHLY_PACKED_MODE;
+    } else if (format == BLADERF_FORMAT_SC8_Q7 ||
+               format == BLADERF_FORMAT_SC8_Q7_META) {
+        config_gpio |= BLADERF_GPIO_8BIT_MODE;
+    }
+
+    if (format == BLADERF_FORMAT_PACKET_META) {
+        config_gpio |= BLADERF_GPIO_PACKET | BLADERF_GPIO_TIMESTAMP;
+    } else if (format == BLADERF_FORMAT_SC16_Q11_META ||
+               format == BLADERF_FORMAT_SC8_Q7_META) {
+        config_gpio |= BLADERF_GPIO_TIMESTAMP;
+    }
+
+    CHECK_STATUS(dev->backend->config_gpio_write(dev, config_gpio));
 
     return async_init_stream(stream, dev, callback, buffers, num_buffers,
                              format, samples_per_buffer, num_transfers,
