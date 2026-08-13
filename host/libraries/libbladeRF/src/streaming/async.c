@@ -32,6 +32,52 @@
 #include "helpers/timeout.h"
 #include "helpers/have_cap.h"
 
+void async_prepare_stream_buffer(struct bladerf_stream *stream, void *buffer)
+{
+    if (stream->format == BLADERF_FORMAT_SC16_Q11_PACKED &&
+        (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX &&
+        buffer != BLADERF_STREAM_SHUTDOWN &&
+        buffer != BLADERF_STREAM_NO_DATA) {
+        sc16q11_pack_in_place(buffer, stream->samples_per_buffer);
+    }
+}
+
+void async_recover_stream_buffer(struct bladerf_stream *stream, void *buffer)
+{
+    if (stream->format == BLADERF_FORMAT_SC16_Q11_PACKED &&
+        (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX &&
+        buffer != BLADERF_STREAM_SHUTDOWN &&
+        buffer != BLADERF_STREAM_NO_DATA) {
+        sc16q11_unpack_in_place(buffer, stream->samples_per_buffer);
+    }
+}
+
+static void *packed_callback(struct bladerf *dev,
+                             struct bladerf_stream *stream,
+                             struct bladerf_metadata *meta,
+                             void *samples,
+                             size_t num_samples,
+                             void *user_data)
+{
+    if (samples != NULL) {
+        if ((stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
+            async_recover_stream_buffer(stream, samples);
+        }
+
+        if (num_samples != stream->samples_per_buffer) {
+            log_error("Incomplete packed stream buffer\n");
+            stream->error_code = BLADERF_ERR_IO;
+            return BLADERF_STREAM_SHUTDOWN;
+        }
+
+        if ((stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_RX) {
+            sc16q11_unpack_in_place(samples, num_samples);
+        }
+    }
+
+    return stream->user_cb(dev, stream, meta, samples, num_samples, user_data);
+}
+
 int async_init_stream(struct bladerf_stream **stream,
                       struct bladerf *dev,
                       bladerf_stream_cb callback,
@@ -70,12 +116,14 @@ int async_init_stream(struct bladerf_stream **stream,
         fx3_version.major, fx3_version.minor, fx3_version.patch,
         gpif_buffer_size, gpif_buffer_size == USB_MSG_SIZE_SS_LEGACY ? " (legacy)" : "");
 
-    buffer_size_bytes = samples_to_bytes(format, samples_per_buffer);
-    if (buffer_size_bytes < gpif_buffer_size || buffer_size_bytes % gpif_buffer_size != 0) {
-        log_error("Samples_per_buffer must be multiples of %u\n",
-                  bytes_to_samples(format, gpif_buffer_size));
+    buffer_size_bytes = samples_to_wire_bytes(format, samples_per_buffer);
+    if (buffer_size_bytes < gpif_buffer_size ||
+        buffer_size_bytes % gpif_buffer_size != 0) {
+        log_error("Wire buffer size must be a multiple of %zu bytes\n",
+                  gpif_buffer_size);
         return BLADERF_ERR_INVAL;
     }
+    buffer_size_bytes = samples_to_bytes(format, samples_per_buffer);
 
     /* Create a stream and populate it with the appropriate information */
     lstream = malloc(sizeof(struct bladerf_stream));
@@ -104,6 +152,10 @@ int async_init_stream(struct bladerf_stream **stream,
     lstream->format = format;
     lstream->transfer_timeout = BULK_TIMEOUT_MS;
     lstream->cb = callback;
+    lstream->user_cb = callback;
+    if (format == BLADERF_FORMAT_SC16_Q11_PACKED) {
+        lstream->cb = packed_callback;
+    }
     lstream->user_data = user_data;
     lstream->buffers = NULL;
 
@@ -282,4 +334,3 @@ void async_deinit_stream(struct bladerf_stream *stream)
     /* Free up the stream itself */
     free(stream);
 }
-

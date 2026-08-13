@@ -566,6 +566,8 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t l
 
     LONG buffer_size = (LONG) len;
 
+    async_prepare_stream_buffer(stream, buffer);
+
     assert(data->transfers[data->avail_i].handle == NULL);
     assert(data->transfers[data->avail_i].buffer == NULL);
     assert(data->num_avail != 0);
@@ -583,6 +585,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t l
         data->avail_i = next_idx(data, data->avail_i);
         data->num_avail--;
     } else {
+        async_recover_stream_buffer(stream, buffer);
         status = BLADERF_ERR_UNEXPECTED;
         log_debug("Failed to submit buffer %p in transfer slot %u.\n",
                   buffer, (unsigned int) data->avail_i);
@@ -698,6 +701,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
                                      stream->user_data);
 
         } else {
+            async_recover_stream_buffer(stream, data->transfers[i].buffer);
             done = true;
             status = BLADERF_ERR_IO;
             log_debug("Failed to finish transfer %u, buf=%p.\n",
@@ -742,6 +746,7 @@ out:
             data->ep->FinishDataXfer(data->transfers[i].buffer, (LONG &)len,
                                      &data->transfers[i].event,
                                      data->transfers[i].handle);
+            async_recover_stream_buffer(stream, data->transfers[i].buffer);
 
 
             data->transfers[i].buffer = NULL;

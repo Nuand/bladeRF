@@ -1136,6 +1136,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 stream->state = STREAM_SHUTTING_DOWN;
             }
         }
+    } else {
+        async_recover_stream_buffer(stream, transfer->buffer);
     }
 
 
@@ -1196,6 +1198,8 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t l
     transfer = get_next_available_transfer(stream_data);
     assert(transfer != NULL);
 
+    async_prepare_stream_buffer(stream, buffer);
+
     assert(bytes_per_buffer <= INT_MAX);
     libusb_fill_bulk_transfer(transfer,
                               lusb->handle,
@@ -1228,6 +1232,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t l
     MUTEX_LOCK(&stream->lock);
 
     if (status != 0) {
+        async_recover_stream_buffer(stream, buffer);
         log_error("Failed to submit transfer in %s: %s\n",
                   __FUNCTION__, libusb_error_name(status));
 

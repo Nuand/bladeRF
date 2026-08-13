@@ -2146,8 +2146,8 @@ typedef enum {
      * This format is a ::BLADERF_FORMAT_SC16_Q11 equivalent to the end user.
      * The difference lies in the intermediate SC12 Q11 packing format used by
      * the FPGA and libbladeRF. This intermediate format allows for a 33.3%
-     * higher sample rate when bandwidth limited by the host interface. Synchronous
-     * buffer length must be a multiple of 4096 samples.
+     * higher sample rate when bandwidth limited by the host interface. Stream
+     * buffer lengths must produce an integral number of FX3 DMA/GPIF buffers.
      *
      * @note While this format allows for higher sample rates over bandwidth-limited
      * interfaces, it requires additional CPU processing for packing/unpacking. Users

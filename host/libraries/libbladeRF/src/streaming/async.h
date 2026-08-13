@@ -46,6 +46,7 @@ struct bladerf_stream {
     bladerf_format format;
     unsigned int transfer_timeout;
     bladerf_stream_cb cb;
+    bladerf_stream_cb user_cb;
     void *user_data;
     size_t samples_per_buffer;
     size_t num_buffers;
@@ -64,8 +65,11 @@ struct bladerf_stream {
 /* Get the number of bytes per stream buffer */
 static inline size_t async_stream_buf_bytes(struct bladerf_stream *s)
 {
-    return samples_to_bytes(s->format, s->samples_per_buffer);
+    return samples_to_wire_bytes(s->format, s->samples_per_buffer);
 }
+
+void async_prepare_stream_buffer(struct bladerf_stream *stream, void *buffer);
+void async_recover_stream_buffer(struct bladerf_stream *stream, void *buffer);
 
 int async_init_stream(struct bladerf_stream **stream,
                       struct bladerf *dev,
