@@ -173,6 +173,17 @@ architecture arch of sample_stream_tb is
 
     signal rx_packet_ready         :   std_logic;
     signal tx_packet_ready         :   std_logic;
+
+    -- RFIC CTRL_OUT gain tag. Must match fifo_writer's GAIN_TAG_MAGIC.
+    constant GAIN_TAG_MAGIC        :   std_logic_vector(15 downto 0) := x"9361";
+
+    -- Value the stimulus below holds for exactly one rx_clock cycle. It stands
+    -- in for the per-bit skew of eight independent synchronizers, and must never
+    -- reach a header.
+    constant GAIN_TAG_SKEW_VALUE   :   std_logic_vector(7 downto 0) := x"2C";
+
+    signal rfic_ctrl_out           :   std_logic_vector(7 downto 0) := x"28";
+    signal gain_tags_checked       :   natural := 0;
 begin
 
     usb_speed <= '0' ;
@@ -263,7 +274,8 @@ begin
     -- RX Submodule
     U_rx : entity work.rx
         generic map (
-            NUM_STREAMS            => adc_controls'length
+            NUM_STREAMS            => adc_controls'length,
+            ENABLE_GAIN_TAG        => true
         )
         port map (
             rx_reset               => rx_reset,
@@ -299,6 +311,9 @@ begin
 
             -- Mini expansion signals
             mini_exp               => "00",
+
+            -- RFIC CTRL_OUT, tagged into the metadata header
+            rfic_ctrl_out          => rfic_ctrl_out,
 
             -- Metadata to host via FX3
             meta_fifo_rclock       => fx3_clock,
@@ -449,6 +464,85 @@ begin
         end loop ;
     end process ;
 
+    -- Walk the RFIC gain index around the way an AGC would, including one
+    -- single-cycle intermediate value that the stability filter must swallow.
+    ctrl_out_stimulus : process
+    begin
+        rfic_ctrl_out <= x"28";     -- index 40
+        wait for 200 us;
+
+        -- Skewed transition: 0x28 -> 0x2C -> 0x34, with the intermediate held
+        -- across exactly one rising edge. Align to the clock first, otherwise
+        -- "wait for 200 us" can land on an edge and make the number of times
+        -- the synchronizer samples the intermediate ambiguous.
+        nop( rx_clock, 1 );
+        rfic_ctrl_out <= GAIN_TAG_SKEW_VALUE;
+        nop( rx_clock, 1 );
+        rfic_ctrl_out <= x"34";     -- index 52
+        wait for 200 us;
+
+        rfic_ctrl_out <= x"B4";     -- index 52, gain lock asserted
+        wait for 200 us;
+
+        rfic_ctrl_out <= x"14";     -- index 20
+        wait;
+    end process;
+
+    -- Drain the RX metadata FIFO and check the gain tag in each header.
+    --
+    -- The meta FIFO is 128 bits wide on the write side and 32 on the read side,
+    -- so each header comes out as four words with the reserved word first. Reads
+    -- start from empty, so counting words keeps us aligned to that boundary.
+    -- LPM_SHOWAHEAD is ON, meaning rdata already presents the head of the queue
+    -- and rreq pops it -- so the word consumed at an edge is the rdata visible
+    -- during the cycle in which rreq is high.
+    rx_meta_reader : process( fx3_clock, reset )
+        variable word_idx : natural range 0 to 3 := 0;
+        variable tag      : std_logic_vector(31 downto 0);
+    begin
+        if( reset = '1' ) then
+            rx_meta_fifo.rreq <= '0';
+            word_idx          := 0;
+        elsif( rising_edge(fx3_clock) ) then
+            if( rx_meta_fifo.rreq = '1' ) then
+                if( word_idx = 0 ) then
+                    tag := rx_meta_fifo.rdata;
+
+                    assert( tag(31 downto 16) = GAIN_TAG_MAGIC )
+                        report "reserved word is not a gain tag: " &
+                               to_hstring(tag)
+                        severity failure;
+
+                    assert( tag(15 downto 11) = "00000" )
+                        report "gain tag reserved bits are not zero: " &
+                               to_hstring(tag)
+                        severity failure;
+
+                    -- Bit 8 is a convenience copy of CTRL_OUT[7] (gain lock)
+                    assert( tag(8) = tag(7) )
+                        report "gain tag lock bit does not mirror CTRL_OUT[7]: " &
+                               to_hstring(tag)
+                        severity failure;
+
+                    assert( tag(7 downto 0) /= GAIN_TAG_SKEW_VALUE )
+                        report "stability filter let a skewed intermediate " &
+                               "CTRL_OUT value reach a header: " & to_hstring(tag)
+                        severity failure;
+
+                    gain_tags_checked <= gain_tags_checked + 1;
+                end if;
+
+                if( word_idx = 3 ) then
+                    word_idx := 0;
+                else
+                    word_idx := word_idx + 1;
+                end if;
+            end if;
+
+            rx_meta_fifo.rreq <= not rx_meta_fifo.rempty;
+        end if;
+    end process;
+
     -- Testbench
     tb : process
     begin
@@ -462,6 +556,11 @@ begin
         rx_enable <= '1' ;
         tx_enable <= '1' ;
         nop( fx3_clock, 2000000 ) ;
+        -- Guard against the gain tag checker silently never running
+        assert( gain_tags_checked > 0 )
+            report "no RX metadata headers were checked for a gain tag"
+            severity failure ;
+        report "-- Gain tags checked: " & integer'image(gain_tags_checked) ;
         report "-- End of Simulation --" ;
         stop(2) ;
         wait ;

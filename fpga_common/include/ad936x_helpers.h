@@ -123,5 +123,27 @@ enum rf_gain_ctrl_mode gainmode_bladerf_to_ad9361(bladerf_gain_mode gainmode,
 bladerf_gain_mode gainmode_ad9361_to_bladerf(enum rf_gain_ctrl_mode gainmode,
                                              bool *ok);
 
+/**
+ * @brief       Convert an RX full gain-table index to RFIC gain in dB
+ *
+ * Mirrors ad9361_get_full_table_gain(), but works from the index alone so it
+ * can be applied to a gain index sampled by the FPGA (see the RX metadata gain
+ * tag) rather than one just read over SPI. Deliberately avoids
+ * struct ad9361_rf_phy so it is usable when the RFIC driver lives on the NIOS
+ * rather than the host.
+ *
+ * Only valid for the full gain table with digital gain disabled, which is how
+ * bladerf2_rfic_init_params configures the RFIC.
+ *
+ * @param[in]   gain_index  Full gain-table index (0-127)
+ * @param[in]   rx_lo_hz    Current RX LO frequency, which selects the band
+ * @param[out]  ok          True if return value is valid, false otherwise
+ *
+ * @return      RFIC gain in dB
+ */
+int ad936x_gain_index_to_gain_db(uint8_t gain_index,
+                                 bladerf_frequency rx_lo_hz,
+                                 bool *ok);
+
 #endif  // !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
 #endif  // FPGA_COMMON_AD936X_HELPERS_H_

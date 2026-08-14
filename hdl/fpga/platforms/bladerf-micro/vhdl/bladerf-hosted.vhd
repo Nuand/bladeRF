@@ -624,7 +624,8 @@ begin
     -- RX Submodule
     U_rx : entity work.rx
         generic map (
-            NUM_STREAMS            => adc_controls'length
+            NUM_STREAMS            => adc_controls'length,
+            ENABLE_GAIN_TAG        => true
         )
         port map (
             rx_reset               => rx_reset,
@@ -664,6 +665,10 @@ begin
 
             -- Mini expansion signals
             mini_exp               => mini_exp2 & mini_exp1,
+
+            -- Raw pin, not rffe_gpio.i.ctrl_out: that copy is synchronized to
+            -- sys_clock, and the metadata header is built in the rx_clock domain.
+            rfic_ctrl_out          => adi_ctrl_out,
 
             -- Metadata to host via FX3
             meta_fifo_rclock       => fx3_pclk_pll,

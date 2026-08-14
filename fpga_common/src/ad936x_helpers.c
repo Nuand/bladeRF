@@ -193,4 +193,54 @@ bladerf_gain_mode gainmode_ad9361_to_bladerf(enum rf_gain_ctrl_mode gainmode,
     return 0;
 }
 
+int ad936x_gain_index_to_gain_db(uint8_t gain_index,
+                                 bladerf_frequency rx_lo_hz,
+                                 bool *ok)
+{
+    /* Per-band parameters of the Analog Devices default RX full gain tables,
+     * matching ad9361_init_gain_tables() in the RFIC driver. Gain is affine in
+     * the table index once past idx_step_offset. */
+    struct {
+        bladerf_frequency max_freq;
+        int starting_gain_db;
+        int gain_step_db;
+        int idx_step_offset;
+        int max_gain_db;
+    } const bands[] = {
+        { 1300000000ULL, 1, 1, 0, 77 },  /* TBL_200_1300_MHZ */
+        { 4000000000ULL, -4, 1, 1, 71 }, /* TBL_1300_4000_MHZ */
+        { UINT64_MAX, -10, 1, 4, 62 },   /* TBL_4000_6000_MHZ */
+    };
+
+    size_t i;
+    int gain_db;
+
+    for (i = 0; i < ARRAY_SIZE(bands) - 1; ++i) {
+        if (rx_lo_hz <= bands[i].max_freq) {
+            break;
+        }
+    }
+
+    if (gain_index > bands[i].idx_step_offset) {
+        gain_db = bands[i].starting_gain_db +
+                  (gain_index - bands[i].idx_step_offset) *
+                      bands[i].gain_step_db;
+    } else {
+        gain_db = bands[i].starting_gain_db;
+    }
+
+    /* An index past the end of the table is not a gain index at all -- most
+     * likely CTRL_OUT is pointed at some row other than 0x16. Clamp, but tell
+     * the caller not to trust the result. */
+    if (NULL != ok) {
+        *ok = (gain_db <= bands[i].max_gain_db);
+    }
+
+    if (gain_db > bands[i].max_gain_db) {
+        gain_db = bands[i].max_gain_db;
+    }
+
+    return gain_db;
+}
+
 #endif  // !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)

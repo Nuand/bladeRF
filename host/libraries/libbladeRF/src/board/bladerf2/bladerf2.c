@@ -3151,6 +3151,49 @@ int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
     return 0;
 }
 
+int bladerf_rx_gain_tag_to_gain_db(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   uint8_t gain_index,
+                                   bladerf_gain *gain_db)
+{
+    CHECK_BOARD_IS_BLADERF2(dev);
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    NULL_CHECK(gain_db);
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    WITH_MUTEX(&dev->lock, {
+        bladerf_frequency frequency = 0;
+        float offset;
+        bool ok;
+        int rfic_gain;
+
+        CHECK_STATUS_LOCKED(dev->board->get_frequency(dev, ch, &frequency));
+        CHECK_STATUS_LOCKED(get_gain_offset(dev, ch, &offset));
+
+        rfic_gain = ad936x_gain_index_to_gain_db(gain_index, frequency, &ok);
+        if (!ok) {
+            log_warning("Gain index %u is outside the RX gain table for "
+                        "%" BLADERF_PRIuFREQ " Hz. Is RFIC register 0x035 "
+                        "still 0x16?\n",
+                        gain_index, frequency);
+            MUTEX_UNLOCK(__lock);
+            return BLADERF_ERR_INVAL;
+        }
+
+        /* Same composition as bladerf2_get_gain(), so the result is directly
+         * comparable to bladerf_get_gain(). The gain calibration table is
+         * deliberately not applied here: it shifts which gain gets commanded,
+         * and the index we were handed already reflects whatever the RFIC
+         * ended up using. */
+        *gain_db = __round_int(rfic_gain + offset);
+    });
+
+    return 0;
+}
+
 int bladerf_get_rfic_rx_fir(struct bladerf *dev, bladerf_rfic_rxfir *rxfir)
 {
     CHECK_BOARD_IS_BLADERF2(dev);

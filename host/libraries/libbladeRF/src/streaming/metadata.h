@@ -42,6 +42,26 @@
  *  0x0c |      Flags      |    4 bytes, Little-endian uint32_t
  *       +-----------------+
  *
+ * The first 4 bytes are only packet length/flags/core ID in
+ * BLADERF_FORMAT_PACKET_META. In BLADERF_FORMAT_SC16_Q11_META they are a
+ * reserved word that the host historically ignored (the FPGA filled it with the
+ * constant 0x12344321). FPGA v0.17.0 and later instead put the RFIC gain tag
+ * there, so a receive can be paired with the gain the RFIC's AGC had applied:
+ *
+ *      31:16  magic 0x9361 (distinguishes this from the old 0x12344321)
+ *      15:11  reserved, zero
+ *         10  CTRL_OUT snapshot passed the FPGA's stability filter
+ *          9  CTRL_OUT changed during the *previous* message (see below)
+ *          8  gain lock (copy of bit 7)
+ *        7:0  raw CTRL_OUT snapshot. When RFIC register 0x035 is 0x16, bits
+ *             [6:0] are the RX1 full gain-table index and bit 7 is gain lock.
+ *
+ * The "changed" bit necessarily lags by one message: the header is emitted
+ * before its own samples, so the FPGA cannot yet know whether the gain will
+ * move partway through them. It reports the flag in the following header
+ * instead, meaning a set bit in header N marks the samples of message N-1 as
+ * spanning a gain change.
+ *
  * The term "buffer" is used to describe a block of of data received from or
  * sent to the device. The size of a "buffer" (in bytes) is always a multiple
  * of the size of a "message." Said another way, a buffer will always evenly
@@ -99,6 +119,21 @@
 
 #define METADATA_HEADER_SIZE (METADATA_FLAGS_OFFSET + METADATA_FLAGS_SIZE)
 
+/* RFIC gain tag, carried in the reserved word in SC16_Q11_META mode */
+#define METADATA_GAIN_TAG_MAGIC 0x9361
+#define METADATA_GAIN_TAG_MAGIC_SHIFT 16
+#define METADATA_GAIN_TAG_STABLE (1 << 10)
+#define METADATA_GAIN_TAG_CHANGED (1 << 9)
+#define METADATA_GAIN_TAG_CTRL_OUT_MASK 0xff
+
+/* Decoded form of the gain tag. Fields are only meaningful when
+ * metadata_get_gain_tag() returned true. */
+struct metadata_gain_tag {
+    uint8_t ctrl_out; /**< Raw CTRL_OUT byte */
+    bool stable;      /**< Snapshot passed the FPGA's stability filter */
+    bool changed;     /**< CTRL_OUT moved during the previous message */
+};
+
 static inline uint64_t metadata_get_timestamp(const uint8_t *header)
 {
     uint64_t ret;
@@ -140,6 +175,34 @@ static inline uint8_t metadata_get_packet_flags(const uint8_t *header)
     assert(sizeof(ret) == METADATA_PACKET_FLAGS_SIZE);
     memcpy(&ret, &header[METADATA_PACKET_FLAGS_OFFSET], METADATA_PACKET_FLAGS_SIZE);
     return ret;
+}
+
+/* Decode the RFIC gain tag from an RX message header.
+ *
+ * Returns true and fills in *tag if this header carries a gain tag. Returns
+ * false for FPGA images that predate it (which leave the constant 0x12344321
+ * in the reserved word), leaving *tag untouched.
+ *
+ * Only valid in SC16_Q11_META mode; in PACKET_META mode those bytes are the
+ * packet length/flags/core ID instead.
+ */
+static inline bool metadata_get_gain_tag(const uint8_t *header,
+                                         struct metadata_gain_tag *tag)
+{
+    uint32_t word;
+    assert(sizeof(word) == METADATA_RESV_SIZE);
+    memcpy(&word, &header[METADATA_RESV_OFFSET], METADATA_RESV_SIZE);
+    word = LE32_TO_HOST(word);
+
+    if ((word >> METADATA_GAIN_TAG_MAGIC_SHIFT) != METADATA_GAIN_TAG_MAGIC) {
+        return false;
+    }
+
+    tag->ctrl_out = (uint8_t)(word & METADATA_GAIN_TAG_CTRL_OUT_MASK);
+    tag->stable   = (word & METADATA_GAIN_TAG_STABLE) != 0;
+    tag->changed  = (word & METADATA_GAIN_TAG_CHANGED) != 0;
+
+    return true;
 }
 
 static inline void metadata_set_packet(uint8_t *header,

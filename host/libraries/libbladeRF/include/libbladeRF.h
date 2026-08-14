@@ -2543,11 +2543,78 @@ struct bladerf_metadata {
     unsigned int actual_count;
 
     /**
-     * Reserved for future use. This is not used by any functions. It is
-     * recommended that users zero out this field.
+     * Reserved for future use. It is recommended that users zero out this
+     * field.
+     *
+     * On RX with ::BLADERF_FORMAT_SC16_Q11_META or ::BLADERF_FORMAT_SC8_Q7_META,
+     * bladerf_sync_rx() overlays a ::bladerf_rx_gain_tag on the first
+     * `sizeof(struct bladerf_rx_gain_tag)` bytes of this field and zeroes the
+     * remainder. Older FPGA images report
+     * ::BLADERF_RX_GAIN_TAG_VERSION_NONE in the `version` field.
      */
     uint8_t reserved[32];
 };
+
+/**
+ * @brief Per-receive summary of the RFIC's automatic gain control state.
+ *
+ * Overlaid on ::bladerf_metadata::reserved by bladerf_sync_rx() when receiving
+ * in a metadata format. It reports the RX gain the AD9361's AGC had actually
+ * applied to the samples being returned, which is what makes it possible to
+ * turn IQ magnitude into absolute power (for example, to compute the RSSI of a
+ * signal within some bandwidth).
+ *
+ * The FPGA snapshots the RFIC's CTRL_OUT pins into each message header, so the
+ * gain travels with the IQ instead of having to be polled asynchronously with
+ * bladerf_get_gain(). Requires FPGA v0.17.0 or later, RX1, and an AGC gain mode
+ * (::BLADERF_GAIN_SLOWATTACK_AGC by default). Convert `gain_index` to dB with
+ * bladerf_rx_gain_tag_to_gain_db().
+ *
+ * A single bladerf_sync_rx() call can span many messages, so the fields
+ * summarize all of them. When `gain_index_min == gain_index_max` and
+ * ::BLADERF_RX_GAIN_TAG_CHANGED is clear, one gain applied to every returned
+ * sample and the conversion is exact. Otherwise the returned samples straddle a
+ * gain change: either discard them or bound the error with the min/max pair.
+ * With the default 1000 us AGC gain update interval this is uncommon.
+ */
+struct bladerf_rx_gain_tag {
+    /** Format version, or ::BLADERF_RX_GAIN_TAG_VERSION_NONE if the FPGA did
+     *  not supply a tag. Always check this before reading other fields. */
+    uint8_t version;
+
+    /** Bitwise OR of ::BLADERF_RX_GAIN_TAG_CHANGED and
+     *  ::BLADERF_RX_GAIN_TAG_UNSTABLE */
+    uint8_t flags;
+
+    /** RX1 full gain-table index at the first message returned */
+    uint8_t gain_index;
+
+    /** Lowest gain index across the returned samples */
+    uint8_t gain_index_min;
+
+    /** Highest gain index across the returned samples */
+    uint8_t gain_index_max;
+
+    /** Raw CTRL_OUT byte from the first message returned. Bit 7 is the AGC
+     *  gain-lock indication when CTRL_OUT is pointed at the gain index. */
+    uint8_t ctrl_out;
+
+    /** Number of messages summarized */
+    uint16_t num_messages;
+};
+
+/** No gain tag was available; every other field is zero */
+#define BLADERF_RX_GAIN_TAG_VERSION_NONE 0
+
+/** Current gain tag format version */
+#define BLADERF_RX_GAIN_TAG_VERSION_1 1
+
+/** The gain changed partway through the returned samples */
+#define BLADERF_RX_GAIN_TAG_CHANGED (1 << 0)
+
+/** At least one snapshot failed the FPGA's stability filter and may be
+ *  unreliable. Expected transiently after starting a stream. */
+#define BLADERF_RX_GAIN_TAG_UNSTABLE (1 << 1)
 
 /** @} (End of STREAMING_FORMAT_METADATA) */
 

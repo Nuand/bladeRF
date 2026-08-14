@@ -32,7 +32,14 @@ entity fifo_writer is
         FIFO_USEDW_WIDTH      : natural := 12;
         FIFO_DATA_WIDTH       : natural := 32;
         META_FIFO_USEDW_WIDTH : natural := 5;
-        META_FIFO_DATA_WIDTH  : natural := 128
+        META_FIFO_DATA_WIDTH  : natural := 128;
+
+        -- Replace the unused constant in the reserved word of the RX metadata
+        -- header with a snapshot of the RFIC's CTRL_OUT pins. Off by default so
+        -- that platforms without an AD9361 -- and images that do not wire up
+        -- rfic_ctrl_out -- keep emitting the historical constant rather than
+        -- advertising a gain index they do not have.
+        ENABLE_GAIN_TAG       : boolean := false
     );
     port (
         clock               :   in      std_logic;
@@ -46,6 +53,12 @@ entity fifo_writer is
         highly_packed_mode_en : in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
         mini_exp            :   in      std_logic_vector(1 downto 0);
+
+        -- Raw (unsynchronized) RFIC CTRL_OUT pins. Snapshotted into the otherwise
+        -- unused reserved word of the RX metadata header so the host can pair the
+        -- RFIC's live gain state with the IQ it applied to. Defaults to zero so
+        -- platforms that do not wire this up are unaffected.
+        rfic_ctrl_out       :   in      std_logic_vector(7 downto 0) := (others => '0');
 
         in_sample_controls  :   in      sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
         in_samples          :   in      sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE);
@@ -146,6 +159,43 @@ architecture simple of fifo_writer is
 
     signal sync_mini_exp: std_logic_vector(1 downto 0);
 
+    -- ------------------------------------------------------------------------
+    -- RFIC CTRL_OUT GAIN TAG
+    -- ------------------------------------------------------------------------
+    -- Magic in the upper half of the reserved word. Images that predate the gain
+    -- tag emit the constant 0x12344321 there, so the host can tell the two apart
+    -- without relying on an FPGA version check.
+    constant GAIN_TAG_MAGIC : std_logic_vector(15 downto 0) := x"9361";
+
+    -- Each CTRL_OUT bit crosses into this clock domain through its own two-flop
+    -- synchronizer, so the bits of a multi-bit transition can land on different
+    -- cycles. Only believe the byte once it has been observed unchanged on this
+    -- many consecutive cycles; otherwise a gain change could be reported as an
+    -- intermediate value the RFIC never actually used. Costs a few cycles of
+    -- latency, which is nothing next to the RFIC's own RX datapath latency.
+    constant GAIN_TAG_MATCH_CYCLES : natural := 3;
+
+    signal sync_ctrl_out      : std_logic_vector(rfic_ctrl_out'range);
+    signal ctrl_out_prev      : std_logic_vector(rfic_ctrl_out'range) := (others => '0');
+    signal ctrl_out_match_cnt : natural range 0 to GAIN_TAG_MATCH_CYCLES := 0;
+
+    -- Most recent value to survive the filter, and whether one ever has. Until
+    -- the first survives, ctrl_out_stable is still its post-reset zero rather
+    -- than anything the RFIC reported, which is what ctrl_out_snap_valid says.
+    signal ctrl_out_stable    : std_logic_vector(rfic_ctrl_out'range) := (others => '0');
+    signal ctrl_out_snap_valid : std_logic := '0';
+
+    -- Value reported in headers, and a sticky "it moved since that header went
+    -- out" bit. Because the header precedes its own samples, the sticky bit
+    -- reported in header N describes the samples of message N-1.
+    signal ctrl_out_snap      : std_logic_vector(rfic_ctrl_out'range) := (others => '0');
+    signal ctrl_out_changed   : std_logic := '0';
+
+    -- The sticky bit alone would miss a change landing on the same edge that latches
+    -- the header, since the tracker clears it there. OR in the live comparison so the
+    -- reported bit covers the whole window, closing that race in the safe direction.
+    signal ctrl_out_changed_now : std_logic;
+
     signal meta_fifo_used_v_r : unsigned(meta_fifo_usedw'length downto 0) := (others => '0');
     signal fifo_used_v_r      : unsigned(fifo_usedw'length downto 0) := (others => '0');
 
@@ -220,6 +270,68 @@ begin
     end generate;
 
     -- ------------------------------------------------------------------------
+    -- RFIC CTRL_OUT PIN SYNCHRONIZER
+    -- ------------------------------------------------------------------------
+    generate_sync_ctrl_out : for i in rfic_ctrl_out'range generate
+        U_sync_ctrl_out : entity work.synchronizer
+            generic map (
+                RESET_LEVEL         =>  '0'
+                )
+            port map (
+                reset               =>  '0',
+                clock               =>  clock,
+                async               =>  rfic_ctrl_out(i),
+                sync                =>  sync_ctrl_out(i)
+            );
+    end generate;
+
+    -- Reject transient values caused by per-bit skew across the synchronizers.
+    ctrl_out_filter : process( clock, reset )
+    begin
+        if( reset = '1' ) then
+            ctrl_out_prev       <= (others => '0');
+            ctrl_out_stable     <= (others => '0');
+            ctrl_out_snap_valid <= '0';
+            ctrl_out_match_cnt  <= 0;
+        elsif( rising_edge(clock) ) then
+            if( sync_ctrl_out = ctrl_out_prev ) then
+                if( ctrl_out_match_cnt < GAIN_TAG_MATCH_CYCLES ) then
+                    ctrl_out_match_cnt <= ctrl_out_match_cnt + 1;
+                else
+                    ctrl_out_stable     <= sync_ctrl_out;
+                    ctrl_out_snap_valid <= '1';
+                end if;
+            else
+                ctrl_out_match_cnt <= 0;
+            end if;
+            ctrl_out_prev <= sync_ctrl_out;
+        end if;
+    end process;
+
+    -- Re-snapshot on the same edge that latches a header into meta_current, so the
+    -- header carries the value from before the update and the sticky "changed" bit
+    -- starts a fresh window aligned to that header.
+    ctrl_out_tracker : process( clock, reset )
+    begin
+        if( reset = '1' ) then
+            ctrl_out_snap    <= (others => '0');
+            ctrl_out_changed <= '0';
+        elsif( rising_edge(clock) ) then
+            if( ctrl_out_stable /= ctrl_out_snap ) then
+                ctrl_out_changed <= '1';
+            end if;
+
+            if( meta_future.meta_write = '1' and packet_en = '0' ) then
+                ctrl_out_snap    <= ctrl_out_stable;
+                ctrl_out_changed <= '0';
+            end if;
+        end if;
+    end process;
+
+    ctrl_out_changed_now <= '1' when (ctrl_out_changed = '1' or ctrl_out_stable /= ctrl_out_snap)
+                                else '0';
+
+    -- ------------------------------------------------------------------------
     -- META FIFO WRITER
     -- ------------------------------------------------------------------------
 
@@ -245,7 +357,23 @@ begin
         meta_future.meta_write <= '0';
         -- currently the GPIF modules overwrites the bottom 16 bits of the flags field
         if( packet_en = '0' ) then
-           meta_future.meta_data  <= x"FFF" & "11" & sync_mini_exp & x"FFFF" & std_logic_vector(timestamp) & x"12344321";
+           -- The low word is the "reserved" header dword, which the host does not
+           -- read in SC16_Q11_META mode. It either keeps its historical constant
+           -- or carries the RFIC gain tag:
+           --   31:16  magic 0x9361
+           --   15:11  reserved, zero
+           --   10     CTRL_OUT snapshot passed the stability filter
+           --    9     CTRL_OUT changed during the *previous* message
+           --    8     gain lock (copy of bit 7, for pointer 0x16)
+           --    7:0   raw CTRL_OUT snapshot; [6:0] is the CH1 full gain-table
+           --          index when register 0x035 is set to 0x16
+           if( ENABLE_GAIN_TAG ) then
+              meta_future.meta_data  <= x"FFF" & "11" & sync_mini_exp & x"FFFF" & std_logic_vector(timestamp) &
+                             GAIN_TAG_MAGIC & "00000" & ctrl_out_snap_valid & ctrl_out_changed_now &
+                             ctrl_out_snap(7) & ctrl_out_snap;
+           else
+              meta_future.meta_data  <= x"FFF" & "11" & sync_mini_exp & x"FFFF" & std_logic_vector(timestamp) & x"12344321";
+           end if;
         else
            packet_flags := packet_control.pkt_flags;
            meta_future.meta_data  <= x"FFF" & "11" & sync_mini_exp & x"FFFF" & std_logic_vector(timestamp) &

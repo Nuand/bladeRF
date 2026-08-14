@@ -305,6 +305,7 @@ int sync_init(struct bladerf_sync *sync,
 
             sync->meta.msg_timestamp = 0;
             sync->meta.msg_flags = 0;
+            memset(&sync->meta.gain_tag, 0, sizeof(sync->meta.gain_tag));
 
             sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
@@ -475,6 +476,112 @@ static inline unsigned int timestamp_to_msg(struct bladerf_sync *s, uint64_t t)
     return (unsigned int) m;
 }
 
+/* Discard the per-call part of the gain tag summary, keeping the last-known
+ * tag so a call that consumes no header can still report a gain. */
+static inline void reset_gain_tag(struct bladerf_sync *s)
+{
+    s->meta.gain_tag.seen     = false;
+    s->meta.gain_tag.changed  = false;
+    s->meta.gain_tag.unstable = false;
+    s->meta.gain_tag.first    = 0;
+    s->meta.gain_tag.idx_min  = 0;
+    s->meta.gain_tag.idx_max  = 0;
+    s->meta.gain_tag.count    = 0;
+}
+
+/* Fold one message's RFIC gain tag into the running summary for this sync_rx()
+ * call. No-op for FPGA images that do not emit a tag. */
+static inline void accumulate_gain_tag(struct bladerf_sync *s,
+                                       const uint8_t *header)
+{
+    struct metadata_gain_tag tag;
+    uint8_t index;
+
+    if (!metadata_get_gain_tag(header, &tag)) {
+        return;
+    }
+
+    /* Bit 7 is gain lock, not part of the index */
+    index = tag.ctrl_out & 0x7f;
+
+    s->meta.gain_tag.known       = true;
+    s->meta.gain_tag.last        = tag.ctrl_out;
+    s->meta.gain_tag.last_stable = tag.stable;
+
+    if (!s->meta.gain_tag.seen) {
+        s->meta.gain_tag.seen    = true;
+        s->meta.gain_tag.first   = tag.ctrl_out;
+        s->meta.gain_tag.idx_min = index;
+        s->meta.gain_tag.idx_max = index;
+    } else {
+        if (index < s->meta.gain_tag.idx_min) {
+            s->meta.gain_tag.idx_min = index;
+        }
+        if (index > s->meta.gain_tag.idx_max) {
+            s->meta.gain_tag.idx_max = index;
+        }
+    }
+
+    if (tag.changed) {
+        s->meta.gain_tag.changed = true;
+    }
+    if (!tag.stable) {
+        s->meta.gain_tag.unstable = true;
+    }
+
+    if (s->meta.gain_tag.count < UINT16_MAX) {
+        s->meta.gain_tag.count++;
+    }
+}
+
+/* Publish the accumulated gain tag into the caller's metadata. Always writes
+ * the full reserved field so a stale tag from a previous call cannot be
+ * mistaken for a current one. */
+static inline void publish_gain_tag(struct bladerf_sync *s,
+                                    struct bladerf_metadata *user_meta)
+{
+    struct bladerf_rx_gain_tag tag;
+
+    memset(user_meta->reserved, 0, sizeof(user_meta->reserved));
+
+    if (!s->meta.gain_tag.known) {
+        return;
+    }
+
+    memset(&tag, 0, sizeof(tag));
+    tag.version = BLADERF_RX_GAIN_TAG_VERSION_1;
+
+    if (s->meta.gain_tag.seen) {
+        tag.gain_index     = s->meta.gain_tag.first & 0x7f;
+        tag.gain_index_min = s->meta.gain_tag.idx_min;
+        tag.gain_index_max = s->meta.gain_tag.idx_max;
+        tag.ctrl_out       = s->meta.gain_tag.first;
+        tag.num_messages   = s->meta.gain_tag.count;
+
+        if (s->meta.gain_tag.changed) {
+            tag.flags |= BLADERF_RX_GAIN_TAG_CHANGED;
+        }
+        if (s->meta.gain_tag.unstable) {
+            tag.flags |= BLADERF_RX_GAIN_TAG_UNSTABLE;
+        }
+    } else {
+        /* These samples came from a message whose header was consumed by an
+         * earlier call, so that call's tag is the one that applies. */
+        tag.gain_index     = s->meta.gain_tag.last & 0x7f;
+        tag.gain_index_min = tag.gain_index;
+        tag.gain_index_max = tag.gain_index;
+        tag.ctrl_out       = s->meta.gain_tag.last;
+        tag.num_messages   = 0;
+
+        if (!s->meta.gain_tag.last_stable) {
+            tag.flags |= BLADERF_RX_GAIN_TAG_UNSTABLE;
+        }
+    }
+
+    assert(sizeof(tag) <= sizeof(user_meta->reserved));
+    memcpy(user_meta->reserved, &tag, sizeof(tag));
+}
+
 int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
             struct bladerf_metadata *user_meta, unsigned int timeout_ms)
 {
@@ -516,6 +623,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
         } else {
             user_meta->status = 0;
             target_timestamp = user_meta->timestamp;
+            reset_gain_tag(s);
         }
     }
 
@@ -714,6 +822,8 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                               BLADERF_META_FLAG_RX_HW_MINIEXP1 |
                               BLADERF_META_FLAG_RX_HW_MINIEXP2);
 
+                        accumulate_gain_tag(s, s->meta.curr_msg);
+
                         s->meta.curr_msg_off = 0;
 
                         /* We've encountered a discontinuity and need to return
@@ -882,6 +992,13 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
     if (user_meta && s->stream_config.format != BLADERF_FORMAT_PACKET_META) {
         user_meta->actual_count = samples_returned;
+
+        /* Only the metadata formats have per-message headers to tag, and only
+         * they own reserved[] -- leave it alone for everyone else. */
+        if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META ||
+            s->stream_config.format == BLADERF_FORMAT_SC8_Q7_META) {
+            publish_gain_tag(s, user_meta);
+        }
     }
 
 out:

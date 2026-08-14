@@ -168,6 +168,36 @@ API_EXPORT
 int CALL_CONV bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
 
 /**
+ * Convert an RX gain-table index into gain in dB.
+ *
+ * Intended for the `gain_index` fields of ::bladerf_rx_gain_tag, so that a gain
+ * the FPGA sampled alongside the IQ can be used for power correction. The band
+ * is chosen from the channel's current RX LO frequency, and the result is
+ * composed the same way bladerf_get_gain() composes its return value, so the
+ * two are directly comparable.
+ *
+ * @note  Assumes the RFIC is using the full gain table with digital gain
+ *        disabled, which is how libbladeRF configures it. Returns
+ *        ::BLADERF_ERR_INVAL for an index outside that table, which usually
+ *        means CTRL_OUT is not pointed at the gain index (RFIC register 0x035
+ *        != 0x16).
+ *
+ * @see   bladerf_get_gain()
+ *
+ * @param      dev         Device handle
+ * @param[in]  ch          RX channel the index came from
+ * @param[in]  gain_index  Full gain-table index
+ * @param[out] gain_db     Pointer for storing the gain, in dB
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_rx_gain_tag_to_gain_db(struct bladerf *dev,
+                                             bladerf_channel ch,
+                                             uint8_t gain_index,
+                                             bladerf_gain *gain_db);
+
+/**
  * RFIC RX FIR filter choices
  */
 typedef enum {

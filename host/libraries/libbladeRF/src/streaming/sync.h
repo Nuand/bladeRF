@@ -189,6 +189,28 @@ struct sync_meta {
             uint64_t
                 msg_timestamp;  /* Timestamp contained in the current message */
             uint32_t msg_flags; /* Flags for the current message */
+
+            /* RFIC gain tag, accumulated over every message consumed by the
+             * current sync_rx() call. One call can span many messages but
+             * returns a single bladerf_metadata, so the per-message values
+             * have to be summarized. See metadata.h for the wire format. */
+            struct {
+                /* Most recent tag seen, persisting across calls. A caller
+                 * reading less than a message at a time consumes no header on
+                 * most calls, and still needs to be told a gain. */
+                bool known;       /* last_* hold a real tag */
+                uint8_t last;     /* CTRL_OUT from the most recent header */
+                bool last_stable; /* That snapshot passed the filter */
+
+                /* Reset at the start of each sync_rx() call */
+                bool seen;       /* A header was consumed this call */
+                bool changed;    /* Any message reported a gain change */
+                bool unstable;   /* Any snapshot failed the stability filter */
+                uint8_t first;   /* CTRL_OUT from the first message this call */
+                uint8_t idx_min; /* Min gain index this call */
+                uint8_t idx_max; /* Max gain index this call */
+                uint16_t count;  /* Number of tagged messages this call */
+            } gain_tag;
         };
 
         /* Used only for TX */
