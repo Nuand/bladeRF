@@ -51,6 +51,7 @@
 #include "streaming/sync.h"
 
 #include "conversions.h"
+#include "device_calibration.h"
 #include "devinfo.h"
 #include "helpers/file.h"
 #include "helpers/version.h"
@@ -3154,7 +3155,7 @@ int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
 int bladerf_rx_gain_tag_to_gain_db(struct bladerf *dev,
                                    bladerf_channel ch,
                                    uint8_t gain_index,
-                                   bladerf_gain *gain_db)
+                                   float *gain_db)
 {
     CHECK_BOARD_IS_BLADERF2(dev);
     CHECK_BOARD_STATE(STATE_INITIALIZED);
@@ -3167,6 +3168,7 @@ int bladerf_rx_gain_tag_to_gain_db(struct bladerf *dev,
     WITH_MUTEX(&dev->lock, {
         bladerf_frequency frequency = 0;
         float offset;
+        float total;
         bool ok;
         int rfic_gain;
 
@@ -3183,12 +3185,37 @@ int bladerf_rx_gain_tag_to_gain_db(struct bladerf *dev,
             return BLADERF_ERR_INVAL;
         }
 
-        /* Same composition as bladerf2_get_gain(), so the result is directly
-         * comparable to bladerf_get_gain(). The gain calibration table is
-         * deliberately not applied here: it shifts which gain gets commanded,
-         * and the index we were handed already reflects whatever the RFIC
-         * ended up using. */
-        *gain_db = __round_int(rfic_gain + offset);
+        /* Nominal gain, composed the way bladerf2_get_gain() composes it */
+        total = (float)rfic_gain + offset;
+
+        /* Fold in the gain calibration table, which turns the nominal gain into
+         * the conversion the hardware actually achieves at this frequency.
+         *
+         * Each RX entry is gain_corr = dBFS_measured - dBm_in, swept at a
+         * commanded gain of 0 (see load_gain_cal_entries_from_image), so the
+         * system obeys
+         *
+         *     dBFS = dBm_in + G + gain_corr(freq)
+         *
+         * and (G + gain_corr) is exactly the figure to subtract from a measured
+         * dBFS power to recover dBm.
+         *
+         * This holds in both gain modes, so there is no need to branch on one.
+         * Under AGC nothing pre-compensates the commanded gain -- bladerf_set_gain()
+         * forces MGC, so an AGC user never goes down that path -- and G is the raw
+         * nominal gain. Under MGC with calibration enabled, bladerf_set_gain()
+         * commanded (target - gain_corr), so G already carries the -gain_corr and
+         * the sum collapses back to the requested target. */
+        if (dev->gain_tbls[ch].enabled) {
+            struct bladerf_gain_cal_entry entry;
+
+            CHECK_STATUS_LOCKED(
+                get_gain_cal_entry(&dev->gain_tbls[ch], frequency, &entry));
+
+            total += (float)entry.gain_corr;
+        }
+
+        *gain_db = total;
     });
 
     return 0;

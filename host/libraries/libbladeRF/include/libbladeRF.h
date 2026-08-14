@@ -2567,8 +2567,17 @@ struct bladerf_metadata {
  * The FPGA snapshots the RFIC's CTRL_OUT pins into each message header, so the
  * gain travels with the IQ instead of having to be polled asynchronously with
  * bladerf_get_gain(). Requires FPGA v0.17.0 or later, RX1, and an AGC gain mode
- * (::BLADERF_GAIN_SLOWATTACK_AGC by default). Convert `gain_index` to dB with
- * bladerf_rx_gain_tag_to_gain_db().
+ * (::BLADERF_GAIN_SLOWATTACK_AGC by default).
+ *
+ * To get absolute power, pass `gain_index` through
+ * bladerf_rx_gain_tag_to_gain_db() and subtract:
+ *
+ * @code
+ *     power_dbm = power_dbfs - gain_db;
+ * @endcode
+ *
+ * That conversion needs a gain calibration table loaded and enabled for the
+ * channel (bladerf_load_gain_calibration()) to be an absolute reference.
  *
  * A single bladerf_sync_rx() call can span many messages, so the fields
  * summarize all of them. When `gain_index_min == gain_index_max` and

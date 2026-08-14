@@ -168,13 +168,30 @@ API_EXPORT
 int CALL_CONV bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
 
 /**
- * Convert an RX gain-table index into gain in dB.
+ * Convert an RX gain-table index into the conversion gain, in dB, that the
+ * receive chain actually achieved.
  *
  * Intended for the `gain_index` fields of ::bladerf_rx_gain_tag, so that a gain
- * the FPGA sampled alongside the IQ can be used for power correction. The band
- * is chosen from the channel's current RX LO frequency, and the result is
- * composed the same way bladerf_get_gain() composes its return value, so the
- * two are directly comparable.
+ * the FPGA sampled alongside the IQ can be used to turn a measured power into
+ * an absolute one:
+ *
+ * @code
+ *     power_dbm = power_dbfs - gain_db;
+ * @endcode
+ *
+ * The LO frequency of `ch` selects both the gain-table band and the calibration
+ * point. When a gain calibration table is loaded and enabled for the channel
+ * (bladerf_load_gain_calibration()), its frequency-interpolated correction is
+ * included, which is what makes the result an absolute reference rather than a
+ * nominal gain. Without one, the return value is only the nominal gain and the
+ * dBm figure above will carry an uncalibrated offset.
+ *
+ * @note  Valid in both AGC and manual gain modes. Under AGC nothing
+ *        pre-compensates the commanded gain, so the index carries the raw
+ *        nominal gain; under MGC with calibration enabled bladerf_set_gain()
+ *        already folded the correction into what it commanded, and the two
+ *        cancel to the gain that was requested. Either way the return value is
+ *        the figure to subtract.
  *
  * @note  Assumes the RFIC is using the full gain table with digital gain
  *        disabled, which is how libbladeRF configures it. Returns
@@ -182,7 +199,11 @@ int CALL_CONV bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
  *        means CTRL_OUT is not pointed at the gain index (RFIC register 0x035
  *        != 0x16).
  *
- * @see   bladerf_get_gain()
+ * @note  In ::BLADERF_TUNING_MODE_FPGA this call costs a USB round trip to read
+ *        the LO frequency, so it is not free to call per received buffer. The
+ *        result only changes when the gain index or the tuned frequency does.
+ *
+ * @see   bladerf_load_gain_calibration(), bladerf_get_gain()
  *
  * @param      dev         Device handle
  * @param[in]  ch          RX channel the index came from
@@ -195,7 +216,7 @@ API_EXPORT
 int CALL_CONV bladerf_rx_gain_tag_to_gain_db(struct bladerf *dev,
                                              bladerf_channel ch,
                                              uint8_t gain_index,
-                                             bladerf_gain *gain_db);
+                                             float *gain_db);
 
 /**
  * RFIC RX FIR filter choices
