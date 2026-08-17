@@ -7,4 +7,4 @@ compile_nuand ../../../ip/nuand bladerf-micro
 
 vcom -work nuand -2008 ../vhdl/tb/loopback_tb.vhd
 
-vsim -t 1ps nuand.loopback_tb
+vsim nuand.loopback_tb
