@@ -1393,7 +1393,8 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
     while (stream->state != STREAM_DONE) {
         status = libusb_handle_events_timeout(lusb->context, &tv);
 
-        if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
+        if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED &&
+            status != LIBUSB_ERROR_TIMEOUT) {
             log_warning("unexpected value from events processing: "
                         "%d: %s\n", status, libusb_error_name(status));
             status = error_conv(status);

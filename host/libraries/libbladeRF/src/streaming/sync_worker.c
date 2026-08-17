@@ -379,7 +379,7 @@ int sync_worker_init(struct bladerf_sync *s)
 
     /* Wait until the worker thread has initialized and is ready to go */
     status =
-        sync_worker_wait_for_state(s->worker, SYNC_WORKER_STATE_IDLE, 1000);
+        sync_worker_wait_for_state(s->worker, SYNC_WORKER_STATE_IDLE, 10000);
     if (status != 0) {
         log_debug("%s worker: sync_worker_wait_for_state failed: %d\n",
                   worker2str(s), status);
