@@ -53,11 +53,14 @@ add_custom_target(test
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(test_all
-                  COMMAND ${PROJECT_NAME} --gtest_output="json"
+                  COMMAND ${PROJECT_NAME} --gtest_filter="environment.hdl"
+                  COMMAND ${PROJECT_NAME} --gtest_filter="environment.synthesis"
+                  COMMAND ${PROJECT_NAME} --gtest_filter="-environment.*" --gtest_output="json"
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(test_hdl
+                  COMMAND ${PROJECT_NAME} --gtest_filter="environment.hdl"
                   COMMAND ${PROJECT_NAME} --gtest_filter="hdl*" --gtest_output="json"
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -68,6 +71,7 @@ add_custom_target(test_libbladeRF
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(test_synthesis
+                  COMMAND ${PROJECT_NAME} --gtest_filter="environment.synthesis"
                   COMMAND ${PROJECT_NAME} --gtest_filter="synthesize*" --gtest_output="json"
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -78,6 +82,7 @@ add_custom_target(prep_ci
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(bitfile_ci
+                  COMMAND ${PROJECT_NAME} --gtest_filter="environment.synthesis"
                   COMMAND ${PROJECT_NAME} --gtest_filter="bitfile_ci/synth_ci*" --gtest_output="json":bitfile_ci.json
                   DEPENDS ${PROJECT_NAME}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -87,12 +92,4 @@ target_link_libraries(
     libbladerf_shared
     gtest_main
     absl::strings
-)
-
-################################################################
-# Find the nios2_command_shell
-################################################################
-find_program(NIOS2_COMMAND_SHELL_EXECUTABLE nios2_command_shell.sh
-    PATHS ~/intelFPGA_lite/20.1/nios2eds
-    NO_CACHE
 )

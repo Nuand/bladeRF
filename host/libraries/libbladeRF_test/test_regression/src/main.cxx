@@ -25,7 +25,6 @@
 
 #include "conversions.h"
 #include "log.h"
-#include "../include/include.h"
 #include <absl/strings/string_view.h>
 #include <absl/strings/str_cat.h>
 #include <absl/algorithm/container.h>
@@ -43,19 +42,18 @@
 #define BLADERF_QUARTUS_CI_DIR "bladeRF/hdl/quartus/"
 #define BLADERF_QUARTUS_DIR "../../hdl/quartus/"
 #define BLADERF_MODELSIM_DIR "../../hdl/fpga/platforms/bladerf-micro/modelsim/"
-#define NIOS2SHELL "~/intelFPGA_lite/20.1/nios2eds/nios2_command_shell.sh"
 int status = 0;
 
 #define TEST_HDL_COMPILE(test_name) \
     TEST_F(hdl, compile_##test_name) { \
-        status = std::system(NIOS2SHELL" vsim -c -do \"do test.do " #test_name ".do\""); \
+        status = std::system("vsim -c -do \"do test.do " #test_name ".do\""); \
         EXPECT_EQ(status, 0); \
     }
 
 #define TEST_HDL_VERIFY(test_name, test_id, tb_args, run_time_us) \
     TEST_F(hdl, verify_##test_name##_##test_id) { \
         status = std::system( \
-            NIOS2SHELL" vsim -c -do \"do test.do vsim nuand." #test_name " " #tb_args " " #run_time_us "\""); \
+            "vsim -c -do \"do test.do vsim nuand." #test_name " " #tb_args " " #run_time_us "\""); \
         EXPECT_EQ(status, 0); \
     }
 
@@ -286,23 +284,35 @@ TEST(TEST_LIBBLADERF, flash_id) {
 // HDL
 // ===============================
 
+TEST(environment, hdl) {
+    status = std::system("vsim -version");
+    if (status != 0) {
+        FAIL() << "Questa is not available in PATH. Run this target from the "
+               << "intended Quartus Nios II command shell:\n"
+               << "  <quartus-install>/nios2eds/nios2_command_shell.sh "
+               << "make test_hdl";
+    }
+}
+
+TEST(environment, synthesis) {
+    if (std::getenv("QUARTUS_ROOTDIR") == nullptr) {
+        FAIL() << "The Quartus environment is not active. Run this target from "
+               << "the intended Quartus Nios II command shell:\n"
+               << "  <quartus-install>/nios2eds/"
+               << "nios2_command_shell.sh make test_synthesis";
+    }
+
+    status = std::system("quartus_sh --version");
+    if (status != 0) {
+        FAIL() << "quartus_sh is not available in PATH. Reactivate the Quartus "
+               << "Nios II command shell.";
+    }
+}
+
 class hdl : public ::testing::Test {
 protected:
     char build_dir[PATH_MAX];
     void SetUp() override {
-        std::string home = std::getenv("HOME");
-        fs::path nios2shell_path = "";
-
-        find_file("~/intelFPGA_lite", "nios2_command_shell.sh", &nios2shell_path);
-        if (nios2shell_path.empty()) {
-            std::cout << "Failed to find nios2_command_shell\n";
-        } else if (!fs::exists(fs::path(home) / "intelFPGA_lite/20.1")) {
-            std::cout << "[ERROR] Found the nios2_command_shell.sh in an alternate version of Quartus.\n";
-            std::cout << "[ERROR] Change the NIOS2SHELL directive accordingly.\n\n";
-            std::cout << "    Expected: " << NIOS2SHELL << std::endl;
-            std::cout << "    Found:    " << nios2shell_path.string() << "\n\n";
-        }
-
         if (getcwd(build_dir, PATH_MAX) == NULL) {
             perror("Failed to get current directory\n");
         }
@@ -320,7 +330,7 @@ protected:
 };
 
 TEST_F(hdl, vsim_version) {
-    status = std::system(NIOS2SHELL" vsim -version");
+    status = std::system("vsim -version");
     EXPECT_EQ(status, 0);
 }
 
@@ -388,8 +398,7 @@ TEST_P(verify, fx3_gpif_iq_8bit_tb) {
     std::string channel0 = std::get<1>(GetParam()) ? "1" : "0";
     std::string channel1 = std::get<2>(GetParam()) ? "1" : "0";
 
-    std::string command = NIOS2SHELL;
-    command += " vsim -c -do \"do test.do vsim nuand.fx3_gpif_iq_8bit_tb ";
+    std::string command = "vsim -c -do \"do test.do vsim nuand.fx3_gpif_iq_8bit_tb ";
     command += "-gEIGHT_BIT_MODE_EN='" + bitmode + "' ";
     command += "-gENABLE_CHANNEL_0='" + channel0 + "' ";
     command += "-gENABLE_CHANNEL_1='" + channel1 + "' ";
@@ -404,8 +413,7 @@ TEST_P(verify, fx3_gpif_meta_8bit_tb) {
     std::string channel0 = std::get<1>(GetParam()) ? "1" : "0";
     std::string channel1 = std::get<2>(GetParam()) ? "1" : "0";
 
-    std::string command = NIOS2SHELL;
-    command += " vsim -c -do \"do test.do vsim nuand.fx3_gpif_meta_8bit_tb ";
+    std::string command = "vsim -c -do \"do test.do vsim nuand.fx3_gpif_meta_8bit_tb ";
     command += "-gEIGHT_BIT_MODE_EN='" + bitmode + "' ";
     command += "-gENABLE_CHANNEL_0='" + channel0 + "' ";
     command += "-gENABLE_CHANNEL_1='" + channel1 + "' ";
@@ -420,8 +428,7 @@ TEST_P(verify, rx_counter_8bit_tb) {
     std::string channel0 = std::get<1>(GetParam()) ? "1" : "0";
     std::string channel1 = std::get<2>(GetParam()) ? "1" : "0";
 
-    std::string command = NIOS2SHELL;
-    command += " vsim -c -do \"do test.do vsim nuand.rx_counter_8bit_tb ";
+    std::string command = "vsim -c -do \"do test.do vsim nuand.rx_counter_8bit_tb ";
     command += "-gEIGHT_BIT_MODE_EN='" + bitmode + "' ";
     command += "-gENABLE_CHANNEL_0='" + channel0 + "' ";
     command += "-gENABLE_CHANNEL_1='" + channel1 + "' ";
@@ -436,8 +443,7 @@ TEST_P(verify, rx_timestamp_tb) {
     std::string channel0 = std::get<1>(GetParam()) ? "1" : "0";
     std::string channel1 = std::get<2>(GetParam()) ? "1" : "0";
 
-    std::string command = NIOS2SHELL;
-    command += " vsim -c -do \"do test.do vsim nuand.rx_timestamp_tb ";
+    std::string command = "vsim -c -do \"do test.do vsim nuand.rx_timestamp_tb ";
     command += "-gEIGHT_BIT_MODE_EN='" + bitmode + "' ";
     command += "-gENABLE_CHANNEL_0='" + channel0 + "' ";
     command += "-gENABLE_CHANNEL_1='" + channel1 + "' ";
@@ -498,19 +504,6 @@ const std::vector<std::tuple<std::string, std::string, std::string>> fpga_images
 class synth: public ::testing::TestWithParam<std::tuple<std::string, std::string, std::string>> {
     char build_dir[PATH_MAX];
     void SetUp() override {
-        std::string home = std::getenv("HOME");
-        fs::path nios2shell_path = "";
-
-        find_file("~/intelFPGA_lite", "nios2_command_shell.sh", &nios2shell_path);
-        if (nios2shell_path.empty()) {
-            std::cout << "Failed to find nios2_command_shell\n";
-        } else if (!fs::exists(fs::path(home) / "intelFPGA_lite/20.1")) {
-            std::cout << "[ERROR] Found the nios2_command_shell.sh in an alternate version of Quartus.\n";
-            std::cout << "[ERROR] Change the NIOS2SHELL directive accordingly.\n\n";
-            std::cout << "    Expected: " << NIOS2SHELL << std::endl;
-            std::cout << "    Found:    " << nios2shell_path.string() << "\n\n";
-        }
-
         if (getcwd(build_dir, PATH_MAX) == NULL) {
             perror("Failed to get current directory\n");
         }
@@ -534,8 +527,7 @@ TEST_P(synth, synthesis) {
     std::string revision = std::get<1>(GetParam());
     std::string size     = std::get<2>(GetParam());
 
-    std::string command = NIOS2SHELL;
-    command += " ./build_bladerf.sh ";
+    std::string command = "./build_bladerf.sh ";
     command += " -b " + board;
     command += " -r " + revision;
     command += " -s " + size;
@@ -549,8 +541,7 @@ TEST_P(synth_ci, synthesis) {
     std::string revision = std::get<1>(GetParam());
     std::string size     = std::get<2>(GetParam());
 
-    std::string command = NIOS2SHELL;
-    command += " ./build_bladerf.sh ";
+    std::string command = "./build_bladerf.sh ";
     command += " -b " + board;
     command += " -r " + revision;
     command += " -s " + size;
