@@ -21,14 +21,19 @@
  */
 #include <cyu3error.h>
 #include <cyu3gpio.h>
+#include <cyu3os.h>
 #include <cyu3usb.h>
 #include <cyu3spi.h>
+#include <string.h>
 #include "bladeRF.h"
 #include "fpga.h"
 #include "gpif.h"
+#include "LzmaDec.h"
 #include "spi_flash_lib.h"
 
 #define THIS_FILE LOGGER_ID_FPGA_C
+#define FPGA_LZMA_BLOCK_BYTES (60u * 1024u)
+#define FPGA_LZMA_MAX_BLOCK_BYTES 65504u
 
 /* DMA Channel for RF U2P (USB to P-port) transfers */
 static CyU3PDmaChannel glChHandlebladeRFUtoP;
@@ -291,16 +296,68 @@ CyBool_t NuandFpgaConfigHalted(uint16_t endpoint, uint8_t * data)
     return isHandled;
 }
 
+/**
+ * Send one 256-byte FPGA configuration page through the GPIF loader.
+ */
+static CyU3PReturnStatus_t FpgaSendFlashBytes(uint8_t *ptr,
+                                              int count,
+                                              CyBool_t last)
+{
+    CyU3PDmaBuffer_t dbuf;
+    CyU3PDmaState_t state;
+    CyU3PReturnStatus_t apiRetStatus;
+    uint32_t prodCnt, consCnt;
+    int32_t i;
+    uint8_t *end_in_b = &((uint8_t *)ptr)[255];
+    uint16_t *end_in_w = &((uint16_t *)ptr)[255];
+
+    apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP,
+                                            &state, &prodCnt, &consCnt);
+    if (apiRetStatus)
+        return apiRetStatus;
+
+    CyU3PDmaChannelAbort(&glChHandlebladeRFUtoP);
+
+    apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP,
+                                            &state, &prodCnt, &consCnt);
+    if (apiRetStatus)
+        return apiRetStatus;
+
+    CyU3PDmaChannelReset(&glChHandlebladeRFUtoP);
+
+    apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP,
+                                            &state, &prodCnt, &consCnt);
+    if (apiRetStatus)
+        return apiRetStatus;
+
+    for (i = 255; i >= 0; i--)
+        *end_in_w-- = glFlipLut[*end_in_b--];
+
+    dbuf.buffer = ptr;
+    dbuf.count = ((last) ? count + 2 : count) * 2;
+    dbuf.size = 4096;
+    dbuf.status = 0;
+
+    apiRetStatus = CyU3PDmaChannelSetupSendBuffer(&glChHandlebladeRFUtoP,
+                                                  &dbuf);
+    if (apiRetStatus)
+        return apiRetStatus;
+
+    apiRetStatus = CyU3PDmaChannelWaitForCompletion(&glChHandlebladeRFUtoP,
+                                                    100);
+    if (apiRetStatus)
+        return apiRetStatus;
+
+    return CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP,
+                                    &state, &prodCnt, &consCnt);
+}
+
 CyBool_t NuandLoadFromFlash(int fpga_len)
 {
     uint8_t *ptr;
     int nleft;
     CyBool_t retval = CyFalse;
-    CyU3PDmaBuffer_t dbuf;
     uint32_t sector_idx = 1025;
-    uint32_t prodCnt, consCnt;
-    int32_t i;
-    CyU3PDmaState_t state;
 
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
 
@@ -318,51 +375,11 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
     nleft = fpga_len;
 
     while(nleft) {
-        apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
-        if (apiRetStatus)
-            break;
-
-        CyU3PDmaChannelAbort(&glChHandlebladeRFUtoP);
-
-        apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
-        if (apiRetStatus)
-            break;
-
-        CyU3PDmaChannelReset(&glChHandlebladeRFUtoP);
-
-        apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
-        if (apiRetStatus)
-            break;
-
         if (CyFxSpiTransfer(sector_idx++, 0x100, ptr, CyTrue, CyFalse) != CY_U3P_SUCCESS)
             break;
 
-        uint8_t *end_in_b = &( ((uint8_t *)ptr)[255]);
-        uint16_t *end_in_w = &( ((uint16_t *)ptr)[255]);
-
-        /* Flip the bits in such a way that the FPGA can be programmed
-         * This mapping can be determined by looking at the schematic */
-        for (i = 255; i >= 0; i--)
-            *end_in_w-- = glFlipLut[*end_in_b--];
-
-        dbuf.buffer = ptr;
-        dbuf.count = ((nleft > 256) ? 256 : (nleft + 2)) * 2;
-        dbuf.size = 4096;
-        dbuf.status = 0;
-
-        apiRetStatus = CyU3PDmaChannelSetupSendBuffer(&glChHandlebladeRFUtoP, &dbuf);
-        if (apiRetStatus)
-            break;
-
-        apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
-        if (apiRetStatus)
-            break;
-
-        apiRetStatus = CyU3PDmaChannelWaitForCompletion(&glChHandlebladeRFUtoP, 100);
-        if (apiRetStatus)
-            break;
-
-        apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
+        apiRetStatus = FpgaSendFlashBytes(ptr,
+                (nleft > 256) ? 256 : nleft, nleft <= 256);
         if (apiRetStatus)
             break;
 
@@ -379,6 +396,234 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
 
 out:
     CyU3PDmaBufferFree(ptr);
+    CyU3PSpiDeInit();
+
+    CyFxSpiFastRead(CyFalse);
+    NuandFpgaConfigStop();
+
+    return retval;
+}
+
+/**
+ * Read a little-endian 32-bit value.
+ */
+static uint32_t load_le32(uint8_t *in)
+{
+    return (uint32_t)in[0] |
+           ((uint32_t)in[1] << 8) |
+           ((uint32_t)in[2] << 16) |
+           ((uint32_t)in[3] << 24);
+}
+
+/**
+ * Read a byte range from the compressed FPGA autoload stream.
+ */
+static CyU3PReturnStatus_t FpgaReadCompressedBytes(uint8_t *page,
+                                                   uint32_t *sector_idx,
+                                                   int *nleft,
+                                                   int *offset,
+                                                   int *avail,
+                                                   uint8_t *out,
+                                                   int count)
+{
+    int copied;
+
+    for (copied = 0; copied < count;) {
+        int take;
+
+        if (*avail == 0) {
+            if (*nleft <= 0 ||
+                CyFxSpiTransfer((*sector_idx)++, 0x100, page,
+                                CyTrue, CyFalse) != CY_U3P_SUCCESS) {
+                return CY_U3P_ERROR_FAILURE;
+            }
+
+            *avail = (*nleft > 256) ? 256 : *nleft;
+            *nleft -= *avail;
+            *offset = 0;
+        }
+
+        take = (count - copied < *avail) ? count - copied : *avail;
+        memcpy(out + copied, page + *offset, take);
+        copied += take;
+        *offset += take;
+        *avail -= take;
+    }
+
+    return CY_U3P_SUCCESS;
+}
+
+/**
+ * Send one decompressed block through the FPGA loader.
+ */
+static CyU3PReturnStatus_t FpgaSendDecodedBlock(uint8_t *page,
+                                                uint8_t *block,
+                                                int block_len,
+                                                int *nleft)
+{
+    int offset;
+
+    for (offset = 0; offset < block_len;) {
+        CyU3PReturnStatus_t status;
+        int count = (block_len - offset > 256) ? 256 : block_len - offset;
+
+        CyU3PMemSet(page, 0xff, 256);
+        memcpy(page, block + offset, count);
+        *nleft -= count;
+
+        status = FpgaSendFlashBytes(page, count, *nleft == 0);
+        if (status != CY_U3P_SUCCESS) {
+            return status;
+        }
+
+        offset += count;
+    }
+
+    return CY_U3P_SUCCESS;
+}
+
+/**
+ * Allocate memory for the LZMA SDK.
+ */
+static void *FpgaLzmaAlloc(ISzAllocPtr p, size_t size)
+{
+    (void)p;
+    return CyU3PMemAlloc((uint32_t)size);
+}
+
+/**
+ * Free memory allocated by the LZMA SDK.
+ */
+static void FpgaLzmaFree(ISzAllocPtr p, void *addr)
+{
+    (void)p;
+    if (addr != NULL) {
+        CyU3PMemFree(addr);
+    }
+}
+
+static const ISzAlloc fpga_lzma_allocator = {
+    FpgaLzmaAlloc,
+    FpgaLzmaFree
+};
+
+/**
+ * Decode one LZMA frame into a caller-provided FPGA block buffer.
+ */
+static CyBool_t FpgaDecodeLzmaBlock(uint8_t *in,
+                                    uint32_t clen,
+                                    uint8_t *out,
+                                    int block_len)
+{
+    ELzmaStatus status;
+    SizeT src_len;
+    SizeT dst_len;
+    SRes lzma_status;
+
+    if (clen <= LZMA_PROPS_SIZE) {
+        return CyFalse;
+    }
+
+    src_len = (SizeT)(clen - LZMA_PROPS_SIZE);
+    dst_len = (SizeT)block_len;
+    lzma_status = LzmaDecode(out, &dst_len, in + LZMA_PROPS_SIZE,
+                             &src_len, in, LZMA_PROPS_SIZE, LZMA_FINISH_END,
+                             &status, &fpga_lzma_allocator);
+
+    return lzma_status == SZ_OK &&
+           dst_len == (SizeT)block_len &&
+           src_len == (SizeT)(clen - LZMA_PROPS_SIZE);
+}
+
+/**
+ * Load a compressed FPGA bitstream from SPI flash.
+ */
+CyBool_t NuandLoadCompressedFromFlash(int fpga_len, int compressed_len)
+{
+    uint8_t *in = NULL;
+    uint8_t *out = NULL;
+    uint8_t *page = NULL;
+    uint8_t header[4];
+    int in_avail = 0;
+    int in_offset = 0;
+    int nleft = fpga_len;
+    int cleft = compressed_len;
+    int decoded;
+    CyBool_t retval = CyFalse;
+    uint32_t sector_idx = 1025;
+    CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+
+    if (fpga_len <= 0 || compressed_len <= 0) {
+        return CyFalse;
+    }
+
+    NuandFpgaConfigStart();
+    in = CyU3PDmaBufferAlloc((uint16_t)FPGA_LZMA_MAX_BLOCK_BYTES);
+    out = CyU3PDmaBufferAlloc((uint16_t)FPGA_LZMA_BLOCK_BYTES);
+    page = CyU3PDmaBufferAlloc(4096);
+    if (in == NULL || out == NULL || page == NULL) {
+        goto out;
+    }
+
+    apiRetStatus = CyFxSpiInit(0x100);
+
+    CyFxSpiFastRead(CyTrue);
+    apiRetStatus = CyU3PSpiSetClock(30000000);
+
+    if (FpgaBeginProgram() != CY_U3P_SUCCESS) {
+        goto out;
+    }
+
+    for (decoded = 0; decoded < fpga_len;) {
+        const int block_len = (fpga_len - decoded > (int)FPGA_LZMA_BLOCK_BYTES) ?
+                              (int)FPGA_LZMA_BLOCK_BYTES : fpga_len - decoded;
+        uint32_t clen;
+
+        apiRetStatus = FpgaReadCompressedBytes(page, &sector_idx, &cleft,
+                                               &in_offset, &in_avail,
+                                               header, sizeof(header));
+        if (apiRetStatus != CY_U3P_SUCCESS) {
+            goto out;
+        }
+
+        clen = load_le32(header);
+        if (clen == 0 || clen > FPGA_LZMA_MAX_BLOCK_BYTES ||
+            clen > (uint32_t)(cleft + in_avail)) {
+            goto out;
+        }
+
+        apiRetStatus = FpgaReadCompressedBytes(page, &sector_idx, &cleft,
+                                               &in_offset, &in_avail,
+                                               in, (int)clen);
+        if (apiRetStatus != CY_U3P_SUCCESS) {
+            goto out;
+        }
+
+        if (!FpgaDecodeLzmaBlock(in, clen, out, block_len)) {
+            goto out;
+        }
+
+        apiRetStatus = FpgaSendDecodedBlock(in, out, block_len, &nleft);
+        if (apiRetStatus != CY_U3P_SUCCESS) {
+            goto out;
+        }
+
+        decoded += block_len;
+    }
+
+    retval = (cleft == 0 && in_avail == 0 && nleft == 0) ? CyTrue : CyFalse;
+    NuandSetFpgaConfigSource(NUAND_FPGA_CONFIG_SOURCE_FLASH);
+
+out:
+    if (in != NULL) {
+        CyU3PDmaBufferFree(in);
+    }
+    if (out != NULL) {
+        CyU3PDmaBufferFree(out);
+    }
+    if (page != NULL) {
+        CyU3PDmaBufferFree(page);
+    }
     CyU3PSpiDeInit();
 
     CyFxSpiFastRead(CyFalse);

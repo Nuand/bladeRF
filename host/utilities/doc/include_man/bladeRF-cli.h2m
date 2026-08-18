@@ -25,6 +25,16 @@ $ bladeRF-cli -L hostedx40.rbf
 Flashes the FPGA image named hostedx40.rbf onto the bladeRF, where it will
 be automatically loaded on power-up.
 
+.PP
+$ bladeRF-cli -v info -L hostedxA5.rbf
+.IP
+Flashes the xA5 FPGA image for autoloading. With libbladeRF v2.6.1 and FX3
+firmware v2.6.1 or later, FPGA images are automatically stored as LZMA.
+Older FX3 firmware continues to use legacy raw autoload storage when the raw
+image fits. The info log reports the raw size, compressed size, and remaining
+flash space when compression is used. Power cycle the device after the write
+completes to verify firmware autoload.
+
 [INTERACTIVE COMMANDS]
 bladeRF-cli supports a scriptable interactive mode.  Run \fBbladeRF-cli --interactive\fP
 to enter this mode.  Type "\fBhelp\fP" for a listing of all commands, or

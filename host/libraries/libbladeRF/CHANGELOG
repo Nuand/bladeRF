@@ -5,6 +5,14 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/Nuand/bladeRF
 ================================================================================
 
+v2.6.1 (2026-05-04)
+--------------------------------
+ * Added automatic LZMA compression for bladeRF1 FPGA autoload writes when
+   attached FX3 firmware v2.6.1 or newer supports LZMA compressed autoloading.
+ * Keep legacy raw FPGA autoload writes for older FX3 firmware when the raw
+   image fits; reject images that require compression with an update-firmware
+   error.
+
 v2.6.0 (2025-05-06)
 --------------------------------
 

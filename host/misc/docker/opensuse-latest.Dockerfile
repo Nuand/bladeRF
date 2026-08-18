@@ -31,6 +31,7 @@ LABEL com.nuand.ci.distribution.version="latest"
 
 # Install things
 RUN zypper --non-interactive install \
+    --allow-downgrade \
     clang \
     cmake \
     doxygen \

@@ -134,7 +134,7 @@ check_quartus_version()
 
     QUARTUS_VER[minor]=$( \
         echo "${VERSION}"   | \
-        sed -e 's/^16\.//g' | \
+        sed -e 's/^[[:digit:]]\+\.//g' | \
         sed -e 's/\([[:digit:]]\+\).*/\1/g' \
     )
 
@@ -370,6 +370,13 @@ fi
 
 if [ $(expr ${QUARTUS_VER[major]} \>= 19 ) -eq 1 ]; then
    export PERL5LIB=$(echo ${QUARTUS_ROOTDIR}/linux64/perl/lib/*.*/)
+fi
+
+if [ "x$(uname)" == "xLinux" ] &&
+       { [ "${QUARTUS_VER[major]}" -lt 20 ] ||
+         { [ "${QUARTUS_VER[major]}" -eq 20 ] &&
+           [ "${QUARTUS_VER[minor]}" -le 1 ]; }; }; then
+    export GLIBC_TUNABLES="${GLIBC_TUNABLES:+${GLIBC_TUNABLES}:}glibc.rtld.execstack=2"
 fi
 
 nios_system=../fpga/ip/altera/nios_system

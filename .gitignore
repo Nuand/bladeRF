@@ -35,6 +35,7 @@ fx3_firmware/make/toolchain.mk
 fx3_firmware/build/*
 
 build/
+!hdl/fpga/platforms/*/build
 
 host/examples/gnuradio/frs/bladeRF_frs.py
 

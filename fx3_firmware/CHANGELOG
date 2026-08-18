@@ -5,6 +5,15 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.6.1 (2026-05-06)
+--------------------------------
+ * Add Renesas AT25FF321A SPI flash support
+ * Add Renesas OTP security register read/write/lock
+ * Add LZMA compressed FPGA autoload support for images that do not fit the
+   SPI flash budget in raw form
+   xA9 wiphy: 12,858,972 bytes raw, 3,854,285 bytes LZMA, 77,568
+        bytes left on 32 Mbit flash after metadata and page padding
+
 v2.6.0 (2025-05-06)
 --------------------------------
  * Increase GPIF buffer size for increase performance

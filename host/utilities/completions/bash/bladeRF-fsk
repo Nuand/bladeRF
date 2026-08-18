@@ -1,0 +1,49 @@
+# bash completion for bladeRF-fsk                            -*- shell-script -*-
+
+# Source common completion functions
+. $(dirname "${BASH_SOURCE[0]}")/bladeRF-common
+
+_bladeRF_fsk()
+{
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "$prev" in
+        -o|--output|-i|--input)
+            COMPREPLY=( $(compgen -f -- "$cur") )
+            return
+            ;;
+        -p|--packet-size)
+            COMPREPLY=( $(compgen -W "64 128 256 512 1024" -- "$cur") )
+            return
+            ;;
+        --rx-chan|--tx-chan)
+            COMPREPLY=( $(compgen -W "0 1" -- "$cur") )
+            return
+            ;;
+        --rx-gain|--tx-gain)
+            COMPREPLY=( $(compgen -W "0 10 20 30 40 50 60" -- "$cur") )
+            return
+            ;;
+        -d|--device)
+            _bladerf_complete_device "$cur"
+            return
+            ;;
+        -s|--sample-rate)
+            # Sample rates for bladeRF-fsk (supports shorthand like 2M)
+            COMPREPLY=( $(compgen -W "1M 2M 3M 4M 5M" -- "$cur") )
+            return
+            ;;
+    esac
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-h --help -d --device -p --packet-size -q --quiet \
+                                  -r --rx-freq -o --output -t --tx-freq -i --input \
+                                  -s --sample-rate --rx-chan --rx-biast --tx-chan --tx-biast \
+                                  --rx-agc --rx-gain --tx-gain" -- "$cur") )
+    fi
+}
+
+complete -F _bladeRF_fsk bladeRF-fsk
+
+# ex: filetype=sh

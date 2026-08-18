@@ -188,6 +188,7 @@ set(LIBBLADERF_INCLUDES
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
     ${BLADERF_FW_COMMON_INCLUDE_DIR}
     ${BLADERF_FPGA_COMMON_INCLUDE_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma
     ${CMAKE_CURRENT_BINARY_DIR}/src
 )
 
@@ -337,6 +338,10 @@ set(LIBBLADERF_SOURCE
         src/helpers/interleave.c
         src/helpers/configfile.c
         src/version.h
+        ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/CpuArch.c
+        ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/LzFind.c
+        ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/LzFindOpt.c
+        ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/LzmaEnc.c
         src/devinfo.c
         src/device_calibration.c
         src/bladerf.c
@@ -420,6 +425,15 @@ endif()
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
     cmake_policy(SET CMP0115 NEW)
 endif(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+
+set_source_files_properties(
+    ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/CpuArch.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/LzFind.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/LzFindOpt.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/lzma/LzmaEnc.c
+    PROPERTIES COMPILE_DEFINITIONS Z7_ST
+)
+
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
 

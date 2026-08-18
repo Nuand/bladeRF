@@ -55,10 +55,10 @@ static void _clear_rffe_ctrl()
     reg = rffe_csr_read();
     reg &= ~(1 << RFFE_CONTROL_TXNRX);
     reg &= ~(1 << RFFE_CONTROL_ENABLE);
-    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_1);
-    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_2);
-    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_1);
-    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_2);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SPDT_1);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SPDT_2);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SPDT_1);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SPDT_2);
     reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_0);
     reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_0);
     reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_1);
@@ -526,6 +526,7 @@ bool _rfic_cmd_wr_frequency(struct rfic_state *state,
 {
     bladerf_direction dir =
         BLADERF_CHANNEL_IS_TX(channel) ? BLADERF_TX : BLADERF_RX;
+    bladerf_channel port_ch = channel;
     bladerf_channel other_ch;
     uint32_t reg;
     size_t i;
@@ -541,12 +542,15 @@ bool _rfic_cmd_wr_frequency(struct rfic_state *state,
         /* Update SPDT bits accordingly */
         CHECK_BOOL(
             _modify_spdt_bits_by_freq(&reg, other_ch, enable, frequency));
+        if (enable) {
+            port_ch = other_ch;
+        }
     }
 
     rffe_csr_write(reg);
 
     CHECK_BOOL(set_ad9361_port_by_freq(
-        state->phy, channel, _rffe_ch_enabled(reg, channel), frequency));
+        state->phy, port_ch, _rffe_ch_enabled(reg, port_ch), frequency));
 
     if (BLADERF_CHANNEL_IS_TX(channel)) {
         CHECK_BOOL(ad9361_set_tx_lo_freq(state->phy, frequency));

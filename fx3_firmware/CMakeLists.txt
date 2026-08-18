@@ -1,7 +1,7 @@
 ################################################################################
 # Build bladeRF FX3 Firmware
 ################################################################################
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(bladeRF_fw C)
 
 ################################################################################
@@ -34,7 +34,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../host/cmake/modules)
 # Update these definitions when updating the firmware version
 set(VERSION_INFO_MAJOR 2)
 set(VERSION_INFO_MINOR 6)
-set(VERSION_INFO_PATCH 0)
+set(VERSION_INFO_PATCH 1)
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
     set(VERSION_INFO_EXTRA "git")
@@ -68,6 +68,7 @@ set(INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_BINARY_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/../firmware_common"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/lzma"
     "${FX3_INCLUDE_DIR}")
 
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -85,6 +86,7 @@ set(SRC_BLADERF
     "${SRC_DIR}/logger.c"
     "${SRC_DIR}/rf.c"
     "${SRC_DIR}/spi_flash_lib.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/lzma/LzmaDec.c"
     "${FX3_FW_COMMON_DIR}/cyfx_gcc_startup.S"
     "${FX3_FW_COMMON_DIR}/cyfxtx.c"
     "${SRC_DIR}/bladeRF1.c"
@@ -99,7 +101,14 @@ endif()
 
 set(CMAKE_C_FLAGS
     "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter -DCYU3P_FX3=1 \
-     -D__CYU3P_TX__=1 -mcpu=arm926ej-s -mthumb-interwork"
+     -D__CYU3P_TX__=1 \
+     -mcpu=arm926ej-s -mthumb-interwork"
+)
+
+set_source_files_properties(
+    "${SRC_DIR}/fpga.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/lzma/LzmaDec.c"
+    PROPERTIES COMPILE_DEFINITIONS Z7_DECL_Int32_AS_long
 )
 
 include_directories(${INCLUDE_DIRS})

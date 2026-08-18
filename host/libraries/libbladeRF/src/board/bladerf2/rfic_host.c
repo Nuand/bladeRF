@@ -71,12 +71,30 @@ static bool _rfic_host_is_standby(struct bladerf *dev)
     return false;
 }
 
+static int _rfic_host_clear_rffe_control(struct bladerf *dev)
+{
+    uint32_t reg;
+
+    CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
+    reg &= ~(1 << RFFE_CONTROL_TXNRX);
+    reg &= ~(1 << RFFE_CONTROL_ENABLE);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SPDT_1);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SPDT_2);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SPDT_1);
+    reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SPDT_2);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_0);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_0);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_1);
+    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_1);
+
+    return dev->backend->rffe_control_write(dev, reg);
+}
+
 static int _rfic_host_initialize(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     struct ad9361_rf_phy *phy              = NULL;
     struct controller_fns const *rfic      = board_data->rfic;
-    uint32_t reg;
     bladerf_direction dir;
     bladerf_channel ch;
     size_t i;
@@ -84,10 +102,8 @@ static int _rfic_host_initialize(struct bladerf *dev)
 
     log_debug("%s: initializating\n", __FUNCTION__);
 
-    /* Initialize RFFE control */
-    CHECK_STATUS(dev->backend->rffe_control_write(
-        dev, (1 << RFFE_CONTROL_ENABLE) | (1 << RFFE_CONTROL_TXNRX)));
-
+    /* Keep the RF path disconnected until AD9361 init is complete. */
+    CHECK_STATUS(_rfic_host_clear_rffe_control(dev));
 
     CHECK_STATUS(dev->backend->config_gpio_read(dev, &config_gpio));
 
@@ -124,19 +140,8 @@ static int _rfic_host_initialize(struct bladerf *dev)
     CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_TX(0), 0,
                                   BLADERF_RFIC_TXFIR_DEFAULT));
 
-    /* Clear RFFE control */
-    CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
-    reg &= ~(1 << RFFE_CONTROL_TXNRX);
-    reg &= ~(1 << RFFE_CONTROL_ENABLE);
-    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_1);
-    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_2);
-    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_1);
-    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_2);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_0);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_0);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_1);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_1);
-    CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
+    /* Leave the RF path disconnected until modules are explicitly enabled. */
+    CHECK_STATUS(_rfic_host_clear_rffe_control(dev));
 
     /* Move AD9361 back to desired frequency */
     CHECK_STATUS(rfic->set_frequency(dev, BLADERF_CHANNEL_RX(0),
@@ -159,23 +164,10 @@ static int _rfic_host_initialize(struct bladerf *dev)
 static int _rfic_host_deinitialize(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
-    uint32_t reg;
 
     log_debug("%s: deinitializing\n", __FUNCTION__);
 
-    /* Clear RFFE control */
-    CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
-    reg &= ~(1 << RFFE_CONTROL_TXNRX);
-    reg &= ~(1 << RFFE_CONTROL_ENABLE);
-    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_1);
-    reg &= ~(1 << RFFE_CONTROL_RX_SPDT_2);
-    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_1);
-    reg &= ~(1 << RFFE_CONTROL_TX_SPDT_2);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_0);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_0);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_RX_EN_1);
-    reg &= ~(1 << RFFE_CONTROL_MIMO_TX_EN_1);
-    CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
+    CHECK_STATUS(_rfic_host_clear_rffe_control(dev));
 
     if (NULL != board_data->phy) {
         CHECK_STATUS(ad9361_deinit(board_data->phy));
@@ -475,6 +467,7 @@ static int _rfic_host_select_band(struct bladerf *dev,
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     struct ad9361_rf_phy *phy              = board_data->phy;
+    bladerf_channel port_ch                = ch;
     uint32_t reg;
     size_t i;
 
@@ -486,8 +479,12 @@ static int _rfic_host_select_band(struct bladerf *dev,
     for (i = 0; i < 2; ++i) {
         bladerf_channel bch = BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_CHANNEL_TX(i)
                                                         : BLADERF_CHANNEL_RX(i);
-        CHECK_STATUS(_modify_spdt_bits_by_freq(
-            &reg, bch, _rffe_ch_enabled(reg, bch), frequency));
+        bool enabled = _rffe_ch_enabled(reg, bch);
+
+        CHECK_STATUS(_modify_spdt_bits_by_freq(&reg, bch, enabled, frequency));
+        if (enabled) {
+            port_ch = bch;
+        }
     }
 
     /* Write RFFE control register */
@@ -495,7 +492,7 @@ static int _rfic_host_select_band(struct bladerf *dev,
 
     /* Set AD9361 port */
     CHECK_STATUS(
-        set_ad9361_port_by_freq(phy, ch, _rffe_ch_enabled(reg, ch), frequency));
+        set_ad9361_port_by_freq(phy, port_ch, _rffe_ch_enabled(reg, port_ch), frequency));
 
     return 0;
 }

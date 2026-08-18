@@ -2252,6 +2252,7 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
         status = BLADERF_ERR_NO_FILE;
         goto error;
     }
+    log_debug("Gain calibration file found: %s\n", full_path);
 
     /** Convert to binary format if CSV */
     full_path_bin = (char*)malloc(strlen(full_path) + 1);

@@ -1,0 +1,35 @@
+# Common bash completion functions for bladeRF utilities     -*- shell-script -*-
+
+# Get device completion options with dynamic serial detection
+_bladerf_get_device_opts()
+{
+    local serials
+    if command -v bladeRF-cli &>/dev/null; then
+        # Extract serial numbers from probe output
+        serials=$(bladeRF-cli -p 2>/dev/null | grep -E '^\s*Serial:' | awk '{print $2}')
+    fi
+    
+    # Build device specifier options
+    local device_opts="*:instance= libusb:instance="
+    if [[ -n "$serials" ]]; then
+        for serial in $serials; do
+            device_opts="$device_opts *:serial=$serial"
+        done
+    else
+        # Fall back to generic template if no devices found
+        device_opts="$device_opts *:serial="
+    fi
+    
+    echo "$device_opts"
+}
+
+# Common completion setup for device options
+_bladerf_complete_device()
+{
+    local cur="$1"
+    COMPREPLY=( $(compgen -W "$(_bladerf_get_device_opts)" -- "$cur") )
+    # Only use compopt if available (bash 4+)
+    type compopt &>/dev/null && compopt -o nospace
+}
+
+# ex: filetype=sh

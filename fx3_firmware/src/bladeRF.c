@@ -185,7 +185,8 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
 }
 
 uint16_t NuandGetProductID() {
-    if (NuandGetSPIManufacturer() == 0xEF) {
+    uint8_t mfn = NuandGetSPIManufacturer();
+    if (mfn == 0xEF || mfn == 0x1F) {
         return USB_NUAND_BLADERF2_PRODUCT_ID;
     }
     return USB_NUAND_BLADERF_PRODUCT_ID;
@@ -1014,6 +1015,23 @@ void bladeRFAppThread_Entry( uint32_t input)
         if (!NuandExtractField((void*)glAutoLoad, 0x100, "LEN", (char *)&fpga_len, 10)) {
             fpga_len[10] = 0;
             NuandLoadFromFlash(atoi(fpga_len));
+        } else {
+            char compressed_len[11] = {0};
+            char format[5] = {0};
+            if (!NuandExtractField((void*)glAutoLoad, 0x100, "FMT", format, 4) &&
+                !NuandExtractField((void*)glAutoLoad, 0x100,
+                                   "ULEN", (char *)&fpga_len, 10) &&
+                !NuandExtractField((void*)glAutoLoad, 0x100,
+                                   "CLEN", (char *)&compressed_len, 10)) {
+                if (format[0] == 'L' && format[1] == 'Z' &&
+                    format[2] == 'M' && format[3] == 'A' &&
+                    format[4] == 0) {
+                    fpga_len[10] = 0;
+                    compressed_len[10] = 0;
+                    NuandLoadCompressedFromFlash(atoi(fpga_len),
+                                                 atoi(compressed_len));
+                }
+            }
         }
     }
 

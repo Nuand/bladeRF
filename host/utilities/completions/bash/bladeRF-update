@@ -1,0 +1,11 @@
+# bash completion for bladeRF-update                         -*- shell-script -*-
+
+_bladeRF_update()
+{
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    COMPREPLY=( $(compgen -W "-h --help -y --rm -v --verbose" -- "$cur") )
+}
+
+complete -F _bladeRF_update bladeRF-update
+
+# ex: filetype=sh
