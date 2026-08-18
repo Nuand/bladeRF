@@ -2559,17 +2559,18 @@ struct bladerf_metadata {
  * @brief Per-receive summary of the RFIC's automatic gain control state.
  *
  * Overlaid on ::bladerf_metadata::reserved by bladerf_sync_rx() when receiving
- * in a metadata format. It reports the RX gain the AD9361's AGC had actually
- * applied to the samples being returned, which is what makes it possible to
- * turn IQ magnitude into absolute power (for example, to compute the RSSI of a
- * signal within some bandwidth).
+ * in a metadata format. It reports the RX gain the AD9361's AGC actually applied
+ * to the samples being returned, which is what makes it possible to turn IQ
+ * magnitude into absolute power (for example, the RSSI of a signal within some
+ * bandwidth).
  *
- * The FPGA snapshots the RFIC's CTRL_OUT pins into each message header, so the
- * gain travels with the IQ instead of having to be polled asynchronously with
- * bladerf_get_gain(). Requires FPGA v0.17.0 or later, RX1, and an AGC gain mode
+ * The FPGA divides each message into `chunks` equal spans and records the gain
+ * index at the end of each, so the gain profile travels with the IQ instead of
+ * having to be polled asynchronously with bladerf_get_gain(). Requires FPGA
+ * v0.17.0 or later, RX1, and an AGC gain mode
  * (::BLADERF_GAIN_SLOWATTACK_AGC by default).
  *
- * To get absolute power, pass `gain_index` through
+ * To get absolute power, pass an index through
  * bladerf_rx_gain_tag_to_gain_db() and subtract:
  *
  * @code
@@ -2579,23 +2580,33 @@ struct bladerf_metadata {
  * That conversion needs a gain calibration table loaded and enabled for the
  * channel (bladerf_load_gain_calibration()) to be an absolute reference.
  *
- * A single bladerf_sync_rx() call can span many messages, so the fields
- * summarize all of them. When `gain_index_min == gain_index_max` and
- * ::BLADERF_RX_GAIN_TAG_CHANGED is clear, one gain applied to every returned
- * sample and the conversion is exact. Otherwise the returned samples straddle a
- * gain change: either discard them or bound the error with the min/max pair.
- * With the default 1000 us AGC gain update interval this is uncommon.
+ * @note **Choosing `buffer_size`.** The metadata header, and therefore this
+ *       profile, is per *message* -- not per buffer. A message holds 2044
+ *       samples on SuperSpeed and 1020 on Hi-Speed, and bladerf_sync_config()
+ *       rounds `buffer_size` up to a whole number of messages. Setting
+ *       `buffer_size` to **2048 samples (SuperSpeed) or 1024 (Hi-Speed)** gives
+ *       exactly one message per buffer, so a bladerf_sync_rx() of up to 2044
+ *       (or 1020) samples maps one-to-one onto a single message and a single
+ *       profile. Larger buffers still work, but many messages then collapse into
+ *       the summary fields and `chunk_gain_index` describes only the first.
+ *
+ * When `gain_index_min == gain_index_max` and ::BLADERF_RX_GAIN_TAG_CHANGED is
+ * clear, one gain applied to every returned sample and the conversion is exact.
+ * Otherwise the gain moved: `chunk_gain_index` localises it within the first
+ * message, and the min/max pair bounds it across all of them. With the default
+ * 1000 us AGC gain update interval this is uncommon -- fewer than one message in
+ * fifteen at 30.72 Msps.
  */
 struct bladerf_rx_gain_tag {
-    /** Format version, or ::BLADERF_RX_GAIN_TAG_VERSION_NONE if the FPGA did
-     *  not supply a tag. Always check this before reading other fields. */
+    /** Format version, or ::BLADERF_RX_GAIN_TAG_VERSION_NONE if no tag was
+     *  available. Always check this before reading other fields. */
     uint8_t version;
 
     /** Bitwise OR of ::BLADERF_RX_GAIN_TAG_CHANGED and
-     *  ::BLADERF_RX_GAIN_TAG_UNSTABLE */
+     *  ::BLADERF_RX_GAIN_TAG_LOCKED */
     uint8_t flags;
 
-    /** RX1 full gain-table index at the first message returned */
+    /** RX1 full gain-table index at the first sample returned */
     uint8_t gain_index;
 
     /** Lowest gain index across the returned samples */
@@ -2604,12 +2615,18 @@ struct bladerf_rx_gain_tag {
     /** Highest gain index across the returned samples */
     uint8_t gain_index_max;
 
-    /** Raw CTRL_OUT byte from the first message returned. Bit 7 is the AGC
-     *  gain-lock indication when CTRL_OUT is pointed at the gain index. */
-    uint8_t ctrl_out;
+    /** Number of chunks per message, i.e. valid entries in
+     *  `chunk_gain_index` */
+    uint8_t chunks;
 
-    /** Number of messages summarized */
+    /** Number of messages summarized. Zero means no header was consumed by this
+     *  call and the fields describe the message an earlier call started. */
     uint16_t num_messages;
+
+    /** Gain index at the end of each chunk of the first message returned.
+     *  Together with `gain_index` this is a `chunks`+1 point profile across that
+     *  message. Only the first `chunks` entries are meaningful. */
+    uint8_t chunk_gain_index[8];
 };
 
 /** No gain tag was available; every other field is zero */
@@ -2618,12 +2635,11 @@ struct bladerf_rx_gain_tag {
 /** Current gain tag format version */
 #define BLADERF_RX_GAIN_TAG_VERSION_1 1
 
-/** The gain changed partway through the returned samples */
+/** The gain moved partway through the returned samples */
 #define BLADERF_RX_GAIN_TAG_CHANGED (1 << 0)
 
-/** At least one snapshot failed the FPGA's stability filter and may be
- *  unreliable. Expected transiently after starting a stream. */
-#define BLADERF_RX_GAIN_TAG_UNSTABLE (1 << 1)
+/** The AGC reported its gain as locked */
+#define BLADERF_RX_GAIN_TAG_LOCKED (1 << 1)
 
 /** @} (End of STREAMING_FORMAT_METADATA) */
 

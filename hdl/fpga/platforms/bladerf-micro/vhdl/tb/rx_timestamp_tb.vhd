@@ -388,7 +388,11 @@ begin
     -- RX Submodule
     U_rx : entity work.rx
         generic map (
-            NUM_STREAMS            => adc_controls'length
+            NUM_STREAMS            => adc_controls'length,
+            -- Exercise the deferred (tail-of-message) metadata commit: the
+            -- inter-header timestamp delta asserted below is what proves the
+            -- message length is still exactly GPIF_BUF_SIZE - HEADER_LEN.
+            ENABLE_GAIN_TAG        => true
         )
         port map (
             rx_reset               => rx_reset,

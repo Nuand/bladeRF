@@ -162,6 +162,14 @@
 #define BLADERF_CAP_FPGA_8BIT_SAMPLES (((uint64_t)1) << 39)
 
 /**
+ * FPGA v0.17.0 tags each RX metadata header with the RFIC gain profile for that
+ * message. The tag occupies the whole reserved header word, so there is no
+ * in-band marker distinguishing it from the constant older images emit -- this
+ * capability is the only way to tell them apart.
+ */
+#define BLADERF_CAP_FPGA_RX_GAIN_TAG (((uint64_t)1) << 40)
+
+/**
  * Max number of gain calibration tables associated to max number of channels
  */
 #define NUM_GAIN_CAL_TBLS 4

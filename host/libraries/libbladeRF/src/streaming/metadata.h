@@ -45,22 +45,31 @@
  * The first 4 bytes are only packet length/flags/core ID in
  * BLADERF_FORMAT_PACKET_META. In BLADERF_FORMAT_SC16_Q11_META they are a
  * reserved word that the host historically ignored (the FPGA filled it with the
- * constant 0x12344321). FPGA v0.17.0 and later instead put the RFIC gain tag
- * there, so a receive can be paired with the gain the RFIC's AGC had applied:
+ * constant 0x12344321). FPGA v0.17.0 and later instead put the RFIC gain
+ * profile there, so a receive can be paired with the gain the RFIC's AGC
+ * actually applied:
  *
- *      31:16  magic 0x9361 (distinguishes this from the old 0x12344321)
- *      15:11  reserved, zero
- *         10  CTRL_OUT snapshot passed the FPGA's stability filter
- *          9  CTRL_OUT changed during the *previous* message (see below)
- *          8  gain lock (copy of bit 7)
- *        7:0  raw CTRL_OUT snapshot. When RFIC register 0x035 is 0x16, bits
- *             [6:0] are the RX1 full gain-table index and bit 7 is gain lock.
+ *      31:25  base: full gain-table index at the first sample of this message
+ *         24  AGC gain lock
+ *      23:18  chunk 0 delta, 6-bit signed
+ *      17:12  chunk 1 delta
+ *      11:6   chunk 2 delta
+ *       5:0   chunk 3 delta
  *
- * The "changed" bit necessarily lags by one message: the header is emitted
- * before its own samples, so the FPGA cannot yet know whether the gain will
- * move partway through them. It reports the flag in the following header
- * instead, meaning a set bit in header N marks the samples of message N-1 as
- * spanning a gain change.
+ * The message payload is divided into METADATA_GAIN_TAG_CHUNKS equal spans of
+ * dwords. Delta i is the gain index at the *end* of chunk i minus the base, so
+ * the profile across the message is base, base+d0, base+d1, base+d2, base+d3.
+ * Deltas saturate rather than wrap.
+ *
+ * Because the whole word is used there is no in-band marker: an image predating
+ * this emits 0x12344321, which would decode as a plausible-looking profile.
+ * BLADERF_CAP_FPGA_RX_GAIN_TAG is the only safe discriminator, so the caller
+ * must establish support before calling metadata_get_gain_tag().
+ *
+ * The header is committed at the tail of its message so that the profile
+ * describes that message's own samples, with one boundary case: a gain change
+ * landing in the final clock cycle of a message appears as the next message's
+ * base rather than this message's last delta.
  *
  * The term "buffer" is used to describe a block of of data received from or
  * sent to the device. The size of a "buffer" (in bytes) is always a multiple
@@ -120,18 +129,18 @@
 #define METADATA_HEADER_SIZE (METADATA_FLAGS_OFFSET + METADATA_FLAGS_SIZE)
 
 /* RFIC gain tag, carried in the reserved word in SC16_Q11_META mode */
-#define METADATA_GAIN_TAG_MAGIC 0x9361
-#define METADATA_GAIN_TAG_MAGIC_SHIFT 16
-#define METADATA_GAIN_TAG_STABLE (1 << 10)
-#define METADATA_GAIN_TAG_CHANGED (1 << 9)
-#define METADATA_GAIN_TAG_CTRL_OUT_MASK 0xff
+#define METADATA_GAIN_TAG_CHUNKS 4
+#define METADATA_GAIN_TAG_DELTA_BITS 6
+#define METADATA_GAIN_TAG_BASE_SHIFT 25
+#define METADATA_GAIN_TAG_BASE_MASK 0x7f
+#define METADATA_GAIN_TAG_LOCK (1u << 24)
 
-/* Decoded form of the gain tag. Fields are only meaningful when
- * metadata_get_gain_tag() returned true. */
+/* Decoded gain profile for one message */
 struct metadata_gain_tag {
-    uint8_t ctrl_out; /**< Raw CTRL_OUT byte */
-    bool stable;      /**< Snapshot passed the FPGA's stability filter */
-    bool changed;     /**< CTRL_OUT moved during the previous message */
+    uint8_t base;  /**< Gain index at the first sample of the message */
+    bool lock;     /**< AGC gain lock */
+    /** Absolute gain index at the end of each chunk */
+    uint8_t chunk[METADATA_GAIN_TAG_CHUNKS];
 };
 
 static inline uint64_t metadata_get_timestamp(const uint8_t *header)
@@ -177,32 +186,56 @@ static inline uint8_t metadata_get_packet_flags(const uint8_t *header)
     return ret;
 }
 
-/* Decode the RFIC gain tag from an RX message header.
+/* Decode the RFIC gain profile from an RX message header.
  *
- * Returns true and fills in *tag if this header carries a gain tag. Returns
- * false for FPGA images that predate it (which leave the constant 0x12344321
- * in the reserved word), leaving *tag untouched.
+ * The caller MUST have established BLADERF_CAP_FPGA_RX_GAIN_TAG first: the tag
+ * uses all 32 bits of the reserved word, so nothing in the data itself
+ * distinguishes it from the constant older images write there.
  *
- * Only valid in SC16_Q11_META mode; in PACKET_META mode those bytes are the
- * packet length/flags/core ID instead.
+ * Only valid in SC16_Q11_META / SC8_Q7_META mode; in PACKET_META mode those
+ * bytes are the packet length/flags/core ID instead.
  */
-static inline bool metadata_get_gain_tag(const uint8_t *header,
+static inline void metadata_get_gain_tag(const uint8_t *header,
                                          struct metadata_gain_tag *tag)
 {
     uint32_t word;
+    unsigned int i;
+    int base;
+
     assert(sizeof(word) == METADATA_RESV_SIZE);
     memcpy(&word, &header[METADATA_RESV_OFFSET], METADATA_RESV_SIZE);
     word = LE32_TO_HOST(word);
 
-    if ((word >> METADATA_GAIN_TAG_MAGIC_SHIFT) != METADATA_GAIN_TAG_MAGIC) {
-        return false;
+    base = (int)((word >> METADATA_GAIN_TAG_BASE_SHIFT) &
+                 METADATA_GAIN_TAG_BASE_MASK);
+
+    tag->base = (uint8_t)base;
+    tag->lock = (word & METADATA_GAIN_TAG_LOCK) != 0;
+
+    for (i = 0; i < METADATA_GAIN_TAG_CHUNKS; i++) {
+        /* Deltas are packed most-significant chunk first, immediately below the
+         * lock bit. Sign-extend from 6 bits before adding to the base. */
+        unsigned int shift =
+            (METADATA_GAIN_TAG_CHUNKS - 1 - i) * METADATA_GAIN_TAG_DELTA_BITS;
+        int delta = (int)((word >> shift) & 0x3f);
+        int absolute;
+
+        if (delta & 0x20) {
+            delta -= 0x40;
+        }
+
+        absolute = base + delta;
+
+        /* Clamp so a corrupt or misinterpreted word can never make a caller
+         * index a gain table out of range. */
+        if (absolute < 0) {
+            absolute = 0;
+        } else if (absolute > METADATA_GAIN_TAG_BASE_MASK) {
+            absolute = METADATA_GAIN_TAG_BASE_MASK;
+        }
+
+        tag->chunk[i] = (uint8_t)absolute;
     }
-
-    tag->ctrl_out = (uint8_t)(word & METADATA_GAIN_TAG_CTRL_OUT_MASK);
-    tag->stable   = (word & METADATA_GAIN_TAG_STABLE) != 0;
-    tag->changed  = (word & METADATA_GAIN_TAG_CHANGED) != 0;
-
-    return true;
 }
 
 static inline void metadata_set_packet(uint8_t *header,

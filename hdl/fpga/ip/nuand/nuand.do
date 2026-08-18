@@ -17,7 +17,9 @@ proc compile_nuand { root platform } {
     vcom -work nuand -2008 [file join $root ./synthesis/synchronizer.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/reset_synchronizer.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/handshake.vhd]
+    vcom -work nuand -2008 [file join $root ./synthesis/ctrl_out_xfer.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/tb/handshake_tb.vhd]
+    vcom -work nuand -2008 [file join $root ./synthesis/tb/ctrl_out_xfer_tb.vhd]
 
     vcom -work nuand -2008 [file join $root ./synthesis/signal_processing_p.vhd]
 

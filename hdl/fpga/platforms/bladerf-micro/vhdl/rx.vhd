@@ -74,9 +74,11 @@ entity rx is
         -- Mini expansion signals
         mini_exp               : in    std_logic_vector(1 downto 0);
 
-        -- Raw RFIC CTRL_OUT pins, tagged into the RX metadata header. Defaulted so
-        -- top levels that do not care need not wire it up.
+        -- RFIC CTRL_OUT, already transferred into rx_clock atomically by
+        -- ctrl_out_xfer. Tagged into the RX metadata header. Defaulted so top
+        -- levels that do not care need not wire it up.
         rfic_ctrl_out          : in    std_logic_vector(7 downto 0) := (others => '0');
+        rfic_ctrl_out_valid    : in    std_logic := '0';
 
         -- Metadata to host via FX3
         meta_fifo_rclock       : in    std_logic;
@@ -252,6 +254,7 @@ begin
             timestamp           =>  rx_timestamp,
             mini_exp            =>  mini_exp,
             rfic_ctrl_out       =>  rfic_ctrl_out,
+            rfic_ctrl_out_valid =>  rfic_ctrl_out_valid,
 
             fifo_full           =>  sample_fifo.wfull,
             fifo_usedw          =>  sample_fifo.wused,

@@ -54,11 +54,14 @@ entity fifo_writer is
         timestamp           :   in      unsigned(63 downto 0);
         mini_exp            :   in      std_logic_vector(1 downto 0);
 
-        -- Raw (unsynchronized) RFIC CTRL_OUT pins. Snapshotted into the otherwise
+        -- RFIC CTRL_OUT, already in this clock domain and already transferred
+        -- atomically (see ctrl_out_xfer.vhd) -- all eight bits belong to the same
+        -- instant, so no filtering is needed here. Snapshotted into the otherwise
         -- unused reserved word of the RX metadata header so the host can pair the
-        -- RFIC's live gain state with the IQ it applied to. Defaults to zero so
+        -- RFIC's gain state with the IQ it applied to. Defaults to zero so
         -- platforms that do not wire this up are unaffected.
         rfic_ctrl_out       :   in      std_logic_vector(7 downto 0) := (others => '0');
+        rfic_ctrl_out_valid :   in      std_logic := '0';
 
         in_sample_controls  :   in      sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
         in_samples          :   in      sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE);
@@ -100,12 +103,57 @@ architecture simple of fifo_writer is
         PACKET_WAIT_EOP
     );
 
+    -- ------------------------------------------------------------------------
+    -- RFIC GAIN TAG
+    -- ------------------------------------------------------------------------
+    -- The message is split into CHUNK_COUNT equal spans of dwords. The header
+    -- carries the absolute gain index at the first sample plus, per chunk, the
+    -- signed difference between that base and the index at the end of the chunk,
+    -- so the host can reconstruct a CHUNK_COUNT+1 point gain profile.
+    --
+    -- 4 chunks is deliberate: it is the largest split that divides both message
+    -- sizes exactly (2044 = 4*511 SuperSpeed, 1020 = 4*255 Hi-Speed), and at
+    -- 16.6 us per chunk it is already ~60x finer than the default AGC gain
+    -- update interval of 1000 us, so more chunks would resolve nothing real.
+    constant CHUNK_COUNT   : natural  := 4;
+
+    -- 6 bits signed spans -32..+31. The largest single AGC decision moves the
+    -- index by 2, so this cannot be reached in the default profile; deltas clamp
+    -- rather than wrap so that even a fast-attack excursion degrades instead of
+    -- decoding as a wild value.
+    constant DELTA_WIDTH   : positive := 6;
+    constant DELTA_MAX     : integer  := 2**(DELTA_WIDTH-1) - 1;
+    constant DELTA_MIN     : integer  := -(2**(DELTA_WIDTH-1));
+
+    -- Gain index is 7 bits: the full gain table runs to index 76 (UG-570 p.49),
+    -- so 6 bits would alias the top of the table down over the bottom.
+    subtype gain_index_t is std_logic_vector(6 downto 0);
+    subtype gain_delta_t is signed(DELTA_WIDTH-1 downto 0);
+    type    gain_deltas_t is array(0 to CHUNK_COUNT-1) of gain_delta_t;
+
+    constant CHUNK_DWORDS_SS : natural := (DMA_BUF_SIZE_SS - 4) / CHUNK_COUNT;
+    constant CHUNK_DWORDS_HS : natural := (DMA_BUF_SIZE_HS - 4) / CHUNK_COUNT;
+
+    signal chunk_dwords : natural range CHUNK_DWORDS_HS to CHUNK_DWORDS_SS
+                          := CHUNK_DWORDS_SS;
+
     type meta_fsm_t is record
         state           : meta_state_t;
         dma_downcount   : natural range 0 to 65536;
         meta_write      : std_logic;
         meta_data       : std_logic_vector(meta_fifo_data'range);
         meta_written    : std_logic;
+
+        -- Header content, held from the head of the message until it is
+        -- committed at the tail.
+        held_timestamp  : unsigned(timestamp'range);
+        held_mini_exp   : std_logic_vector(mini_exp'range);
+        base_gain       : gain_index_t;
+        base_lock       : std_logic;
+        base_valid      : std_logic;
+        deltas          : gain_deltas_t;
+        chunk_index     : natural range 0 to CHUNK_COUNT-1;
+        chunk_countdown : natural range 0 to CHUNK_DWORDS_SS;
     end record;
 
     constant META_FSM_RESET_VALUE : meta_fsm_t := (
@@ -113,7 +161,15 @@ architecture simple of fifo_writer is
         dma_downcount   => 0,
         meta_write      => '0',
         meta_data       => (others => '-'),
-        meta_written    => '0'
+        meta_written    => '0',
+        held_timestamp  => (others => '0'),
+        held_mini_exp   => (others => '0'),
+        base_gain       => (others => '0'),
+        base_lock       => '0',
+        base_valid      => '0',
+        deltas          => (others => (others => '0')),
+        chunk_index     => 0,
+        chunk_countdown => CHUNK_DWORDS_SS
     );
 
     signal meta_current : meta_fsm_t := META_FSM_RESET_VALUE;
@@ -159,43 +215,6 @@ architecture simple of fifo_writer is
 
     signal sync_mini_exp: std_logic_vector(1 downto 0);
 
-    -- ------------------------------------------------------------------------
-    -- RFIC CTRL_OUT GAIN TAG
-    -- ------------------------------------------------------------------------
-    -- Magic in the upper half of the reserved word. Images that predate the gain
-    -- tag emit the constant 0x12344321 there, so the host can tell the two apart
-    -- without relying on an FPGA version check.
-    constant GAIN_TAG_MAGIC : std_logic_vector(15 downto 0) := x"9361";
-
-    -- Each CTRL_OUT bit crosses into this clock domain through its own two-flop
-    -- synchronizer, so the bits of a multi-bit transition can land on different
-    -- cycles. Only believe the byte once it has been observed unchanged on this
-    -- many consecutive cycles; otherwise a gain change could be reported as an
-    -- intermediate value the RFIC never actually used. Costs a few cycles of
-    -- latency, which is nothing next to the RFIC's own RX datapath latency.
-    constant GAIN_TAG_MATCH_CYCLES : natural := 3;
-
-    signal sync_ctrl_out      : std_logic_vector(rfic_ctrl_out'range);
-    signal ctrl_out_prev      : std_logic_vector(rfic_ctrl_out'range) := (others => '0');
-    signal ctrl_out_match_cnt : natural range 0 to GAIN_TAG_MATCH_CYCLES := 0;
-
-    -- Most recent value to survive the filter, and whether one ever has. Until
-    -- the first survives, ctrl_out_stable is still its post-reset zero rather
-    -- than anything the RFIC reported, which is what ctrl_out_snap_valid says.
-    signal ctrl_out_stable    : std_logic_vector(rfic_ctrl_out'range) := (others => '0');
-    signal ctrl_out_snap_valid : std_logic := '0';
-
-    -- Value reported in headers, and a sticky "it moved since that header went
-    -- out" bit. Because the header precedes its own samples, the sticky bit
-    -- reported in header N describes the samples of message N-1.
-    signal ctrl_out_snap      : std_logic_vector(rfic_ctrl_out'range) := (others => '0');
-    signal ctrl_out_changed   : std_logic := '0';
-
-    -- The sticky bit alone would miss a change landing on the same edge that latches
-    -- the header, since the tracker clears it there. OR in the live comparison so the
-    -- reported bit covers the whole window, closing that race in the safe direction.
-    signal ctrl_out_changed_now : std_logic;
-
     signal meta_fifo_used_v_r : unsigned(meta_fifo_usedw'length downto 0) := (others => '0');
     signal fifo_used_v_r      : unsigned(fifo_usedw'length downto 0) := (others => '0');
 
@@ -211,11 +230,14 @@ begin
     begin
         if( reset = '1' ) then
             dma_buf_size <= DMA_BUF_SIZE_SS;
+            chunk_dwords <= CHUNK_DWORDS_SS;
         elsif( rising_edge(clock) ) then
             if( usb_speed = '0' ) then
                 dma_buf_size <= DMA_BUF_SIZE_SS;
+                chunk_dwords <= CHUNK_DWORDS_SS;
             else
                 dma_buf_size <= DMA_BUF_SIZE_HS;
+                chunk_dwords <= CHUNK_DWORDS_HS;
             end if;
         end if;
     end process;
@@ -270,68 +292,6 @@ begin
     end generate;
 
     -- ------------------------------------------------------------------------
-    -- RFIC CTRL_OUT PIN SYNCHRONIZER
-    -- ------------------------------------------------------------------------
-    generate_sync_ctrl_out : for i in rfic_ctrl_out'range generate
-        U_sync_ctrl_out : entity work.synchronizer
-            generic map (
-                RESET_LEVEL         =>  '0'
-                )
-            port map (
-                reset               =>  '0',
-                clock               =>  clock,
-                async               =>  rfic_ctrl_out(i),
-                sync                =>  sync_ctrl_out(i)
-            );
-    end generate;
-
-    -- Reject transient values caused by per-bit skew across the synchronizers.
-    ctrl_out_filter : process( clock, reset )
-    begin
-        if( reset = '1' ) then
-            ctrl_out_prev       <= (others => '0');
-            ctrl_out_stable     <= (others => '0');
-            ctrl_out_snap_valid <= '0';
-            ctrl_out_match_cnt  <= 0;
-        elsif( rising_edge(clock) ) then
-            if( sync_ctrl_out = ctrl_out_prev ) then
-                if( ctrl_out_match_cnt < GAIN_TAG_MATCH_CYCLES ) then
-                    ctrl_out_match_cnt <= ctrl_out_match_cnt + 1;
-                else
-                    ctrl_out_stable     <= sync_ctrl_out;
-                    ctrl_out_snap_valid <= '1';
-                end if;
-            else
-                ctrl_out_match_cnt <= 0;
-            end if;
-            ctrl_out_prev <= sync_ctrl_out;
-        end if;
-    end process;
-
-    -- Re-snapshot on the same edge that latches a header into meta_current, so the
-    -- header carries the value from before the update and the sticky "changed" bit
-    -- starts a fresh window aligned to that header.
-    ctrl_out_tracker : process( clock, reset )
-    begin
-        if( reset = '1' ) then
-            ctrl_out_snap    <= (others => '0');
-            ctrl_out_changed <= '0';
-        elsif( rising_edge(clock) ) then
-            if( ctrl_out_stable /= ctrl_out_snap ) then
-                ctrl_out_changed <= '1';
-            end if;
-
-            if( meta_future.meta_write = '1' and packet_en = '0' ) then
-                ctrl_out_snap    <= ctrl_out_stable;
-                ctrl_out_changed <= '0';
-            end if;
-        end if;
-    end process;
-
-    ctrl_out_changed_now <= '1' when (ctrl_out_changed = '1' or ctrl_out_stable /= ctrl_out_snap)
-                                else '0';
-
-    -- ------------------------------------------------------------------------
     -- META FIFO WRITER
     -- ------------------------------------------------------------------------
 
@@ -350,6 +310,20 @@ begin
     -- Meta FIFO combinatorial process
     meta_fsm_comb : process( all )
         variable packet_flags : std_logic_vector(7 downto 0);
+
+        -- Saturate rather than wrap, so an excursion wider than the field
+        -- degrades to the nearest representable gain instead of decoding as a
+        -- value the RFIC never used.
+        function clamp_delta( d : signed ) return gain_delta_t is
+        begin
+            if( d > DELTA_MAX ) then
+                return to_signed(DELTA_MAX, DELTA_WIDTH);
+            elsif( d < DELTA_MIN ) then
+                return to_signed(DELTA_MIN, DELTA_WIDTH);
+            else
+                return resize(d, DELTA_WIDTH);
+            end if;
+        end function;
     begin
 
         meta_future            <= meta_current;
@@ -360,17 +334,25 @@ begin
            -- The low word is the "reserved" header dword, which the host does not
            -- read in SC16_Q11_META mode. It either keeps its historical constant
            -- or carries the RFIC gain tag:
-           --   31:16  magic 0x9361
-           --   15:11  reserved, zero
-           --   10     CTRL_OUT snapshot passed the stability filter
-           --    9     CTRL_OUT changed during the *previous* message
-           --    8     gain lock (copy of bit 7, for pointer 0x16)
-           --    7:0   raw CTRL_OUT snapshot; [6:0] is the CH1 full gain-table
-           --          index when register 0x035 is set to 0x16
+           --   31:25  base gain index at the first sample of this message
+           --      24  AGC gain lock
+           --   23:18  chunk 0 delta, signed, index at end of chunk minus base
+           --   17:12  chunk 1 delta
+           --   11:6   chunk 2 delta
+           --    5:0   chunk 3 delta
+           --
+           -- With the tag enabled the header is committed at the tail of the
+           -- message (see META_DOWNCOUNT), so it is assembled from the values
+           -- held since the head rather than from the live inputs -- otherwise
+           -- the timestamp would be that of the last sample, not the first.
            if( ENABLE_GAIN_TAG ) then
-              meta_future.meta_data  <= x"FFF" & "11" & sync_mini_exp & x"FFFF" & std_logic_vector(timestamp) &
-                             GAIN_TAG_MAGIC & "00000" & ctrl_out_snap_valid & ctrl_out_changed_now &
-                             ctrl_out_snap(7) & ctrl_out_snap;
+              meta_future.meta_data  <= x"FFF" & "11" & meta_current.held_mini_exp & x"FFFF" &
+                             std_logic_vector(meta_current.held_timestamp) &
+                             meta_current.base_gain & meta_current.base_lock &
+                             std_logic_vector(meta_current.deltas(0)) &
+                             std_logic_vector(meta_current.deltas(1)) &
+                             std_logic_vector(meta_current.deltas(2)) &
+                             std_logic_vector(meta_current.deltas(3));
            else
               meta_future.meta_data  <= x"FFF" & "11" & sync_mini_exp & x"FFFF" & std_logic_vector(timestamp) & x"12344321";
            end if;
@@ -413,9 +395,39 @@ begin
 
             when META_WRITE =>
 
+                -- The first valid sample of the message. This is where the header
+                -- content is pinned, whether or not the FIFO write happens here.
                 for i in in_samples'range loop
                     if (meta_fifo_full = '0' and in_samples(i).data_v = '1') then
-                        meta_future.meta_write <= '1';
+                        if( ENABLE_GAIN_TAG ) then
+                            -- Commit at the tail instead, so the chunk deltas can
+                            -- describe this message's own samples. meta_written
+                            -- becomes a reservation rather than proof of a write,
+                            -- exactly as the packet path already treats it; the
+                            -- META_MAX - 4 headroom checked by fifo_enough
+                            -- guarantees the slot is still free at the tail.
+                            meta_future.held_timestamp <= timestamp;
+                            meta_future.held_mini_exp  <= sync_mini_exp;
+
+                            -- Hold the previous base if the cross-domain
+                            -- transfer has not produced a settled byte yet, so a
+                            -- header can never advertise a gain index of zero
+                            -- that the RFIC never reported. In practice the
+                            -- transfer settles within ~10 cycles of reset, long
+                            -- before the first message.
+                            if( rfic_ctrl_out_valid = '1' ) then
+                                meta_future.base_gain  <= rfic_ctrl_out(6 downto 0);
+                                meta_future.base_lock  <= rfic_ctrl_out(7);
+                                meta_future.base_valid <= '1';
+                            end if;
+                            meta_future.deltas     <= (others => (others => '0'));
+
+                            meta_future.chunk_index     <= 0;
+                            meta_future.chunk_countdown <= chunk_dwords;
+                        else
+                            meta_future.meta_write <= '1';
+                        end if;
+
                         meta_future.meta_written <= '1';
                         meta_future.state <= META_DOWNCOUNT;
                     end if;
@@ -425,6 +437,33 @@ begin
 
                 if( fifo_current.fifo_write = '1' and meta_current.meta_write = '0' ) then
                     meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
+
+                    -- Walk the chunk boundaries off the same dword writes that
+                    -- drive dma_downcount. The last chunk simply runs to the end
+                    -- of the message, absorbing the two dwords that are written
+                    -- while the FSM passes back through IDLE and META_WRITE.
+                    if( ENABLE_GAIN_TAG ) then
+                        if( meta_current.chunk_countdown <= NUM_STREAMS ) then
+                            if( meta_current.chunk_index < CHUNK_COUNT-1 ) then
+                                meta_future.chunk_index     <= meta_current.chunk_index + 1;
+                                meta_future.chunk_countdown <= chunk_dwords;
+                            end if;
+                        else
+                            meta_future.chunk_countdown <=
+                                meta_current.chunk_countdown - NUM_STREAMS;
+                        end if;
+                    end if;
+                end if;
+
+                -- Track the gain for the chunk in flight. Rewriting the same slot
+                -- every cycle leaves it holding the value at the end of the chunk.
+                -- A change landing on the very last cycle of the message shows up
+                -- as the next message's base instead of this one's final delta.
+                if( ENABLE_GAIN_TAG and meta_current.base_valid = '1'
+                    and rfic_ctrl_out_valid = '1' ) then
+                    meta_future.deltas(meta_current.chunk_index) <=
+                        clamp_delta(signed(resize(unsigned(rfic_ctrl_out(6 downto 0)), 9)) -
+                                    signed(resize(unsigned(meta_current.base_gain), 9)));
                 end if;
 
                 if( meta_current.dma_downcount <= 2 ) then
@@ -434,9 +473,15 @@ begin
                     if( eight_bit_mode_en = '1' ) then
                         if( fifo_future.eight_bit_delay = '1' and fifo_future.samples_left = 0) then
                             meta_future.state <= IDLE;
+                            if( ENABLE_GAIN_TAG ) then
+                                meta_future.meta_write <= '1';
+                            end if;
                         end if;
                     else
                         meta_future.state <= IDLE;
+                        if( ENABLE_GAIN_TAG ) then
+                            meta_future.meta_write <= '1';
+                        end if;
                     end if;
                 end if;
 
@@ -448,6 +493,9 @@ begin
                     meta_current.dma_downcount <= NUM_STREAMS + 2 )
                 then
                     meta_future.state <= IDLE;
+                    if( ENABLE_GAIN_TAG ) then
+                        meta_future.meta_write <= '1';
+                    end if;
                 end if;
 
             when PACKET_WAIT_EOP =>

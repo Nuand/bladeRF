@@ -130,6 +130,10 @@ architecture hosted_bladerf of bladerf is
     signal timestamp_ack          : std_logic;
     signal fx3_timestamp          : unsigned(63 downto 0);
 
+    -- AD9361 CTRL_OUT, moved from sys_clock into rx_clock as one atomic byte
+    signal rfic_ctrl_out_rx       : std_logic_vector(7 downto 0);
+    signal rfic_ctrl_out_rx_valid : std_logic;
+
     signal rx_ts_reset            : std_logic;
     signal tx_ts_reset            : std_logic;
 
@@ -666,9 +670,10 @@ begin
             -- Mini expansion signals
             mini_exp               => mini_exp2 & mini_exp1,
 
-            -- Raw pin, not rffe_gpio.i.ctrl_out: that copy is synchronized to
-            -- sys_clock, and the metadata header is built in the rx_clock domain.
-            rfic_ctrl_out          => adi_ctrl_out,
+            -- Transferred out of sys_clock into rx_clock as one atomic byte by
+            -- U_ctrl_out_xfer below.
+            rfic_ctrl_out          => rfic_ctrl_out_rx,
+            rfic_ctrl_out_valid    => rfic_ctrl_out_rx_valid,
 
             -- Metadata to host via FX3
             meta_fifo_rclock       => fx3_pclk_pll,
@@ -1030,6 +1035,23 @@ begin
             end if;
         end if;
     end process;
+
+    -- The metadata gain tag is assembled in rx_clock, but adi_ctrl_out is only
+    -- synchronized into sys_clock (for the Nios readback register below). Reuse
+    -- that synchronized copy rather than adding a third set of per-bit chains,
+    -- and carry all eight bits across the remaining domain boundary in a single
+    -- parallel load so a header can never see a mixture of two gain indices.
+    U_ctrl_out_xfer : entity work.ctrl_out_xfer
+        port map (
+            src_clock           =>  sys_clock,
+            src_reset           =>  sys_reset,
+            src_data            =>  rffe_gpio.i.ctrl_out,
+
+            dst_clock           =>  rx_clock,
+            dst_reset           =>  rx_reset,
+            dst_data            =>  rfic_ctrl_out_rx,
+            dst_valid           =>  rfic_ctrl_out_rx_valid
+        );
 
     U_handshake_timestamp : entity work.handshake
         generic map (

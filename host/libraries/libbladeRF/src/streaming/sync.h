@@ -52,6 +52,11 @@ typedef enum {
 #define SYNC_RX_MAX_REORDER 256
 #endif
 
+/* Chunks per message in the RFIC gain tag. Kept independent of metadata.h so
+ * this header stays usable without host_config.h having been included first;
+ * sync.c static-asserts that the two agree. */
+#define SYNC_GAIN_TAG_CHUNKS 4
+
 struct rx_reorder_entry {
     uint32_t seq;
     unsigned int buf_idx;
@@ -190,26 +195,30 @@ struct sync_meta {
                 msg_timestamp;  /* Timestamp contained in the current message */
             uint32_t msg_flags; /* Flags for the current message */
 
-            /* RFIC gain tag, accumulated over every message consumed by the
-             * current sync_rx() call. One call can span many messages but
-             * returns a single bladerf_metadata, so the per-message values
+            /* RFIC gain profile, accumulated over every message consumed by
+             * the current sync_rx() call. One call can span many messages but
+             * returns a single bladerf_metadata, so the per-message profiles
              * have to be summarized. See metadata.h for the wire format. */
             struct {
-                /* Most recent tag seen, persisting across calls. A caller
-                 * reading less than a message at a time consumes no header on
-                 * most calls, and still needs to be told a gain. */
-                bool known;       /* last_* hold a real tag */
-                uint8_t last;     /* CTRL_OUT from the most recent header */
-                bool last_stable; /* That snapshot passed the filter */
+                bool supported;   /* FPGA advertises the tag at all */
+
+                /* Most recent message's profile, persisting across calls. A
+                 * caller reading less than a message at a time consumes no
+                 * header on most calls and still needs to be told a gain. */
+                bool known;
+                uint8_t last_base;
+                bool last_lock;
+                uint8_t last_chunk[SYNC_GAIN_TAG_CHUNKS];
 
                 /* Reset at the start of each sync_rx() call */
-                bool seen;       /* A header was consumed this call */
-                bool changed;    /* Any message reported a gain change */
-                bool unstable;   /* Any snapshot failed the stability filter */
-                uint8_t first;   /* CTRL_OUT from the first message this call */
-                uint8_t idx_min; /* Min gain index this call */
-                uint8_t idx_max; /* Max gain index this call */
-                uint16_t count;  /* Number of tagged messages this call */
+                bool seen;        /* A header was consumed this call */
+                bool changed;     /* Gain moved within the returned samples */
+                uint8_t base;     /* Base of the first message this call */
+                bool lock;        /* Lock bit of the first message this call */
+                uint8_t idx_min;  /* Min over every chunk seen this call */
+                uint8_t idx_max;  /* Max over every chunk seen this call */
+                uint8_t first_chunk[SYNC_GAIN_TAG_CHUNKS];
+                uint16_t count;   /* Number of messages this call */
             } gain_tag;
         };
 

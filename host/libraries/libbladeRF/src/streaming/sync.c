@@ -307,6 +307,13 @@ int sync_init(struct bladerf_sync *sync,
             sync->meta.msg_flags = 0;
             memset(&sync->meta.gain_tag, 0, sizeof(sync->meta.gain_tag));
 
+            /* The gain tag occupies the whole reserved header word, so there is
+             * no in-band marker; the FPGA version is the only discriminator. */
+            sync->meta.gain_tag.supported =
+                (format == BLADERF_FORMAT_SC16_Q11_META ||
+                 format == BLADERF_FORMAT_SC8_Q7_META) &&
+                have_cap_dev(dev, BLADERF_CAP_FPGA_RX_GAIN_TAG);
+
             sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
             break;
@@ -476,67 +483,93 @@ static inline unsigned int timestamp_to_msg(struct bladerf_sync *s, uint64_t t)
     return (unsigned int) m;
 }
 
-/* Discard the per-call part of the gain tag summary, keeping the last-known
- * tag so a call that consumes no header can still report a gain. */
+/* The wire format and the accumulator must agree on how many chunks a message
+ * is divided into. */
+#if SYNC_GAIN_TAG_CHUNKS != METADATA_GAIN_TAG_CHUNKS
+#error "SYNC_GAIN_TAG_CHUNKS disagrees with METADATA_GAIN_TAG_CHUNKS"
+#endif
+
+/* Discard the per-call part of the gain summary, keeping the last known profile
+ * so a call that consumes no header can still report a gain. */
 static inline void reset_gain_tag(struct bladerf_sync *s)
 {
-    s->meta.gain_tag.seen     = false;
-    s->meta.gain_tag.changed  = false;
-    s->meta.gain_tag.unstable = false;
-    s->meta.gain_tag.first    = 0;
-    s->meta.gain_tag.idx_min  = 0;
-    s->meta.gain_tag.idx_max  = 0;
-    s->meta.gain_tag.count    = 0;
+    s->meta.gain_tag.seen    = false;
+    s->meta.gain_tag.changed = false;
+    s->meta.gain_tag.base    = 0;
+    s->meta.gain_tag.lock    = false;
+    s->meta.gain_tag.idx_min = 0;
+    s->meta.gain_tag.idx_max = 0;
+    s->meta.gain_tag.count   = 0;
+    memset(s->meta.gain_tag.first_chunk, 0,
+           sizeof(s->meta.gain_tag.first_chunk));
 }
 
-/* Fold one message's RFIC gain tag into the running summary for this sync_rx()
- * call. No-op for FPGA images that do not emit a tag. */
+/* Fold one message's gain profile into the running summary for this sync_rx()
+ * call. */
 static inline void accumulate_gain_tag(struct bladerf_sync *s,
                                        const uint8_t *header)
 {
     struct metadata_gain_tag tag;
-    uint8_t index;
+    unsigned int i;
 
-    if (!metadata_get_gain_tag(header, &tag)) {
+    if (!s->meta.gain_tag.supported) {
         return;
     }
 
-    /* Bit 7 is gain lock, not part of the index */
-    index = tag.ctrl_out & 0x7f;
+    metadata_get_gain_tag(header, &tag);
 
-    s->meta.gain_tag.known       = true;
-    s->meta.gain_tag.last        = tag.ctrl_out;
-    s->meta.gain_tag.last_stable = tag.stable;
+    /* The gain moved somewhere inside this message if any chunk differs from
+     * its base, or across the message boundary if the base moved from the
+     * previous message's last chunk. */
+    for (i = 0; i < METADATA_GAIN_TAG_CHUNKS; i++) {
+        if (tag.chunk[i] != tag.base) {
+            s->meta.gain_tag.changed = true;
+        }
+    }
+
+    if (s->meta.gain_tag.known &&
+        tag.base != s->meta.gain_tag.last_chunk[METADATA_GAIN_TAG_CHUNKS - 1]) {
+        s->meta.gain_tag.changed = true;
+    }
 
     if (!s->meta.gain_tag.seen) {
         s->meta.gain_tag.seen    = true;
-        s->meta.gain_tag.first   = tag.ctrl_out;
-        s->meta.gain_tag.idx_min = index;
-        s->meta.gain_tag.idx_max = index;
-    } else {
-        if (index < s->meta.gain_tag.idx_min) {
-            s->meta.gain_tag.idx_min = index;
+        s->meta.gain_tag.base    = tag.base;
+        s->meta.gain_tag.lock    = tag.lock;
+        s->meta.gain_tag.idx_min = tag.base;
+        s->meta.gain_tag.idx_max = tag.base;
+        memcpy(s->meta.gain_tag.first_chunk, tag.chunk, sizeof(tag.chunk));
+    }
+
+    /* min/max span the base and every chunk of every message this call */
+    if (tag.base < s->meta.gain_tag.idx_min) {
+        s->meta.gain_tag.idx_min = tag.base;
+    }
+    if (tag.base > s->meta.gain_tag.idx_max) {
+        s->meta.gain_tag.idx_max = tag.base;
+    }
+    for (i = 0; i < METADATA_GAIN_TAG_CHUNKS; i++) {
+        if (tag.chunk[i] < s->meta.gain_tag.idx_min) {
+            s->meta.gain_tag.idx_min = tag.chunk[i];
         }
-        if (index > s->meta.gain_tag.idx_max) {
-            s->meta.gain_tag.idx_max = index;
+        if (tag.chunk[i] > s->meta.gain_tag.idx_max) {
+            s->meta.gain_tag.idx_max = tag.chunk[i];
         }
     }
 
-    if (tag.changed) {
-        s->meta.gain_tag.changed = true;
-    }
-    if (!tag.stable) {
-        s->meta.gain_tag.unstable = true;
-    }
+    s->meta.gain_tag.known     = true;
+    s->meta.gain_tag.last_base = tag.base;
+    s->meta.gain_tag.last_lock = tag.lock;
+    memcpy(s->meta.gain_tag.last_chunk, tag.chunk, sizeof(tag.chunk));
 
     if (s->meta.gain_tag.count < UINT16_MAX) {
         s->meta.gain_tag.count++;
     }
 }
 
-/* Publish the accumulated gain tag into the caller's metadata. Always writes
- * the full reserved field so a stale tag from a previous call cannot be
- * mistaken for a current one. */
+/* Publish the accumulated profile into the caller's metadata. Always writes the
+ * full reserved field so a stale tag from a previous call cannot be mistaken for
+ * a current one. */
 static inline void publish_gain_tag(struct bladerf_sync *s,
                                     struct bladerf_metadata *user_meta)
 {
@@ -544,37 +577,40 @@ static inline void publish_gain_tag(struct bladerf_sync *s,
 
     memset(user_meta->reserved, 0, sizeof(user_meta->reserved));
 
-    if (!s->meta.gain_tag.known) {
+    if (!s->meta.gain_tag.supported || !s->meta.gain_tag.known) {
         return;
     }
 
     memset(&tag, 0, sizeof(tag));
     tag.version = BLADERF_RX_GAIN_TAG_VERSION_1;
+    tag.chunks  = METADATA_GAIN_TAG_CHUNKS;
 
     if (s->meta.gain_tag.seen) {
-        tag.gain_index     = s->meta.gain_tag.first & 0x7f;
+        tag.gain_index     = s->meta.gain_tag.base;
         tag.gain_index_min = s->meta.gain_tag.idx_min;
         tag.gain_index_max = s->meta.gain_tag.idx_max;
-        tag.ctrl_out       = s->meta.gain_tag.first;
         tag.num_messages   = s->meta.gain_tag.count;
+        memcpy(tag.chunk_gain_index, s->meta.gain_tag.first_chunk,
+               sizeof(tag.chunk_gain_index));
 
+        if (s->meta.gain_tag.lock) {
+            tag.flags |= BLADERF_RX_GAIN_TAG_LOCKED;
+        }
         if (s->meta.gain_tag.changed) {
             tag.flags |= BLADERF_RX_GAIN_TAG_CHANGED;
         }
-        if (s->meta.gain_tag.unstable) {
-            tag.flags |= BLADERF_RX_GAIN_TAG_UNSTABLE;
-        }
     } else {
-        /* These samples came from a message whose header was consumed by an
-         * earlier call, so that call's tag is the one that applies. */
-        tag.gain_index     = s->meta.gain_tag.last & 0x7f;
-        tag.gain_index_min = tag.gain_index;
-        tag.gain_index_max = tag.gain_index;
-        tag.ctrl_out       = s->meta.gain_tag.last;
+        /* These samples came from a message whose header an earlier call
+         * consumed, so that call's profile is the one that applies. */
+        tag.gain_index     = s->meta.gain_tag.last_base;
+        tag.gain_index_min = s->meta.gain_tag.last_base;
+        tag.gain_index_max = s->meta.gain_tag.last_base;
         tag.num_messages   = 0;
+        memcpy(tag.chunk_gain_index, s->meta.gain_tag.last_chunk,
+               sizeof(tag.chunk_gain_index));
 
-        if (!s->meta.gain_tag.last_stable) {
-            tag.flags |= BLADERF_RX_GAIN_TAG_UNSTABLE;
+        if (s->meta.gain_tag.last_lock) {
+            tag.flags |= BLADERF_RX_GAIN_TAG_LOCKED;
         }
     }
 
