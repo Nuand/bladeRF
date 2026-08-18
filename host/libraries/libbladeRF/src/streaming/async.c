@@ -32,6 +32,56 @@
 #include "helpers/timeout.h"
 #include "helpers/have_cap.h"
 
+/* Kernel default for /sys/module/usbcore/parameters/usbfs_memory_mb.
+ * Used when the sysfs entry cannot be read (non-Linux, restricted /sys). */
+#define USBFS_MEMORY_MB_DEFAULT 16
+
+/* Reserve part of the budget for other users of the bus: the limit is
+ * per-host, not per-device, and a bladeRF is rarely alone on it. */
+#define USBFS_BUDGET_FRACTION 0.9
+
+/**
+ * Verify that a stream configuration fits in the kernel's usbfs memory
+ * budget. Each in-flight transfer is pinned for its lifetime, so a stream
+ * needs num_transfers * buffer_size_bytes of it simultaneously.
+ *
+ * @return 0 if the configuration fits, BLADERF_ERR_INVAL otherwise.
+ */
+static int usbfs_budget_check(size_t num_transfers, size_t buffer_size_bytes)
+{
+    size_t limit_mb = USBFS_MEMORY_MB_DEFAULT;
+    size_t needed, budget;
+
+#if BLADERF_OS_LINUX
+    FILE *f = fopen("/sys/module/usbcore/parameters/usbfs_memory_mb", "r");
+    if (f != NULL) {
+        unsigned int v = 0;
+        if (fscanf(f, "%u", &v) == 1 && v > 0) {
+            limit_mb = v;
+        }
+        fclose(f);
+    }
+#endif
+
+    needed = num_transfers * buffer_size_bytes;
+    budget = (size_t)(limit_mb * 1024 * 1024 * USBFS_BUDGET_FRACTION);
+
+    if (needed > budget) {
+        size_t max_transfers = budget / buffer_size_bytes;
+
+        log_error("Stream needs %zu MiB of in-flight USB buffers "
+                  "(%zu transfers x %zu bytes), but usbfs_memory_mb is %zu. "
+                  "Use at most %zu transfers, or raise the limit with "
+                  "'echo <MiB> > /sys/module/usbcore/parameters/"
+                  "usbfs_memory_mb'.\n",
+                  needed / (1024 * 1024), num_transfers, buffer_size_bytes,
+                  limit_mb, max_transfers);
+        return BLADERF_ERR_INVAL;
+    }
+
+    return 0;
+}
+
 int async_init_stream(struct bladerf_stream **stream,
                       struct bladerf *dev,
                       bladerf_stream_cb callback,
@@ -75,6 +125,20 @@ int async_init_stream(struct bladerf_stream **stream,
         log_error("Samples_per_buffer must be multiples of %u\n",
                   bytes_to_samples(format, gpif_buffer_size));
         return BLADERF_ERR_INVAL;
+    }
+
+    /* Reject configurations that cannot fit in the kernel's usbfs memory
+     * budget. Every in-flight transfer is pinned by the kernel, so the
+     * stream needs num_transfers * buffer_size_bytes available at once.
+     *
+     * Without this check the failure is reported far from its cause:
+     * bladerf_sync_config() succeeds, submit_transfer() then fails
+     * asynchronously with LIBUSB_ERROR_NO_MEM, and the caller only sees
+     * BLADERF_ERR_MEM from the first bladerf_sync_rx().
+     */
+    status = usbfs_budget_check(num_transfers, buffer_size_bytes);
+    if (status != 0) {
+        return status;
     }
 
     /* Create a stream and populate it with the appropriate information */
