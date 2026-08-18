@@ -84,7 +84,7 @@ Build and Debug
 The Nios software is built and embedded into the FPGA when running the **build_bladeRF.sh** script,
 per the [README.md](../../../../../../README.md) in the [bladeRF/hdl/](../../../../../../hdl) directory.
 
-It is possible to build, load, and debug the Nios software over JTAG using the Intel/Terasic USB Blaster using either `make` and `gdb`, or Eclipse. The former is quicker to setup, but the latter offers the Eclipse GUI that some may find easier. Both methods are discussed below.
+It is possible to build, load, and debug the Nios software over JTAG using the Altera/Terasic USB Blaster using either `make` and `gdb`, or Eclipse. The former is quicker to setup, but the latter offers the Eclipse GUI that some may find easier. Both methods are discussed below.
 
 (***Linux Users: Ensure you've installed udev rules for your JTAG debugger***)
 
@@ -184,28 +184,24 @@ To increase the Nios RAM size:
 
 Install Eclipse
 =====================
-Before Eclipse can be used, it must be installed. This step is a new change as of recent Quartus versions, and is required for Quartus 20.1.
+Before Eclipse can be used, it must be installed. This step is a new change as of recent Quartus versions, and is required for Quartus 20.1 and later.
 
-These steps will download eclipse, get a new jdk, and replace the jdk. Edit the first line if needed for your install path and version.
+These steps follow the `nios2eds/bin/README` included with Quartus 23.1. Edit the first line if needed for your install path and version.
 
 ```bash
-export QUARTUS_INSTALL_DIR=~/intelFPGA_lite/20.1/
+export QUARTUS_INSTALL_DIR=~/intelFPGA_lite/23.1std/
 
-sudo apt install -y openjdk-8-jdk
-cd $QUARTUS_INSTALL_DIR/nios2eds/bin/
+cd "$QUARTUS_INSTALL_DIR/nios2eds/bin"
 wget https://archive.eclipse.org/technology/epp/downloads/release/mars/2/eclipse-cpp-mars-2-linux-gtk-x86_64.tar.gz
 tar -xf eclipse-cpp-mars-2-linux-gtk-x86_64.tar.gz
 mv eclipse eclipse_nios2
 tar -xf eclipse_nios2_plugins.tar.gz
-mv jre64 jre64_old
-ln -svf /lib/jvm/java-8-openjdk-amd64/jre/ jre64
 ```
 
-This will install eclipse, however you must launch eclipse using our script, located at `hdl/quartus/launch_eclipse.sh`
+Quartus 23.1 includes a compatible Java 8 runtime. This will install Eclipse, however you must launch Eclipse using our script, located at `hdl/quartus/launch_eclipse.sh`.
 
-These two pages are reference for this section:
-* https://www.intel.com/content/www/us/en/support/programmable/articles/000086893.html
-* https://community.intel.com/t5/Intel-Quartus-Prime-Software/Nios-Eclipse-crashes-free-invalid-pointer/m-p/1215921#M66524
+This page is a reference for this section:
+* https://community.altera.com/kb/knowledge-base/is-the-nios%c2%ae-ii-software-build-tools-sbt-for-eclipse-included-in-the-full-instal/340524
 
 Eclipse GUI Debugging
 =====================
@@ -238,10 +234,12 @@ cd $BLADERF_DIR
   - You should see a project labeled `bladeRF_nios_bsp` checked in the *Projects* pane.
   - Click Finish
 
-- Import the bladeRF_nios projects:
+- Import the bladeRF_nios project:
   - Repeat the previous import steps again, but this time select the software directory for the target platform. For example:
     - `hdl/fpga/platforms/bladerf-micro/software` for bladeRF-micro
     - `hdl/fpga/platforms/bladerf/software` for bladeRF
+  - You should see a project labeled `bladeRF_nios` checked in the *Projects* pane.
+  - Click Finish
 
 - You should now have both projects in your Eclipse workspace. If the C/C++ indexer reports syntax issues due to unknown macro definitions or types, click *Project* -> *C/C++ Index* -> *Rebuild*.
   - This doesn't always work and you may have to manually add linked source directories:
@@ -257,7 +255,7 @@ cd $BLADERF_DIR
     - Now Rebuild the C/C++ indexer. You may also have to right-click the project and select *Index --> Search for unresolved includes* or *Index --> Re-resolve unresolved includes*
   - Eclipse may continue to complain about some Altera-specific includes missing, but these can simply be ignored.
 
-- Building the `bladeRF_nios` project will fail stating that the BSP directory could not be found. This is because the environment variable `WORKDIR` has not been set. To set this:
+- The launcher sets the `WORKDIR` environment variable for the selected build. To switch to a different build after Eclipse has started:
   - Right-click the `bladeRF_nios` project and select *Properties*
   - Under *C/C++ Build --> Environment*, click *Add* to create a new environment variable
   - For *Name*, type `WORKDIR`
