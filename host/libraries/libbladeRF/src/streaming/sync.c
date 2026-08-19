@@ -622,8 +622,19 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                  * a consumer stall return history, and with a non-metadata
                  * format nothing marks it as such. In this state cons_i is
                  * never PARTIAL, so the contiguous FULL run is safe to walk;
-                 * the producer resumes storing at the slots freed here. */
-                if (b->stale_pending) {
+                 * the producer resumes storing at the slots freed here.
+                 *
+                 * Metadata formats are exempt: their consumers see the gap
+                 * in the timestamps and may legitimately want the backlog -
+                 * a scheduled capture seeks THROUGH these buffers to reach
+                 * its target timestamp, and dropping them under that seek
+                 * loses the samples the caller asked for (measured: a sweep
+                 * that overruns on every stop went from hundreds of
+                 * detections to zero with an unconditional drop here). */
+                if (b->stale_pending &&
+                    s->stream_config.format != BLADERF_FORMAT_SC16_Q11_META &&
+                    s->stream_config.format != BLADERF_FORMAT_SC8_Q7_META &&
+                    s->stream_config.format != BLADERF_FORMAT_PACKET_META) {
                     unsigned int dropped = 0;
 
                     while (b->status[b->cons_i] == SYNC_BUFFER_FULL &&
