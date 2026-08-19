@@ -98,6 +98,15 @@ struct buffer_mgmt {
      * is otherwise invisible to the caller. */
     bool overrun_pending;
 
+    /* Also set by the RX worker on an overrun, cleared once the consumer
+     * has dropped the buffers that were already full at that moment. Those
+     * buffers hold the OLDEST samples: everything the hardware produced
+     * after the ring filled was discarded, so on resume the consumer would
+     * read history first - up to (num_buffers - num_transfers) buffers of
+     * it. With a metadata format the timestamps expose this; without one
+     * the stale prefix is indistinguishable from live data. */
+    bool stale_pending;
+
     /* Applicable to TX only. Denotes which context is responsible for
      * submitting full buffers to the underlying async system */
     sync_tx_submitter submitter;

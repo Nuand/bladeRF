@@ -225,6 +225,10 @@ static void *rx_callback(struct bladerf *dev,
                  * sample stream. Record it so the next bladerf_sync_rx()
                  * can report BLADERF_META_STATUS_OVERRUN to the caller. */
                 b->overrun_pending = true;
+                /* The buffers that are full right now predate the gap;
+                 * flag them so the consumer resumes at the live edge
+                 * instead of reading history first. */
+                b->stale_pending = true;
 
                 next_buf = samples;
                 b->resubmit_count = s->stream_config.num_xfers - 1;

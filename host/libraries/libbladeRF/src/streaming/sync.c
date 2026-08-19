@@ -307,6 +307,7 @@ int sync_init(struct bladerf_sync *sync,
             sync->meta.msg_flags = 0;
             sync->meta.have_timestamp = false;
             sync->buf_mgmt.overrun_pending = false;
+            sync->buf_mgmt.stale_pending = false;
 
             sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
@@ -612,6 +613,34 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
             case SYNC_STATE_WAIT_FOR_BUFFER:
                 MUTEX_LOCK(&b->lock);
+
+                /* An overrun means every buffer that is full right now was
+                 * produced BEFORE the gap: the worker stopped storing when
+                 * the ring filled, so this backlog is the oldest data, not
+                 * the newest. Drop it and resume at the live edge. Without
+                 * this, the first (num_buffers - num_transfers) reads after
+                 * a consumer stall return history, and with a non-metadata
+                 * format nothing marks it as such. In this state cons_i is
+                 * never PARTIAL, so the contiguous FULL run is safe to walk;
+                 * the producer resumes storing at the slots freed here. */
+                if (b->stale_pending) {
+                    unsigned int dropped = 0;
+
+                    while (b->status[b->cons_i] == SYNC_BUFFER_FULL &&
+                           dropped < b->num_buffers) {
+                        b->status[b->cons_i] = SYNC_BUFFER_EMPTY;
+                        b->cons_i = (b->cons_i + 1) % b->num_buffers;
+                        dropped++;
+                    }
+
+                    b->stale_pending = false;
+
+                    if (dropped != 0) {
+                        log_debug("%s: dropped %u stale buffer%s after "
+                                  "overrun\n", __FUNCTION__, dropped,
+                                  1 == dropped ? "" : "s");
+                    }
+                }
 
                 /* Check the buffer state, as the worker may have produced one
                  * since we last queried the status */
