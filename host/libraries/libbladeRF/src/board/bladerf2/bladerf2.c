@@ -1533,9 +1533,44 @@ static int bladerf2_schedule_retune(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->backend->retune2(dev, ch, timestamp, quick_tune->nios_profile,
-                                 quick_tune->rffe_profile, quick_tune->port,
-                                 quick_tune->spdt);
+    CHECK_STATUS(dev->backend->retune2(dev, ch, timestamp,
+                                       quick_tune->nios_profile,
+                                       quick_tune->rffe_profile,
+                                       quick_tune->port, quick_tune->spdt));
+
+    /* The Nios recalls the profile by writing the RFIC directly, which
+     * leaves the part in fastlock mode with FORCE_ALC_ENABLE asserted.
+     * ad9361_fastlock_prepare() cannot undo that: it is gated on
+     * phy->fastlock.current_profile, which a recall performed by the FPGA
+     * never touches. Ownership of the RFPLL therefore returns to host
+     * tuning with forced controls still active, and the next
+     * bladerf_set_frequency() programs the synthesiser as if ALC were
+     * automatic.
+     *
+     * Measured on a bladeRF 2.0 micro xA4, interleaving a quick tune
+     * capture plus an immediate recall with ordinary tuning every fifth
+     * stop of a 242-point sweep across 82-5988 MHz:
+     *
+     *   before   55 lock failures in 706 tunes, first at tune 280
+     *   after     2 lock failures in 758 tunes, first at tune 495
+     *
+     * The shape matters more than the rate. Before, the failures form a
+     * series that never recovers: 44 consecutive failures with no
+     * successful tune inside them, and 0x247 reading 0x40 throughout,
+     * meaning the RX charge pump has saturated low. After, there are no
+     * consecutive failures at all. Both reproduced across three runs
+     * each, identical to the tune.
+     *
+     * Only immediate retunes are handled here. One scheduled for a future
+     * timestamp completes inside the FPGA long after this call returns,
+     * so the exit would have to happen there instead.
+     */
+    if (BLADERF_RETUNE_NOW == timestamp) {
+        CHECK_AD936X(ad9361_fastlock_exit_foreign(
+            board_data->phy, BLADERF_CHANNEL_IS_TX(ch)));
+    }
+
+    return 0;
 }
 
 static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev,
