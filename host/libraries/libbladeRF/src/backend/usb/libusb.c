@@ -36,6 +36,7 @@
 #include "backend/usb/usb.h"
 #include "streaming/async.h"
 #include "helpers/timeout.h"
+#include "helpers/wallclock.h"
 
 #include "bladeRF.h"
 
@@ -77,6 +78,10 @@ struct lusb_stream_data {
     /* Full transfers completed on this stream, so a stall can report how far
      * the feed got before it stopped. */
     size_t num_complete;
+
+    /* When an in-flight TX transfer may no longer be given time to finish
+     * on its own. Zero until a shutdown starts. */
+    uint64_t cancel_deadline_ns;
 
     /* Report a stalled feed once per stream, not once per transfer. */
     bool timeout_reported;
@@ -1032,6 +1037,40 @@ static inline void cancel_all_transfers(struct bladerf_stream *stream)
     int status;
     struct lusb_stream_data *stream_data = stream->backend_data;
 
+    /* Cancelling a TX transfer that is already moving cuts the stream in the
+     * middle of a buffer, and the device cannot use a partial one.
+     *
+     * Measured on the wire: cancelled OUT transfers come back with 1024,
+     * 3072, 5120, 6144, 8192, 13312 and 27648 bytes done - all multiples of
+     * the 1024-byte SuperSpeed packet, none a multiple of the 32768-byte
+     * buffer. The FX3 TX channel is CY_U3P_DMA_TYPE_AUTO over 8192-byte
+     * buffers, so it assembles whole buffers; a cut leaves it holding an
+     * unfinished one, and later submissions have nowhere to complete. What
+     * follows is eight submissions sitting for a full stream timeout while
+     * the RX endpoint keeps completing normally.
+     *
+     * So let an in-flight TX transfer finish on its own. The event loop calls
+     * this on every iteration while shutting down, so returning here means
+     * trying again in 15 ms; each transfer already carries its own timeout,
+     * which bounds the wait. Cancel only once that deadline has passed, since
+     * by then the transfer is not going to complete anyway.
+     *
+     * Transfers that never started are unaffected: they complete immediately
+     * either way.
+     */
+    if ((stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX &&
+        stream->transfer_timeout != 0) {
+        const uint64_t now = wallclock_get_current_nsec();
+
+        if (stream_data->cancel_deadline_ns == 0) {
+            stream_data->cancel_deadline_ns =
+                now + (uint64_t)stream->transfer_timeout * 1000000u;
+        }
+        if (now < stream_data->cancel_deadline_ns) {
+            return;
+        }
+    }
+
     for (i = 0; i < stream_data->num_transfers; i++) {
         if (stream_data->transfer_status[i] == TRANSFER_IN_FLIGHT) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
@@ -1337,6 +1376,7 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
     stream_data->out_of_order_event = false;
     stream_data->num_complete = 0;
     stream_data->timeout_reported = false;
+    stream_data->cancel_deadline_ns = 0;
     stream_data->done_flag = 0;
 
     stream_data->transfers =
