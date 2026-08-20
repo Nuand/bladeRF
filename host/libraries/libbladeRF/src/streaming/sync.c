@@ -1140,9 +1140,35 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
             return status;
        }
     } else {
-        /* We are not submitting this buffer; this is deffered to the worker
-         * call back. Just update its state to being full of samples. */
+        /* Submission is currently the callback's job. Mark the buffer full so
+         * the callback can ship it. */
         b->status[idx] = SYNC_BUFFER_FULL;
+
+        /* Then try to ship the oldest deferred buffer ourselves.
+         *
+         * Handing submission over is meant to be temporary - the callback is
+         * supposed to give it back once nothing is left deferred. In a steady
+         * feed that never happens: sync_tx() fills buffers faster than
+         * transfers complete, so the callback always finds the next one FULL,
+         * takes the shipping branch, and never reaches the branch that
+         * restores submitter=FN. Measured on a bladeRF 2.0 micro: 588
+         * deferred submissions in one run and zero handovers back.
+         *
+         * That makes the whole feed depend on an unbroken chain of
+         * completions. Miss one and nothing submits again: the callback only
+         * runs on a completion, and this function refuses to submit while the
+         * callback owns the duty. Trying here breaks the cycle - the attempt
+         * is non-blocking, so it does nothing when transfers really are all
+         * busy, and when one is free the feed keeps moving.
+         */
+        if (b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
+            b->cons_i != BUFFER_MGMT_INVALID_INDEX &&
+            b->status[b->cons_i] == SYNC_BUFFER_FULL) {
+            status = reclaim_tx_submission(s, b);
+            if (status != 0) {
+                return status;
+            }
+        }
     }
 
     /* Advance "producer" insertion index. */
