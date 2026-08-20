@@ -1406,6 +1406,25 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
                         "%d: %s\n", status, libusb_error_name(status));
             status = error_conv(status);
         }
+
+        /* Finish a shutdown that has nothing left to complete.
+         *
+         * The SHUTTING_DOWN -> DONE transition normally happens in
+         * lusb_stream_cb(), so it needs a transfer to come back. When a
+         * shutdown is requested while nothing is in flight - a stopped TX
+         * feed, for instance - no callback ever runs and this loop would spin
+         * until the worker is cancelled. Cancel here and settle it once every
+         * transfer is accounted for.
+         */
+        MUTEX_LOCK(&stream->lock);
+        if (stream->state == STREAM_SHUTTING_DOWN) {
+            if (stream_data->num_avail == stream_data->num_transfers) {
+                stream->state = STREAM_DONE;
+            } else {
+                cancel_all_transfers(stream);
+            }
+        }
+        MUTEX_UNLOCK(&stream->lock);
     }
 
     return status;

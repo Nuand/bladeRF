@@ -445,6 +445,26 @@ void sync_worker_submit_request(struct sync_worker *w, unsigned int request)
     w->requests |= request;
     COND_SIGNAL(&w->requests_pending);
     MUTEX_UNLOCK(&w->request_lock);
+
+    /* A TX worker only inspects requests from inside its transfer callback,
+     * and that callback only runs when a transfer completes. With the feed
+     * stopped nothing completes, so a STOP request is never seen and the
+     * worker stays in RUNNING until sync_worker_deinit() gives up waiting and
+     * cancels the thread.
+     *
+     * Nudge the stream into SHUTTING_DOWN so the backend event loop, which
+     * spins on "state != STREAM_DONE", leaves on its own. The loop then
+     * cancels whatever is outstanding and reaches STREAM_DONE without needing
+     * a completion to arrive first.
+     */
+    if ((request & SYNC_WORKER_STOP) && w->stream != NULL &&
+        (w->stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
+        MUTEX_LOCK(&w->stream->lock);
+        if (w->stream->state == STREAM_RUNNING) {
+            w->stream->state = STREAM_SHUTTING_DOWN;
+        }
+        MUTEX_UNLOCK(&w->stream->lock);
+    }
 }
 
 int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
