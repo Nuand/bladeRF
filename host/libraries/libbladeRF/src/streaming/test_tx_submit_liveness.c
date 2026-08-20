@@ -55,28 +55,29 @@ struct buffer_mgmt {
 
 /* --- the code under test, kept in step with sync.c --- */
 
-static bool tx_submission_parked(struct buffer_mgmt *b)
-{
-    return b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
-           b->cons_i != BUFFER_MGMT_INVALID_INDEX;
-}
-
 static unsigned int oldest_full_buffer(struct buffer_mgmt *b)
 {
     unsigned int i, idx;
-
-    if (b->cons_i == BUFFER_MGMT_INVALID_INDEX) {
-        return BUFFER_MGMT_INVALID_INDEX;
-    }
+    const unsigned int from = (b->cons_i == BUFFER_MGMT_INVALID_INDEX)
+                                  ? b->prod_i : b->cons_i;
 
     for (i = 0; i < b->num_buffers; i++) {
-        idx = (b->cons_i + i) % b->num_buffers;
+        idx = (from + i) % b->num_buffers;
         if (b->status[idx] == SYNC_BUFFER_FULL) {
             return idx;
         }
     }
 
     return BUFFER_MGMT_INVALID_INDEX;
+}
+
+static bool tx_submission_parked(struct buffer_mgmt *b)
+{
+    if (b->submitter == SYNC_TX_SUBMITTER_CALLBACK) {
+        return b->cons_i != BUFFER_MGMT_INVALID_INDEX;
+    }
+    return b->submitter == SYNC_TX_SUBMITTER_FN &&
+           oldest_full_buffer(b) != BUFFER_MGMT_INVALID_INDEX;
 }
 
 /* reclaim_tx_submission() with the submit call replaced by a stub, since the
@@ -160,8 +161,11 @@ static bool stuck(struct buffer_mgmt *b, int live_transfers)
             full++;
         }
     }
-    return full > 0 && live_transfers == 0 &&
-           b->submitter == SYNC_TX_SUBMITTER_CALLBACK;
+    /* Who holds the duty does not matter: what makes it stuck is data waiting
+     * with nothing in flight to bring the callback that would move it. Both
+     * states were seen on hardware - CALLBACK with 8 in flight and 8 full, and
+     * FN with 0 in flight and 26 full. */
+    return full > 0 && live_transfers == 0;
 }
 
 int main(void)
@@ -198,10 +202,33 @@ int main(void)
     assert(b.cons_i == BUFFER_MGMT_INVALID_INDEX);
     assert(!tx_submission_parked(&b));
 
-    /* Duty already ours: nothing to reclaim, nothing parked. */
+    /* Duty ours and nothing waiting: not parked. */
+    for (unsigned int i = 0; i < NUM_BUFFERS; i++) {
+        b.status[i] = SYNC_BUFFER_EMPTY;
+    }
     b.submitter = SYNC_TX_SUBMITTER_FN;
     b.cons_i    = BUFFER_MGMT_INVALID_INDEX;
+    b.prod_i    = 0;
     assert(!tx_submission_parked(&b));
+
+    /* Duty ours but buffers piled up while it was parked with the callback.
+     * Measured on hardware as submitter FN, 0 in flight, 26 of 64 FULL, and
+     * sync_tx timing out: it only ever submits the buffer prod_i points at,
+     * so the backlog never moves and no transfer is out to bring a callback.
+     */
+    for (unsigned int i = 0; i < NUM_BUFFERS; i++) {
+        b.status[i] = SYNC_BUFFER_EMPTY;
+    }
+    b.status[5] = SYNC_BUFFER_FULL;
+    b.status[6] = SYNC_BUFFER_FULL;
+    b.submitter = SYNC_TX_SUBMITTER_FN;
+    b.cons_i    = BUFFER_MGMT_INVALID_INDEX;
+    b.prod_i    = 0;
+    assert(stuck(&b, 0));
+    assert(tx_submission_parked(&b));
+    assert(oldest_full_buffer(&b) == 5);
+    assert(drain(&b, NUM_TRANSFERS) == 0);
+    assert(!stuck(&b, 0));
 
     printf("tx submit liveness: ok\n");
     return 0;
