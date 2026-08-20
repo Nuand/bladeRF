@@ -342,6 +342,19 @@ error:
 void sync_deinit(struct bladerf_sync *sync)
 {
     if (sync->initialized) {
+        /* Retire the handle before tearing anything down.
+         *
+         * sync_rx() and sync_tx() test sync->initialized without holding any
+         * lock - they cannot, since the lock they would take is the one being
+         * destroyed here - and then go on to take buf_mgmt.lock. Clearing the
+         * flag last leaves a window where a concurrent reader passes the test
+         * and then locks a mutex that MUTEX_DESTROY has already reclaimed.
+         * Clearing it first closes that window: a reader either sees the
+         * handle as live and finishes with the still-valid mutex, or sees it
+         * retired and returns without touching it.
+         */
+        sync->initialized = false;
+
         if ((sync->stream_config.layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
             async_submit_stream_buffer(sync->worker->stream,
                                        BLADERF_STREAM_SHUTDOWN, NULL, 0, false);
@@ -368,8 +381,6 @@ void sync_deinit(struct bladerf_sync *sync)
         }
 
         MUTEX_DESTROY(&sync->lock);
-
-        sync->initialized = false;
     }
 }
 
