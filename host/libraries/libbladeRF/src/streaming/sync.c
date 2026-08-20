@@ -333,6 +333,34 @@ int sync_init(struct bladerf_sync *sync,
         goto error;
     }
 
+    if ((layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
+        /* Clear a wedged FX3 TX DMA channel before the caller starts feeding.
+         *
+         * Building a second TX stream on the same device handle intermittently
+         * leaves that channel stuck: transfers go out, the FX3 takes zero
+         * bytes, and every completion returns LIBUSB_TRANSFER_TIMED_OUT with
+         * actual_length 0. The host ring fills and sync_tx() then refuses
+         * buffers permanently. It latches -- which repeat it strikes is random
+         * -- and used to need a close/open to clear.
+         *
+         * Cycling the direction through the board layer clears it. Measured:
+         * wedged then cycled gives 60/60 buffers, 4 of 4 attempts, against
+         * 15/60 for a do-nothing control in the same runs. What does NOT work,
+         * also measured: the backend vendor command alone (0 of 5), disable
+         * without re-enable (17/60), re-setting gain or frequency (15/60), an
+         * alt-setting change, and libusb_clear_halt() on the OUT endpoint.
+         * So the whole disable+enable pair through the board is required.
+         */
+        int cycle = dev->board->enable_module(dev, BLADERF_CHANNEL_TX(0), false);
+        if (cycle == 0) {
+            cycle = dev->board->enable_module(dev, BLADERF_CHANNEL_TX(0), true);
+        }
+        if (cycle != 0) {
+            log_debug("%s: could not cycle TX to clear the FX3 channel: %s\n",
+                      __FUNCTION__, bladerf_strerror(cycle));
+        }
+    }
+
     sync->initialized = true;
 
     return 0;
