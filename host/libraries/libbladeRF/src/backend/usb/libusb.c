@@ -80,7 +80,29 @@ struct lusb_stream_data {
 
     /* Report a stalled feed once per stream, not once per transfer. */
     bool timeout_reported;
+
+    /* Completion flag for libusb_handle_events_timeout_completed(). libusb
+     * re-checks it under its own event lock, which is what makes the wait
+     * safe when RX and TX both handle events on one context. Set wherever
+     * the stream reaches STREAM_DONE. */
+    int done_flag;
 };
+
+/* Finish a stream and wake anyone waiting on libusb events for it.
+ *
+ * The state and the completion flag have to move together: a waiter inside
+ * libusb only re-checks the flag, so setting the state alone leaves it
+ * sleeping until its timeout expires.
+ */
+static inline void mark_stream_done(struct bladerf_stream *stream)
+{
+    struct lusb_stream_data *stream_data = stream->backend_data;
+
+    stream->state = STREAM_DONE;
+    if (stream_data != NULL) {
+        stream_data->done_flag = 1;
+    }
+}
 
 static inline struct bladerf_lusb * lusb_backend(struct bladerf *dev)
 {
@@ -1187,7 +1209,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         /* We know we're done when all of our transfers have returned to their
          * "available" states */
         if (stream_data->num_avail == stream_data->num_transfers) {
-            stream->state = STREAM_DONE;
+            mark_stream_done(stream);
         } else {
             cancel_all_transfers(stream);
         }
@@ -1315,6 +1337,7 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
     stream_data->out_of_order_event = false;
     stream_data->num_complete = 0;
     stream_data->timeout_reported = false;
+    stream_data->done_flag = 0;
 
     stream_data->transfers =
         malloc(num_transfers * sizeof(struct libusb_transfer *));
@@ -1407,7 +1430,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
                 } else {
                     /* No transfers have been shipped out yet so we can
                      * simply enter our "done" state */
-                    stream->state = STREAM_DONE;
+                    mark_stream_done(stream);
                 }
 
                 /* In either of the above we don't want to attempt to
@@ -1437,9 +1460,22 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
     }
     MUTEX_UNLOCK(&stream->lock);
 
-    /* This loop is required so libusb can do callbacks and whatnot */
+    /* This loop is required so libusb can do callbacks and whatnot.
+     *
+     * RX and TX each run this loop on the same libusb context, so two threads
+     * compete for event handling. libusb allows that, but only one thread
+     * actually handles events while the others wait, and a waiter that
+     * decided to wait before the state it is waiting on changed will keep
+     * waiting - the classic lost wakeup that libusb_handle_events_completed()
+     * exists to close. Checking stream->state outside the event lock, as a
+     * plain handle_events_timeout() call requires, is exactly that pattern.
+     *
+     * Pass the completion flag instead: libusb re-checks it under its own
+     * event lock and returns immediately if it is already set.
+     */
     while (stream->state != STREAM_DONE) {
-        status = libusb_handle_events_timeout(lusb->context, &tv);
+        status = libusb_handle_events_timeout_completed(
+            lusb->context, &tv, &stream_data->done_flag);
 
         if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED &&
             status != LIBUSB_ERROR_TIMEOUT) {
@@ -1460,7 +1496,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
         MUTEX_LOCK(&stream->lock);
         if (stream->state == STREAM_SHUTTING_DOWN) {
             if (stream_data->num_avail == stream_data->num_transfers) {
-                stream->state = STREAM_DONE;
+                mark_stream_done(stream);
             } else {
                 cancel_all_transfers(stream);
             }
@@ -1481,7 +1517,7 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
 
     if (buffer == BLADERF_STREAM_SHUTDOWN) {
         if (stream_data->num_avail == stream_data->num_transfers) {
-            stream->state = STREAM_DONE;
+            mark_stream_done(stream);
         } else {
             stream->state = STREAM_SHUTTING_DOWN;
         }
