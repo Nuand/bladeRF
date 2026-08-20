@@ -3117,6 +3117,19 @@ int bladerf_get_rfic_register(struct bladerf *dev,
     return 0;
 }
 
+int bladerf_get_rffe_control(struct bladerf *dev, uint32_t *value)
+{
+    CHECK_BOARD_IS_BLADERF2(dev);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    NULL_CHECK(value);
+
+    WITH_MUTEX(&dev->lock, {
+        CHECK_STATUS_LOCKED(dev->backend->rffe_control_read(dev, value));
+    });
+
+    return 0;
+}
+
 int bladerf_set_rfic_register(struct bladerf *dev,
                               uint16_t address,
                               uint8_t val)

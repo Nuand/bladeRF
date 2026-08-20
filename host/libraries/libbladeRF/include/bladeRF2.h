@@ -117,6 +117,28 @@ int CALL_CONV bladerf_set_rfic_register(struct bladerf *dev,
                                         uint8_t val);
 
 /**
+ * Read the RFFE control register
+ *
+ * This register lives in the FPGA, not in the RFIC, and carries the RF
+ * front-end state that no RFIC register reflects: the SPDT switch
+ * positions, the per-channel enables, and the direction ENABLE/TXNRX
+ * bits. Without it, a caller debugging a dead or attenuated RF path has
+ * no way to tell a switch left in its shutdown position from an RFIC
+ * problem -- every RFIC register can read back correct while the signal
+ * is routed nowhere.
+ *
+ * The bit positions are the RFFE_CONTROL_* constants in
+ * fpga_common/include/bladerf2_common.h.
+ *
+ * @param       dev         Device handle
+ * @param[out]  value       RFFE control register value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rffe_control(struct bladerf *dev, uint32_t *value);
+
+/**
  * Read the temperature from the RFIC
  *
  * @param       dev         Device handle
