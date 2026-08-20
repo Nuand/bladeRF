@@ -405,8 +405,27 @@ static int wait_for_buffer(struct buffer_mgmt *b,
     }
 
     if (status == THREAD_TIMEOUT) {
-        log_error("%s: Timed out waiting for buf_ready after %d ms\n",
-                  __FUNCTION__, timeout_ms);
+        /* Who owns submission matters more than the timeout itself. Once
+         * submitter is CALLBACK, only a completing transfer can hand it back,
+         * so a timeout with CALLBACK set and nothing in flight is a deadlock
+         * on this side rather than a device that went quiet. */
+        unsigned int in_flight = 0, full = 0, empty = 0, i;
+        for (i = 0; i < b->num_buffers; i++) {
+            switch (b->status[i]) {
+                case SYNC_BUFFER_IN_FLIGHT: in_flight++; break;
+                case SYNC_BUFFER_FULL:      full++;      break;
+                case SYNC_BUFFER_EMPTY:     empty++;     break;
+                default: break;
+            }
+        }
+        log_error("%s: Timed out waiting for buf_ready after %d ms "
+                  "(submitter=%s, in_flight=%u full=%u empty=%u of %u, "
+                  "prod_i=%u cons_i=%u)\n",
+                  __FUNCTION__, timeout_ms,
+                  b->submitter == SYNC_TX_SUBMITTER_CALLBACK ? "CALLBACK"
+                      : (b->submitter == SYNC_TX_SUBMITTER_FN ? "FN" : "-"),
+                  in_flight, full, empty, (unsigned)b->num_buffers,
+                  b->prod_i, b->cons_i);
         status = BLADERF_ERR_TIMEOUT;
     } else if (status != 0) {
         status = BLADERF_ERR_UNEXPECTED;
@@ -1018,6 +1037,49 @@ out:
     return status;
 }
 
+/* Try to ship the buffer the worker callback was told to ship, and take
+ * submission duty back if that works.
+ *
+ * Assumes the buffer lock is held. Drops it around the submission, the same
+ * way advance_tx_buffer() does, because submitting takes the stream lock.
+ */
+static int reclaim_tx_submission(struct bladerf_sync *s, struct buffer_mgmt *b)
+{
+    const unsigned int idx = b->cons_i;
+    size_t len;
+    int status;
+
+    if (s->stream_config.format == BLADERF_FORMAT_PACKET_META) {
+        len = b->actual_lengths[idx];
+    } else {
+        len = async_stream_buf_bytes(s->worker->stream);
+    }
+
+    b->status[idx] = SYNC_BUFFER_IN_FLIGHT;
+
+    MUTEX_UNLOCK(&b->lock);
+    status = async_submit_stream_buffer(s->worker->stream, b->buffers[idx],
+                                       &len, s->stream_config.timeout_ms,
+                                       true);
+    MUTEX_LOCK(&b->lock);
+
+    if (status == 0) {
+        b->cons_i = (idx + 1) % b->num_buffers;
+        if (b->status[b->cons_i] != SYNC_BUFFER_FULL) {
+            /* Nothing else deferred, so we own submission again. */
+            b->submitter = SYNC_TX_SUBMITTER_FN;
+            b->cons_i    = BUFFER_MGMT_INVALID_INDEX;
+        }
+        log_verbose("%s: reclaimed submission of buf[%u]\n", __FUNCTION__, idx);
+        return 0;
+    }
+
+    /* Still nothing free, or a real failure. Leave the buffer as the callback
+     * found it and let the caller wait; WOULD_BLOCK is not an error here. */
+    b->status[idx] = SYNC_BUFFER_FULL;
+    return status == BLADERF_ERR_WOULD_BLOCK ? 0 : status;
+}
+
 /* Assumes buffer lock is held */
 static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
 {
@@ -1270,8 +1332,35 @@ int sync_tx(struct bladerf_sync *s,
                 if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
                     s->state = SYNC_STATE_BUFFER_READY;
                 } else {
-                    status =
-                        wait_for_buffer(b, timeout_ms, __FUNCTION__, b->prod_i);
+                    /* Submission may have been handed to the worker callback
+                     * back when every transfer was busy. The callback only
+                     * runs when a transfer completes, so if none ever does,
+                     * nothing hands submission back and this wait can never
+                     * be satisfied: the ring stays full, sync_tx() times out,
+                     * and only tearing the stream down clears it.
+                     *
+                     * Try the deferred buffer ourselves first. The attempt is
+                     * non-blocking, so it only succeeds if a transfer really
+                     * is free - if they are all still busy this changes
+                     * nothing and we wait exactly as before.
+                     */
+                    status = wait_for_buffer(b, timeout_ms, __FUNCTION__,
+                                             b->prod_i);
+
+                    /* The wait gave up. If submission is still parked with
+                     * the callback, try the deferred buffer ourselves before
+                     * failing: the attempt is non-blocking, so it only
+                     * succeeds when a transfer really is free, and then the
+                     * wait had no reason to fail in the first place. */
+                    if (status == BLADERF_ERR_TIMEOUT &&
+                        b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
+                        b->cons_i != BUFFER_MGMT_INVALID_INDEX &&
+                        b->status[b->cons_i] == SYNC_BUFFER_FULL) {
+                        if (reclaim_tx_submission(s, b) == 0 &&
+                            b->submitter == SYNC_TX_SUBMITTER_FN) {
+                            status = 0;
+                        }
+                    }
                 }
 
                 MUTEX_UNLOCK(&b->lock);
