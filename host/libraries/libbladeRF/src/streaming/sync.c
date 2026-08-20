@@ -305,6 +305,9 @@ int sync_init(struct bladerf_sync *sync,
 
             sync->meta.msg_timestamp = 0;
             sync->meta.msg_flags = 0;
+            sync->meta.have_timestamp = false;
+            sync->buf_mgmt.overrun_pending = false;
+            sync->buf_mgmt.stale_pending = false;
 
             sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
@@ -342,6 +345,19 @@ error:
 void sync_deinit(struct bladerf_sync *sync)
 {
     if (sync->initialized) {
+        /* Retire the handle before tearing anything down.
+         *
+         * sync_rx() and sync_tx() test sync->initialized without holding any
+         * lock - they cannot, since the lock they would take is the one being
+         * destroyed here - and then go on to take buf_mgmt.lock. Clearing the
+         * flag last leaves a window where a concurrent reader passes the test
+         * and then locks a mutex that MUTEX_DESTROY has already reclaimed.
+         * Clearing it first closes that window: a reader either sees the
+         * handle as live and finishes with the still-valid mutex, or sees it
+         * retired and returns without touching it.
+         */
+        sync->initialized = false;
+
         if ((sync->stream_config.layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
             async_submit_stream_buffer(sync->worker->stream,
                                        BLADERF_STREAM_SHUTDOWN, NULL, 0, false);
@@ -368,8 +384,6 @@ void sync_deinit(struct bladerf_sync *sync)
         }
 
         MUTEX_DESTROY(&sync->lock);
-
-        sync->initialized = false;
     }
 }
 
@@ -391,8 +405,27 @@ static int wait_for_buffer(struct buffer_mgmt *b,
     }
 
     if (status == THREAD_TIMEOUT) {
-        log_error("%s: Timed out waiting for buf_ready after %d ms\n",
-                  __FUNCTION__, timeout_ms);
+        /* Who owns submission matters more than the timeout itself. Once
+         * submitter is CALLBACK, only a completing transfer can hand it back,
+         * so a timeout with CALLBACK set and nothing in flight is a deadlock
+         * on this side rather than a device that went quiet. */
+        unsigned int in_flight = 0, full = 0, empty = 0, i;
+        for (i = 0; i < b->num_buffers; i++) {
+            switch (b->status[i]) {
+                case SYNC_BUFFER_IN_FLIGHT: in_flight++; break;
+                case SYNC_BUFFER_FULL:      full++;      break;
+                case SYNC_BUFFER_EMPTY:     empty++;     break;
+                default: break;
+            }
+        }
+        log_error("%s: Timed out waiting for buf_ready after %d ms "
+                  "(submitter=%s, in_flight=%u full=%u empty=%u of %u, "
+                  "prod_i=%u cons_i=%u)\n",
+                  __FUNCTION__, timeout_ms,
+                  b->submitter == SYNC_TX_SUBMITTER_CALLBACK ? "CALLBACK"
+                      : (b->submitter == SYNC_TX_SUBMITTER_FN ? "FN" : "-"),
+                  in_flight, full, empty, (unsigned)b->num_buffers,
+                  b->prod_i, b->cons_i);
         status = BLADERF_ERR_TIMEOUT;
     } else if (status != 0) {
         status = BLADERF_ERR_UNEXPECTED;
@@ -442,10 +475,20 @@ int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms)
     return status;
 }
 
-/* Returns # of timestamps (or time steps) left in a message */
+/* Returns # of timestamps (or time steps) left in a message.
+ *
+ * curr_msg_off counts SAMPLES (it is advanced by samples_to_copy and
+ * compared against samples_per_msg), so it has to be subtracted before
+ * converting to time steps. Subtracting it from samples_per_msg /
+ * samples_per_ts mixed the units: correct for single-channel layouts
+ * where samples_per_ts == 1, but in X2 mode the unsigned subtraction
+ * underflowed once the offset passed half a message, and the huge
+ * result sent the seek logic down the wrong branch. */
 static inline unsigned int ts_remaining(struct bladerf_sync *s)
 {
-    size_t ret = s->meta.samples_per_msg / s->meta.samples_per_ts - s->meta.curr_msg_off;
+    size_t ret = (s->meta.samples_per_msg - s->meta.curr_msg_off) /
+                 s->meta.samples_per_ts;
+    assert(s->meta.curr_msg_off <= s->meta.samples_per_msg);
     assert(ret <= UINT_MAX);
 
     return (unsigned int) ret;
@@ -516,11 +559,22 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
         } else {
             user_meta->status = 0;
             target_timestamp = user_meta->timestamp;
+
+            /* Report an overrun the worker recovered from. Its recovery
+             * resubmits buffers, so the gap is not visible in the message
+             * timestamps this call will see. */
+            MUTEX_LOCK(&s->buf_mgmt.lock);
+            if (s->buf_mgmt.overrun_pending) {
+                user_meta->status |= BLADERF_META_STATUS_OVERRUN;
+                s->buf_mgmt.overrun_pending = false;
+            }
+            MUTEX_UNLOCK(&s->buf_mgmt.lock);
         }
     }
 
     b = &s->buf_mgmt;
     samples_per_buffer = s->stream_config.samples_per_buffer;
+    log_verbose("%s: stream format=%d state=%d\n", __FUNCTION__, (int)s->stream_config.format, (int)s->state);
 
     log_verbose("%s: Requests %u samples.\n", __FUNCTION__, num_samples);
 
@@ -559,9 +613,26 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
             case SYNC_STATE_RESET_BUF_MGMT:
                 MUTEX_LOCK(&b->lock);
                 /* When the RX stream starts up, it will submit the first T
-                 * transfers, so the consumer index must be reset to 0 */
-                b->cons_i = 0;
+                 * transfers, so the consumer index must be reset to 0.
+                 *
+                 * For TX the consumer index means the opposite thing: it names
+                 * the buffer the callback should ship out next, and
+                 * BUFFER_MGMT_INVALID_INDEX is how sync_init() says "nothing
+                 * is deferred yet". Resetting it to 0 here makes a restarted
+                 * TX worker believe buffer 0 is a deferred, full buffer, so
+                 * tx_callback submits a buffer the producer has not filled and
+                 * the ring accounting drifts from that point on.
+                 */
+                if ((s->stream_config.layout & BLADERF_DIRECTION_MASK) ==
+                    BLADERF_TX) {
+                    b->cons_i = BUFFER_MGMT_INVALID_INDEX;
+                } else {
+                    b->cons_i = 0;
+                }
                 MUTEX_UNLOCK(&b->lock);
+                /* The restarted stream begins a fresh timestamp sequence, so
+                 * its first header must not be reported as a discontinuity. */
+                s->meta.have_timestamp = false;
                 log_debug("%s: Reset buf_mgmt consumer index\n", __FUNCTION__);
                 s->state = SYNC_STATE_START_WORKER;
                 break;
@@ -587,6 +658,45 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
             case SYNC_STATE_WAIT_FOR_BUFFER:
                 MUTEX_LOCK(&b->lock);
 
+                /* An overrun means every buffer that is full right now was
+                 * produced BEFORE the gap: the worker stopped storing when
+                 * the ring filled, so this backlog is the oldest data, not
+                 * the newest. Drop it and resume at the live edge. Without
+                 * this, the first (num_buffers - num_transfers) reads after
+                 * a consumer stall return history, and with a non-metadata
+                 * format nothing marks it as such. In this state cons_i is
+                 * never PARTIAL, so the contiguous FULL run is safe to walk;
+                 * the producer resumes storing at the slots freed here.
+                 *
+                 * Metadata formats are exempt: their consumers see the gap
+                 * in the timestamps and may legitimately want the backlog -
+                 * a scheduled capture seeks THROUGH these buffers to reach
+                 * its target timestamp, and dropping them under that seek
+                 * loses the samples the caller asked for (measured: a sweep
+                 * that overruns on every stop went from hundreds of
+                 * detections to zero with an unconditional drop here). */
+                if (b->stale_pending &&
+                    s->stream_config.format != BLADERF_FORMAT_SC16_Q11_META &&
+                    s->stream_config.format != BLADERF_FORMAT_SC8_Q7_META &&
+                    s->stream_config.format != BLADERF_FORMAT_PACKET_META) {
+                    unsigned int dropped = 0;
+
+                    while (b->status[b->cons_i] == SYNC_BUFFER_FULL &&
+                           dropped < b->num_buffers) {
+                        b->status[b->cons_i] = SYNC_BUFFER_EMPTY;
+                        b->cons_i = (b->cons_i + 1) % b->num_buffers;
+                        dropped++;
+                    }
+
+                    b->stale_pending = false;
+
+                    if (dropped != 0) {
+                        log_debug("%s: dropped %u stale buffer%s after "
+                                  "overrun\n", __FUNCTION__, dropped,
+                                  1 == dropped ? "" : "s");
+                    }
+                }
+
                 /* Check the buffer state, as the worker may have produced one
                  * since we last queried the status */
                 if (b->status[b->cons_i] == SYNC_BUFFER_FULL) {
@@ -605,6 +715,31 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             log_verbose("%s: buffer %u is ready to consume\n",
                                         __FUNCTION__, b->cons_i);
                         }
+                    } else {
+                        /* Go re-examine the worker instead of waiting on the
+                         * same buffer again.
+                         *
+                         * Leaving the state at WAIT_FOR_BUFFER makes the
+                         * timeout permanent whenever the worker is no longer
+                         * there to free anything: every later call re-enters
+                         * this branch, waits out the full timeout, and
+                         * returns the same error. The worker's START path
+                         * already knows how to recover -- it clears buffers
+                         * that were left IN_FLIGHT by a cancelled stream --
+                         * but it is only reachable through CHECK_WORKER, so
+                         * that recovery never runs.
+                         *
+                         * This is what turns one hiccup into a dead stream.
+                         * Measured on a bladeRF 2.0 micro xA4 at 15.36 MSps:
+                         * after enable_module(TX, false)/(true) the worker
+                         * failed to stop ("Timed out while stopping worker.
+                         * Canceling thread."), and from then on the feeding
+                         * thread submitted 0 buffers/s instead of 1917, with
+                         * a 1000 ms timeout on every sync_tx(). Downstream
+                         * the RFIC repeats its last sample, so it reads as a
+                         * dead transmitter rather than a stalled queue.
+                         */
+                        s->state = SYNC_STATE_CHECK_WORKER;
                     }
                 }
 
@@ -638,6 +773,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         assert(!"Invalid stream format");
                         status = BLADERF_ERR_UNEXPECTED;
                 }
+                log_verbose("%s: BUFFER_READY -> state=%d (format=%d)\n", __FUNCTION__, (int)s->state, (int)s->stream_config.format);
 
                 MUTEX_UNLOCK(&b->lock);
                 break;
@@ -716,13 +852,23 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                         s->meta.curr_msg_off = 0;
 
-                        /* We've encountered a discontinuity and need to return
-                         * what we have so far, setting the status flags */
-                        if (copied_data &&
+                        /* We've encountered a discontinuity. Report it via
+                         * the status flags whether or not samples have been
+                         * copied yet: a gap that lands on the first message
+                         * of a read is still a gap, and the caller has no
+                         * other way to learn about it.
+                         *
+                         * Only the early return is conditional. With data
+                         * already copied we must hand it back before the
+                         * discontinuity; with none copied there is nothing
+                         * to preserve, so the read continues and returns
+                         * contiguous samples that start after the gap.
+                         */
+                        if (s->meta.have_timestamp &&
                             s->meta.msg_timestamp != s->meta.curr_timestamp) {
 
                             user_meta->status |= BLADERF_META_STATUS_OVERRUN;
-                            exit_early = true;
+                            exit_early = copied_data;
                             log_debug("Sample discontinuity detected @ "
                                       "buffer %u, message %u: Expected t=%llu, "
                                       "got t=%llu\n",
@@ -739,6 +885,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         }
 
                         s->meta.curr_timestamp = s->meta.msg_timestamp;
+                        s->meta.have_timestamp = true;
                         s->meta.state = SYNC_META_STATE_SAMPLES;
                         break;
 
@@ -890,6 +1037,103 @@ out:
     return status;
 }
 
+/* Try to ship the buffer the worker callback was told to ship, and take
+ * submission duty back if that works.
+ *
+ * Assumes the buffer lock is held. Drops it around the submission, the same
+ * way advance_tx_buffer() does, because submitting takes the stream lock.
+ */
+/* Oldest buffer the callback still owes a submission for, or INVALID.
+ *
+ * cons_i alone is not enough. When transfers are cancelled - a teardown, an
+ * error, a timeout - libusb returns them through its own callback path, which
+ * never runs the sync callback, so cons_i keeps pointing at a buffer that has
+ * already been marked IN_FLIGHT and will never come back. The data waiting to
+ * go out is in the FULL buffers behind it.
+ */
+/* Is submission parked on a callback with data waiting behind it?
+ *
+ * Submission duty is handed to the worker callback when every transfer is
+ * busy, and only that callback hands it back. The callback runs on a
+ * completion, and a completion that libusb delivers through its own
+ * cancellation path never reaches it. So the ring can end up with buffers
+ * FULL, the duty with the callback, and nothing able to move either.
+ *
+ * ⛔ Buffer status is not a reliable count of live transfers: IN_FLIGHT is
+ * only cleared in the sync callback, so a cancelled transfer leaves its
+ * buffer marked IN_FLIGHT forever. Which is exactly why this asks whether
+ * anything is waiting, not how many transfers are out.
+ */
+static bool tx_submission_parked(struct buffer_mgmt *b)
+{
+    return b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
+           b->cons_i != BUFFER_MGMT_INVALID_INDEX;
+}
+
+static unsigned int oldest_full_buffer(struct buffer_mgmt *b)
+{
+    unsigned int i, idx;
+
+    if (b->cons_i == BUFFER_MGMT_INVALID_INDEX) {
+        return BUFFER_MGMT_INVALID_INDEX;
+    }
+
+    for (i = 0; i < b->num_buffers; i++) {
+        idx = (b->cons_i + i) % b->num_buffers;
+        if (b->status[idx] == SYNC_BUFFER_FULL) {
+            return idx;
+        }
+    }
+
+    return BUFFER_MGMT_INVALID_INDEX;
+}
+
+static int reclaim_tx_submission(struct bladerf_sync *s, struct buffer_mgmt *b)
+{
+    const unsigned int idx = oldest_full_buffer(b);
+    size_t len;
+    int status;
+
+    if (idx == BUFFER_MGMT_INVALID_INDEX) {
+        /* Nothing is waiting to go out, so the callback owes nothing and the
+         * duty is ours again. Reached when every buffer the callback was
+         * tracking came back through the cancellation path. */
+        b->submitter = SYNC_TX_SUBMITTER_FN;
+        b->cons_i    = BUFFER_MGMT_INVALID_INDEX;
+        return 0;
+    }
+
+    if (s->stream_config.format == BLADERF_FORMAT_PACKET_META) {
+        len = b->actual_lengths[idx];
+    } else {
+        len = async_stream_buf_bytes(s->worker->stream);
+    }
+
+    b->status[idx] = SYNC_BUFFER_IN_FLIGHT;
+
+    MUTEX_UNLOCK(&b->lock);
+    status = async_submit_stream_buffer(s->worker->stream, b->buffers[idx],
+                                       &len, s->stream_config.timeout_ms,
+                                       true);
+    MUTEX_LOCK(&b->lock);
+
+    if (status == 0) {
+        b->cons_i = (idx + 1) % b->num_buffers;
+        if (oldest_full_buffer(b) == BUFFER_MGMT_INVALID_INDEX) {
+            /* Nothing else waiting, so we own submission again. */
+            b->submitter = SYNC_TX_SUBMITTER_FN;
+            b->cons_i    = BUFFER_MGMT_INVALID_INDEX;
+        }
+        log_verbose("%s: reclaimed submission of buf[%u]\n", __FUNCTION__, idx);
+        return 0;
+    }
+
+    /* Still nothing free, or a real failure. Leave the buffer as the callback
+     * found it and let the caller wait; WOULD_BLOCK is not an error here. */
+    b->status[idx] = SYNC_BUFFER_FULL;
+    return status == BLADERF_ERR_WOULD_BLOCK ? 0 : status;
+}
+
 /* Assumes buffer lock is held */
 static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
 {
@@ -950,9 +1194,34 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
             return status;
        }
     } else {
-        /* We are not submitting this buffer; this is deffered to the worker
-         * call back. Just update its state to being full of samples. */
+        /* Submission is currently the callback's job. Mark the buffer full so
+         * the callback can ship it. */
         b->status[idx] = SYNC_BUFFER_FULL;
+
+        /* Then try to ship the oldest deferred buffer ourselves.
+         *
+         * Handing submission over is meant to be temporary - the callback is
+         * supposed to give it back once nothing is left deferred. In a steady
+         * feed that never happens: sync_tx() fills buffers faster than
+         * transfers complete, so the callback always finds the next one FULL,
+         * takes the shipping branch, and never reaches the branch that
+         * restores submitter=FN. Measured on a bladeRF 2.0 micro: 588
+         * deferred submissions in one run and zero handovers back.
+         *
+         * That makes the whole feed depend on an unbroken chain of
+         * completions. Miss one and nothing submits again: the callback only
+         * runs on a completion, and this function refuses to submit while the
+         * callback owns the duty. Trying here breaks the cycle - the attempt
+         * is non-blocking, so it does nothing when transfers really are all
+         * busy, and when one is free the feed keeps moving.
+         */
+        if (b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
+            b->cons_i != BUFFER_MGMT_INVALID_INDEX) {
+            status = reclaim_tx_submission(s, b);
+            if (status != 0) {
+                return status;
+            }
+        }
     }
 
     /* Advance "producer" insertion index. */
@@ -1126,6 +1395,11 @@ int sync_tx(struct bladerf_sync *s,
                 if (status == 0) {
                     s->state = SYNC_STATE_WAIT_FOR_BUFFER;
                     log_debug("%s: Worker is now running.\n", __FUNCTION__);
+                } else {
+                    log_warning("%s: worker did not reach RUNNING in %u ms: "
+                                "%s\n", __FUNCTION__,
+                                SYNC_WORKER_START_TIMEOUT_MS,
+                                bladerf_strerror(status));
                 }
                 break;
 
@@ -1137,8 +1411,55 @@ int sync_tx(struct bladerf_sync *s,
                 if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
                     s->state = SYNC_STATE_BUFFER_READY;
                 } else {
-                    status =
-                        wait_for_buffer(b, timeout_ms, __FUNCTION__, b->prod_i);
+                    /* Submission may have been handed to the worker callback
+                     * back when every transfer was busy. The callback only
+                     * runs when a transfer completes, so if none ever does,
+                     * nothing hands submission back and this wait can never
+                     * be satisfied: the ring stays full, sync_tx() times out,
+                     * and only tearing the stream down clears it.
+                     *
+                     * Try the deferred buffer ourselves first. The attempt is
+                     * non-blocking, so it only succeeds if a transfer really
+                     * is free - if they are all still busy this changes
+                     * nothing and we wait exactly as before.
+                     */
+                    /* Do not start waiting while the ring is in a state no
+                     * callback can get it out of. Submission duty sits with
+                     * the callback, buffers are waiting to go out, and the
+                     * callback only runs when a transfer completes - so if
+                     * none can, waiting just burns the timeout. Try the
+                     * submission here first; the attempt is non-blocking, so
+                     * when transfers really are busy nothing changes and we
+                     * wait exactly as before. */
+                    /* Loop: one submission is not enough. Each buffer still
+                     * FULL behind the first would need its own callback to be
+                     * shipped, and the callbacks that would have run were
+                     * consumed by the cancellation path. Keep going while the
+                     * backend accepts buffers - WOULD_BLOCK leaves the ring
+                     * untouched, which ends the loop. */
+                    while (status == 0 && tx_submission_parked(b)) {
+                        const unsigned int before = b->cons_i;
+
+                        status = reclaim_tx_submission(s, b);
+                        if (b->cons_i == before) {
+                            break;      /* nothing moved: transfers all busy */
+                        }
+                    }
+
+                    if (status == 0 &&
+                        b->status[b->prod_i] != SYNC_BUFFER_EMPTY) {
+                        status = wait_for_buffer(b, timeout_ms, __FUNCTION__,
+                                                 b->prod_i);
+
+                        /* Same check after the wait: a completion may have
+                         * arrived and left the duty parked again. */
+                        if (status == BLADERF_ERR_TIMEOUT &&
+                            tx_submission_parked(b) &&
+                            reclaim_tx_submission(s, b) == 0 &&
+                            b->submitter == SYNC_TX_SUBMITTER_FN) {
+                            status = 0;
+                        }
+                    }
                 }
 
                 MUTEX_UNLOCK(&b->lock);
