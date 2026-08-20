@@ -1186,8 +1186,12 @@ get_next_available_transfer(struct lusb_stream_data *stream_data)
             if (stream_data->i != i &&
                 stream_data->out_of_order_event == false) {
 
-                log_warning("Transfer callback occurred out of order. "
-                            "(Warning only this time.)\n");
+                log_warning("Transfer callback occurred out of order: "
+                            "wanted %u, found %u, num_avail %u of %u. "
+                            "(Warning only this time.)\n",
+                            (unsigned)stream_data->i, (unsigned)i,
+                            (unsigned)stream_data->num_avail,
+                            (unsigned)stream_data->num_transfers);
                 stream_data->out_of_order_event = true;
             }
 
@@ -1256,11 +1260,11 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer, size_t l
         assert(stream_data->transfer_status[prev_idx] == TRANSFER_IN_FLIGHT);
         stream_data->transfer_status[prev_idx] = TRANSFER_AVAIL;
         stream_data->num_avail++;
-        if (stream_data->i == 0) {
-            stream_data->i = stream_data->num_transfers - 1;
-        } else {
-            stream_data->i--;
-        }
+
+        /* Undo the index step. prev_idx is the slot we took, and
+         * get_next_available_transfer() had already pointed stream_data->i at
+         * it, so this restores exactly what we found. */
+        stream_data->i = prev_idx;
     }
 
     return error_conv(status);
