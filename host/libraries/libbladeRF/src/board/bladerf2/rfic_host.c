@@ -245,7 +245,11 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
     reg_old    = reg;
     ch_pending = _rffe_ch_enabled(reg, ch) != enable;
-    layout = board_data->sync->stream_config.layout;
+    /* board_data->sync is indexed by direction. Plain sync-> is sync[0],
+     * which is always the RX stream, so enabling or disabling a TX
+     * channel read the RX layout here and decided the MIMO question from
+     * the wrong stream. */
+    layout = board_data->sync[dir].stream_config.layout;
     mimo_enabled = layout == BLADERF_RX_X2 || layout == BLADERF_TX_X2;
 
     if (layout == BLADERF_TX_X2) {
