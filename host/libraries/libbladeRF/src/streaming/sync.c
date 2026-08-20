@@ -1051,6 +1051,25 @@ out:
  * already been marked IN_FLIGHT and will never come back. The data waiting to
  * go out is in the FULL buffers behind it.
  */
+/* Is submission parked on a callback with data waiting behind it?
+ *
+ * Submission duty is handed to the worker callback when every transfer is
+ * busy, and only that callback hands it back. The callback runs on a
+ * completion, and a completion that libusb delivers through its own
+ * cancellation path never reaches it. So the ring can end up with buffers
+ * FULL, the duty with the callback, and nothing able to move either.
+ *
+ * ⛔ Buffer status is not a reliable count of live transfers: IN_FLIGHT is
+ * only cleared in the sync callback, so a cancelled transfer leaves its
+ * buffer marked IN_FLIGHT forever. Which is exactly why this asks whether
+ * anything is waiting, not how many transfers are out.
+ */
+static bool tx_submission_parked(struct buffer_mgmt *b)
+{
+    return b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
+           b->cons_i != BUFFER_MGMT_INVALID_INDEX;
+}
+
 static unsigned int oldest_full_buffer(struct buffer_mgmt *b)
 {
     unsigned int i, idx;
@@ -1100,8 +1119,8 @@ static int reclaim_tx_submission(struct bladerf_sync *s, struct buffer_mgmt *b)
 
     if (status == 0) {
         b->cons_i = (idx + 1) % b->num_buffers;
-        if (b->status[b->cons_i] != SYNC_BUFFER_FULL) {
-            /* Nothing else deferred, so we own submission again. */
+        if (oldest_full_buffer(b) == BUFFER_MGMT_INVALID_INDEX) {
+            /* Nothing else waiting, so we own submission again. */
             b->submitter = SYNC_TX_SUBMITTER_FN;
             b->cons_i    = BUFFER_MGMT_INVALID_INDEX;
         }
@@ -1404,18 +1423,39 @@ int sync_tx(struct bladerf_sync *s,
                      * is free - if they are all still busy this changes
                      * nothing and we wait exactly as before.
                      */
-                    status = wait_for_buffer(b, timeout_ms, __FUNCTION__,
-                                             b->prod_i);
+                    /* Do not start waiting while the ring is in a state no
+                     * callback can get it out of. Submission duty sits with
+                     * the callback, buffers are waiting to go out, and the
+                     * callback only runs when a transfer completes - so if
+                     * none can, waiting just burns the timeout. Try the
+                     * submission here first; the attempt is non-blocking, so
+                     * when transfers really are busy nothing changes and we
+                     * wait exactly as before. */
+                    /* Loop: one submission is not enough. Each buffer still
+                     * FULL behind the first would need its own callback to be
+                     * shipped, and the callbacks that would have run were
+                     * consumed by the cancellation path. Keep going while the
+                     * backend accepts buffers - WOULD_BLOCK leaves the ring
+                     * untouched, which ends the loop. */
+                    while (status == 0 && tx_submission_parked(b)) {
+                        const unsigned int before = b->cons_i;
 
-                    /* The wait gave up. If submission is still parked with
-                     * the callback, try the deferred buffer ourselves before
-                     * failing: the attempt is non-blocking, so it only
-                     * succeeds when a transfer really is free, and then the
-                     * wait had no reason to fail in the first place. */
-                    if (status == BLADERF_ERR_TIMEOUT &&
-                        b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
-                        b->cons_i != BUFFER_MGMT_INVALID_INDEX) {
-                        if (reclaim_tx_submission(s, b) == 0 &&
+                        status = reclaim_tx_submission(s, b);
+                        if (b->cons_i == before) {
+                            break;      /* nothing moved: transfers all busy */
+                        }
+                    }
+
+                    if (status == 0 &&
+                        b->status[b->prod_i] != SYNC_BUFFER_EMPTY) {
+                        status = wait_for_buffer(b, timeout_ms, __FUNCTION__,
+                                                 b->prod_i);
+
+                        /* Same check after the wait: a completion may have
+                         * arrived and left the duty parked again. */
+                        if (status == BLADERF_ERR_TIMEOUT &&
+                            tx_submission_parked(b) &&
+                            reclaim_tx_submission(s, b) == 0 &&
                             b->submitter == SYNC_TX_SUBMITTER_FN) {
                             status = 0;
                         }
