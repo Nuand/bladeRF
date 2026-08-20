@@ -1043,11 +1043,46 @@ out:
  * Assumes the buffer lock is held. Drops it around the submission, the same
  * way advance_tx_buffer() does, because submitting takes the stream lock.
  */
+/* Oldest buffer the callback still owes a submission for, or INVALID.
+ *
+ * cons_i alone is not enough. When transfers are cancelled - a teardown, an
+ * error, a timeout - libusb returns them through its own callback path, which
+ * never runs the sync callback, so cons_i keeps pointing at a buffer that has
+ * already been marked IN_FLIGHT and will never come back. The data waiting to
+ * go out is in the FULL buffers behind it.
+ */
+static unsigned int oldest_full_buffer(struct buffer_mgmt *b)
+{
+    unsigned int i, idx;
+
+    if (b->cons_i == BUFFER_MGMT_INVALID_INDEX) {
+        return BUFFER_MGMT_INVALID_INDEX;
+    }
+
+    for (i = 0; i < b->num_buffers; i++) {
+        idx = (b->cons_i + i) % b->num_buffers;
+        if (b->status[idx] == SYNC_BUFFER_FULL) {
+            return idx;
+        }
+    }
+
+    return BUFFER_MGMT_INVALID_INDEX;
+}
+
 static int reclaim_tx_submission(struct bladerf_sync *s, struct buffer_mgmt *b)
 {
-    const unsigned int idx = b->cons_i;
+    const unsigned int idx = oldest_full_buffer(b);
     size_t len;
     int status;
+
+    if (idx == BUFFER_MGMT_INVALID_INDEX) {
+        /* Nothing is waiting to go out, so the callback owes nothing and the
+         * duty is ours again. Reached when every buffer the callback was
+         * tracking came back through the cancellation path. */
+        b->submitter = SYNC_TX_SUBMITTER_FN;
+        b->cons_i    = BUFFER_MGMT_INVALID_INDEX;
+        return 0;
+    }
 
     if (s->stream_config.format == BLADERF_FORMAT_PACKET_META) {
         len = b->actual_lengths[idx];
@@ -1162,8 +1197,7 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
          * busy, and when one is free the feed keeps moving.
          */
         if (b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
-            b->cons_i != BUFFER_MGMT_INVALID_INDEX &&
-            b->status[b->cons_i] == SYNC_BUFFER_FULL) {
+            b->cons_i != BUFFER_MGMT_INVALID_INDEX) {
             status = reclaim_tx_submission(s, b);
             if (status != 0) {
                 return status;
@@ -1380,8 +1414,7 @@ int sync_tx(struct bladerf_sync *s,
                      * wait had no reason to fail in the first place. */
                     if (status == BLADERF_ERR_TIMEOUT &&
                         b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
-                        b->cons_i != BUFFER_MGMT_INVALID_INDEX &&
-                        b->status[b->cons_i] == SYNC_BUFFER_FULL) {
+                        b->cons_i != BUFFER_MGMT_INVALID_INDEX) {
                         if (reclaim_tx_submission(s, b) == 0 &&
                             b->submitter == SYNC_TX_SUBMITTER_FN) {
                             status = 0;
