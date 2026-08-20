@@ -73,6 +73,13 @@ struct lusb_stream_data {
     * libusb 1.0.19 for Windows. Further investigation required...
     */
     bool out_of_order_event;
+
+    /* Full transfers completed on this stream, so a stall can report how far
+     * the feed got before it stopped. */
+    size_t num_complete;
+
+    /* Report a stalled feed once per stream, not once per transfer. */
+    bool timeout_reported;
 };
 
 static inline struct bladerf_lusb * lusb_backend(struct bladerf *dev)
@@ -1068,13 +1075,28 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
      * status alone is easy to guess wrong about: a stalled TX feed shows up as
      * TIMED_OUT, never as a zero-length COMPLETED. Log what actually came
      * back so the next person does not have to instrument this again. */
-    if (transfer->status != LIBUSB_TRANSFER_COMPLETED ||
-        transfer->actual_length != (int)transfer->length) {
-        log_verbose("%s: %s transfer status %d, %d of %d bytes\n", __FUNCTION__,
+    if (transfer->status == LIBUSB_TRANSFER_COMPLETED &&
+        transfer->actual_length == (int)transfer->length) {
+        stream_data->num_complete++;
+    } else if (transfer->status == LIBUSB_TRANSFER_TIMED_OUT &&
+               !stream_data->timeout_reported) {
+        /* Once per stream, at a level people actually run with: a feed that
+         * stops does it after a fixed number of transfers, and that count is
+         * the first thing worth knowing about it. */
+        stream_data->timeout_reported = true;
+        log_warning("%s: %s transfer timed out after %u full transfers\n",
+                    __FUNCTION__,
+                    (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
+                        ? "TX" : "RX",
+                    (unsigned)stream_data->num_complete);
+    } else {
+        log_verbose("%s: %s transfer status %d, %d of %d bytes, after %u full "
+                    "transfers\n", __FUNCTION__,
                     (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
                         ? "TX" : "RX",
                     (int)transfer->status, transfer->actual_length,
-                    (int)transfer->length);
+                    (int)transfer->length,
+                    (unsigned)stream_data->num_complete);
     }
 
     /* Check to see if the transfer has been cancelled or errored */
@@ -1291,6 +1313,8 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
     stream_data->num_avail = 0;
     stream_data->i = 0;
     stream_data->out_of_order_event = false;
+    stream_data->num_complete = 0;
+    stream_data->timeout_reported = false;
 
     stream_data->transfers =
         malloc(num_transfers * sizeof(struct libusb_transfer *));

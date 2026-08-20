@@ -1254,6 +1254,11 @@ int sync_tx(struct bladerf_sync *s,
                 if (status == 0) {
                     s->state = SYNC_STATE_WAIT_FOR_BUFFER;
                     log_debug("%s: Worker is now running.\n", __FUNCTION__);
+                } else {
+                    log_warning("%s: worker did not reach RUNNING in %u ms: "
+                                "%s\n", __FUNCTION__,
+                                SYNC_WORKER_START_TIMEOUT_MS,
+                                bladerf_strerror(status));
                 }
                 break;
 
