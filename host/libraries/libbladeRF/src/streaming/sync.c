@@ -650,8 +650,14 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                     s->state = SYNC_STATE_WAIT_FOR_BUFFER;
                     log_debug("%s: Worker is now running.\n", __FUNCTION__);
                 } else {
-                    log_debug("%s: Failed to start worker, (%d)\n",
-                              __FUNCTION__, status);
+                    /* At debug level this was invisible in practice: the
+                     * caller then waits out its timeout and reports a
+                     * timeout, which reads like a device that went quiet
+                     * rather than a worker that never started. */
+                    log_warning("%s: worker did not reach RUNNING in %u ms: "
+                                "%s\n", __FUNCTION__,
+                                SYNC_WORKER_START_TIMEOUT_MS,
+                                bladerf_strerror(status));
                 }
                 break;
 
@@ -1064,22 +1070,39 @@ out:
  * buffer marked IN_FLIGHT forever. Which is exactly why this asks whether
  * anything is waiting, not how many transfers are out.
  */
+static unsigned int oldest_full_buffer(struct buffer_mgmt *b);
+
 static bool tx_submission_parked(struct buffer_mgmt *b)
 {
-    return b->submitter == SYNC_TX_SUBMITTER_CALLBACK &&
-           b->cons_i != BUFFER_MGMT_INVALID_INDEX;
+    if (b->submitter == SYNC_TX_SUBMITTER_CALLBACK) {
+        return b->cons_i != BUFFER_MGMT_INVALID_INDEX;
+    }
+
+    /* Duty is ours, but buffers are still waiting to go out.
+     *
+     * Reached after the duty comes back from the callback: the callback path
+     * shipped what it could and handed submission back, and sync_tx() then
+     * only ever submits the buffer prod_i points at - so anything that piled
+     * up while the duty was parked stays FULL, with no transfer in flight to
+     * bring a callback that would move it. Measured on hardware: submitter
+     * FN, 0 in flight, 26 of 64 buffers FULL, and sync_tx timing out.
+     */
+    return b->submitter == SYNC_TX_SUBMITTER_FN &&
+           oldest_full_buffer(b) != BUFFER_MGMT_INVALID_INDEX;
 }
 
 static unsigned int oldest_full_buffer(struct buffer_mgmt *b)
 {
     unsigned int i, idx;
 
-    if (b->cons_i == BUFFER_MGMT_INVALID_INDEX) {
-        return BUFFER_MGMT_INVALID_INDEX;
-    }
+    /* Where to start looking. cons_i names the buffer the callback was told
+     * to ship; with the duty back with us it is INVALID, and then the oldest
+     * data is just ahead of the producer. */
+    const unsigned int from = (b->cons_i == BUFFER_MGMT_INVALID_INDEX)
+                                  ? b->prod_i : b->cons_i;
 
     for (i = 0; i < b->num_buffers; i++) {
-        idx = (b->cons_i + i) % b->num_buffers;
+        idx = (from + i) % b->num_buffers;
         if (b->status[idx] == SYNC_BUFFER_FULL) {
             return idx;
         }
