@@ -594,8 +594,22 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
             case SYNC_STATE_RESET_BUF_MGMT:
                 MUTEX_LOCK(&b->lock);
                 /* When the RX stream starts up, it will submit the first T
-                 * transfers, so the consumer index must be reset to 0 */
-                b->cons_i = 0;
+                 * transfers, so the consumer index must be reset to 0.
+                 *
+                 * For TX the consumer index means the opposite thing: it names
+                 * the buffer the callback should ship out next, and
+                 * BUFFER_MGMT_INVALID_INDEX is how sync_init() says "nothing
+                 * is deferred yet". Resetting it to 0 here makes a restarted
+                 * TX worker believe buffer 0 is a deferred, full buffer, so
+                 * tx_callback submits a buffer the producer has not filled and
+                 * the ring accounting drifts from that point on.
+                 */
+                if ((s->stream_config.layout & BLADERF_DIRECTION_MASK) ==
+                    BLADERF_TX) {
+                    b->cons_i = BUFFER_MGMT_INVALID_INDEX;
+                } else {
+                    b->cons_i = 0;
+                }
                 MUTEX_UNLOCK(&b->lock);
                 /* The restarted stream begins a fresh timestamp sequence, so
                  * its first header must not be reported as a discontinuity. */
