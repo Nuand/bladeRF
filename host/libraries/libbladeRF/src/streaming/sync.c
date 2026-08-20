@@ -671,6 +671,31 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                             log_verbose("%s: buffer %u is ready to consume\n",
                                         __FUNCTION__, b->cons_i);
                         }
+                    } else {
+                        /* Go re-examine the worker instead of waiting on the
+                         * same buffer again.
+                         *
+                         * Leaving the state at WAIT_FOR_BUFFER makes the
+                         * timeout permanent whenever the worker is no longer
+                         * there to free anything: every later call re-enters
+                         * this branch, waits out the full timeout, and
+                         * returns the same error. The worker's START path
+                         * already knows how to recover -- it clears buffers
+                         * that were left IN_FLIGHT by a cancelled stream --
+                         * but it is only reachable through CHECK_WORKER, so
+                         * that recovery never runs.
+                         *
+                         * This is what turns one hiccup into a dead stream.
+                         * Measured on a bladeRF 2.0 micro xA4 at 15.36 MSps:
+                         * after enable_module(TX, false)/(true) the worker
+                         * failed to stop ("Timed out while stopping worker.
+                         * Canceling thread."), and from then on the feeding
+                         * thread submitted 0 buffers/s instead of 1917, with
+                         * a 1000 ms timeout on every sync_tx(). Downstream
+                         * the RFIC repeats its last sample, so it reads as a
+                         * dead transmitter rather than a stalled queue.
+                         */
+                        s->state = SYNC_STATE_CHECK_WORKER;
                     }
                 }
 
