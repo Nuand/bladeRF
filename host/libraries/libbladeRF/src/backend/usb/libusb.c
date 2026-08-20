@@ -1064,6 +1064,19 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         COND_SIGNAL(&stream->can_submit_buffer);
     }
 
+    /* A short or failed transfer says a lot about a stalled feed, and the
+     * status alone is easy to guess wrong about: a stalled TX feed shows up as
+     * TIMED_OUT, never as a zero-length COMPLETED. Log what actually came
+     * back so the next person does not have to instrument this again. */
+    if (transfer->status != LIBUSB_TRANSFER_COMPLETED ||
+        transfer->actual_length != (int)transfer->length) {
+        log_verbose("%s: %s transfer status %d, %d of %d bytes\n", __FUNCTION__,
+                    (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX
+                        ? "TX" : "RX",
+                    (int)transfer->status, transfer->actual_length,
+                    (int)transfer->length);
+    }
+
     /* Check to see if the transfer has been cancelled or errored */
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         /* Errored out for some reason .. */
@@ -1487,6 +1500,14 @@ static int lusb_deinit_stream(void *driver, struct bladerf_stream *stream)
     struct lusb_stream_data *stream_data = stream->backend_data;
 
     for (i = 0; i < stream_data->num_transfers; i++) {
+        if (stream_data->transfer_status[i] != TRANSFER_AVAIL &&
+            stream_data->transfer_status[i] != TRANSFER_UNINITIALIZED) {
+            log_warning("deinit_stream: transfer %u still %d, num_avail %u of "
+                        "%u\n", (unsigned)i,
+                        (int)stream_data->transfer_status[i],
+                        (unsigned)stream_data->num_avail,
+                        (unsigned)stream_data->num_transfers);
+        }
         libusb_free_transfer(stream_data->transfers[i]);
         stream_data->transfers[i] = NULL;
         stream_data->transfer_status[i] = TRANSFER_UNINITIALIZED;
