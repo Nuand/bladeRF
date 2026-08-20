@@ -59,6 +59,12 @@ architecture arch of fx3_gpif_wedge_tb is
     signal freeze        : std_logic := '0';
     signal tx_dis        : std_logic := '0';
     signal tx_req_gone   : std_logic := '0';
+    signal rx_req_gone   : std_logic := '0';
+    signal rx_full       : std_logic := '0';
+
+    -- 2048 words is enough for a GPIF burst but below rx_fifo_critical;
+    -- rx_full pushes it over that line to flip the arbiter's priority.
+    signal rx_usedw      : std_logic_vector(USEDW-1 downto 0);
 
     -- FX3 handshake, active low on the wire
     alias dma0_rx_ack   is ctl_out(0);
@@ -112,9 +118,7 @@ begin
             rx_fifo_read        => rx_fifo_read,
             rx_fifo_full        => '0',
             rx_fifo_empty       => '0',
-            -- enough for a GPIF burst but below rx_fifo_critical, so the
-            -- arbiter's TX-first priority actually gets exercised
-            rx_fifo_usedw       => std_logic_vector(to_unsigned(2048, USEDW)),
+            rx_fifo_usedw       => rx_usedw,
             rx_fifo_data        => x"deadbeef",
 
             rx_meta_fifo_read   => rx_meta_read,
@@ -130,7 +134,10 @@ begin
     ctl_in(5)  <= not tx_dis;               -- tx enabled
     ctl_in(6)  <= '0' when (freeze = '1' or dma0_rx_ack = '1' or
                            dma3_tx_ack = '1') else '1';
-    ctl_in(8)  <= '0';                      -- rx0 requesting (active low)
+    rx_usedw   <= std_logic_vector(to_unsigned(7000, USEDW)) when rx_full = '1'
+                  else std_logic_vector(to_unsigned(2048, USEDW));
+
+    ctl_in(8)  <= rx_req_gone;              -- rx0 requesting (active low)
     ctl_in(10) <= '1';                      -- tx2 never used by the firmware
     ctl_in(11) <= tx_req_gone;              -- tx3 requesting (active low)
     ctl_in(12) <= '1';                      -- rx1 never used
@@ -149,6 +156,7 @@ begin
 
     stim : process
         variable tx_acks    : natural := 0;
+        variable waited     : natural := 0;
         variable idle_seen  : natural := 0;
         variable stuck      : natural := 0;
         constant WATCHDOG   : natural := 4000;
@@ -208,6 +216,50 @@ begin
                 wait until rising_edge(pclk);
             end loop;
             tx_req_gone <= '0';
+        elsif SCENARIO = 7 then
+            -- RX crosses the TX transaction: the host reading RX makes the
+            -- FX3 raise and drop its RX request while a TX burst is being
+            -- acked. This is the condition the wedge needs on hardware - TX
+            -- alone never wedges, TX with RX being read does.
+            -- bounded: a disturbance loop that waits on an ack forever would
+            -- hang the bench instead of reporting the wedge it is looking for
+            for k in 1 to 12 loop
+                waited := 0;
+                while dma3_tx_ack = '0' and waited < 4000 loop
+                    wait until rising_edge(pclk);
+                    waited := waited + 1;
+                end loop;
+                exit when waited >= 4000;
+                rx_req_gone <= '1';
+                for i in 1 to 3 loop
+                    wait until rising_edge(pclk);
+                end loop;
+                rx_req_gone <= '0';
+                waited := 0;
+                while dma0_rx_ack = '0' and waited < 4000 loop
+                    wait until rising_edge(pclk);
+                    waited := waited + 1;
+                end loop;
+                exit when waited >= 4000;
+                rx_req_gone <= '1';
+                wait until rising_edge(pclk);
+                rx_req_gone <= '0';
+            end loop;
+            report "scenario 7: disturbance loop ran " &
+                   integer'image(waited) & " idle cycles at exit"
+                   severity note;
+        elsif SCENARIO = 8 then
+            -- RX FIFO crosses the critical line mid-TX, which flips the
+            -- arbiter's priority away from TX in the same cycle it is
+            -- servicing one.
+            for k in 1 to 12 loop
+                wait until rising_edge(pclk) and dma3_tx_ack = '1';
+                rx_full <= '1';
+                for i in 1 to 5 loop
+                    wait until rising_edge(pclk);
+                end loop;
+                rx_full <= '0';
+            end loop;
         elsif SCENARIO = 5 then
             -- same, but the drop lands during the metadata phase
             wait until rising_edge(pclk) and dma3_tx_ack = '1';
