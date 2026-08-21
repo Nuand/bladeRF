@@ -116,7 +116,7 @@ static inline int posix_cond_timedwait(pthread_cond_t *c,
         ts.tv_sec++;
         ts.tv_nsec -= 1000000000;
     }
-    return pthread_cond_timedwait(c, m, &ts) == ETIMEDOUT ? -1 : 0;
+    return pthread_cond_timedwait(c, m, &ts);
 }
 #define COND_TIMED_WAIT(c, m, t) posix_cond_timedwait(c, m, t)
 
