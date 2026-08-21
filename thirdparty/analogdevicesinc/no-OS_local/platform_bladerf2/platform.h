@@ -44,8 +44,12 @@
 /******************************************************************************/
 
 #include "stdint.h"
-#include "util.h"
+/* Renamed upstream: util.h became ad9361_util.h when the driver moved to
+ * drivers/rf-transceiver/ad9361/. */
+#include "ad9361_util.h"
 #include "config.h"
+#include "no_os_gpio.h"
+#include "no_os_spi.h"
 
 /******************************************************************************/
 /********************** Macros and Constants Definitions **********************/
@@ -143,27 +147,19 @@ enum adc_data_sel {
 /************************ Functions Declarations ******************************/
 /******************************************************************************/
 
-int spi_init(struct ad9361_rf_phy *phy, void *userdata);
-int spi_write(struct spi_device *spi, uint16_t cmd, const uint8_t *buf,
-              unsigned int len);
-int spi_read(struct spi_device *spi, uint16_t cmd, uint8_t *buf,
-             unsigned int len);
-
-int gpio_init(struct ad9361_rf_phy *phy, void *userdata);
-bool gpio_is_valid(struct gpio_device *gpio, int32_t number);
-int gpio_set_value(struct gpio_device *gpio, int32_t number, bool value);
+/* SPI and GPIO reach the driver through the no-OS platform ops tables now, in
+ * bladerf2_spi.c and bladerf2_gpio.c. The driver no longer declares
+ * struct spi_device or struct gpio_device, so the old accessors are gone. */
+extern const struct no_os_spi_platform_ops bladerf2_spi_ops;
+extern const struct no_os_gpio_platform_ops bladerf2_gpio_ops;
 
 void udelay(unsigned long usecs);
 void mdelay(unsigned long msecs);
+void no_os_udelay(uint32_t usecs);
+void no_os_mdelay(uint32_t msecs);
 unsigned long msleep_interruptible(unsigned int msecs);
 
 #ifndef AXI_ADC_NOT_PRESENT
-int axiadc_init(struct ad9361_rf_phy *phy, void *userdata);
-int axiadc_post_setup(struct ad9361_rf_phy *phy);
-int axiadc_read(struct axiadc_state *st, uint32_t addr, uint32_t *data);
-int axiadc_write(struct axiadc_state *st, uint32_t addr, uint32_t data);
-int axiadc_set_pnsel(struct axiadc_state *st, unsigned int channel, enum adc_pn_sel sel);
-int axiadc_idelay_set(struct axiadc_state *st, unsigned int lane, unsigned int val);
 #endif
 
 #endif

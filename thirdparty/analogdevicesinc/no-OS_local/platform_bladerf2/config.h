@@ -61,7 +61,11 @@
 //#define PICOZED_SDR
 //#define PICOZED_SDR_CMOS
 //#define CAPTURE_SCRIPT
-//#define AXI_ADC_NOT_PRESENT
+/* The bladeRF has no AXI ADC/DAC core: samples reach the host over USB, so
+ * the driver's AXI paths must stay out. The older driver revision this tree
+ * used to carry had no such paths at all, which is why the switch was left
+ * off; the current one guards them with this symbol. */
+#define AXI_ADC_NOT_PRESENT
 //#define TDD_SWITCH_STATE_EXAMPLE
 
 #endif

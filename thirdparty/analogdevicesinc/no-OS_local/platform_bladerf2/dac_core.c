@@ -45,7 +45,8 @@
 
 #include "dac_core.h"
 #include "platform.h"
-#include "util.h"
+/* Renamed upstream: util.h became ad9361_util.h. */
+#include "ad9361_util.h"
 
 /******************************************************************************/
 /********************** Macros and Constants Definitions **********************/
