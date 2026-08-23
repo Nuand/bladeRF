@@ -68,6 +68,11 @@ struct lusb_stream_data {
     struct libusb_transfer **transfers; /* Array of transfer metadata */
     transfer_status *transfer_status;   /* Status of each transfer */
 
+    /* # of transfers that completed with a full buffer on this stream.
+     * Reported when a transfer fails: zero means the device never produced
+     * anything, nonzero means it stopped after having worked. */
+    size_t num_complete;
+
    /* Warn the first time we get a transfer callback out of order.
     * This shouldn't happen normally, but we've seen it intermittently on
     * libusb 1.0.19 for Windows. Further investigation required...
@@ -1057,6 +1062,11 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         COND_SIGNAL(&stream->can_submit_buffer);
     }
 
+    if (transfer->status == LIBUSB_TRANSFER_COMPLETED &&
+        transfer->actual_length == (int)transfer->length) {
+        stream_data->num_complete++;
+    }
+
     /* Check to see if the transfer has been cancelled or errored */
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         /* Errored out for some reason .. */
@@ -1086,9 +1096,19 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 break;
 
             case LIBUSB_TRANSFER_TIMED_OUT:
-                log_error("Transfer timed out for %s buffer %p\n\r",
+                /* How much of the buffer arrived, and whether anything ever
+                 * arrived on this stream, separates two very different
+                 * faults that both surface as BLADERF_ERR_TIMEOUT: a device
+                 * that never started producing, and one that stopped
+                 * mid-stream. Without these numbers the caller only sees
+                 * "timed out" and has to instrument the library to tell them
+                 * apart. */
+                log_error("Transfer timed out for %s buffer %p: %d of %d "
+                          "bytes, %u transfer(s) completed on this stream\n\r",
                           (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX ? "TX" : "RX",
-                          transfer->buffer);
+                          transfer->buffer, transfer->actual_length,
+                          (int)transfer->length,
+                          (unsigned)stream_data->num_complete);
                 stream->error_code = BLADERF_ERR_TIMEOUT;
                 break;
 
@@ -1267,6 +1287,7 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
     stream_data->num_avail = 0;
     stream_data->i = 0;
     stream_data->out_of_order_event = false;
+    stream_data->num_complete = 0;
 
     stream_data->transfers =
         malloc(num_transfers * sizeof(struct libusb_transfer *));
