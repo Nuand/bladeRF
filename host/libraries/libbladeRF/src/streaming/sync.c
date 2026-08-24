@@ -442,10 +442,20 @@ int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms)
     return status;
 }
 
-/* Returns # of timestamps (or time steps) left in a message */
+/* Returns # of timestamps (or time steps) left in a message.
+ *
+ * curr_msg_off counts SAMPLES (it is advanced by samples_to_copy and
+ * compared against samples_per_msg), so it has to be subtracted before
+ * converting to time steps. Subtracting it from samples_per_msg /
+ * samples_per_ts mixed the units: correct for single-channel layouts
+ * where samples_per_ts == 1, but in X2 mode the unsigned subtraction
+ * underflowed once the offset passed half a message, and the huge
+ * result sent the seek logic down the wrong branch. */
 static inline unsigned int ts_remaining(struct bladerf_sync *s)
 {
-    size_t ret = s->meta.samples_per_msg / s->meta.samples_per_ts - s->meta.curr_msg_off;
+    size_t ret = (s->meta.samples_per_msg - s->meta.curr_msg_off) /
+                 s->meta.samples_per_ts;
+    assert(s->meta.curr_msg_off <= s->meta.samples_per_msg);
     assert(ret <= UINT_MAX);
 
     return (unsigned int) ret;
