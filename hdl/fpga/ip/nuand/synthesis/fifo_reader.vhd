@@ -224,7 +224,14 @@ begin
         meta_future.meta_pkt_eop <= '0';
         meta_future.meta_fifo_empty <= meta_fifo_empty;
         meta_future.meta_fifo_data  <= meta_fifo_data;
-        meta_time := unsigned(meta_current.meta_fifo_data(95 downto 32)) - 1;
+        -- Use the header the meta FIFO is presenting now, not the copy
+        -- registered on the previous cycle. That copy is all zeros out of
+        -- reset, and "0 - 1" wraps to all ones -- which is exactly the
+        -- META_NOW sentinel. META_WAIT then sees meta_p_time =
+        -- MAX_TIMESTAMP and opens the gate immediately, so a burst
+        -- scheduled in the future is emitted at once and nothing is left
+        -- to send when its timestamp actually arrives.
+        meta_time := unsigned(meta_fifo_data(95 downto 32)) - 1;
         meta_future.meta_p_time_r <= meta_time;
 
         case meta_current.state is
