@@ -305,6 +305,8 @@ int sync_init(struct bladerf_sync *sync,
 
             sync->meta.msg_timestamp = 0;
             sync->meta.msg_flags = 0;
+            sync->meta.have_timestamp = false;
+            sync->buf_mgmt.overrun_pending = false;
 
             sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
@@ -516,11 +518,22 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
         } else {
             user_meta->status = 0;
             target_timestamp = user_meta->timestamp;
+
+            /* Report an overrun the worker recovered from. Its recovery
+             * resubmits buffers, so the gap is not visible in the message
+             * timestamps this call will see. */
+            MUTEX_LOCK(&s->buf_mgmt.lock);
+            if (s->buf_mgmt.overrun_pending) {
+                user_meta->status |= BLADERF_META_STATUS_OVERRUN;
+                s->buf_mgmt.overrun_pending = false;
+            }
+            MUTEX_UNLOCK(&s->buf_mgmt.lock);
         }
     }
 
     b = &s->buf_mgmt;
     samples_per_buffer = s->stream_config.samples_per_buffer;
+    log_verbose("%s: stream format=%d state=%d\n", __FUNCTION__, (int)s->stream_config.format, (int)s->state);
 
     log_verbose("%s: Requests %u samples.\n", __FUNCTION__, num_samples);
 
@@ -562,6 +575,9 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                  * transfers, so the consumer index must be reset to 0 */
                 b->cons_i = 0;
                 MUTEX_UNLOCK(&b->lock);
+                /* The restarted stream begins a fresh timestamp sequence, so
+                 * its first header must not be reported as a discontinuity. */
+                s->meta.have_timestamp = false;
                 log_debug("%s: Reset buf_mgmt consumer index\n", __FUNCTION__);
                 s->state = SYNC_STATE_START_WORKER;
                 break;
@@ -638,6 +654,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         assert(!"Invalid stream format");
                         status = BLADERF_ERR_UNEXPECTED;
                 }
+                log_verbose("%s: BUFFER_READY -> state=%d (format=%d)\n", __FUNCTION__, (int)s->state, (int)s->stream_config.format);
 
                 MUTEX_UNLOCK(&b->lock);
                 break;
@@ -716,13 +733,23 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                         s->meta.curr_msg_off = 0;
 
-                        /* We've encountered a discontinuity and need to return
-                         * what we have so far, setting the status flags */
-                        if (copied_data &&
+                        /* We've encountered a discontinuity. Report it via
+                         * the status flags whether or not samples have been
+                         * copied yet: a gap that lands on the first message
+                         * of a read is still a gap, and the caller has no
+                         * other way to learn about it.
+                         *
+                         * Only the early return is conditional. With data
+                         * already copied we must hand it back before the
+                         * discontinuity; with none copied there is nothing
+                         * to preserve, so the read continues and returns
+                         * contiguous samples that start after the gap.
+                         */
+                        if (s->meta.have_timestamp &&
                             s->meta.msg_timestamp != s->meta.curr_timestamp) {
 
                             user_meta->status |= BLADERF_META_STATUS_OVERRUN;
-                            exit_early = true;
+                            exit_early = copied_data;
                             log_debug("Sample discontinuity detected @ "
                                       "buffer %u, message %u: Expected t=%llu, "
                                       "got t=%llu\n",
@@ -739,6 +766,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         }
 
                         s->meta.curr_timestamp = s->meta.msg_timestamp;
+                        s->meta.have_timestamp = true;
                         s->meta.state = SYNC_META_STATE_SAMPLES;
                         break;
 
