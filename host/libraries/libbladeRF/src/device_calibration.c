@@ -115,9 +115,13 @@ int gain_cal_csv_to_bin(struct bladerf *dev, const char *csv_path, const char *b
     if (!csvFile || !binaryFile) {
         status = BLADERF_ERR_NO_FILE;
         if (getcwd(current_dir, sizeof(current_dir)) != NULL) {
-            log_error("Error opening calibration file: %s\n", strcat(current_dir, csv_path));
+            /* strcat() here appends a caller-supplied path of arbitrary
+             * length to a buffer already holding the working directory,
+             * overflowing it for long paths. Print the two parts instead. */
+            log_error("Error opening calibration file: %s/%s\n",
+                      current_dir, csv_path);
         } else {
-            log_error("Error opening calibration file\n");
+            log_error("Error opening calibration file: %s\n", csv_path);
         }
         goto error;
     }
