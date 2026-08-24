@@ -51,6 +51,14 @@ option(BUILD_DOCUMENTATION
         "Enable build and install of manpages and other documentation."
         OFF)
 
+option(BUILD_BLADERF_UTILITIES
+        "Build bladeRF utilities (e.g. bladeRF-cli)."
+        ON)
+
+if(BLADERF_OS_ANDROID)
+    set(BUILD_BLADERF_UTILITIES OFF)
+endif()
+
 option(TREAT_WARNINGS_AS_ERRORS
        "Treat compiler warnings as errors."
        ON)
@@ -86,7 +94,9 @@ option(BUILD_AD936X_DEBUG
        OFF)
  # We do this prior to the rest of host/common, as the compile options are
 # going to be different.
-add_subdirectory(common/thirdparty/ad936x)
+if(BUILD_AD936X)
+    add_subdirectory(common/thirdparty/ad936x)
+endif(BUILD_AD936X)
 
 ################################################################################
 # Compiler configuration
@@ -161,6 +171,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR CYGWIN)
         endif()
     endif(NOT CMAKE_CROSSCOMPILING AND NOT CYGWIN)
 
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Android")
+    set(BLADERF_OS_ANDROID 1)
+
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
     set(BLADERF_OS_FREEBSD 1)
 
@@ -211,7 +224,11 @@ endif()
 ################################################################################
 add_subdirectory(libraries)
 add_subdirectory(misc)
-add_subdirectory(utilities)
+
+if(BUILD_BLADERF_UTILITIES)
+    add_subdirectory(utilities)
+endif()
+
 add_subdirectory(common)
 
 ################################################################################

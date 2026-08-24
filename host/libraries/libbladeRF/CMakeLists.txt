@@ -266,7 +266,7 @@ if(ENABLE_BACKEND_LIBUSB)
         else()
             message(WARNING "Not checking libbladeRF/libusb compatibility because LIBUSB_VERSION is not defined.")
         endif()
-        set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS})
+        set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS} "${LIBUSB_INCLUDE_DIR}")
     endif(NOT LIBUSB_FOUND)
 endif(ENABLE_BACKEND_LIBUSB)
 
@@ -291,7 +291,8 @@ if(BUILD_AD936X)
     set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ad936x)
 endif(BUILD_AD936X)
 
-include_directories(${LIBBLADERF_INCLUDES})
+message(STATUS "libbladeRF includes: ${LIBBLADERF_INCLUDES}")
+include_directories(${LIBBLADERF_INCLUDES} )
 
 
 ################################################################################
