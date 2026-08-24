@@ -2764,6 +2764,14 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev,
  * @param[in]   num_transfers   The number of active USB transfers that may be
  *                              in-flight at any given time. If unsure of what
  *                              to use here, try values of 4, 8, or 16.
+ *
+ *                              Each in-flight transfer is pinned by the
+ *                              kernel, so `num_transfers * buffer_size` must
+ *                              fit within the usbfs memory limit (16 MiB by
+ *                              default on Linux, see
+ *                              /sys/module/usbcore/parameters/usbfs_memory_mb).
+ *                              Configurations that exceed it are rejected
+ *                              with ::BLADERF_ERR_INVAL.
  * @param[in]   stream_timeout  Timeout (milliseconds) for transfers in the
  *                              underlying data stream.
  *
