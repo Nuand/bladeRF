@@ -1439,19 +1439,34 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
     pm = _get_band_port_map_by_freq(ch, freq);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        if (board_data->quick_tune_tx_profile < NUM_BBP_FASTLOCK_PROFILES) {
-            /* Assign Nios and RFFE profile numbers */
-            quick_tune->nios_profile = board_data->quick_tune_tx_profile++;
-            log_verbose("Quick tune assigned Nios TX fast lock index: %u\n",
-                        quick_tune->nios_profile);
-            quick_tune->rffe_profile =
-                quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
-            log_verbose("Quick tune assigned RFFE TX fast lock index: %u\n",
-                        quick_tune->rffe_profile);
-        } else {
-            log_error("Reached maximum number of TX quick tune profiles.");
-            return BLADERF_ERR_UNEXPECTED;
-        }
+        /* Profile indices wrap instead of running out.
+         *
+         * The counter only ever incremented, and was reset in exactly one
+         * place: board initialisation. An application that keeps asking for
+         * quick tunes therefore had a hard budget of 256 for the lifetime of
+         * the device handle, after which every further call failed with
+         * BLADERF_ERR_UNEXPECTED and no way to recover short of reopening.
+         *
+         * That budget is not a hardware limit on how many retune targets may
+         * exist over time. The RFIC holds NUM_RFFE_FASTLOCK_PROFILES slots
+         * and the Nios holds NUM_BBP_FASTLOCK_PROFILES; both are caches that
+         * the code already overwrites - the RFFE index is assigned modulo the
+         * slot count, so profile 8 has always overwritten profile 0. Letting
+         * the Nios index wrap in the same way makes the two consistent and
+         * keeps a long-running sweep working.
+         *
+         * Measured on a bladeRF 2.0 micro xA4 sweeping 70 MHz - 6 GHz with
+         * 4700 stops: the counter reached 256 after roughly 165-229 s and
+         * every subsequent retune to a new frequency failed.
+         */
+        quick_tune->nios_profile =
+            board_data->quick_tune_tx_profile++ % NUM_BBP_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned Nios TX fast lock index: %u\n",
+                    quick_tune->nios_profile);
+        quick_tune->rffe_profile =
+            quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned RFFE TX fast lock index: %u\n",
+                    quick_tune->rffe_profile);
 
         /* Create a fast lock profile in the RFIC */
         CHECK_STATUS(
@@ -1468,19 +1483,15 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         quick_tune->spdt = (pm->spdt << 6) | (pm->spdt << 4);
 
     } else {
-        if (board_data->quick_tune_rx_profile < NUM_BBP_FASTLOCK_PROFILES) {
-            /* Assign Nios and RFFE profile numbers */
-            quick_tune->nios_profile = board_data->quick_tune_rx_profile++;
-            log_verbose("Quick tune assigned Nios RX fast lock index: %u\n",
-                        quick_tune->nios_profile);
-            quick_tune->rffe_profile =
-                quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
-            log_verbose("Quick tune assigned RFFE RX fast lock index: %u\n",
-                        quick_tune->rffe_profile);
-        } else {
-            log_error("Reached maximum number of RX quick tune profiles.");
-            return BLADERF_ERR_UNEXPECTED;
-        }
+        /* Profile indices wrap instead of running out; see the TX branch. */
+        quick_tune->nios_profile =
+            board_data->quick_tune_rx_profile++ % NUM_BBP_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned Nios RX fast lock index: %u\n",
+                    quick_tune->nios_profile);
+        quick_tune->rffe_profile =
+            quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned RFFE RX fast lock index: %u\n",
+                    quick_tune->rffe_profile);
 
         /* Create a fast lock profile in the RFIC */
         CHECK_STATUS(
@@ -1533,9 +1544,39 @@ static int bladerf2_schedule_retune(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->backend->retune2(dev, ch, timestamp, quick_tune->nios_profile,
-                                 quick_tune->rffe_profile, quick_tune->port,
-                                 quick_tune->spdt);
+    CHECK_STATUS(dev->backend->retune2(dev, ch, timestamp,
+                                       quick_tune->nios_profile,
+                                       quick_tune->rffe_profile,
+                                       quick_tune->port, quick_tune->spdt));
+
+    /* The Nios recalls the profile by writing the RFIC directly, which
+     * leaves the part in fastlock mode with FORCE_ALC_ENABLE asserted.
+     * ad9361_fastlock_prepare() cannot undo that on its own: it is gated
+     * on this driver's own bookkeeping, and a recall performed by the
+     * FPGA never touches it. Ownership of the RFPLL therefore returns to
+     * host tuning with forced controls still active.
+     *
+     * Measured on a bladeRF 2.0 micro xA4, interleaving a recall with
+     * ordinary tuning every fifth stop of a 242-point sweep:
+     *
+     *   without this exit   49 lock failures in 643 tunes, first at 280
+     *   with it              1 lock failure  in 702 tunes, first at 495
+     *
+     * Without the exit the failures form a series that never recovers,
+     * and 0x247 reads 0x40 throughout: the charge pump has saturated
+     * low. Three runs with it in place gave zero consecutive failures,
+     * and confirmed the leak occurs on every recall without exception.
+     *
+     * Immediate scheduling is the only case handled here. A retune
+     * scheduled for a future timestamp completes inside the FPGA long
+     * after this call returns, so the exit has to happen there instead.
+     */
+    if (BLADERF_RETUNE_NOW == timestamp) {
+        CHECK_AD936X(ad9361_fastlock_exit_foreign(
+            board_data->phy, BLADERF_CHANNEL_IS_TX(ch)));
+    }
+
+    return 0;
 }
 
 static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev,

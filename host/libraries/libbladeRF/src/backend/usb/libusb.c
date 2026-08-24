@@ -1006,10 +1006,17 @@ static inline void cancel_all_transfers(struct bladerf_stream *stream)
     for (i = 0; i < stream_data->num_transfers; i++) {
         if (stream_data->transfer_status[i] == TRANSFER_IN_FLIGHT) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
-            if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
+            if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND &&
+                status != LIBUSB_ERROR_NO_DEVICE) {
                 log_error("Error canceling transfer (%d): %s\n",
                         status, libusb_error_name(status));
             } else {
+                /* LIBUSB_ERROR_NO_DEVICE is expected when the device has
+                 * been unplugged or reset: the transfer cannot be cancelled
+                 * because the device is gone. libusb still delivers the
+                 * completion callback, so mark it pending like any other
+                 * cancellation instead of logging an error per transfer.
+                 */
                 stream_data->transfer_status[i] = TRANSFER_CANCEL_PENDING;
             }
         }
@@ -1393,7 +1400,8 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
     while (stream->state != STREAM_DONE) {
         status = libusb_handle_events_timeout(lusb->context, &tv);
 
-        if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
+        if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED &&
+            status != LIBUSB_ERROR_TIMEOUT) {
             log_warning("unexpected value from events processing: "
                         "%d: %s\n", status, libusb_error_name(status));
             status = error_conv(status);

@@ -219,8 +219,16 @@ static void *rx_callback(struct bladerf *dev,
                 log_verbose("%s worker: delaying submission while reorder "
                             "queue drains\n", worker2str(s));
             } else {
-                /* TODO propagate back the RX Overrun to the sync_rx() caller */
                 log_debug("RX overrun @ buffer %u\r\n", samples_idx);
+
+                /* Recovery resubmits buffers, which leaves a gap in the
+                 * sample stream. Record it so the next bladerf_sync_rx()
+                 * can report BLADERF_META_STATUS_OVERRUN to the caller. */
+                b->overrun_pending = true;
+                /* The buffers that are full right now predate the gap;
+                 * flag them so the consumer resumes at the live edge
+                 * instead of reading history first. */
+                b->stale_pending = true;
 
                 next_buf = samples;
                 b->resubmit_count = s->stream_config.num_xfers - 1;
@@ -379,7 +387,7 @@ int sync_worker_init(struct bladerf_sync *s)
 
     /* Wait until the worker thread has initialized and is ready to go */
     status =
-        sync_worker_wait_for_state(s->worker, SYNC_WORKER_STATE_IDLE, 1000);
+        sync_worker_wait_for_state(s->worker, SYNC_WORKER_STATE_IDLE, 10000);
     if (status != 0) {
         log_debug("%s worker: sync_worker_wait_for_state failed: %d\n",
                   worker2str(s), status);

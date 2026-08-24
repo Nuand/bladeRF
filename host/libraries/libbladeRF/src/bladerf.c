@@ -1117,6 +1117,7 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
         if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
             log_error("bladeRF 2.0 required for 8bit format\n");
+            MUTEX_UNLOCK(&dev->lock);
             return BLADERF_ERR_UNSUPPORTED;
         }
     }
@@ -1216,6 +1217,7 @@ int bladerf_sync_config(struct bladerf *dev,
     if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
         if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
             log_error("bladeRF 2.0 required for 8bit format\n");
+            MUTEX_UNLOCK(&dev->lock);
             return BLADERF_ERR_UNSUPPORTED;
         }
     }
@@ -2234,6 +2236,12 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
     }
 
     if (cal_file_loc != NULL) {
+        if (strlen(cal_file_loc) >= filename_len) {
+            log_error("Gain calibration path is too long (%zu >= %zu)\n",
+                      strlen(cal_file_loc), filename_len);
+            status = BLADERF_ERR_INVAL;
+            goto error;
+        }
         strcpy(filename, cal_file_loc);
     } else {
         log_debug("No calibration file specified, using serial number\n");
@@ -2256,6 +2264,10 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
 
     /** Convert to binary format if CSV */
     full_path_bin = (char*)malloc(strlen(full_path) + 1);
+    if (full_path_bin == NULL) {
+        status = BLADERF_ERR_MEM;
+        goto error;
+    }
     strcpy(full_path_bin, full_path);
     ext = strstr(full_path_bin, ".csv");
     if (ext) {

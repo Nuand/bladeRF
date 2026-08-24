@@ -305,6 +305,9 @@ int sync_init(struct bladerf_sync *sync,
 
             sync->meta.msg_timestamp = 0;
             sync->meta.msg_flags = 0;
+            sync->meta.have_timestamp = false;
+            sync->buf_mgmt.overrun_pending = false;
+            sync->buf_mgmt.stale_pending = false;
 
             sync_reset_sequence_tracking(&sync->buf_mgmt, num_transfers);
 
@@ -442,10 +445,20 @@ int sync_prime_stream(struct bladerf_sync *sync, unsigned int timeout_ms)
     return status;
 }
 
-/* Returns # of timestamps (or time steps) left in a message */
+/* Returns # of timestamps (or time steps) left in a message.
+ *
+ * curr_msg_off counts SAMPLES (it is advanced by samples_to_copy and
+ * compared against samples_per_msg), so it has to be subtracted before
+ * converting to time steps. Subtracting it from samples_per_msg /
+ * samples_per_ts mixed the units: correct for single-channel layouts
+ * where samples_per_ts == 1, but in X2 mode the unsigned subtraction
+ * underflowed once the offset passed half a message, and the huge
+ * result sent the seek logic down the wrong branch. */
 static inline unsigned int ts_remaining(struct bladerf_sync *s)
 {
-    size_t ret = s->meta.samples_per_msg / s->meta.samples_per_ts - s->meta.curr_msg_off;
+    size_t ret = (s->meta.samples_per_msg - s->meta.curr_msg_off) /
+                 s->meta.samples_per_ts;
+    assert(s->meta.curr_msg_off <= s->meta.samples_per_msg);
     assert(ret <= UINT_MAX);
 
     return (unsigned int) ret;
@@ -516,11 +529,22 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
         } else {
             user_meta->status = 0;
             target_timestamp = user_meta->timestamp;
+
+            /* Report an overrun the worker recovered from. Its recovery
+             * resubmits buffers, so the gap is not visible in the message
+             * timestamps this call will see. */
+            MUTEX_LOCK(&s->buf_mgmt.lock);
+            if (s->buf_mgmt.overrun_pending) {
+                user_meta->status |= BLADERF_META_STATUS_OVERRUN;
+                s->buf_mgmt.overrun_pending = false;
+            }
+            MUTEX_UNLOCK(&s->buf_mgmt.lock);
         }
     }
 
     b = &s->buf_mgmt;
     samples_per_buffer = s->stream_config.samples_per_buffer;
+    log_verbose("%s: stream format=%d state=%d\n", __FUNCTION__, (int)s->stream_config.format, (int)s->state);
 
     log_verbose("%s: Requests %u samples.\n", __FUNCTION__, num_samples);
 
@@ -562,6 +586,9 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                  * transfers, so the consumer index must be reset to 0 */
                 b->cons_i = 0;
                 MUTEX_UNLOCK(&b->lock);
+                /* The restarted stream begins a fresh timestamp sequence, so
+                 * its first header must not be reported as a discontinuity. */
+                s->meta.have_timestamp = false;
                 log_debug("%s: Reset buf_mgmt consumer index\n", __FUNCTION__);
                 s->state = SYNC_STATE_START_WORKER;
                 break;
@@ -586,6 +613,45 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
             case SYNC_STATE_WAIT_FOR_BUFFER:
                 MUTEX_LOCK(&b->lock);
+
+                /* An overrun means every buffer that is full right now was
+                 * produced BEFORE the gap: the worker stopped storing when
+                 * the ring filled, so this backlog is the oldest data, not
+                 * the newest. Drop it and resume at the live edge. Without
+                 * this, the first (num_buffers - num_transfers) reads after
+                 * a consumer stall return history, and with a non-metadata
+                 * format nothing marks it as such. In this state cons_i is
+                 * never PARTIAL, so the contiguous FULL run is safe to walk;
+                 * the producer resumes storing at the slots freed here.
+                 *
+                 * Metadata formats are exempt: their consumers see the gap
+                 * in the timestamps and may legitimately want the backlog -
+                 * a scheduled capture seeks THROUGH these buffers to reach
+                 * its target timestamp, and dropping them under that seek
+                 * loses the samples the caller asked for (measured: a sweep
+                 * that overruns on every stop went from hundreds of
+                 * detections to zero with an unconditional drop here). */
+                if (b->stale_pending &&
+                    s->stream_config.format != BLADERF_FORMAT_SC16_Q11_META &&
+                    s->stream_config.format != BLADERF_FORMAT_SC8_Q7_META &&
+                    s->stream_config.format != BLADERF_FORMAT_PACKET_META) {
+                    unsigned int dropped = 0;
+
+                    while (b->status[b->cons_i] == SYNC_BUFFER_FULL &&
+                           dropped < b->num_buffers) {
+                        b->status[b->cons_i] = SYNC_BUFFER_EMPTY;
+                        b->cons_i = (b->cons_i + 1) % b->num_buffers;
+                        dropped++;
+                    }
+
+                    b->stale_pending = false;
+
+                    if (dropped != 0) {
+                        log_debug("%s: dropped %u stale buffer%s after "
+                                  "overrun\n", __FUNCTION__, dropped,
+                                  1 == dropped ? "" : "s");
+                    }
+                }
 
                 /* Check the buffer state, as the worker may have produced one
                  * since we last queried the status */
@@ -638,6 +704,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         assert(!"Invalid stream format");
                         status = BLADERF_ERR_UNEXPECTED;
                 }
+                log_verbose("%s: BUFFER_READY -> state=%d (format=%d)\n", __FUNCTION__, (int)s->state, (int)s->stream_config.format);
 
                 MUTEX_UNLOCK(&b->lock);
                 break;
@@ -716,13 +783,23 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
 
                         s->meta.curr_msg_off = 0;
 
-                        /* We've encountered a discontinuity and need to return
-                         * what we have so far, setting the status flags */
-                        if (copied_data &&
+                        /* We've encountered a discontinuity. Report it via
+                         * the status flags whether or not samples have been
+                         * copied yet: a gap that lands on the first message
+                         * of a read is still a gap, and the caller has no
+                         * other way to learn about it.
+                         *
+                         * Only the early return is conditional. With data
+                         * already copied we must hand it back before the
+                         * discontinuity; with none copied there is nothing
+                         * to preserve, so the read continues and returns
+                         * contiguous samples that start after the gap.
+                         */
+                        if (s->meta.have_timestamp &&
                             s->meta.msg_timestamp != s->meta.curr_timestamp) {
 
                             user_meta->status |= BLADERF_META_STATUS_OVERRUN;
-                            exit_early = true;
+                            exit_early = copied_data;
                             log_debug("Sample discontinuity detected @ "
                                       "buffer %u, message %u: Expected t=%llu, "
                                       "got t=%llu\n",
@@ -739,6 +816,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
                         }
 
                         s->meta.curr_timestamp = s->meta.msg_timestamp;
+                        s->meta.have_timestamp = true;
                         s->meta.state = SYNC_META_STATE_SAMPLES;
                         break;
 
