@@ -22,9 +22,9 @@ set(UDEV_RULES_PATH
 set(BLADERF_GROUP "plugdev" CACHE STRING "Group to associate bladeRF devices with in udev rules")
 
 set(BLADERF_UDEV_FILES
-    88-nuand-bladerf1.rules
-    88-nuand-bladerf2.rules
-    88-nuand-bootloader.rules
+    60-nuand-bladerf1.rules
+    60-nuand-bladerf2.rules
+    60-nuand-bootloader.rules
 )
 
 if(SYSTEM_IS_LINUX)
