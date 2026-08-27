@@ -552,12 +552,18 @@ int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch, bool enable)
 int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     int status;
-    bladerf_gain_mode gain_mode;
+    bladerf_gain_mode gain_mode  = BLADERF_GAIN_MGC;
+    bladerf_gain_mode restore_to = BLADERF_GAIN_MGC;
+    bool restore_gain_mode       = false;
     bladerf_frequency freq;
     bladerf_gain assigned_gain = gain;
     MUTEX_LOCK(&dev->lock);
 
-    /* Change gain mode to manual if ch = RX */
+    /* The RFIC only accepts a manual gain value while it is in MGC: the
+     * AD936x driver rejects the write outright otherwise. Borrow MGC for the
+     * duration of the write and hand the channel back in the mode the caller
+     * chose, rather than silently leaving AGC switched off behind them.
+     */
     if (BLADERF_CHANNEL_IS_TX(ch) == false) {
         status = dev->board->get_gain_mode(dev, ch, &gain_mode);
         if (status != 0) {
@@ -566,12 +572,14 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         }
 
         if (gain_mode != BLADERF_GAIN_MGC) {
-            log_warning("Setting gain mode to manual\n");
             status = dev->board->set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
             if (status != 0) {
                 log_error("Failed to set gain mode\n");
                 goto error;
             }
+
+            restore_to         = gain_mode;
+            restore_gain_mode  = true;
         }
     }
 
@@ -585,7 +593,16 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     status = dev->board->set_gain(dev, ch, assigned_gain);
     if (status != 0) {
         log_error("Failed to set gain\n");
-        goto error;
+    }
+
+    if (restore_gain_mode) {
+        int restore_status = dev->board->set_gain_mode(dev, ch, restore_to);
+        if (restore_status != 0) {
+            log_error("Failed to restore gain mode\n");
+            if (status == 0) {
+                status = restore_status;
+            }
+        }
     }
 
 error:
