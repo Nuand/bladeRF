@@ -533,6 +533,29 @@ static void bladerf2_close(struct bladerf *dev)
                 {
                     sync_deinit(&board_data->sync[ch]);
 
+                    /* Tell the FX3 the direction is going away.
+                     *
+                     * sync_deinit() only tears down host-side structures, and
+                     * putting the RFIC in standby further down is a
+                     * control-plane operation: neither reaches the FX3 sample
+                     * endpoint or its DMA channel. The firmware clears those
+                     * from its RF_RX/RF_TX handler, and only on the disable
+                     * transition, so a close that never disables leaves the
+                     * data plane in whatever state the last stream left it.
+                     * A later open then inherits it, and every RX transfer
+                     * comes back timed out with zero bytes.
+                     */
+                    if (board_data->state >= STATE_INITIALIZED &&
+                        dev->backend->is_fpga_configured(dev)) {
+                        int status = dev->backend->enable_module(dev, dir, false);
+                        if (status != 0) {
+                            log_debug("%s: could not disable %s on close: %s\n",
+                                      __FUNCTION__,
+                                      (dir == BLADERF_RX) ? "RX" : "TX",
+                                      bladerf_strerror(status));
+                        }
+                    }
+
                     /* Cancel scheduled retunes here to avoid the device
                      * retuning underneath the user should they open it again in
                      * the future.
