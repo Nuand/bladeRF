@@ -44,7 +44,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 {
     int status = 0;
     unsigned int samples_per_buffer;
-    int16_t *tx_buffer;
+    int8_t *tx_buffer;
     struct tx_params *tx_params = tx->params;
     unsigned int repeats_remaining;
     unsigned int delay_us;
@@ -54,9 +54,12 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     unsigned int timeout_ms;
     bladerf_sample_rate sample_rate = 0;
     int i;
+    size_t sample_size;
 
     enum state { INIT, READ_FILE, DELAY, PAD_TRAILING, DONE };
     enum state state = INIT;
+
+    sample_size = (s->sample_format == BLADERF_FORMAT_SC8_Q7) ? sizeof(int8_t) : sizeof(int16_t);
 
     /* Fetch the parameters required for the TX operation */
     MUTEX_LOCK(&tx->param_lock);
@@ -93,7 +96,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     delay_samples_remaining = delay_samples;
 
     /* Allocate a buffer to hold each block of samples to transmit */
-    tx_buffer = (int16_t *)malloc(samples_per_buffer * 2 * sizeof(int16_t));
+    tx_buffer = (int8_t *)malloc(samples_per_buffer * 2 * sample_size);
     if (tx_buffer == NULL) {
         status = CLI_RET_MEM;
         set_last_error(&tx->last_error, ETYPE_ERRNO,
@@ -105,7 +108,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     while (state != DONE && status == 0) {
         unsigned char requests;
         unsigned int buffer_samples_remaining = samples_per_buffer;
-        int16_t *tx_buffer_current            = tx_buffer;
+        int8_t *tx_buffer_current             = tx_buffer;
 
         /* Stop stream on STOP or SHUTDOWN, but only clear STOP. This will keep
          * the SHUTDOWN request around so we can read it when determining
@@ -127,7 +130,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 
                     /* Read from the input file */
                     samples_populated =
-                        fread(tx_buffer_current, 2 * sizeof(int16_t),
+                        fread(tx_buffer_current, 2 * sample_size,
                               buffer_samples_remaining, tx->file_mgmt.file);
 
                     assert(samples_populated <= UINT_MAX);
@@ -168,7 +171,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                                                  delay_samples_remaining);
 
                     memset(tx_buffer_current, 0,
-                           samples_populated * 2 * sizeof(uint16_t));
+                           samples_populated * 2 * sample_size);
 
                     delay_samples_remaining -= (unsigned int)samples_populated;
 
@@ -180,7 +183,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                 case PAD_TRAILING:
                     /* Populate the remainder of the buffer with zeros */
                     memset(tx_buffer_current, 0,
-                           buffer_samples_remaining * 2 * sizeof(uint16_t));
+                           buffer_samples_remaining * 2 * sample_size);
 
                     state = DONE;
                     break;
@@ -191,9 +194,10 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
             }
 
             /* Advance the buffer pointer.
-             * Remember, two int16_t's make up 1 sample in the SC16Q11 format */
+             * Remember, two int16_t's make up 1 sample in the SC16Q11 format,
+             * two int8_t's make up 1 sample in the SC8Q7 format */
             buffer_samples_remaining -= (unsigned int)samples_populated;
-            tx_buffer_current += (2 * samples_populated);
+            tx_buffer_current += (samples_populated * 2 * sample_size);
         }
 
         /* If there were no errors, transmit the data buffer */
@@ -211,7 +215,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
         const unsigned int num_buffers = tx->data_mgmt.num_buffers;
         unsigned int i;
 
-        memset(tx_buffer, 0, samples_per_buffer * 2 * sizeof(int16_t));
+        memset(tx_buffer, 0, samples_per_buffer * 2 * sample_size);
         for (i = 0; i < (num_buffers + 1) && status == 0; i++) {
             status = bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer,
                                      NULL, timeout_ms);
