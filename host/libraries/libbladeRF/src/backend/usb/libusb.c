@@ -69,11 +69,6 @@ struct lusb_stream_data {
     struct libusb_transfer **transfers; /* Array of transfer metadata */
     transfer_status *transfer_status;   /* Status of each transfer */
 
-    /* # of transfers that completed with a full buffer on this stream.
-     * Reported when a transfer fails: zero means the device never produced
-     * anything, nonzero means it stopped after having worked. */
-    size_t num_complete;
-
    /* Warn the first time we get a transfer callback out of order.
     * This shouldn't happen normally, but we've seen it intermittently on
     * libusb 1.0.19 for Windows. Further investigation required...
