@@ -56,8 +56,11 @@ add_library(ad936x STATIC
     ${LIBAD936X_PLATFORM_DIR}/platform.c
     ${LIBAD936X_PLATFORM_DIR}/bladerf2_spi.c
     ${LIBAD936X_PLATFORM_DIR}/bladerf2_gpio.c
-    # adc_core.c and dac_core.c drove the AXI ADC/DAC cores, which this board
-    # does not have; config.h defines AXI_ADC_NOT_PRESENT.
+    # FPGA AXI ad9361 core: the board DOES have it (NIOS ADI_AXI target).
+    # axi_adc_init/ad9361_post_setup deassert its reset — without them the RX
+    # sample path is dead after every cold power-up.
+    ${LIBAD936X_PLATFORM_DIR}/bladerf2_axi_io.c
+    ${LIBAD936X_UPSTREAM_BUILD_DIR}/axi_adc_core.c
     ${LIBAD936X_FPGACOMMON_DIR}/src/ad936x_params.c
 )
 
@@ -216,11 +219,13 @@ foreach(cpfile IN ITEMS ${LIBAD936X_UPSTREAM_UTIL_FILES})
     )
 endforeach(cpfile)
 
-# The driver includes the AXI core headers unconditionally, but every call into
-# them is guarded by AXI_ADC_NOT_PRESENT, which config.h defines for this
-# board. Headers only; the cores are not built.
+# AXI adc core is built (it initializes the FPGA-side ad9361 interface core);
+# the dac core is header-only here (included but not called by the driver).
 configure_file(
     "${LIBAD936X_UPSTREAM_AXI_DIR}/axi_adc_core/axi_adc_core.h"
+    "${LIBAD936X_UPSTREAM_BUILD_DIR}/" COPYONLY)
+configure_file(
+    "${LIBAD936X_UPSTREAM_AXI_DIR}/axi_adc_core/axi_adc_core.c"
     "${LIBAD936X_UPSTREAM_BUILD_DIR}/" COPYONLY)
 configure_file(
     "${LIBAD936X_UPSTREAM_AXI_DIR}/axi_dac_core/axi_dac_core.h"

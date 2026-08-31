@@ -121,6 +121,14 @@ static int _rfic_host_initialize(struct bladerf *dev)
     {
         AD9361_InitParam *p = (AD9361_InitParam *)board_data->rfic_init_params;
 
+        /* The no_os_axi_io accessors (FPGA AXI ad9361 core over NIOS) have no
+         * context argument, so the handle travels through a file-static in
+         * platform_bladerf2 instead. */
+        {
+            extern void bladerf2_axi_io_set_dev(struct bladerf *dev);
+            bladerf2_axi_io_set_dev(dev);
+        }
+
         p->spi_param.extra = dev;
         p->gpio_resetb.extra = dev;
         p->gpio_sync.extra = dev;

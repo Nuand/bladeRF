@@ -61,11 +61,15 @@
 //#define PICOZED_SDR
 //#define PICOZED_SDR_CMOS
 //#define CAPTURE_SCRIPT
-/* The bladeRF has no AXI ADC/DAC core: samples reach the host over USB, so
- * the driver's AXI paths must stay out. The older driver revision this tree
- * used to carry had no such paths at all, which is why the switch was left
- * off; the current one guards them with this symbol. */
-#define AXI_ADC_NOT_PRESENT
+/* The bladeRF2 FPGA DOES carry the ADI AXI interface core, reachable over
+ * NIOS_PKT_32x32_TARGET_ADI_AXI (see backend adi_axi_read/write). The core
+ * powers up held in reset; ad9361_post_setup()/axi_adc_init() are what
+ * deassert RSTN and program the channel/data-format registers. Defining
+ * AXI_ADC_NOT_PRESENT skipped all of that, which left the RX sample path
+ * dead after every cold power-up (RX timestamp frozen at 0, zero bytes on
+ * the sample endpoint) until some other build initialized the core.
+ * Measured 2026-08-31; keep the AXI path IN. */
+//#define AXI_ADC_NOT_PRESENT
 //#define TDD_SWITCH_STATE_EXAMPLE
 
 #endif

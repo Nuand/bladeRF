@@ -6,6 +6,7 @@
 #if !defined(BLADERF_NIOS_BUILD) || defined(BLADERF_NIOS_LIBAD936X)
 
 #include "ad9361_api.h"
+#include "axi_adc_core.h"
 #include "platform.h"
 
 /**
@@ -17,6 +18,17 @@
  */
 
 // clang-format off
+
+/* FPGA-side ADI AXI interface core (axi_ad9361). Flat address space over
+ * NIOS_PKT_32x32_TARGET_ADI_AXI: base 0, DAC-side registers at 0x4000+.
+ * axi_adc_init() deasserts the core's RSTN and enables the channels; without
+ * it the core stays in reset after power-up and no RX samples ever flow. */
+static struct axi_adc_init bladerf2_rx_adc_init = {
+    .name         = "bladerf2-axi-ad9361",
+    .base         = 0,
+    .num_channels = 4, // 2R2T, I+Q на канал
+};
+
 AD9361_InitParam bladerf2_rfic_init_params = {
     /* Device selection */
     .dev_sel = ID_AD9361,	// AD9361 RF Agile Transceiver                                      // dev_sel
@@ -302,6 +314,9 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     /* SPI reaches the device through the accessor table in
      * platform_bladerf2; the handle goes into .extra at init time. */
     .spi_param = { .platform_ops = &bladerf2_spi_ops },
+
+    /* FPGA AXI interface core init (деасерт RSTN у axi_adc_init) */
+    .rx_adc_init = &bladerf2_rx_adc_init,
 
     .ad9361_rfpll_ext_recalc_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_recalc_rate)()
     .ad9361_rfpll_ext_round_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_round_rate)()
@@ -596,6 +611,9 @@ AD9361_InitParam bladerf2_rfic_init_params_fastagc_burst = {
     /* SPI reaches the device through the accessor table in
      * platform_bladerf2; the handle goes into .extra at init time. */
     .spi_param = { .platform_ops = &bladerf2_spi_ops },
+
+    /* FPGA AXI interface core init (деасерт RSTN у axi_adc_init) */
+    .rx_adc_init = &bladerf2_rx_adc_init,
 
     .ad9361_rfpll_ext_recalc_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_recalc_rate)()
     .ad9361_rfpll_ext_round_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_round_rate)()
