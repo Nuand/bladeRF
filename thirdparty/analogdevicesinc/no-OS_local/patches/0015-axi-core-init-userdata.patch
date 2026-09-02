@@ -1,0 +1,12 @@
+diff --git axi_adc_core.c axi_adc_core.c
+index 74dc69e..9a7b220 100644
+--- axi_adc_core.c
++++ axi_adc_core.c
+@@ -597,0 +598 @@ int32_t axi_adc_init_begin(struct axi_adc **adc_core,
++	adc->userdata = init->userdata;
+diff --git axi_dac_core.c axi_dac_core.c
+index feda876..8e38535 100644
+--- axi_dac_core.c
++++ axi_dac_core.c
+@@ -1120,0 +1121 @@ int32_t axi_dac_init_begin(struct axi_dac **dac_core,
++	dac->userdata = init->userdata;

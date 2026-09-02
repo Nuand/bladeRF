@@ -42,13 +42,13 @@ static inline uint32_t control_reg_read(void)
 
 static inline void control_reg_write(uint32_t value)
 {
-    const size_t CFG_GPIO_CLOCK_SELECT = 18; // Refer to bladerf2_common.h
-    const uint32_t CLK_SEL_MASK = (1 << CFG_GPIO_CLOCK_SELECT);
+    enum { CFG_GPIO_CLOCK_SELECT = 18 };
+    const uint32_t clock_select_mask = (1 << CFG_GPIO_CLOCK_SELECT);
     uint32_t current_clock_select, requested_clock_select;
     bool delay_nios_response = false;
 
-    current_clock_select = control_reg_read() & CLK_SEL_MASK;
-    requested_clock_select = value & CLK_SEL_MASK;
+    current_clock_select = control_reg_read() & clock_select_mask;
+    requested_clock_select = value & clock_select_mask;
     delay_nios_response = current_clock_select != requested_clock_select;
 
     IOWR_ALTERA_AVALON_PIO_DATA(CONTROL_BASE, value);

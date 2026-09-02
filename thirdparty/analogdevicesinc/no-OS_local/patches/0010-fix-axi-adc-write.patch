@@ -1,0 +1,7 @@
+diff --git axi_dac_core.c axi_dac_core.c
+index 3765a50..936d7f3 100644
+--- axi_dac_core.c
++++ axi_dac_core.c
+@@ -1177 +1177 @@ int32_t axi_dac_init(struct axi_dac **dac_core,
+-	axi_dac_write(dac, AXI_DAC_REG_RATECNTRL, AXI_DAC_RATE(init->rate));
++	axi_dac_write(dac, AXI_DAC_REG_RATECNTRL, AXI_DAC_RATE(init->rate)|1);

@@ -30,8 +30,13 @@
 #include "helpers/wallclock.h"
 #include "iterators.h"
 #include "log.h"
+#include "platform.h"
+#include "axi_adc_core.h"
+#include "axi_dac_core.h"
 
 // #define BLADERF_HOSTED_C_DEBUG
+
+extern struct axi_dac_init bladerf2_tx_dac_init;
 
 
 /******************************************************************************/
@@ -98,7 +103,10 @@ static int _rfic_host_initialize(struct bladerf *dev)
     bladerf_direction dir;
     bladerf_channel ch;
     size_t i;
+    int status;
     uint32_t config_gpio;
+    AD9361_InitParam init_params;
+    struct axi_dac_init tx_dac_init;
 
     log_debug("%s: initializating\n", __FUNCTION__);
 
@@ -111,8 +119,30 @@ static int _rfic_host_initialize(struct bladerf *dev)
                 (void *)&bladerf2_rfic_init_params_fastagc_burst :
                 (void *)&bladerf2_rfic_init_params;
 
+    init_params = *(AD9361_InitParam *)board_data->rfic_init_params;
+    init_params.spi_param.platform_ops = &bladerf_spi_ops;
+    init_params.spi_param.extra = dev;
+    init_params.gpio_resetb.platform_ops = &bladerf_gpio_ops;
+    init_params.gpio_resetb.extra = dev;
+
     /* Initialize AD9361 */
-    CHECK_AD936X(ad9361_init(&phy, (AD9361_InitParam *)board_data->rfic_init_params, dev));
+    CHECK_AD936X(ad9361_init(&phy, &init_params, dev));
+
+    tx_dac_init = bladerf2_tx_dac_init;
+    tx_dac_init.userdata = dev;
+    status = axi_dac_init(&phy->tx_dac, &tx_dac_init);
+    if (status < 0) {
+        ad9361_remove(phy);
+        RETURN_ERROR_AD9361("axi_dac_init", status);
+    }
+
+    status = axi_dac_set_datasel(phy->tx_dac, -1,
+                                 AXI_DAC_DATA_SEL_DMA);
+    if (status < 0) {
+        axi_dac_remove(phy->tx_dac);
+        ad9361_remove(phy);
+        RETURN_ERROR_AD9361("axi_dac_set_datasel", status);
+    }
 
     if (NULL == phy || NULL == phy->pdata) {
         RETURN_ERROR_STATUS("ad9361_init struct initialization",
@@ -170,7 +200,8 @@ static int _rfic_host_deinitialize(struct bladerf *dev)
     CHECK_STATUS(_rfic_host_clear_rffe_control(dev));
 
     if (NULL != board_data->phy) {
-        CHECK_STATUS(ad9361_deinit(board_data->phy));
+        CHECK_AD936X(axi_dac_remove(board_data->phy->tx_dac));
+        CHECK_STATUS(ad9361_remove(board_data->phy));
         board_data->phy = NULL;
     }
 

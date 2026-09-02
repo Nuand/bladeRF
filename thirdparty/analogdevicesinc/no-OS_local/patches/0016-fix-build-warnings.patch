@@ -1,0 +1,17 @@
+diff --git ad9361.c ad9361.c
+index 966c153..3812c91 100644
+--- ad9361.c
++++ ad9361.c
+@@ -1753,0 +1754 @@ static int32_t ad9361_rfpll_vco_init(struct ad9361_rf_phy *phy,
++	tab = &SynthLUT_FDD[range][0];
+@@ -6857 +6858 @@ int32_t ad9361_rfpll_int_set_rate(struct refclk_scale *clk_priv, uint32_t rate,
+-	int32_t vco_div, ret, fixup_other;
++	int32_t vco_div = 0, ret, fixup_other;
+diff --git axi_dac_core.c axi_dac_core.c
+index 8e38535..2c1f0ce 100644
+--- axi_dac_core.c
++++ axi_dac_core.c
+@@ -1143 +1143,2 @@ int32_t axi_dac_init_finish(struct axi_dac *dac)
+-		printf("%s: Status errors: %08ld\n", dac->name, reg_data);
++		printf("%s: Status errors: %08"PRIu32"\n", dac->name,
++		       reg_data);

@@ -1,0 +1,22 @@
+diff --git ad9361.c ad9361.c
+index 3812c91..184b8c1 100644
+--- ad9361.c
++++ ad9361.c
+@@ -978,0 +979,2 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
++	bool found_zero = false;
++	bool found_one = false;
+@@ -981,0 +984 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
++			found_zero = true;
+@@ -985,0 +989 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
++			found_one = true;
+diff --git ad9361_api.c ad9361_api.c
+index 3681f67..0fc56b3 100644
+--- ad9361_api.c
++++ ad9361_api.c
+@@ -497,0 +498,4 @@ int32_t ad9361_init(struct ad9361_rf_phy **ad9361_phy,
++#ifdef NUAND_MODIFICATIONS
++	phy->pdata->port_ctrl.digital_io_ctrl =
++		CLK_OUT_DRIVE | DATACLK_DRIVE | DATA_PORT_DRIVE;
++#else
+@@ -498,0 +503 @@ int32_t ad9361_init(struct ad9361_rf_phy **ad9361_phy,
++#endif

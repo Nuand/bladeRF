@@ -37,7 +37,7 @@ set(LIBAD936X_PATCH_DIR "${LIBAD936X_LOCAL_DIR}/patches")
 set(LIBAD936X_PLATFORM_DIR "${LIBAD936X_LOCAL_DIR}/platform_bladerf2_headless")
 
 # Upstream source (clean)
-set(LIBAD936X_UPSTREAM_DIR "${LIBAD936X_LOCAL_DIR}/../no-OS/ad9361/sw")
+set(LIBAD936X_UPSTREAM_DIR "${LIBAD936X_LOCAL_DIR}/../no-OS/drivers/rf-transceiver/ad9361")
 # Upstream source (patched)
 set(LIBAD936X_UPSTREAM_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -59,10 +59,9 @@ add_library(ad936x STATIC
     ${LIBAD936X_UPSTREAM_BUILD_DIR}/ad9361.c
     ${LIBAD936X_UPSTREAM_BUILD_DIR}/ad9361_api.c
     ${LIBAD936X_UPSTREAM_BUILD_DIR}/ad9361_conv.c
-    ${LIBAD936X_UPSTREAM_BUILD_DIR}/util.c
-    ${LIBAD936X_PLATFORM_DIR}/platform.c
-    ${LIBAD936X_PLATFORM_DIR}/adc_core.c
-    ${LIBAD936X_PLATFORM_DIR}/dac_core.c
+    ${LIBAD936X_UPSTREAM_BUILD_DIR}/ad9361_util.c
+    ${LIBAD936X_UPSTREAM_BUILD_DIR}/axi_adc_core.c
+    ${LIBAD936X_UPSTREAM_BUILD_DIR}/axi_dac_core.c
     ${LIBAD936X_FPGACOMMON_DIR}/src/ad936x_params.c
 )
 
@@ -161,8 +160,8 @@ set(LIBAD936X_UPSTREAM_FILES
     ad9361_api.h
     ad9361_conv.c
     common.h
-    util.c
-    util.h
+    ad9361_util.c
+    ad9361_util.h
 )
 
 foreach(cpfile IN ITEMS ${LIBAD936X_UPSTREAM_FILES})
@@ -173,14 +172,70 @@ foreach(cpfile IN ITEMS ${LIBAD936X_UPSTREAM_FILES})
     )
 endforeach(cpfile)
 
+# Copy additional header files from no-OS include directory
+set(LIBAD936X_INCLUDE_FILES
+    no_os_gpio.h
+    no_os_spi.h
+    no_os_error.h
+    no_os_delay.h
+    no_os_util.h
+    no_os_alloc.h
+    no_os_axi_io.h
+)
+
+foreach(cpfile IN ITEMS ${LIBAD936X_INCLUDE_FILES})
+    configure_file(
+        "${LIBAD936X_LOCAL_DIR}/../no-OS/include/${cpfile}"
+        "${LIBAD936X_UPSTREAM_BUILD_DIR}/"
+        COPYONLY
+    )
+endforeach(cpfile)
+
+########################################
+# Copy AXI core files to build directory
+foreach(cpfile IN ITEMS axi_adc_core.c axi_adc_core.h)
+    configure_file(
+        "${LIBAD936X_BLADERF_ROOT}/thirdparty/analogdevicesinc/no-OS/drivers/axi_core/axi_adc_core/${cpfile}"
+        "${LIBAD936X_UPSTREAM_BUILD_DIR}/"
+        COPYONLY
+    )
+endforeach(cpfile)
+
+foreach(cpfile IN ITEMS axi_dac_core.c axi_dac_core.h)
+    configure_file(
+        "${LIBAD936X_BLADERF_ROOT}/thirdparty/analogdevicesinc/no-OS/drivers/axi_core/axi_dac_core/${cpfile}"
+        "${LIBAD936X_UPSTREAM_BUILD_DIR}/"
+        COPYONLY
+    )
+endforeach(cpfile)
+
+# Copy only necessary header files from platform_bladerf2_headless
+# We use no-OS implementations directly
+set(LIBAD936X_PLATFORM_FILES
+    config.h
+    platform.h
+    app_config.h
+)
+
+foreach(cpfile IN ITEMS ${LIBAD936X_PLATFORM_FILES})
+    if(EXISTS "${LIBAD936X_PLATFORM_DIR}/${cpfile}")
+        configure_file(
+            "${LIBAD936X_PLATFORM_DIR}/${cpfile}"
+            "${LIBAD936X_UPSTREAM_BUILD_DIR}/"
+            COPYONLY
+        )
+    endif()
+endforeach(cpfile)
+
 # Patch the upstream files
 set(LIBAD936X_PATCHES
-    0001-0bba46e-nuand-modifications.patch
-    0002-0bba46e-pr-561.patch
-    0003-0bba46e-pr-573.patch
-    0004-0bba46e-pr-598.patch
-    0005-0bba46e-rm-ad9361_parse_fir.patch
-    0006-0bba46e-compilefix.patch
+    0009-fix-axi-adc-write.patch
+    0010-fix-axi-adc-write.patch
+    0016-fix-build-warnings.patch
+    0017-preserve-bladerf2-behavior.patch
+    0018-free-axi-adc.patch
+    0019-disable-nios-fir-parser.patch
+    0020-suppress-nios-init-messages.patch
 )
 
 find_package(Patcher REQUIRED)
@@ -188,17 +243,18 @@ find_package(Patcher REQUIRED)
 foreach(patchfile IN ITEMS ${LIBAD936X_PATCHES})
     message(STATUS "libad936x: Applying patch: ${patchfile}")
     execute_process(
-        COMMAND ${Patcher_EXECUTABLE} -p3
+        COMMAND ${Patcher_EXECUTABLE} -p0
         INPUT_FILE ${LIBAD936X_PATCH_DIR}/${patchfile}
         WORKING_DIRECTORY "${LIBAD936X_UPSTREAM_BUILD_DIR}"
-        OUTPUT_QUIET
+        OUTPUT_VARIABLE outvar
         RESULT_VARIABLE resultcode
         ERROR_VARIABLE errvar
     )
 
     if(resultcode)
-        message(FATAL_ERROR "Failed to apply ${patchfile}: ${errvar}")
+        message(FATAL_ERROR "Failed to apply ${patchfile}: ${errvar}\nOutput: ${outvar}")
     endif(resultcode)
 endforeach(patchfile)
+
 
 message(STATUS "libad936x: Build configured")

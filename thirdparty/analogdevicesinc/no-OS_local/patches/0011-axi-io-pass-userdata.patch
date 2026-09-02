@@ -1,0 +1,76 @@
+diff --git axi_adc_core.c axi_adc_core.c
+index 785ecf4..74dc69e 100644
+--- axi_adc_core.c
++++ axi_adc_core.c
+@@ -56 +56 @@ int32_t axi_adc_read(struct axi_adc *adc,
+-	no_os_axi_io_read(adc->base, reg_addr, reg_data);
++	no_os_axi_io_read(adc->userdata, adc->base, reg_addr, reg_data);
+@@ -72 +72 @@ int32_t axi_adc_write(struct axi_adc *adc,
+-	no_os_axi_io_write(adc->base, reg_addr, reg_data);
++	no_os_axi_io_write(adc->userdata, adc->base, reg_addr, reg_data);
+@@ -88 +88 @@ int32_t axi_slave_adc_read(struct axi_adc *adc,
+-	return no_os_axi_io_read(adc->slave_base, reg_addr, reg_data);
++	return no_os_axi_io_read(adc->userdata, adc->slave_base, reg_addr, reg_data);
+@@ -102 +102 @@ int32_t axi_slave_adc_write(struct axi_adc *adc,
+-	return no_os_axi_io_write(adc->slave_base, reg_addr, reg_data);
++	return no_os_axi_io_write(adc->userdata, adc->slave_base, reg_addr, reg_data);
+diff --git axi_adc_core.h axi_adc_core.h
+index 8428650..82602cf 100644
+--- axi_adc_core.h
++++ axi_adc_core.h
+@@ -137,0 +138,2 @@ struct axi_adc {
++	/** Platform/user context (e.g., bladerf *dev) */
++	void *userdata;
+@@ -154,0 +157,2 @@ struct axi_adc_init {
++	/** Platform/user context (e.g., bladerf *dev) */
++	void *userdata;
+diff --git axi_dac_core.c axi_dac_core.c
+index 936d7f3..feda876 100644
+--- axi_dac_core.c
++++ axi_dac_core.c
+@@ -362 +362 @@ int32_t axi_dac_read(struct axi_dac *dac,
+-	no_os_axi_io_read(dac->base, reg_addr, reg_data);
++	no_os_axi_io_read(dac->userdata, dac->base, reg_addr, reg_data);
+@@ -378 +378 @@ int32_t axi_dac_write(struct axi_dac *dac,
+-	no_os_axi_io_write(dac->base, reg_addr, reg_data);
++	no_os_axi_io_write(dac->userdata, dac->base, reg_addr, reg_data);
+@@ -395 +395 @@ void axi_dac_update_bits(struct axi_dac *dac, uint32_t reg_addr,
+-	no_os_axi_io_read(dac->base, reg_addr, &reg);
++	no_os_axi_io_read(dac->userdata, dac->base, reg_addr, &reg);
+@@ -400 +400 @@ void axi_dac_update_bits(struct axi_dac *dac, uint32_t reg_addr,
+-	no_os_axi_io_write(dac->base, reg_addr, reg);
++	no_os_axi_io_write(dac->userdata, dac->base, reg_addr, reg);
+@@ -419 +419 @@ int32_t axi_dac_read_poll_timeout(struct axi_dac *dac, uint32_t reg_addr,
+-		no_os_axi_io_read(dac->base, reg_addr, &reg);
++		no_os_axi_io_read(dac->userdata, dac->base, reg_addr, &reg);
+@@ -447 +447 @@ int32_t axi_dac_bus_write(struct axi_dac *dac, uint32_t reg_addr,
+-	no_os_axi_io_write(dac->base, AXI_DAC_CNTRL_DATA_WR,
++	no_os_axi_io_write(dac->userdata, dac->base, AXI_DAC_CNTRL_DATA_WR,
+@@ -504 +504 @@ int32_t axi_dac_bus_read(struct axi_dac *dac,
+-	no_os_axi_io_read(dac->base, AXI_DAC_CNTRL_DATA_RD, reg_data);
++	no_os_axi_io_read(dac->userdata, dac->base, AXI_DAC_CNTRL_DATA_RD, reg_data);
+@@ -1006 +1006 @@ uint32_t axi_dac_set_sine_lut(struct axi_dac *dac,
+-			no_os_axi_io_write(address, index_mem * 4, data_i1 | data_q1);
++			no_os_axi_io_write(dac->userdata, address, index_mem * 4, data_i1 | data_q1);
+@@ -1017 +1017 @@ uint32_t axi_dac_set_sine_lut(struct axi_dac *dac,
+-			no_os_axi_io_write(address, (index_mem + 1) * 4, data_i2 | data_q2);
++			no_os_axi_io_write(dac->userdata, address, (index_mem + 1) * 4, data_i2 | data_q2);
+@@ -1029 +1029 @@ uint32_t axi_dac_set_sine_lut(struct axi_dac *dac,
+-			no_os_axi_io_write(address, index * 4, data_i1 | data_q1);
++			no_os_axi_io_write(dac->userdata, address, index * 4, data_i1 | data_q1);
+@@ -1058 +1058 @@ int32_t axi_dac_set_buff(struct axi_dac *dac,
+-		no_os_axi_io_write(address, index * 2, data_i | data_q);
++		no_os_axi_io_write(dac->userdata, address, index * 2, data_i | data_q);
+@@ -1085 +1085 @@ int32_t axi_dac_load_custom_data(struct axi_dac *dac,
+-			no_os_axi_io_write(address, index_mem * sizeof(uint32_t),
++			no_os_axi_io_write(dac->userdata, address, index_mem * sizeof(uint32_t),
+diff --git axi_dac_core.h axi_dac_core.h
+index 941a47c..c213019 100644
+--- axi_dac_core.h
++++ axi_dac_core.h
+@@ -65,0 +66,2 @@ struct axi_dac {
++	/** Platform/user context (e.g., bladerf *dev) */
++	void *userdata;
+@@ -80,0 +83,2 @@ struct axi_dac_init {
++	/** Platform/user context (e.g., bladerf *dev) */
++	void *userdata;

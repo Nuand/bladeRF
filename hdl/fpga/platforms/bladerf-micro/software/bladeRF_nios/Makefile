@@ -24,6 +24,7 @@ C_SRCS              += $(FPGA_COMMON_DIR)/src/bladerf2_common.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_cmds.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/devices_rfic_queue.c
+C_SRCS              += $(BLADERF_COMMON_DIR)/src/no_os_platform.c
 C_SRCS              += $(BLADERF_COMMON_DIR)/src/pkt_retune2.c
 C_SRCS              += $(HOST_COMMON_DIR)/src/range.c
 
@@ -60,9 +61,8 @@ include $(BLADERF_COMMON_DIR)/Makefile
 
 # if any source file changes, re-run cmake so that patching, etc, occurs
 LIBAD936X_MAKE_DEP  :=  ../../../../ip/analogdevicesinc/no_OS/CMakeLists.txt \
-                        ../../../../../../thirdparty/analogdevicesinc/no-OS/ad9361/sw/* \
-                        ../../../../../../thirdparty/analogdevicesinc/no-OS_local/patches/* \
-                        ../../../../../../thirdparty/analogdevicesinc/no-OS_local/platform_bladerf2_headless/*
+                        ../../../../../../thirdparty/analogdevicesinc/no-OS/drivers/rf-transceiver/ad9361/* \
+                        ../../../../../../thirdparty/analogdevicesinc/no-OS_local/patches/*
 
 LIBAD936X_BUILD_DEP :=  $(LIBAD936X_BUILDDIR)/Makefile
 

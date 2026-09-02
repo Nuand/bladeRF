@@ -1,0 +1,21 @@
+diff --git ad9361_api.c ad9361_api.c
+--- ad9361_api.c
++++ ad9361_api.c
+@@ -568,0 +569 @@ int32_t ad9361_init(struct ad9361_rf_phy **ad9361_phy,
++#ifndef NUAND_MODIFICATIONS
+@@ -569,0 +571 @@ int32_t ad9361_init(struct ad9361_rf_phy **ad9361_phy,
++#endif
+diff --git axi_adc_core.c axi_adc_core.c
+--- axi_adc_core.c
++++ axi_adc_core.c
+@@ -625,0 +626 @@ int32_t axi_adc_init_finish(struct axi_adc *adc)
++#ifndef NUAND_MODIFICATIONS
+@@ -627,0 +629 @@ int32_t axi_adc_init_finish(struct axi_adc *adc)
++#endif
+diff --git axi_dac_core.c axi_dac_core.c
+--- axi_dac_core.c
++++ axi_dac_core.c
+@@ -1151,0 +1152 @@ int32_t axi_dac_init_finish(struct axi_dac *dac)
++#ifndef NUAND_MODIFICATIONS
+@@ -1153,0 +1155 @@ int32_t axi_dac_init_finish(struct axi_dac *dac)
++#endif

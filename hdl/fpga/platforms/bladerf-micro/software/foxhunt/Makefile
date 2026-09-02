@@ -61,9 +61,8 @@ include $(BLADERF_COMMON_DIR)/Makefile
 
 # if any source file changes, re-run cmake so that patching, etc, occurs
 LIBAD936X_MAKE_DEP  :=  ../../../../ip/analogdevicesinc/no_OS/CMakeLists.txt \
-                        ../../../../../../thirdparty/analogdevicesinc/no-OS/ad9361/sw/* \
+                        ../../../../../../thirdparty/analogdevicesinc/no-OS/drivers/rf-transceiver/ad9361/* \
                         ../../../../../../thirdparty/analogdevicesinc/no-OS_local/patches/* \
-                        ../../../../../../thirdparty/analogdevicesinc/no-OS_local/platform_bladerf2_headless/*
 
 LIBAD936X_BUILD_DEP :=  $(LIBAD936X_BUILDDIR)/Makefile
 

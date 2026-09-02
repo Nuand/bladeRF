@@ -39,8 +39,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#define HAVE_VERBOSE_MESSAGES /* Recommended during development prints errors and warnings */
-//#define HAVE_DEBUG_MESSAGES /* For Debug purposes only */
+/* #define HAVE_DEBUG_MESSAGES */
 
 /*
  * In case memory footprint is a concern these options allow

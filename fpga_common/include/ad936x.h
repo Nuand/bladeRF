@@ -29,14 +29,13 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include <ad9361_api.h>
-
 /**
- * The purpose of this header file is to allow the use of libad9361 without
- * including all of the unnecessary defines, etc, used during compilation.
+ * The purpose of this header file is to provide bladeRF-local AD936x register
+ * and port identifiers without dragging the full AD9361 application headers
+ * into shared code.
  *
- * This file is largely copied from the files named in each section.  Only
- * necessary declarations are present.
+ * Translation units that need the vendor AD9361 API should include
+ * ad9361_api.h explicitly.
  *
  * In general, defines are prefixed with AD936X_ to avoid conflicts.
  *

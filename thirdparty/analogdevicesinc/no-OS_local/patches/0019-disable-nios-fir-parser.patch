@@ -1,0 +1,8 @@
+diff --git ad9361.c ad9361.c
+index 184b8c1..7500c5e 100644
+--- ad9361.c
++++ ad9361.c
+@@ -5898,0 +5899 @@ int32_t ad9361_load_fir_filter_coef(struct ad9361_rf_phy *phy,
++#ifndef NUAND_MODIFICATIONS
+@@ -6070,0 +6072 @@ int32_t ad9361_parse_fir(struct ad9361_rf_phy *phy,
++#endif

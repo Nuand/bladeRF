@@ -103,7 +103,7 @@ static bool _rfic_deinitialize(struct rfic_state *state)
 
     /* Deinitialize AD9361 */
     if (NULL != state->phy) {
-        CHECK_BOOL(ad9361_deinit(state->phy));
+        CHECK_BOOL(ad9361_remove(state->phy));
         state->phy = NULL;
     }
 
@@ -146,12 +146,12 @@ static bool _rfic_initialize(struct rfic_state *state)
         usleep(1000);
         _reset_rfic(false);
 
-        CHECK_BOOL(ad9361_init(&state->phy, init_param, NULL));
+        CHECK_BOOL(ad9361_init(&state->phy, init_param));
 
         if (NULL == state->phy || NULL == state->phy->pdata) {
             /* Oh no */
             DBG("%s: ad9361_init failed silently\n", __FUNCTION__);
-            ad9361_deinit(state->phy);
+            ad9361_remove(state->phy);
             state->phy = NULL;
             return false;
         }

@@ -33,6 +33,10 @@
 #include "libbladeRF_nios_compat.h"
 #endif  // !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
 
+#if defined(BUILD_AD936X) || defined(BLADERF_NIOS_LIBAD936X)
+#include "ad9361_api.h"
+#endif
+
 #include "ad936x.h"
 #include "host_config.h"
 #include "nios_pkt_retune2.h"
@@ -116,10 +120,12 @@ enum bladerf2_band {
 /**
  * Mapping between libbladeRF gain modes and RFIC gain modes.
  */
+#if defined(BUILD_AD936X) || defined(BLADERF_NIOS_LIBAD936X)
 struct bladerf_rfic_gain_mode_map {
     bladerf_gain_mode brf_mode;       /**< libbladeRF gain mode */
     enum rf_gain_ctrl_mode rfic_mode; /**< RFIC gain mode */
 };
+#endif
 
 /**
  * Mapping between frequency ranges and gain ranges.
@@ -320,24 +326,26 @@ typedef enum {
 // clang-format off
 
 /* Gain mode mappings */
+#if defined(BUILD_AD936X) || defined(BLADERF_NIOS_LIBAD936X)
 static struct bladerf_rfic_gain_mode_map const bladerf2_rx_gain_mode_map[] = {
-    {   
+    {
         FIELD_INIT(.brf_mode, BLADERF_GAIN_MGC),
         FIELD_INIT(.rfic_mode, RF_GAIN_MGC)
     },
-    {   
+    {
         FIELD_INIT(.brf_mode, BLADERF_GAIN_FASTATTACK_AGC),
         FIELD_INIT(.rfic_mode, RF_GAIN_FASTATTACK_AGC)
     },
-    {   
+    {
         FIELD_INIT(.brf_mode, BLADERF_GAIN_SLOWATTACK_AGC),
         FIELD_INIT(.rfic_mode, RF_GAIN_SLOWATTACK_AGC)
     },
-    {   
+    {
         FIELD_INIT(.brf_mode, BLADERF_GAIN_HYBRID_AGC),
         FIELD_INIT(.rfic_mode, RF_GAIN_HYBRID_AGC)
     },
 };
+#endif
 
 /* RX gain ranges */
 /* Reference: ad9361.c, ad9361_gt_tableindex and ad9361_init_gain_tables */
@@ -352,7 +360,7 @@ static struct bladerf_gain_range const bladerf2_rx_gain_ranges[] = {
         }),
         FIELD_INIT(.gain, {
             FIELD_INIT(.min,    1 - 17),
-            FIELD_INIT(.max,    77 - 17),
+            FIELD_INIT(.max,    73 - 17),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -399,8 +407,8 @@ static struct bladerf_gain_range const bladerf2_rx_gain_ranges[] = {
             FIELD_INIT(.scale,  1),
         }),
         FIELD_INIT(.gain, {
-            FIELD_INIT(.min,    1),
-            FIELD_INIT(.max,    77),
+            FIELD_INIT(.min,    -1),
+            FIELD_INIT(.max,    73),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -415,7 +423,7 @@ static struct bladerf_gain_range const bladerf2_rx_gain_ranges[] = {
             FIELD_INIT(.scale,  1),
         }),
         FIELD_INIT(.gain, {
-            FIELD_INIT(.min,    -4),
+            FIELD_INIT(.min,    -3),
             FIELD_INIT(.max,    71),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
@@ -502,9 +510,11 @@ static struct bladerf_gain_modes const bladerf2_rx_gain_modes[] = {
 };
 
 /* Default RX gain control modes */
+#if defined(BUILD_AD936X) || defined(BLADERF_NIOS_LIBAD936X)
 static enum rf_gain_ctrl_mode const bladerf2_rx_gain_mode_default[2] = {
     RF_GAIN_SLOWATTACK_AGC, RF_GAIN_SLOWATTACK_AGC
 };
+#endif
 
 /* Sample Rate Range */
 static struct bladerf_range const bladerf2_sample_rate_range = {

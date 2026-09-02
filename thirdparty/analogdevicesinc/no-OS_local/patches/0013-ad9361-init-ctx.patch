@@ -1,0 +1,18 @@
+diff --git ad9361_api.c ad9361_api.c
+index 3eb4816..f78e942 100644
+--- ad9361_api.c
++++ ad9361_api.c
+@@ -556 +556,5 @@ int32_t ad9361_init(struct ad9361_rf_phy **ad9361_phy,
+-	axi_adc_init(&phy->rx_adc, init_param->rx_adc_init);
++	if (init_param->rx_adc_init) {
++		struct axi_adc_init rx_init_local = *init_param->rx_adc_init;
++		rx_init_local.userdata = ctx;
++		axi_adc_init(&phy->rx_adc, &rx_init_local);
++	}
+diff --git ad9361_api.h ad9361_api.h
+index d84650c..cfe966d 100644
+--- ad9361_api.h
++++ ad9361_api.h
+@@ -358 +358 @@ int32_t ad9361_init(struct ad9361_rf_phy **ad9361_phy,
+-		    AD9361_InitParam *init_param);
++		    AD9361_InitParam *init_param, void *ctx);

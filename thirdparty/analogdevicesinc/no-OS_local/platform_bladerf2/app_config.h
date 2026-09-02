@@ -1,7 +1,7 @@
 /* This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2018 Nuand LLC
+ * Copyright (c) 2026 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,9 @@
  * THE SOFTWARE.
  */
 
-#ifndef RANGE_H_
-#define RANGE_H_
+#ifndef APP_CONFIG_H_
+#define APP_CONFIG_H_
 
-#if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
-#include <libbladeRF.h>
-#else
-#include "libbladeRF_nios_compat.h"
+#include "platform.h"
+
 #endif
-
-#ifdef BLADERF_NIOS_BUILD
-// don't do scaling on the Nios, since multiplication and division suck
-#define __scale(r, v) (v)
-#define __unscale(r, v) (v)
-#else
-#define __scale(r, v) ((float)(v) / (r)->scale)
-#define __unscale(r, v) ((float)(v) * (r)->scale)
-#endif  // BLADERF_NIOS_BUILD
-
-#ifndef __round_int
-#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
-#endif
-
-#ifndef __round_int64
-#define __round_int64(x) (x >= 0 ? (int64_t)(x + 0.5) : (int64_t)(x - 0.5))
-#endif
-
-#define __scale_int(r, v) (__round_int(__scale(r, v)))
-#define __scale_int64(r, v) (__round_int64(__scale(r, v)))
-
-#define __unscale_int(r, v) (__round_int(__unscale(r, v)))
-#define __unscale_int64(r, v) (__round_int64(__unscale(r, v)))
-
-bool is_within_range(struct bladerf_range const *range, int64_t value);
-int64_t clamp_to_range(struct bladerf_range const *range, int64_t value);
-
-#endif  // RANGE_H_

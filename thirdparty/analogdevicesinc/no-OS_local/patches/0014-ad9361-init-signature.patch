@@ -1,0 +1,7 @@
+diff --git ad9361_api.c ad9361_api.c
+index f78e942..3681f67 100644
+--- ad9361_api.c
++++ ad9361_api.c
+@@ -71 +71 @@ int32_t ad9361_init(struct ad9361_rf_phy **ad9361_phy,
+-		    AD9361_InitParam *init_param)
++		    AD9361_InitParam *init_param, void *ctx)

@@ -34,6 +34,7 @@
 #include "libbladeRF_nios_compat.h"
 #endif
 
+#include "ad9361_api.h"
 #include "ad936x.h"
 
 /**

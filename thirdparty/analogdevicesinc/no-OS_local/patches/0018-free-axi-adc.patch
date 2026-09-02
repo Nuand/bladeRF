@@ -1,0 +1,6 @@
+diff --git ad9361_api.c ad9361_api.c
+index 0fc56b3..36059fc 100644
+--- ad9361_api.c
++++ ad9361_api.c
+@@ -607,0 +608 @@ int32_t ad9361_remove(struct ad9361_rf_phy *phy)
++	axi_adc_remove(phy->rx_adc);

@@ -288,6 +288,7 @@ if(ENABLE_USB_DEV_RESET_ON_OPEN)
 endif()
 
 if(BUILD_AD936X)
+    add_definitions(-DBUILD_AD936X)
     set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ad936x)
 endif(BUILD_AD936X)
 
