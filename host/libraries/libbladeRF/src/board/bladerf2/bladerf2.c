@@ -2448,11 +2448,18 @@ static int bladerf2_get_tuning_mode(struct bladerf *dev,
 static int bladerf2_get_loopback_modes(
     struct bladerf *dev, struct bladerf_loopback_modes const **modes)
 {
+    struct bladerf2_board_data *board_data = dev->board_data;
+    size_t count = ARRAY_SIZE(bladerf2_loopback_modes);
+
     if (modes != NULL) {
         *modes = bladerf2_loopback_modes;
     }
 
-    return ARRAY_SIZE(bladerf2_loopback_modes);
+    if (board_data->tuning_mode == BLADERF_TUNING_MODE_FPGA) {
+        --count;
+    }
+
+    return count;
 }
 
 static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback mode)
