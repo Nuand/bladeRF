@@ -126,6 +126,12 @@ static int _rfic_fpga_spinwait(struct bladerf *dev)
     /* Poll the CPU and spin until the job has been completed. */
     do {
         jobs = _rfic_fpga_get_status_wqlen(dev);
+        if (jobs < 0) {
+            log_debug("%s: RFIC status read failed: %s\n", __FUNCTION__,
+                      bladerf_strerror(jobs));
+            return jobs;
+        }
+
         if (0 != jobs) {
             usleep(DELAY);
         }
@@ -134,6 +140,7 @@ static int _rfic_fpga_spinwait(struct bladerf *dev)
     /* If it's simply taking too long to dequeue the command, status will
      * have the number of items in the queue. Bonk this down to a timeout. */
     if (jobs > 0) {
+        log_debug("%s: RFIC write queue failed to drain\n", __FUNCTION__);
         jobs = BLADERF_ERR_TIMEOUT;
     }
 

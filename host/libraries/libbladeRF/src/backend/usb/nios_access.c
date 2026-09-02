@@ -84,9 +84,19 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
 }
 
 /* Variant that doesn't output to log_error on error. */
-static int nios_access_quiet(struct bladerf *dev, uint8_t *buf)
+static int nios_access_quiet(struct bladerf *dev,
+                             uint8_t *buf,
+                             uint8_t id,
+                             bool write,
+                             uint16_t addr)
 {
+    uint32_t const RFIC_TIMEOUT_MS = 10000;
+    size_t const RESPONSE_ATTEMPTS = 2;
     struct bladerf_usb *usb = dev->backend_data;
+    uint8_t response_id;
+    bool response_write;
+    uint16_t response_addr;
+    size_t attempt = 0;
     int status;
 
     print_buf("NIOS II REQ:", buf, NIOS_PKT_LEN);
@@ -98,9 +108,25 @@ static int nios_access_quiet(struct bladerf *dev, uint8_t *buf)
         return status;
     }
 
-    /* Retrieve the request */
-    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN, buf,
-                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
+    /* Retrieve the response without sending a duplicate command on a timeout. */
+    do {
+        status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN, buf,
+                                        NIOS_PKT_LEN, RFIC_TIMEOUT_MS);
+        if (status != 0) {
+            break;
+        }
+
+        nios_pkt_16x64_unpack(buf, &response_id, &response_write,
+                              &response_addr, NULL);
+        if (buf[NIOS_PKT_16x64_IDX_MAGIC] == NIOS_PKT_16x64_MAGIC &&
+            response_id == id && response_write == write &&
+            response_addr == addr) {
+            break;
+        }
+
+        log_debug("%s: discarded unexpected response\n", __FUNCTION__);
+        status = BLADERF_ERR_UNEXPECTED;
+    } while (status == BLADERF_ERR_UNEXPECTED && ++attempt < RESPONSE_ATTEMPTS);
 
     print_buf("NIOS II res:", buf, NIOS_PKT_LEN);
 
@@ -294,9 +320,9 @@ static int nios_16x64_read(struct bladerf *dev,
 
     nios_pkt_16x64_pack(buf, id, false, addr, 0);
 
-    /* RFIC access times out occasionally, and this is fine. */
+    /* RFIC operations can exceed the standard peripheral timeout. */
     if (NIOS_PKT_16x64_TARGET_RFIC == id) {
-        status = nios_access_quiet(dev, buf);
+        status = nios_access_quiet(dev, buf, id, false, addr);
     } else {
         status = nios_access(dev, buf);
     }
@@ -327,9 +353,9 @@ static int nios_16x64_write(struct bladerf *dev,
 
     nios_pkt_16x64_pack(buf, id, true, addr, data);
 
-    /* RFIC access times out occasionally, and this is fine. */
+    /* RFIC operations can exceed the standard peripheral timeout. */
     if (NIOS_PKT_16x64_TARGET_RFIC == id) {
-        status = nios_access_quiet(dev, buf);
+        status = nios_access_quiet(dev, buf, id, true, addr);
     } else {
         status = nios_access(dev, buf);
     }
