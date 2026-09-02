@@ -214,6 +214,11 @@ struct sync_meta {
         /* Used only for TX */
         struct {
             bool in_burst;
+            uint64_t burst_start; /* Timestamp the current burst was
+                                   * scheduled to begin at. Valid while
+                                   * in_burst && !now; used to bound how
+                                   * much of the burst may sit in the
+                                   * device ahead of playback. */
             bool now;
         };
     };

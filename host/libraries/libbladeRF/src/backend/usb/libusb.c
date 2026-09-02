@@ -46,6 +46,16 @@
 #   define LIBUSB_HANDLE_EVENTS_TIMEOUT_NSEC    (15 * 1000)
 #endif
 
+/* No short polling timeout on TX transfers, deliberately.
+ *
+ * Retiring an in-flight TX transfer cuts it wherever it happens to be, and a
+ * cut that is not a multiple of the FX3's 8192-byte buffer leaves the DMA
+ * channel holding an unfinished buffer that nothing can complete - the wedge
+ * documented and fixed in "libusb: do not cut a TX transfer in the middle of
+ * a buffer". A transfer waiting on a scheduled timestamp must be left alone
+ * until it finishes; capacity control belongs at submission, not in the
+ * transfer timeout. */
+
 struct bladerf_lusb {
     libusb_device           *dev;
     libusb_device_handle    *handle;
@@ -85,6 +95,7 @@ struct lusb_stream_data {
 
     /* Report a stalled feed once per stream, not once per transfer. */
     bool timeout_reported;
+
 
     /* Completion flag for libusb_handle_events_timeout_completed(). libusb
      * re-checks it under its own event lock, which is what makes the wait
@@ -1129,6 +1140,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     } else {
         stream_data->transfer_status[transfer_i] = TRANSFER_AVAIL;
         stream_data->num_avail++;
+
+
         COND_SIGNAL(&stream->can_submit_buffer);
     }
 
@@ -1158,6 +1171,60 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                     (int)transfer->status, transfer->actual_length,
                     (int)transfer->length,
                     (unsigned)stream_data->num_complete);
+    }
+
+    /* A TX transfer that timed out without moving a byte is backpressure,
+     * not a fault.
+     *
+     * With SC16_Q11_META the FPGA pulls a block out of the FX3 only once its
+     * timestamp comes due (fifo_reader.vhd: timestamp >= meta_p_time). A
+     * burst scheduled into the future is therefore not consumed at all until
+     * its start time: the FX3 buffers fill, the endpoint stops accepting, and
+     * the kernel retires the queued URBs with -ENOENT after their timeout.
+     *
+     * Confirmed with usbmon on a bladeRF 2.0 micro: 18 submissions, 18
+     * completions, one with status 0 carrying the full buffer, the rest one
+     * second later with status -2 and zero bytes - while the other endpoint
+     * kept completing normally throughout. Nothing was lost and the link was
+     * healthy; the device simply had nowhere to put the data yet.
+     *
+     * Tearing the stream down here turns that wait into a hard failure: the
+     * worker exits, no thread services completions, and the remainder of the
+     * burst is stranded. Instead, hand the transfer back to the pool and
+     * leave the stream running. The buffer stays IN_FLIGHT and unsent, so
+     * sync_tx() re-submits it through the reclaim path once the device is
+     * ready - no samples are dropped and none are duplicated.
+     *
+     * Only a transfer that moved nothing is retried. Resuming a partially
+     * accepted buffer from where it stopped was tried and does not help: the
+     * device is full either way, so the remainder stalls exactly like the
+     * whole did (measured: one resume of 8192 bytes, then 95 consecutive
+     * zero-byte stalls). Retrying it also cannot be done by resending from
+     * the start, which would put the accepted samples on the air twice. RX
+     * is left alone - there a timeout does mean the feed stopped. */
+    if (transfer->status == LIBUSB_TRANSFER_TIMED_OUT &&
+        transfer->actual_length == 0 &&
+        (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX &&
+        stream->state == STREAM_RUNNING) {
+        int resubmit;
+
+        log_verbose("TX transfer %p timed out with nothing sent; device not "
+                    "ready for scheduled samples yet. Requeueing.\n",
+                    transfer->buffer);
+
+        /* submit_transfer() takes a fresh transfer from the pool - this one
+         * was returned to it a few lines above - so nothing is reused from
+         * under libusb. Nothing of the buffer reached the device, so this
+         * neither drops nor duplicates samples; it simply waits again. */
+        resubmit = submit_transfer(stream, transfer->buffer,
+                                   async_stream_buf_bytes(stream));
+        if (resubmit == 0) {
+            MUTEX_UNLOCK(&stream->lock);
+            return;
+        }
+
+        log_debug("Could not requeue stalled TX transfer: %s\n",
+                  bladerf_strerror(resubmit));
     }
 
     /* Check to see if the transfer has been cancelled or errored */
@@ -1557,6 +1624,8 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
     return status;
 }
 
+
+
 /* The top-level code will have aquired the stream->lock for us */
 int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
                               void *buffer, size_t *length,
@@ -1575,6 +1644,20 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         return 0;
     }
 
+    /* Room means both a free transfer and space the device can actually take.
+     *
+     * Counting only transfers queues past what the hardware holds: with a
+     * scheduled burst nothing is consumed until its start time, so the extra
+     * submissions sit on a full endpoint and time out. Waiting here instead
+     * keeps the feed matched to the device and lets a burst of any length go
+     * out, a piece at a time, as room frees up. */
+    /* A byte-level admission gate was tried here and measured worse: the only
+     * cheap feedback is URB completion, which for a scheduled burst arrives
+     * only after consumption begins, so the gate starved the feed during
+     * playback and stalled configurations that work without it. Capacity
+     * pressure is instead absorbed by requeueing zero-byte TX timeouts in
+     * lusb_stream_cb, which keeps the stream alive while the device waits
+     * for its timestamp. */
     if (stream_data->num_avail == 0) {
         if (nonblock) {
             log_debug("Non-blocking buffer submission requested, but no "
