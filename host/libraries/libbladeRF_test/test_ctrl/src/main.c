@@ -51,6 +51,7 @@ static const struct test_case *tests[] = {
     &test_case_bandwidth,
     &test_case_gain,
     &test_case_frequency,
+    &test_case_thread_timeout,
     &test_case_threads,
     // clang-format on
 };

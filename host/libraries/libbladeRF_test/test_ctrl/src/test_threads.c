@@ -30,6 +30,42 @@
 #include "thread.h"
 
 DECLARE_TEST_CASE(threads);
+DECLARE_TEST_CASE(thread_timeout);
+
+failure_count test_thread_timeout(struct bladerf *dev,
+                                  struct app_params *p,
+                                  bool quiet)
+{
+#ifdef USE_PTHREADS
+    MUTEX lock;
+    COND condition;
+    int status;
+
+    (void)dev;
+    (void)p;
+
+    MUTEX_INIT(&lock);
+    COND_INIT(&condition);
+    MUTEX_LOCK(&lock);
+    status = COND_TIMED_WAIT(&condition, &lock, 1);
+    MUTEX_UNLOCK(&lock);
+    pthread_cond_destroy(&condition);
+    MUTEX_DESTROY(&lock);
+
+    if (status != THREAD_TIMEOUT) {
+        PR_ERROR("Timed wait returned %d, expected %d\n", status,
+                 THREAD_TIMEOUT);
+        return 1;
+    }
+
+    PRINT("POSIX timed wait preserved ETIMEDOUT\n");
+#else
+    (void)dev;
+    (void)p;
+    PRINT("POSIX timed wait test skipped\n");
+#endif
+    return 0;
+}
 
 struct sync_task {
     struct bladerf *dev;
