@@ -73,7 +73,16 @@ struct lusb_stream_data {
     * libusb 1.0.19 for Windows. Further investigation required...
     */
     bool out_of_order_event;
+    int done_flag;
 };
+
+static inline void mark_stream_done(struct bladerf_stream *stream)
+{
+    struct lusb_stream_data *stream_data = stream->backend_data;
+
+    stream->state = STREAM_DONE;
+    stream_data->done_flag = 1;
+}
 
 static inline struct bladerf_lusb * lusb_backend(struct bladerf *dev)
 {
@@ -1145,7 +1154,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         /* We know we're done when all of our transfers have returned to their
          * "available" states */
         if (stream_data->num_avail == stream_data->num_transfers) {
-            stream->state = STREAM_DONE;
+            mark_stream_done(stream);
         } else {
             cancel_all_transfers(stream);
         }
@@ -1267,6 +1276,7 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
     stream_data->num_avail = 0;
     stream_data->i = 0;
     stream_data->out_of_order_event = false;
+    stream_data->done_flag = 0;
 
     stream_data->transfers =
         malloc(num_transfers * sizeof(struct libusb_transfer *));
@@ -1359,7 +1369,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
                 } else {
                     /* No transfers have been shipped out yet so we can
                      * simply enter our "done" state */
-                    stream->state = STREAM_DONE;
+                    mark_stream_done(stream);
                 }
 
                 /* In either of the above we don't want to attempt to
@@ -1391,7 +1401,8 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
 
     /* This loop is required so libusb can do callbacks and whatnot */
     while (stream->state != STREAM_DONE) {
-        status = libusb_handle_events_timeout(lusb->context, &tv);
+        status = libusb_handle_events_timeout_completed(
+            lusb->context, &tv, &stream_data->done_flag);
 
         if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
             log_warning("unexpected value from events processing: "
@@ -1402,7 +1413,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
         MUTEX_LOCK(&stream->lock);
         if (stream->state == STREAM_SHUTTING_DOWN) {
             if (stream_data->num_avail == stream_data->num_transfers) {
-                stream->state = STREAM_DONE;
+                mark_stream_done(stream);
             } else {
                 cancel_all_transfers(stream);
             }
@@ -1423,7 +1434,7 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
 
     if (buffer == BLADERF_STREAM_SHUTDOWN) {
         if (stream_data->num_avail == stream_data->num_transfers) {
-            stream->state = STREAM_DONE;
+            mark_stream_done(stream);
         } else {
             stream->state = STREAM_SHUTTING_DOWN;
         }
