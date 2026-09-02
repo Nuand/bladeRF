@@ -273,6 +273,7 @@ static int _rfic_fpga_enable_module(struct bladerf *dev,
     bool dir_enabled; /* Direction: initial state */
     bool dir_enable;  /* Direction: target state */
     bool dir_pending; /* Direction: target state is not initial state */
+    bool mimo_enabled;
     bool be_toggle;   /* Backend: toggle off/on to reset backend FIFO */
     bool be_teardown; /* Backend: disable backend module */
     bool be_setup;    /* Backend: enable backend module */
@@ -290,7 +291,10 @@ static int _rfic_fpga_enable_module(struct bladerf *dev,
     dir_enable  = ch_enable || _rffe_dir_otherwise_enabled(reg, ch);
     ch_pending  = ch_enabled != ch_enable;
     dir_pending = dir_enabled != dir_enable;
-    be_toggle   = !BLADERF_CHANNEL_IS_TX(ch) && ch_enable && !dir_pending;
+    mimo_enabled =
+        board_data->sync[dir].stream_config.layout == BLADERF_RX_X2;
+    be_toggle   = !BLADERF_CHANNEL_IS_TX(ch) && ch_enable && !dir_pending &&
+                  !mimo_enabled;
     be_setup    = be_toggle || (dir_pending && dir_enable);
     be_teardown = be_toggle || (dir_pending && !dir_enable);
 
