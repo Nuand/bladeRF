@@ -438,8 +438,7 @@ void sync_worker_submit_request(struct sync_worker *w, unsigned int request)
     COND_SIGNAL(&w->requests_pending);
     MUTEX_UNLOCK(&w->request_lock);
 
-    if ((request & SYNC_WORKER_STOP) != 0 && w->stream != NULL &&
-        (w->stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
+    if ((request & SYNC_WORKER_STOP) != 0 && w->stream != NULL) {
         MUTEX_LOCK(&w->stream->lock);
         if (w->stream->state == STREAM_RUNNING) {
             w->stream->state = STREAM_SHUTTING_DOWN;
