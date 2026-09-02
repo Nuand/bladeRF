@@ -61,6 +61,7 @@ add_library(ad936x STATIC
     # sample path is dead after every cold power-up.
     ${LIBAD936X_PLATFORM_DIR}/bladerf2_axi_io.c
     ${LIBAD936X_UPSTREAM_BUILD_DIR}/axi_adc_core.c
+    ${LIBAD936X_UPSTREAM_BUILD_DIR}/axi_dac_core.c
     ${LIBAD936X_FPGACOMMON_DIR}/src/ad936x_params.c
 )
 
@@ -219,8 +220,9 @@ foreach(cpfile IN ITEMS ${LIBAD936X_UPSTREAM_UTIL_FILES})
     )
 endforeach(cpfile)
 
-# AXI adc core is built (it initializes the FPGA-side ad9361 interface core);
-# the dac core is header-only here (included but not called by the driver).
+# Both halves of the FPGA-side ad9361 interface core are built: axi_adc_init
+# brings the RX side out of reset, axi_dac_init does the same for TX and -
+# critically - points the DAC at the DMA stream instead of its internal DDS.
 configure_file(
     "${LIBAD936X_UPSTREAM_AXI_DIR}/axi_adc_core/axi_adc_core.h"
     "${LIBAD936X_UPSTREAM_BUILD_DIR}/" COPYONLY)
@@ -229,6 +231,9 @@ configure_file(
     "${LIBAD936X_UPSTREAM_BUILD_DIR}/" COPYONLY)
 configure_file(
     "${LIBAD936X_UPSTREAM_AXI_DIR}/axi_dac_core/axi_dac_core.h"
+    "${LIBAD936X_UPSTREAM_BUILD_DIR}/" COPYONLY)
+configure_file(
+    "${LIBAD936X_UPSTREAM_AXI_DIR}/axi_dac_core/axi_dac_core.c"
     "${LIBAD936X_UPSTREAM_BUILD_DIR}/" COPYONLY)
 
 # No patches are applied any more.

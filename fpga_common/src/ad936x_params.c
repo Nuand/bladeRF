@@ -7,6 +7,7 @@
 
 #include "ad9361_api.h"
 #include "axi_adc_core.h"
+#include "axi_dac_core.h"
 #include "platform.h"
 
 /**
@@ -27,6 +28,44 @@ static struct axi_adc_init bladerf2_rx_adc_init = {
     .name         = "bladerf2-axi-ad9361",
     .base         = 0,
     .num_channels = 4, // 2R2T, I+Q на канал
+};
+
+/* TX side of the same core.
+ *
+ * The old in-tree ADI bundle initialized both directions from the platform:
+ * axiadc_init() called adc_init(phy) and then dac_init(phy, DATA_SEL_DMA, 0).
+ * The migration to the current driver dropped adc_core.c and dac_core.c from
+ * the build; the ADC path was restored, the DAC path was not, and the current
+ * driver only ever touches rx_adc - nothing initializes tx_dac.
+ *
+ * The consequence is silent: the control plane is fully alive, sync_tx()
+ * succeeds, USB transfers complete, and the TX LO leaks at the expected
+ * level, but no submitted sample ever reaches the air. The core comes out of
+ * power-up with its data source set to DDS, so the DAC plays its internal
+ * generator instead of the DMA stream.
+ *
+ * The channel table is what makes that explicit: with .channels left NULL,
+ * axi_dac_data_setup() programs DDS tones instead. Four channels for 2R2T,
+ * I and Q each. */
+static struct axi_dac_channel bladerf2_tx_dac_channels[4] = {
+    { .sel = AXI_DAC_DATA_SEL_DMA },
+    { .sel = AXI_DAC_DATA_SEL_DMA },
+    { .sel = AXI_DAC_DATA_SEL_DMA },
+    { .sel = AXI_DAC_DATA_SEL_DMA },
+};
+
+static struct axi_dac_init bladerf2_tx_dac_init = {
+    .name         = "bladerf2-axi-ad9361-tx",
+    /* DAC half of the core lives at +0x4000 in the same flat space - the
+     * old in-tree dac_core.c added that offset in dac_read/dac_write, while
+     * the current driver expects it in .base. With base 0 the DAC writes
+     * land on the ADC's registers instead: axi_dac_init()'s reset write to
+     * 0x40 hits AXI_ADC_REG_RSTN and takes the receiver down with it
+     * (measured: every RX bin reads -inf, including the TX LO leak that is
+     * always present otherwise). */
+    .base         = 0x4000,
+    .num_channels = 4,
+    .channels     = bladerf2_tx_dac_channels,
 };
 
 AD9361_InitParam bladerf2_rfic_init_params = {
@@ -317,6 +356,7 @@ AD9361_InitParam bladerf2_rfic_init_params = {
 
     /* FPGA AXI interface core init (деасерт RSTN у axi_adc_init) */
     .rx_adc_init = &bladerf2_rx_adc_init,
+    .tx_dac_init = &bladerf2_tx_dac_init,
 
     .ad9361_rfpll_ext_recalc_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_recalc_rate)()
     .ad9361_rfpll_ext_round_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_round_rate)()
@@ -614,6 +654,7 @@ AD9361_InitParam bladerf2_rfic_init_params_fastagc_burst = {
 
     /* FPGA AXI interface core init (деасерт RSTN у axi_adc_init) */
     .rx_adc_init = &bladerf2_rx_adc_init,
+    .tx_dac_init = &bladerf2_tx_dac_init,
 
     .ad9361_rfpll_ext_recalc_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_recalc_rate)()
     .ad9361_rfpll_ext_round_rate = NULL,	// Future use (RX_EXT_LO, TX_EXT_LO control)                        // (*ad9361_rfpll_ext_round_rate)()
