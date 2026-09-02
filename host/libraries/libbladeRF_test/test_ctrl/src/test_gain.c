@@ -41,7 +41,8 @@ struct gain {
 static inline int set_and_check(struct bladerf *dev,
                                 bladerf_channel ch,
                                 struct gain const *g,
-                                int gain)
+                                int gain,
+                                struct app_params const *p)
 {
     int readback;
     int status;
@@ -75,7 +76,7 @@ static inline int set_and_check(struct bladerf *dev,
             return status;
         }
     }
-    if (gain != readback) {
+    if (!p->concurrent_control && gain != readback) {
         PR_ERROR("Erroneous %s gain readback=%d, expected=%d\n", g->name,
                  readback, gain);
         return -1;
@@ -86,6 +87,7 @@ static inline int set_and_check(struct bladerf *dev,
 
 static failure_count gain_sweep(struct bladerf *dev,
                                 bladerf_channel ch,
+                                struct app_params const *p,
                                 bool quiet)
 {
     char const **stages    = NULL;
@@ -145,7 +147,7 @@ static failure_count gain_sweep(struct bladerf *dev,
 
         fflush(stdout);
         for (gain = stage.min; gain <= stage.max; gain += stage.inc) {
-            status = set_and_check(dev, ch, &stage, __round_int(gain));
+            status = set_and_check(dev, ch, &stage, __round_int(gain), p);
             if (status != 0) {
                 failures++;
             }
@@ -233,7 +235,7 @@ static failure_count random_gains(struct bladerf *dev,
                 gain = stage.min;
             }
 
-            status = set_and_check(dev, ch, &stage, __round_int(gain));
+            status = set_and_check(dev, ch, &stage, __round_int(gain), p);
             if (status != 0) {
                 failures++;
             }
@@ -268,14 +270,17 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
             int num_gain_modes = 0;
             int status;
 
-            /* NOTE: This is a workaround for a bug in fpga v0.10.2 on bladerf2,
-             * where the frequency post-initialization is not valid. */
-            status = bladerf_set_frequency(dev, ch, TEST_FREQ);
-            if (status != 0) {
-                PR_ERROR("Failed to set frequency %" BLADERF_PRIuFREQ
-                         " Hz: %s\n",
-                         TEST_FREQ, bladerf_strerror(status));
-                return status;
+            if (!p->concurrent_control) {
+                /* NOTE: This is a workaround for a bug in fpga v0.10.2 on
+                 * bladerf2, where the frequency post-initialization is not
+                 * valid. */
+                status = bladerf_set_frequency(dev, ch, TEST_FREQ);
+                if (status != 0) {
+                    PR_ERROR("Failed to set frequency %" BLADERF_PRIuFREQ
+                             " Hz: %s\n",
+                             TEST_FREQ, bladerf_strerror(status));
+                    return status;
+                }
             }
 
             num_gain_modes = bladerf_get_gain_modes(dev, ch, NULL);
@@ -341,7 +346,7 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
                                  channel2str(ch), bladerf_strerror(status));
                         failures++;
                     } else if (set_and_check(dev, ch, &overall,
-                                             SIGNED_GAIN_TEST_VALUE) != 0) {
+                                             SIGNED_GAIN_TEST_VALUE, p) != 0) {
                         failures++;
                     }
 
@@ -356,7 +361,7 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
 
             PRINT("%s: Performing gain sweep on %s...\n", __FUNCTION__,
                   channel2str(ch));
-            failures += gain_sweep(dev, ch, quiet);
+            failures += gain_sweep(dev, ch, p, quiet);
 
             PRINT("%s: Applying random gains on %s...\n", __FUNCTION__,
                   channel2str(ch));

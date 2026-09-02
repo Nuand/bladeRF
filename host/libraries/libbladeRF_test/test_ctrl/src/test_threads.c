@@ -72,7 +72,9 @@ struct sync_task {
     bladerf_direction direction;
     THREAD thread;
     MUTEX lock;
+    COND cond;
     bool launched;
+    bool ready;
     bool run;
     int status;
 };
@@ -86,7 +88,7 @@ struct thread_test_case {
 struct thread_state {
     bool launched;
     struct bladerf *dev;
-    struct app_params *p;
+    struct app_params p;
     failure_count failures;
     struct thread_test_case const *tc;
     THREAD thread;
@@ -138,6 +140,11 @@ static void *stream_task(void *arg)
         goto out;
     }
 
+    MUTEX_LOCK(&t->lock);
+    t->ready = true;
+    COND_SIGNAL(&t->cond);
+    MUTEX_UNLOCK(&t->lock);
+
     get_sync_task_state(t, &run);
     while (run && 0 == status) {
         if (BLADERF_RX == t->direction) {
@@ -167,6 +174,8 @@ out:
     free(samples);
     MUTEX_LOCK(&t->lock);
     t->status = status;
+    t->ready  = true;
+    COND_SIGNAL(&t->cond);
     MUTEX_UNLOCK(&t->lock);
     return NULL;
 }
@@ -177,10 +186,12 @@ static void init_task(struct sync_task *t,
 {
     t->dev       = dev;
     t->launched  = false;
+    t->ready     = false;
     t->run       = true;
     t->status    = 0;
     t->direction = dir;
     MUTEX_INIT(&t->lock);
+    COND_INIT(&t->cond);
 }
 
 static int launch_task(struct sync_task *t)
@@ -190,6 +201,13 @@ static int launch_task(struct sync_task *t)
     status = THREAD_CREATE(&t->thread, stream_task, t);
     if (THREAD_SUCCESS == status) {
         t->launched = true;
+
+        MUTEX_LOCK(&t->lock);
+        while (!t->ready) {
+            COND_WAIT(&t->cond, &t->lock);
+        }
+        status = t->status;
+        MUTEX_UNLOCK(&t->lock);
     }
 
     return status;
@@ -212,10 +230,11 @@ static inline int deinit_task(struct sync_task *t)
 void *run_test_fn(void *arg)
 {
     struct thread_state *s = (struct thread_state *)arg;
+    size_t const iterations = s->p.fast_test ? 1 : s->tc->iterations;
     size_t i;
 
-    for (i = 0; i < s->tc->iterations; i++) {
-        s->failures += s->tc->test->fn(s->dev, s->p, s->tc->quiet);
+    for (i = 0; i < iterations; i++) {
+        s->failures += s->tc->test->fn(s->dev, &s->p, s->tc->quiet);
     }
 
     return NULL;
@@ -230,23 +249,6 @@ failure_count test_threads(struct bladerf *dev, struct app_params *p, bool quiet
     size_t i;
     failure_count failures = 0;
     int status;
-
-    // Workaround for https://github.com/Nuand/bladeRF/issues/705
-    if (0 == strcmp(bladerf_get_board_name(dev), "bladerf2")) {
-        bladerf_tuning_mode mode;
-
-        status = bladerf_get_tuning_mode(dev, &mode);
-        if (status < 0 && status != BLADERF_ERR_UNSUPPORTED) {
-            PR_ERROR("  Could not get current tuning mode\n");
-            return 1;
-        }
-
-        if (mode != BLADERF_TUNING_MODE_FPGA) {
-            PR_ERROR("  Cannot successfully run this test with host-based "
-                     "tuning on the bladerf2 (bug #705)\n");
-            return 1;
-        }
-    }
 
     PRINT("%s: Running full-duplex stream with multiple control threads...\n",
           __FUNCTION__);
@@ -265,7 +267,8 @@ failure_count test_threads(struct bladerf *dev, struct app_params *p, bool quiet
     for (i = 0; i < ARRAY_SIZE(tc); i++) {
         threads[i].launched = false;
         threads[i].dev      = dev;
-        threads[i].p        = p;
+        threads[i].p        = *p;
+        threads[i].p.concurrent_control = true;
         threads[i].failures = 0;
         threads[i].tc       = &tc[i];
     }
@@ -314,8 +317,24 @@ failure_count test_threads(struct bladerf *dev, struct app_params *p, bool quiet
     }
 
 out:
-    deinit_task(&rx);
-    deinit_task(&tx);
+    MUTEX_LOCK(&rx.lock);
+    rx.run = false;
+    MUTEX_UNLOCK(&rx.lock);
+    MUTEX_LOCK(&tx.lock);
+    tx.run = false;
+    MUTEX_UNLOCK(&tx.lock);
+
+    status = deinit_task(&rx);
+    if (status != 0) {
+        PR_ERROR("RX stream failed: %s\n", bladerf_strerror(status));
+        failures++;
+    }
+
+    status = deinit_task(&tx);
+    if (status != 0) {
+        PR_ERROR("TX stream failed: %s\n", bladerf_strerror(status));
+        failures++;
+    }
 
     p->module_enabled = false;
 
