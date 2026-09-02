@@ -1507,3 +1507,12 @@ const struct usb_driver usb_driver_libusb = {
     FIELD_INIT(.fn, &libusb_fns),
     FIELD_INIT(.id, BLADERF_BACKEND_LIBUSB),
 };
+
+#ifdef BLADERF_TEST_LIBUSB_EVENT_WAIT
+int test_lusb_stream(void *driver,
+                     struct bladerf_stream *stream,
+                     bladerf_channel_layout layout)
+{
+    return lusb_stream(driver, stream, layout);
+}
+#endif
