@@ -112,6 +112,7 @@ void print_help() {
 int main(int argc, char *argv[])
 {
     int status = 0;
+    int stream_status;
     struct bladerf *dev = NULL;
     const char *fpga_file = NULL;
     const char *device_string = NULL;
@@ -278,6 +279,10 @@ int main(int argc, char *argv[])
             CHECK_STATUS(bladerf_enable_module(dev, BLADERF_CHANNEL_TX(1), true));
         CHECK_STATUS(bladerf_sync_tx(dev, config.tx_samples, config.num_samples,
             &config.tx_meta, 5000));
+        if (config.mimo) {
+            CHECK_STATUS(
+                bladerf_enable_module(dev, BLADERF_CHANNEL_TX(1), false));
+        }
         CHECK_STATUS(bladerf_enable_module(dev, BLADERF_CHANNEL_TX(0), false));
     }
 
@@ -306,10 +311,12 @@ int main(int argc, char *argv[])
         config.rx_meta.timestamp += config.sample_rate / 10;
         printf("Scheduling RX for 0x%016" PRIx64 "\n", config.rx_meta.timestamp);
 
-        status = bladerf_sync_rx(dev, config.rx_samples, config.num_samples,
-            &config.rx_meta, config.timeout_ms);
-        if (status != 0) {
-            fprintf(stderr, "RX failed: %s\n", bladerf_strerror(status));
+        stream_status = bladerf_sync_rx(dev, config.rx_samples,
+                                        config.num_samples, &config.rx_meta,
+                                        config.timeout_ms);
+        if (stream_status != 0) {
+            fprintf(stderr, "RX failed: %s\n",
+                    bladerf_strerror(stream_status));
         } else if (config.rx_meta.status & BLADERF_META_STATUS_OVERRUN) {
             fprintf(stderr, "Overrun detected. %u valid samples were read.\n",
             config.rx_meta.actual_count);
@@ -318,7 +325,15 @@ int main(int argc, char *argv[])
             printf("RX'd %u samples at t=0x%016" PRIx64 "\n", config.rx_meta.actual_count,
             config.rx_meta.timestamp);
         }
+        if (config.mimo) {
+            CHECK_STATUS(
+                bladerf_enable_module(dev, BLADERF_CHANNEL_RX(1), false));
+        }
         CHECK_STATUS(bladerf_enable_module(dev, BLADERF_CHANNEL_RX(0), false));
+        if (stream_status != 0) {
+            status = stream_status;
+            goto error;
+        }
     }
 
 error:
