@@ -1183,81 +1183,21 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
            len = async_stream_buf_bytes(s->worker->stream);
         }
 
-        /* Hold this buffer back until the samples just ahead of it have gone
-         * to air, so the device never sits on data whose timestamp has not
-         * come due.
+        /* Do NOT pace timestamped buffers against the device clock here.
+         * A pacing loop lived in this spot briefly and it broke scheduled
+         * playback outright: the FPGA metadata engine wants each message
+         * delivered BEFORE its timestamp so META_WAIT can hold it, and
+         * releasing a buffer at (end - 2048) hands every message over after
+         * its own start tick. Measured on a bladeRF 2.0 micro loopback: with
+         * pacing a scheduled tone burst never airs (noise floor in its bin);
+         * with the buffer preloaded ahead of the timestamp the same burst
+         * plays at +87 dB starting exactly at its tick.
          *
-         * Measured on a bladeRF 2.0 micro (usbmon + loopback): samples
-         * delivered AHEAD of their timestamp are never played. The path
-         * absorbs 122880 bytes - 11 FX3 DMA buffers of 8192 plus an
-         * 8192-sample FPGA FIFO - and then the endpoint stops accepting;
-         * playback does not begin even after the scheduled time passes, every
-         * queued URB dies in the kernel at its timeout, and only the first
-         * 30720 samples ever reach the air, however long the burst. Delivered
-         * AT or PAST the timestamp, the same data plays immediately and a
-         * burst of any length streams through (40-buffer series: 164 of 164
-         * transfers completed, four series in one stream).
-         *
-         * So the release point for a buffer ending at tick E is the moment
-         * the device clock reaches E - hold: everything the buffer trails is
-         * on the air, and the buffer itself arrives as its own window opens.
-         * The wait is computed from the tick deficit and the sample rate -
-         * one sleep, one confirming read - not polled.
-         *
-         * TX_NOW is exempt: the device consumes immediately and ordinary
-         * flow control suffices. If the clock or rate cannot be read, submit
-         * as before rather than guessing. */
-        if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META &&
-            s->meta.in_burst && !s->meta.now) {
-            /* One FX3 DMA buffer (8192 B) of slack: enough for the transport
-             * to land the buffer before its first sample is due, small
-             * enough that the device is never asked to hold future data. */
-            const uint64_t hold_samples = 2048;
-            const uint64_t end          = s->meta.curr_timestamp;
-            uint64_t waited_us          = 0;
-            const uint64_t budget_us =
-                s->stream_config.timeout_ms == 0
-                    ? UINT64_MAX
-                    : (uint64_t)s->stream_config.timeout_ms * 1000;
-            bladerf_sample_rate rate = 0;
-
-            if (end > s->meta.burst_start + hold_samples &&
-                s->dev->board->get_sample_rate(
-                    s->dev, BLADERF_CHANNEL_TX(0), &rate) == 0 &&
-                rate != 0) {
-                const uint64_t release_tick = end - hold_samples;
-
-                for (;;) {
-                    uint64_t now_ts = 0;
-                    uint64_t deficit;
-                    uint64_t wait_us;
-
-                    if (s->dev->backend->get_timestamp(s->dev, BLADERF_TX,
-                                                       &now_ts) != 0 ||
-                        now_ts >= release_tick) {
-                        break;
-                    }
-
-                    deficit = release_tick - now_ts;
-                    wait_us = deficit * 1000000 / rate;
-                    if (wait_us == 0) {
-                        wait_us = 1;
-                    }
-
-                    if (waited_us + wait_us > budget_us) {
-                        log_debug("%s: %" PRIu64 " samples still ahead of "
-                                  "the device clock at the %u ms timeout\n",
-                                  __FUNCTION__, deficit,
-                                  s->stream_config.timeout_ms);
-                        break;
-                    }
-
-                    usleep((useconds_t)wait_us);
-                    waited_us += wait_us;
-                }
-            }
-        }
-
+         * The "data ahead of its timestamp wedges the endpoint" result that
+         * justified pacing was measured while the FPGA-side AXI DAC core was
+         * left uninitialized (DAC played its DDS, never draining the DMA
+         * path). With the DAC core initialized, holding future data is
+         * exactly what the engine is designed to do. */
         status = async_submit_stream_buffer(s->worker->stream,
                                             b->buffers[idx],
                                             &len,

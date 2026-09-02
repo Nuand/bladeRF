@@ -66,6 +66,13 @@ static struct axi_dac_init bladerf2_tx_dac_init = {
     .base         = 0x4000,
     .num_channels = 4,
     .channels     = bladerf2_tx_dac_channels,
+    /* AXI_DAC_REG_RATECNTRL. The old in-tree dac_init() picked this from the
+     * two mode bits it had at hand: DAC_RATE(1) for 2R2T without LVDS, which
+     * is this board (two_rx_two_tx_mode_enable = 1, CMOS port config). The
+     * current driver takes it from .rate instead, and an unset field wrote
+     * DAC_RATE(0) - the single-channel divisor - leaving the core clocking
+     * the interface at the wrong ratio for the mode the RFIC is actually in. */
+    .rate         = 1,
 };
 
 AD9361_InitParam bladerf2_rfic_init_params = {
