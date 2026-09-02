@@ -886,6 +886,15 @@ static int _rfic_host_get_rssi(struct bladerf *dev,
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         uint32_t rssi = 0;
 
+        /* The TX power monitor gates the measurement block behind
+         * REG_TX_RSSI. Without it those registers stay at zero and this
+         * call reports 0 dBm at every gain setting, which reads as "no
+         * output" rather than "not measured". Measured on a bladeRF 2.0
+         * micro xA4: 0 dBm at TX gains 0/20/40/60 dB with the monitor
+         * off, -68/-68/-44/-44 dBm with it on. */
+        CHECK_AD936X(
+            ad9361_txmon_enable(phy, (0 == rfic_ch) ? TX_1 : TX_2));
+
         CHECK_AD936X(ad9361_get_tx_rssi(phy, rfic_ch, &rssi));
 
         pre = __round_int(rssi / 1000.0);
