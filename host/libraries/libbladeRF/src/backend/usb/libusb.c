@@ -1398,6 +1398,16 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
                         "%d: %s\n", status, libusb_error_name(status));
             status = error_conv(status);
         }
+
+        MUTEX_LOCK(&stream->lock);
+        if (stream->state == STREAM_SHUTTING_DOWN) {
+            if (stream_data->num_avail == stream_data->num_transfers) {
+                stream->state = STREAM_DONE;
+            } else {
+                cancel_all_transfers(stream);
+            }
+        }
+        MUTEX_UNLOCK(&stream->lock);
     }
 
     return status;
