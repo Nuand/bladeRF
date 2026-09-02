@@ -56,6 +56,18 @@ int main(void)
         failures++;
     }
 
+    stream.layout   = BLADERF_RX_X1;
+    stream.state    = STREAM_RUNNING;
+    worker.requests = 0;
+
+    sync_worker_submit_request(&worker, SYNC_WORKER_STOP);
+
+    if (stream.state != STREAM_SHUTTING_DOWN) {
+        fprintf(stderr, "RX stream state is %d, expected %d\n", stream.state,
+                STREAM_SHUTTING_DOWN);
+        failures++;
+    }
+
     MUTEX_DESTROY(&worker.request_lock);
     MUTEX_DESTROY(&stream.lock);
 
@@ -63,6 +75,6 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    puts("PASS: a TX STOP request starts stream shutdown");
+    puts("PASS: STOP requests start RX and TX stream shutdown");
     return EXIT_SUCCESS;
 }
