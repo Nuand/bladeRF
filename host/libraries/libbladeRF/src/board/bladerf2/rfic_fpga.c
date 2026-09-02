@@ -570,10 +570,10 @@ static int _rfic_fpga_get_gain_stage(struct bladerf *dev,
 
     CHECK_STATUS(_rfic_cmd_read(dev, ch, BLADERF_RFIC_COMMAND_GAIN, &val));
 
-    *gain = __unscale_int(range, val);
-
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        *gain = -(*gain);
+        *gain = -__unscale_int(range, val);
+    } else {
+        *gain = __unscale_int(range, (int32_t)val);
     }
 
     return 0;
