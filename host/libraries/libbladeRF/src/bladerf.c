@@ -641,7 +641,13 @@ int bladerf_get_gain_range(struct bladerf *dev,
                            bladerf_channel ch,
                            struct bladerf_range const **range)
 {
-    return dev->board->get_gain_range(dev, ch, range);
+    int status;
+
+    MUTEX_LOCK(&dev->lock);
+    status = dev->board->get_gain_range(dev, ch, range);
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
 }
 
 int bladerf_set_gain_stage(struct bladerf *dev,
@@ -677,7 +683,13 @@ int bladerf_get_gain_stage_range(struct bladerf *dev,
                                  const char *stage,
                                  struct bladerf_range const **range)
 {
-    return dev->board->get_gain_stage_range(dev, ch, stage, range);
+    int status;
+
+    MUTEX_LOCK(&dev->lock);
+    status = dev->board->get_gain_stage_range(dev, ch, stage, range);
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
 }
 
 int bladerf_get_gain_stages(struct bladerf *dev,
