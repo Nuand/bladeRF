@@ -252,7 +252,9 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
 
     bladerf_direction dir;
 
-    bladerf_frequency const TEST_FREQ = 420000000;
+    bladerf_frequency const SIGNED_GAIN_TEST_FREQ = 5000000000ULL;
+    int const SIGNED_GAIN_TEST_VALUE              = -12;
+    bladerf_frequency const TEST_FREQ             = 420000000;
 
     FOR_EACH_DIRECTION(dir)
     {
@@ -324,6 +326,30 @@ failure_count test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
                                  channel2str(ch), bladerf_strerror(status));
                         failures += 1;
                         continue;
+                    }
+                }
+
+                if (!p->module_enabled &&
+                    strcmp(bladerf_get_board_name(dev), "bladerf2") == 0) {
+                    struct gain const overall = { .name = "overall" };
+
+                    status = bladerf_set_frequency(
+                        dev, ch, SIGNED_GAIN_TEST_FREQ);
+                    if (status != 0) {
+                        PR_ERROR("Failed to set signed-gain test frequency on "
+                                 "%s: %s\n",
+                                 channel2str(ch), bladerf_strerror(status));
+                        failures++;
+                    } else if (set_and_check(dev, ch, &overall,
+                                             SIGNED_GAIN_TEST_VALUE) != 0) {
+                        failures++;
+                    }
+
+                    status = bladerf_set_frequency(dev, ch, TEST_FREQ);
+                    if (status != 0) {
+                        PR_ERROR("Failed to restore frequency on %s: %s\n",
+                                 channel2str(ch), bladerf_strerror(status));
+                        failures++;
                     }
                 }
             }
