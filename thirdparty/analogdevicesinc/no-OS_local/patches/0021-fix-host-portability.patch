@@ -14,6 +14,13 @@ index bd90832..643c3b8 100644
 
  	return 0;
  }
+diff --git ad9361.h ad9361.h
+index d62ad78..9797787 100644
+--- ad9361.h
++++ ad9361.h
+@@ -3136 +3136 @@ enum ad9361_pdata_tx_freq {
+-	IGNORE,
++	TX_BBPLL_FREQ,
 diff --git ad9361_util.h ad9361_util.h
 index 8c60f39..02ab39d 100644
 --- ad9361_util.h
@@ -58,3 +65,17 @@ index 8c60f39..02ab39d 100644
  };
 
  struct spi_device {
+diff --git common.h common.h
+index 39f5d03..2a1c5b0 100644
+--- common.h
++++ common.h
+@@ -36,7 +36,8 @@
+ #include <stdint.h>
+ #include "no_os_error.h"
+
+-#if defined (__STDC__) && (__STDC_VERSION__ >= 199901L)
++#if defined(_MSC_VER) || \
++	(defined(__STDC__) && (__STDC_VERSION__ >= 199901L))
+ #include <stdbool.h>
+ #else
+ typedef enum { false, true } bool;
