@@ -31,9 +31,9 @@
 
 int main(void)
 {
-    struct bladerf_stream stream = { 0 };
-    struct sync_worker worker    = { 0 };
-    int failures                = 0;
+    static struct bladerf_stream stream;
+    static struct sync_worker worker;
+    int failures = 0;
 
     MUTEX_INIT(&stream.lock);
     MUTEX_INIT(&worker.request_lock);
