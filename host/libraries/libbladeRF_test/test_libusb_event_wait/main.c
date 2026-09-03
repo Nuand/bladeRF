@@ -101,9 +101,9 @@ int __wrap_libusb_handle_events_timeout_completed(libusb_context *context,
 
 int main(void)
 {
-    struct test_lusb_stream_data stream_data = { 0 };
-    struct test_lusb_backend backend         = { 0 };
-    struct bladerf_stream stream             = { 0 };
+    static struct test_lusb_stream_data stream_data;
+    static struct test_lusb_backend backend;
+    static struct bladerf_stream stream;
     int status;
 
     MUTEX_INIT(&stream.lock);
