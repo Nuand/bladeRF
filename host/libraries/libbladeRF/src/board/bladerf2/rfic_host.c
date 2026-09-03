@@ -200,6 +200,8 @@ static int _rfic_host_deinitialize(struct bladerf *dev)
     CHECK_STATUS(_rfic_host_clear_rffe_control(dev));
 
     if (NULL != board_data->phy) {
+        CHECK_AD936X(no_os_gpio_set_value(
+            board_data->phy->gpio_desc_resetb, 0));
         CHECK_AD936X(axi_dac_remove(board_data->phy->tx_dac));
         CHECK_STATUS(ad9361_remove(board_data->phy));
         board_data->phy = NULL;
