@@ -4,7 +4,7 @@ Date: 2026-09-02
 
 ## Position
 
-This branch starts at bladeRF master `35174c30b009cdb335800c411f3c14d45283f12b`
+This branch starts at bladeRF master `25151f2c1abb62da41c4b4c1792e0eb48666cca5`
 and updates the Analog Devices no-OS submodule from
 `0bba46e6f6f75785a65d425ece37d0a04daf6157` to the v1.251.0 commit
 `e31142c6e7b08e6b4cee40f1997aef3b48cbca79`.
@@ -47,15 +47,15 @@ hacks.
 
 ## Proposal implemented
 
-Migration commits `a72c5157d` and `e039b3c5c` port the dependency on top of
-current master, use the upstream v1.251.0 AXI cores, supply separate host and
-Nios platform operations, pass the owning bladeRF as AXI context, and retain
-AD9361 initialization behavior where the new API still supports it.
-Independent-FDD mode is the one deliberate parameter exception: v1.251.0
-rejects the old value during Nios initialization, while normal FDD preserves
-the supported bladeRF2 operation.
+Migration commit `2114eac4c` and its focused fixups port the dependency on top
+of current master, use the upstream v1.251.0 AXI cores, supply separate host
+and Nios platform operations, pass the owning bladeRF as AXI context, and
+retain AD9361 initialization behavior where the new API still supports it.
+The profiles keep legacy independent-FDD mode enabled. They disable the new
+managed TX LO power-down behavior because the old driver did not manage TX LO
+power this way.
 
-Commit `c693e4c47` restores the production timing policy after a candidate FPGA
+Commit `1792268b1` restores the production timing policy after a candidate FPGA
 image exposed intermittent three-buffer RX reordering. Production builds skip
 digital-interface tuning as before, timing-verification builds request it, and
 the fast-AGC initialization retains the bladeRF2 LVDS bias, termination, phase,
@@ -78,7 +78,7 @@ also omits host-only RFIC BIST while FPGA tuning is active.
 ## Local patch audit
 
 The retained `0009` through `0015` names correspond to the individually
-reviewed prototype patches. Patches numbered `0016` through `0020` below are
+reviewed prototype patches. Patches numbered `0016` through `0021` below are
 new, AD9361-only local patches; they are not the prototype patches that used
 those numbers.
 
@@ -100,6 +100,9 @@ those numbers.
   the supported small C library has no `sscanf`.
 * `0020`: retained for Nios only to suppress unconditional success text that
   fills the command UART and stalls Nios. Host diagnostics remain enabled.
+* `0021`: retained for host compiler portability. It uses the standard Boolean
+  type on MSVC, avoids a Windows macro collision, and makes diagnostics valid
+  ISO C statements.
 
 The former `0001` through `0006` patch set was removed only after its behavior
 was found in v1.251.0 or represented by the focused replacements above. The
