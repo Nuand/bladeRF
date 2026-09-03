@@ -72,11 +72,11 @@ if(NOT MSVC)
     )
 endif(NOT MSVC)
 
-if(NOT MSVC AND NOT APPLE)
+if(NOT MSVC)
     target_compile_options(ad936x PRIVATE
         -Wno-unused-but-set-variable
     )
-endif(NOT MSVC AND NOT APPLE)
+endif(NOT MSVC)
 
 if(APPLE)
     target_compile_options(ad936x PRIVATE
