@@ -1,0 +1,60 @@
+diff --git ad9361_conv.c ad9361_conv.c
+index bd90832..643c3b8 100644
+--- ad9361_conv.c
++++ ad9361_conv.c
+@@ -172,9 +172,9 @@
+ {
+ 	struct axiadc_state *st = phy->adc_state;
+-	int32_t ret = 0, i;
++	int32_t i;
+
+ 	for (i = 0; i < 7; i++)
+-		ret |= ad9361_iodelay_set(st, i, 15, tx);
++		(void)ad9361_iodelay_set(st, i, 15, tx);
+
+ 	return 0;
+ }
+diff --git ad9361_util.h ad9361_util.h
+index 8c60f39..02ab39d 100644
+--- ad9361_util.h
++++ ad9361_util.h
+@@ -45,22 +45,31 @@
+ #define CLK_GET_RATE_NOCACHE					NO_OS_BIT(6)
+
+ #if defined(HAVE_VERBOSE_MESSAGES)
+-#define dev_err(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
+-#define dev_warn(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
++#define dev_err(dev, format, ...)					\
++	do { printf(format, ## __VA_ARGS__); printf("\n"); } while (0)
++#define dev_warn(dev, format, ...)					\
++	do { printf(format, ## __VA_ARGS__); printf("\n"); } while (0)
+ #if defined(HAVE_DEBUG_MESSAGES)
+-#define dev_dbg(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
++#define dev_dbg(dev, format, ...)					\
++	do { printf(format, ## __VA_ARGS__); printf("\n"); } while (0)
+ #else
+-#define dev_dbg(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
++#define dev_dbg(dev, format, ...)					\
++	do { if (0) printf(format, ## __VA_ARGS__); } while (0)
+ #endif
+ #define printk(format, ...)			printf(format, ## __VA_ARGS__)
+ #else
+-#define dev_err(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
+-#define dev_warn(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
+-#define dev_dbg(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
+-#define printk(format, ...)			({ if (0) printf(format, ## __VA_ARGS__); })
++#define dev_err(dev, format, ...)					\
++	do { if (0) printf(format, ## __VA_ARGS__); } while (0)
++#define dev_warn(dev, format, ...)					\
++	do { if (0) printf(format, ## __VA_ARGS__); } while (0)
++#define dev_dbg(dev, format, ...)					\
++	do { if (0) printf(format, ## __VA_ARGS__); } while (0)
++#define printk(format, ...)					\
++	do { if (0) printf(format, ## __VA_ARGS__); } while (0)
+ #endif
+
+ struct device {
++	uint8_t unused;
+ };
+
+ struct spi_device {

@@ -24,7 +24,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#ifdef _WIN32
+#include "host_config.h"
+#else
 #include <unistd.h>
+#endif
 
 #include "backend/backend.h"
 #include "board/board.h"

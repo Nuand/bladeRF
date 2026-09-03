@@ -72,12 +72,6 @@ if(NOT MSVC)
     )
 endif(NOT MSVC)
 
-if(NOT MSVC)
-    target_compile_options(ad936x PRIVATE
-        -Wno-unused-but-set-variable
-    )
-endif(NOT MSVC)
-
 if(APPLE)
     target_compile_options(ad936x PRIVATE
         -Wno-absolute-value
@@ -222,6 +216,7 @@ set(LIBAD936X_APPLY_PATCHES
     0016-fix-build-warnings.patch
     0017-preserve-bladerf2-behavior.patch
     0018-free-axi-adc.patch
+    0021-fix-host-portability.patch
 )
 
 find_package(Patcher REQUIRED)
