@@ -15,3 +15,11 @@ index 8e38535..2c1f0ce 100644
 -		printf("%s: Status errors: %08ld\n", dac->name, reg_data);
 +		printf("%s: Status errors: %08"PRIu32"\n", dac->name,
 +		       reg_data);
+diff --git axi_adc_core.c axi_adc_core.c
+index cb5f10c..63628fe 100644
+--- axi_adc_core.c
++++ axi_adc_core.c
+@@ -253 +252,0 @@ int32_t axi_adc_delay_calibrate(struct axi_adc *adc,
+-	uint8_t cnt_invalid = 0;
+@@ -298 +296,0 @@ int32_t axi_adc_delay_calibrate(struct axi_adc *adc,
+-			cnt_invalid++;
