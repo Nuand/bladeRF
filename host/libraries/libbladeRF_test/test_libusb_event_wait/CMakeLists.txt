@@ -5,8 +5,8 @@ set(INCLUDES
     ${libbladeRF_SOURCE_DIR}/include
     ${libbladeRF_SOURCE_DIR}/src
     ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/../firmware_common
-    ${CMAKE_SOURCE_DIR}/../fpga_common/include
+    ${BLADERF_FW_COMMON_INCLUDE_DIR}
+    ${BLADERF_FPGA_COMMON_INCLUDE_DIR}
     ${libbladeRF_BINARY_DIR}/src
     ${LIBUSB_INCLUDE_DIRS}
 )
@@ -24,7 +24,6 @@ target_compile_definitions(libbladeRF_test_libusb_event_wait PRIVATE
 )
 target_compile_options(libbladeRF_test_libusb_event_wait PRIVATE
     -ffunction-sections
-    -fvisibility=hidden
     -ULOGGING_ENABLED
     -Wno-unused-function
     -Wno-unused-variable

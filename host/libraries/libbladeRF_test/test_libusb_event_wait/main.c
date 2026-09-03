@@ -50,9 +50,32 @@ static struct bladerf_stream *active_stream;
 static unsigned int completed_wait_calls;
 static unsigned int legacy_wait_calls;
 
+struct bladerf_devinfo_list;
+
 int test_lusb_stream(void *driver,
                      struct bladerf_stream *stream,
                      bladerf_channel_layout layout);
+
+int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
+                             struct bladerf_devinfo *info)
+{
+    (void)list;
+    (void)info;
+    return 0;
+}
+
+void bladerf_init_devinfo(struct bladerf_devinfo *info)
+{
+    (void)info;
+}
+
+bool bladerf_devinfo_matches(const struct bladerf_devinfo *a,
+                             const struct bladerf_devinfo *b)
+{
+    (void)a;
+    (void)b;
+    return false;
+}
 
 int __wrap_libusb_handle_events_timeout(libusb_context *context,
                                         struct timeval *timeout)
