@@ -9,6 +9,10 @@ index 3812c91..184b8c1 100644
 +			found_zero = true;
 @@ -985,0 +989 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
 +			found_one = true;
+@@ -1000,0 +1005,3 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
++	if (!found_zero || !found_one)
++		return -1;
++
 diff --git ad9361_api.c ad9361_api.c
 index 3681f67..0fc56b3 100644
 --- ad9361_api.c
