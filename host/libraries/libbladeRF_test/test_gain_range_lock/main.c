@@ -37,7 +37,7 @@ static int fake_get_gain_range(struct bladerf *dev,
                                bladerf_channel ch,
                                struct bladerf_range const **range)
 {
-    static struct bladerf_range const test_range = { 0 };
+    static struct bladerf_range const test_range;
     int status;
 
     (void)ch;
