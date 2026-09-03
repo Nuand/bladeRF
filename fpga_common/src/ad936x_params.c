@@ -219,7 +219,11 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     .elna_gaintable_all_index_enable = 0,
 
     // Digital Interface Control
-    .digital_interface_tune_skip_mode = 0, /* Skip RX and TX tuning */
+#ifdef ENABLE_AD9361_DIGITAL_INTERFACE_TIMING_VERIFICATION
+    .digital_interface_tune_skip_mode = 0,
+#else
+    .digital_interface_tune_skip_mode = 2,
+#endif
     .digital_interface_tune_fir_disable = 0,  /* Enable FIR during tuning */
     .pp_tx_swap_enable = 1,
     .pp_rx_swap_enable = 1,
@@ -244,8 +248,6 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     .rx_data_delay = 0,
     .tx_fb_clock_delay = 0,
     .tx_data_delay = 5,
-    .lvds_bias_mV = 300,            // LVDS driver bias 300 mV
-    .lvds_rx_onchip_termination_enable = 1,              // Enable LVDS on-chip termination
     .lvds_bias_mV = 300,            // LVDS driver bias 300 mV
     .lvds_rx_onchip_termination_enable = 1,              // Enable LVDS on-chip termination
     .rx1rx2_phase_inversion_en = 1,              // RX1 and RX2 are not phase-aligned
@@ -443,7 +445,11 @@ AD9361_InitParam bladerf2_rfic_init_params_fastagc_burst = {
     .elna_rx1_gpo0_control_enable = 0,
     .elna_rx2_gpo1_control_enable = 0,
     .elna_gaintable_all_index_enable = 0,
-    .digital_interface_tune_skip_mode = 0, /* Skip RX and TX tuning */
+#ifdef ENABLE_AD9361_DIGITAL_INTERFACE_TIMING_VERIFICATION
+    .digital_interface_tune_skip_mode = 0,
+#else
+    .digital_interface_tune_skip_mode = 2,
+#endif
     .digital_interface_tune_fir_disable = 0,  /* Enable FIR during tuning */
     .pp_tx_swap_enable = 1,
     .pp_rx_swap_enable = 1,
@@ -468,6 +474,11 @@ AD9361_InitParam bladerf2_rfic_init_params_fastagc_burst = {
     .rx_data_delay = 0,
     .tx_fb_clock_delay = 0,
     .tx_data_delay = 5,
+    .lvds_bias_mV = 300,            // LVDS driver bias 300 mV
+    .lvds_rx_onchip_termination_enable = 1,              // Enable LVDS on-chip termination
+    .rx1rx2_phase_inversion_en = 1,              // RX1 and RX2 are not phase-aligned
+    .lvds_invert1_control = 0xFF,           // Default signal inversion mappings
+    .lvds_invert2_control = 0x0F,           // Default signal inversion mappings
     .gpo0_inactive_state_high_enable = 0,
     .gpo1_inactive_state_high_enable = 0,
     .gpo2_inactive_state_high_enable = 0,
