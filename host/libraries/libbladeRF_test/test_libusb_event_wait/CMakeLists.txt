@@ -24,6 +24,7 @@ target_compile_definitions(libbladeRF_test_libusb_event_wait PRIVATE
 )
 target_compile_options(libbladeRF_test_libusb_event_wait PRIVATE
     -ffunction-sections
+    -fvisibility=hidden
     -ULOGGING_ENABLED
     -Wno-unused-function
     -Wno-unused-variable
