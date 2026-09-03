@@ -133,6 +133,20 @@ overwrite the bladeRF-specific rate-control value retained by `0010`.
 * CTest exits successfully but reports `No tests were found!!!`; this result is
   not regression coverage.
 
+### Continuous integration
+
+The software and hardware workflows used source `3e3f2879f` with CI overlay
+`0c474ee7b`. Ubuntu (`33715086702`), HIL (`33715086716`), FreeBSD
+(`33715086742`), macOS (`33715086744`), Windows (`33715086801`), and the
+13-image Docker compiler matrix (`33715086805`) all completed successfully.
+
+FPGA diagnostic run `33713362010` failed only the bladeRF-micro foxhunt A4 and
+A9 cases, where the migrated AD9361 library could not resolve the shared no-OS
+platform functions. Adding `no_os_platform.c` to the foxhunt firmware sources
+made focused A4 and A9 builds pass. Exact rerun `33717170223` used source
+`c80bdbdf8` with CI overlay `0c474ee7b`; all 11 `bitfile_ci` targets passed and
+the workflow produced its FPGA report and 11 bitfile artifacts.
+
 ### Software checks
 
 Valgrind ran with full leak checking and an error exit code on the final Debug
