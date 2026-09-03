@@ -51,7 +51,7 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     .one_rx_one_tx_mode_use_rx_num = 1,
     .one_rx_one_tx_mode_use_tx_num = 1,
     .frequency_division_duplex_mode_enable = 1,
-    .frequency_division_duplex_independent_mode_enable = 0,
+    .frequency_division_duplex_independent_mode_enable = 1,
     .tdd_use_dual_synth_mode_enable = 0,
     .tdd_skip_vco_cal_enable = 0,
     .tx_fastlock_delay_ns = 0,
@@ -76,7 +76,7 @@ AD9361_InitParam bladerf2_rfic_init_params = {
     // LO Control
     .rx_synthesizer_frequency_hz = 2400000000ULL,
     .tx_synthesizer_frequency_hz = 2400000000ULL,
-    .tx_lo_powerdown_managed_enable = 1,
+    .tx_lo_powerdown_managed_enable = 0,
 
     // Rate & BW Control
     .rx_path_clock_frequencies = {983040000, 245760000, 122880000, 61440000, 30720000, 30720000},
@@ -321,7 +321,7 @@ AD9361_InitParam bladerf2_rfic_init_params_fastagc_burst = {
     .one_rx_one_tx_mode_use_rx_num = 1,
     .one_rx_one_tx_mode_use_tx_num = 1,
     .frequency_division_duplex_mode_enable = 1,
-    .frequency_division_duplex_independent_mode_enable = 0,
+    .frequency_division_duplex_independent_mode_enable = 1,
     .tdd_use_dual_synth_mode_enable = 0,
     .tdd_skip_vco_cal_enable = 0,
     .tx_fastlock_delay_ns = 0,
@@ -342,7 +342,7 @@ AD9361_InitParam bladerf2_rfic_init_params_fastagc_burst = {
     .ensm_enable_txnrx_control_enable = 0,
     .rx_synthesizer_frequency_hz = 2400000000ULL,
     .tx_synthesizer_frequency_hz = 2400000000ULL,
-    .tx_lo_powerdown_managed_enable = 1,
+    .tx_lo_powerdown_managed_enable = 0,
     .rx_path_clock_frequencies = {983040000, 245760000, 122880000, 61440000, 30720000, 30720000},
     .tx_path_clock_frequencies = {983040000, 122880000, 122880000, 61440000, 30720000, 30720000},
     .rf_rx_bandwidth_hz = 18000000,
