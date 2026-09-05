@@ -1175,16 +1175,42 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         rate /= 2;
     }
 
-    /* Set the sample rate */
-    CHECK_STATUS(rfic->set_sample_rate(dev, ch, rate));
-
-    /* If the previous sample rate was below the native range, but the new one
-     * isn't, switch back to the default filters. */
+    /* Leaving the sub-native range: restore the default filters BEFORE
+     * applying the new rate, mirroring the low-rate path above.
+     *
+     * With the 4x interpolation filter still active, the AD9361 computes the
+     * TX clock chain as (new rate * 4). Restoring 61.44 MSPS therefore asks
+     * for 245.76 MHz, above MAX_TX_HB1 (160 MHz), and the transition fails:
+     *
+     *   ad9361_validate_trx_clock_chain: Failed TX max rate check
+     *       (245760000 > 160000000)
+     *   ad9361_calculate_rf_clock_chain: Failed to find suitable dividers:
+     *       ADC clock below limit
+     *
+     * Both chains are validated together, so RX-only applications hit this
+     * too. Resetting the filters after set_sample_rate() (as before) made
+     * that reset unreachable, since CHECK_STATUS() had already returned.
+     *
+     * The intermediate-rate step is the same trick the low-rate path above
+     * already uses. That guard even spells out this direction:
+     *
+     *   (rate > 40e6 && current < 2083334)
+     *
+     * but it lives inside "if (new_low)", where the new rate is low by
+     * definition, so that half of the condition can never run. The step is
+     * applied here instead, where the transition actually happens.
+     *
+     * 30 MSPS works for both sides of the switch: it is inside the native
+     * range (no FIR needed) and 30 * 4 = 120 MHz stays under MAX_TX_HB1, so
+     * it is valid with the 4x filters still active and after they are
+     * cleared. */
     if (old_low && !new_low) {
         if (rxfir != BLADERF_RFIC_RXFIR_DEFAULT ||
             txfir != BLADERF_RFIC_TXFIR_DEFAULT) {
             log_debug("%s: disabling 4x decimation/interpolation filters\n",
                       __FUNCTION__);
+
+            CHECK_STATUS(rfic->set_sample_rate(dev, ch, 30e6));
 
             CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
                                           BLADERF_RFIC_RXFIR_DEFAULT, 0));
@@ -1192,6 +1218,9 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
                                           BLADERF_RFIC_TXFIR_DEFAULT));
         }
     }
+
+    /* Set the sample rate */
+    CHECK_STATUS(rfic->set_sample_rate(dev, ch, rate));
 
     /* If requested, fetch the new sample rate and return it. */
     if (actual != NULL) {
