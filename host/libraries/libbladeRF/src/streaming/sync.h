@@ -92,6 +92,21 @@ struct buffer_mgmt {
      * resubmission */
     unsigned int resubmit_count;
 
+    /* Set by the RX worker when it detects an overrun, cleared once the
+     * condition has been reported to a bladerf_sync_rx() caller. The worker
+     * recovers by resubmitting buffers, so the sample stream has a gap that
+     * is otherwise invisible to the caller. */
+    bool overrun_pending;
+
+    /* Also set by the RX worker on an overrun, cleared once the consumer
+     * has dropped the buffers that were already full at that moment. Those
+     * buffers hold the OLDEST samples: everything the hardware produced
+     * after the ring filled was discarded, so on resume the consumer would
+     * read history first - up to (num_buffers - num_transfers) buffers of
+     * it. With a metadata format the timestamps expose this; without one
+     * the stale prefix is indistinguishable from live data. */
+    bool stale_pending;
+
     /* Applicable to TX only. Denotes which context is responsible for
      * submitting full buffers to the underlying async system */
     sync_tx_submitter submitter;
@@ -173,6 +188,11 @@ typedef enum {
 struct sync_meta {
     sync_meta_state state; /* State of metadata processing */
 
+    bool have_timestamp;   /* curr_timestamp holds a value read from a
+                            * message header. Until then there is nothing to
+                            * compare against, so the first header of a
+                            * stream must not be treated as a discontinuity. */
+
     uint8_t *curr_msg;            /* Points to current message in the buffer */
     size_t curr_msg_off;          /* Offset into current message (samples),
                                    * ignoring the 4-samples worth of metadata */
@@ -194,6 +214,11 @@ struct sync_meta {
         /* Used only for TX */
         struct {
             bool in_burst;
+            uint64_t burst_start; /* Timestamp the current burst was
+                                   * scheduled to begin at. Valid while
+                                   * in_burst && !now; used to bound how
+                                   * much of the burst may sit in the
+                                   * device ahead of playback. */
             bool now;
         };
     };

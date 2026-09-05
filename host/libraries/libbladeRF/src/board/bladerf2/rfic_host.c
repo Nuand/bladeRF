@@ -111,8 +111,32 @@ static int _rfic_host_initialize(struct bladerf *dev)
                 (void *)&bladerf2_rfic_init_params_fastagc_burst :
                 (void *)&bladerf2_rfic_init_params;
 
-    /* Initialize AD9361 */
-    CHECK_AD936X(ad9361_init(&phy, (AD9361_InitParam *)board_data->rfic_init_params, dev));
+    /* Initialize AD9361
+     *
+     * ad9361_init() used to take the device handle as a third argument and
+     * stash it for the SPI and GPIO accessors. It now builds its descriptors
+     * from the init parameters, so the handle travels in the .extra field of
+     * those parameters instead. The parameter block is shared, so this has to
+     * be filled in on every init rather than once at compile time. */
+    {
+        AD9361_InitParam *p = (AD9361_InitParam *)board_data->rfic_init_params;
+
+        /* The no_os_axi_io accessors (FPGA AXI ad9361 core over NIOS) have no
+         * context argument, so the handle travels through a file-static in
+         * platform_bladerf2 instead. */
+        {
+            extern void bladerf2_axi_io_set_dev(struct bladerf *dev);
+            bladerf2_axi_io_set_dev(dev);
+        }
+
+        p->spi_param.extra = dev;
+        p->gpio_resetb.extra = dev;
+        p->gpio_sync.extra = dev;
+        p->gpio_cal_sw1.extra = dev;
+        p->gpio_cal_sw2.extra = dev;
+
+        CHECK_AD936X(ad9361_init(&phy, p));
+    }
 
     if (NULL == phy || NULL == phy->pdata) {
         RETURN_ERROR_STATUS("ad9361_init struct initialization",
@@ -170,7 +194,12 @@ static int _rfic_host_deinitialize(struct bladerf *dev)
     CHECK_STATUS(_rfic_host_clear_rffe_control(dev));
 
     if (NULL != board_data->phy) {
-        CHECK_STATUS(ad9361_deinit(board_data->phy));
+        /* ad9361_deinit() was a local addition; upstream provides
+         * ad9361_remove(), which frees more: the clocks, the SPI and all four
+         * GPIO descriptors on top of the data. It does not drive the part into
+         * reset, but _rfic_host_clear_rffe_control() above already cleared the
+         * reset bit. */
+        CHECK_STATUS(ad9361_remove(board_data->phy));
         board_data->phy = NULL;
     }
 
@@ -245,7 +274,11 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
     reg_old    = reg;
     ch_pending = _rffe_ch_enabled(reg, ch) != enable;
-    layout = board_data->sync->stream_config.layout;
+    /* board_data->sync is indexed by direction. Plain sync-> is sync[0],
+     * which is always the RX stream, so enabling or disabling a TX
+     * channel read the RX layout here and decided the MIMO question from
+     * the wrong stream. */
+    layout = board_data->sync[dir].stream_config.layout;
     mimo_enabled = layout == BLADERF_RX_X2 || layout == BLADERF_TX_X2;
 
     if (layout == BLADERF_TX_X2) {
@@ -448,6 +481,17 @@ static int _rfic_host_set_frequency(struct bladerf *dev,
         return BLADERF_ERR_RANGE;
     }
 
+    /* A quick tune scheduled for a future timestamp is recalled by the
+     * FPGA's Nios core, which writes REG_(RX|TX)_FAST_LOCK_SETUP directly
+     * and leaves the part in fastlock mode behind the driver's back. The
+     * exit in bladerf2_schedule_retune() only covers BLADERF_RETUNE_NOW,
+     * because a deferred recall completes long after that call returns.
+     * Tuning ordinarily while the leaked state is in place pins the RF PLL
+     * charge pump (0x247 reads 0x80 during the failed tune, 0x40 after),
+     * so leave fastlock here before touching the synthesizer. The call
+     * reads first and writes nothing when not in fastlock mode. */
+    CHECK_AD936X(ad9361_fastlock_exit_foreign(phy, BLADERF_CHANNEL_IS_TX(ch)));
+
     /* Set up band selection */
     CHECK_STATUS(rfic->select_band(dev, ch, frequency));
 
@@ -469,10 +513,12 @@ static int _rfic_host_select_band(struct bladerf *dev,
     struct ad9361_rf_phy *phy              = board_data->phy;
     bladerf_channel port_ch                = ch;
     uint32_t reg;
+    uint32_t reg_orig;
     size_t i;
 
     /* Read RFFE control register */
     CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
+    reg_orig = reg;
 
     /* Modify the SPDT bits. */
     /* We have to do this for all the channels sharing the same LO. */
@@ -487,8 +533,37 @@ static int _rfic_host_select_band(struct bladerf *dev,
         }
     }
 
-    /* Write RFFE control register */
-    CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
+    /* Write RFFE control register only when the SPDT bits actually changed.
+     *
+     * Retuning to the frequency that is already programmed used to rewrite
+     * this register unconditionally. Measured on a TX1 -> 40 dB pad -> RX1
+     * loopback at 30.72 MSPS, 2440 MHz, manual gain, cyclic tone: a
+     * same-frequency set_frequency() left the receive path in one of two
+     * stable level states about 2.9 dB apart, and the state persisted until
+     * the next call. Strict A/B in one process, interleaved, 5 reps each,
+     * reference tone measured by direct FFT over 6 fresh captures:
+     *
+     *   nothing                        range 0.23 dB, sigma 0.093
+     *   stream stop/start              range 0.29 dB, sigma 0.131
+     *   stream cycle + set_frequency   range 3.33 dB, sigma 1.323
+     *   stream cycle + LO no-op        range 0.21 dB, sigma 0.085
+     *
+     * Ruled out by measurement: settling time (0 vs 300 ms after the call:
+     * sigma 1.788 vs 1.672), RX module enable cycle alone (sigma 0.182),
+     * the RX gain table (a repeated set_gain does not clear it, and
+     * ad9361_load_gt() returns early for an unchanged band), the SPI bus
+     * itself (a frequency read matches control at sigma 0.248), one side
+     * only (RX sigma 1.883 vs TX 2.025 - both), spectral leakage (11 bins
+     * instead of 3: range 3.68 vs 3.65) and image aliasing (the mirror sits
+     * 20-30 dB below the tone and does not track it). RFIC registers
+     * 0x200-0x2FF are identical in both states.
+     *
+     * Skipping the write when nothing changed is safe: the register is
+     * read-modify-write, so an unchanged value carries no information, and
+     * the AD9361 port is still selected below. */
+    if (reg != reg_orig) {
+        CHECK_STATUS(dev->backend->rffe_control_write(dev, reg));
+    }
 
     /* Set AD9361 port */
     CHECK_STATUS(
@@ -810,6 +885,15 @@ static int _rfic_host_get_rssi(struct bladerf *dev,
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         uint32_t rssi = 0;
+
+        /* The TX power monitor gates the measurement block behind
+         * REG_TX_RSSI. Without it those registers stay at zero and this
+         * call reports 0 dBm at every gain setting, which reads as "no
+         * output" rather than "not measured". Measured on a bladeRF 2.0
+         * micro xA4: 0 dBm at TX gains 0/20/40/60 dB with the monitor
+         * off, -68/-68/-44/-44 dBm with it on. */
+        CHECK_AD936X(
+            ad9361_txmon_enable(phy, (0 == rfic_ch) ? TX_1 : TX_2));
 
         CHECK_AD936X(ad9361_get_tx_rssi(phy, rfic_ch, &rssi));
 

@@ -821,6 +821,13 @@ bool _rfic_cmd_rd_rssi(struct rfic_state *state,
     if (BLADERF_CHANNEL_IS_TX(channel)) {
         uint32_t rssi = 0;
 
+        /* The TX power monitor gates the measurement block behind
+         * REG_TX_RSSI. Without it those registers stay at zero and this
+         * reports 0 dBm at every gain setting, which reads as "no
+         * output" rather than "not measured". */
+        CHECK_BOOL(
+            ad9361_txmon_enable(state->phy, (0 == rfic_ch) ? TX_1 : TX_2));
+
         CHECK_BOOL(ad9361_get_tx_rssi(state->phy, rfic_ch, &rssi));
 
         mul = -1000;

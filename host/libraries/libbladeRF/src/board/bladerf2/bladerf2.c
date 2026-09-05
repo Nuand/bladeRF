@@ -533,6 +533,29 @@ static void bladerf2_close(struct bladerf *dev)
                 {
                     sync_deinit(&board_data->sync[ch]);
 
+                    /* Tell the FX3 the direction is going away.
+                     *
+                     * sync_deinit() only tears down host-side structures, and
+                     * putting the RFIC in standby further down is a
+                     * control-plane operation: neither reaches the FX3 sample
+                     * endpoint or its DMA channel. The firmware clears those
+                     * from its RF_RX/RF_TX handler, and only on the disable
+                     * transition, so a close that never disables leaves the
+                     * data plane in whatever state the last stream left it.
+                     * A later open then inherits it, and every RX transfer
+                     * comes back timed out with zero bytes.
+                     */
+                    if (board_data->state >= STATE_INITIALIZED &&
+                        dev->backend->is_fpga_configured(dev)) {
+                        int status = dev->backend->enable_module(dev, dir, false);
+                        if (status != 0) {
+                            log_debug("%s: could not disable %s on close: %s\n",
+                                      __FUNCTION__,
+                                      (dir == BLADERF_RX) ? "RX" : "TX",
+                                      bladerf_strerror(status));
+                        }
+                    }
+
                     /* Cancel scheduled retunes here to avoid the device
                      * retuning underneath the user should they open it again in
                      * the future.
@@ -1152,16 +1175,42 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         rate /= 2;
     }
 
-    /* Set the sample rate */
-    CHECK_STATUS(rfic->set_sample_rate(dev, ch, rate));
-
-    /* If the previous sample rate was below the native range, but the new one
-     * isn't, switch back to the default filters. */
+    /* Leaving the sub-native range: restore the default filters BEFORE
+     * applying the new rate, mirroring the low-rate path above.
+     *
+     * With the 4x interpolation filter still active, the AD9361 computes the
+     * TX clock chain as (new rate * 4). Restoring 61.44 MSPS therefore asks
+     * for 245.76 MHz, above MAX_TX_HB1 (160 MHz), and the transition fails:
+     *
+     *   ad9361_validate_trx_clock_chain: Failed TX max rate check
+     *       (245760000 > 160000000)
+     *   ad9361_calculate_rf_clock_chain: Failed to find suitable dividers:
+     *       ADC clock below limit
+     *
+     * Both chains are validated together, so RX-only applications hit this
+     * too. Resetting the filters after set_sample_rate() (as before) made
+     * that reset unreachable, since CHECK_STATUS() had already returned.
+     *
+     * The intermediate-rate step is the same trick the low-rate path above
+     * already uses. That guard even spells out this direction:
+     *
+     *   (rate > 40e6 && current < 2083334)
+     *
+     * but it lives inside "if (new_low)", where the new rate is low by
+     * definition, so that half of the condition can never run. The step is
+     * applied here instead, where the transition actually happens.
+     *
+     * 30 MSPS works for both sides of the switch: it is inside the native
+     * range (no FIR needed) and 30 * 4 = 120 MHz stays under MAX_TX_HB1, so
+     * it is valid with the 4x filters still active and after they are
+     * cleared. */
     if (old_low && !new_low) {
         if (rxfir != BLADERF_RFIC_RXFIR_DEFAULT ||
             txfir != BLADERF_RFIC_TXFIR_DEFAULT) {
             log_debug("%s: disabling 4x decimation/interpolation filters\n",
                       __FUNCTION__);
+
+            CHECK_STATUS(rfic->set_sample_rate(dev, ch, 30e6));
 
             CHECK_STATUS(rfic->set_filter(dev, BLADERF_CHANNEL_RX(0),
                                           BLADERF_RFIC_RXFIR_DEFAULT, 0));
@@ -1169,6 +1218,9 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
                                           BLADERF_RFIC_TXFIR_DEFAULT));
         }
     }
+
+    /* Set the sample rate */
+    CHECK_STATUS(rfic->set_sample_rate(dev, ch, rate));
 
     /* If requested, fetch the new sample rate and return it. */
     if (actual != NULL) {
@@ -1439,19 +1491,34 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
     pm = _get_band_port_map_by_freq(ch, freq);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        if (board_data->quick_tune_tx_profile < NUM_BBP_FASTLOCK_PROFILES) {
-            /* Assign Nios and RFFE profile numbers */
-            quick_tune->nios_profile = board_data->quick_tune_tx_profile++;
-            log_verbose("Quick tune assigned Nios TX fast lock index: %u\n",
-                        quick_tune->nios_profile);
-            quick_tune->rffe_profile =
-                quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
-            log_verbose("Quick tune assigned RFFE TX fast lock index: %u\n",
-                        quick_tune->rffe_profile);
-        } else {
-            log_error("Reached maximum number of TX quick tune profiles.");
-            return BLADERF_ERR_UNEXPECTED;
-        }
+        /* Profile indices wrap instead of running out.
+         *
+         * The counter only ever incremented, and was reset in exactly one
+         * place: board initialisation. An application that keeps asking for
+         * quick tunes therefore had a hard budget of 256 for the lifetime of
+         * the device handle, after which every further call failed with
+         * BLADERF_ERR_UNEXPECTED and no way to recover short of reopening.
+         *
+         * That budget is not a hardware limit on how many retune targets may
+         * exist over time. The RFIC holds NUM_RFFE_FASTLOCK_PROFILES slots
+         * and the Nios holds NUM_BBP_FASTLOCK_PROFILES; both are caches that
+         * the code already overwrites - the RFFE index is assigned modulo the
+         * slot count, so profile 8 has always overwritten profile 0. Letting
+         * the Nios index wrap in the same way makes the two consistent and
+         * keeps a long-running sweep working.
+         *
+         * Measured on a bladeRF 2.0 micro xA4 sweeping 70 MHz - 6 GHz with
+         * 4700 stops: the counter reached 256 after roughly 165-229 s and
+         * every subsequent retune to a new frequency failed.
+         */
+        quick_tune->nios_profile =
+            board_data->quick_tune_tx_profile++ % NUM_BBP_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned Nios TX fast lock index: %u\n",
+                    quick_tune->nios_profile);
+        quick_tune->rffe_profile =
+            quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned RFFE TX fast lock index: %u\n",
+                    quick_tune->rffe_profile);
 
         /* Create a fast lock profile in the RFIC */
         CHECK_STATUS(
@@ -1468,19 +1535,15 @@ static int bladerf2_get_quick_tune(struct bladerf *dev,
         quick_tune->spdt = (pm->spdt << 6) | (pm->spdt << 4);
 
     } else {
-        if (board_data->quick_tune_rx_profile < NUM_BBP_FASTLOCK_PROFILES) {
-            /* Assign Nios and RFFE profile numbers */
-            quick_tune->nios_profile = board_data->quick_tune_rx_profile++;
-            log_verbose("Quick tune assigned Nios RX fast lock index: %u\n",
-                        quick_tune->nios_profile);
-            quick_tune->rffe_profile =
-                quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
-            log_verbose("Quick tune assigned RFFE RX fast lock index: %u\n",
-                        quick_tune->rffe_profile);
-        } else {
-            log_error("Reached maximum number of RX quick tune profiles.");
-            return BLADERF_ERR_UNEXPECTED;
-        }
+        /* Profile indices wrap instead of running out; see the TX branch. */
+        quick_tune->nios_profile =
+            board_data->quick_tune_rx_profile++ % NUM_BBP_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned Nios RX fast lock index: %u\n",
+                    quick_tune->nios_profile);
+        quick_tune->rffe_profile =
+            quick_tune->nios_profile % NUM_RFFE_FASTLOCK_PROFILES;
+        log_verbose("Quick tune assigned RFFE RX fast lock index: %u\n",
+                    quick_tune->rffe_profile);
 
         /* Create a fast lock profile in the RFIC */
         CHECK_STATUS(
@@ -1533,9 +1596,39 @@ static int bladerf2_schedule_retune(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->backend->retune2(dev, ch, timestamp, quick_tune->nios_profile,
-                                 quick_tune->rffe_profile, quick_tune->port,
-                                 quick_tune->spdt);
+    CHECK_STATUS(dev->backend->retune2(dev, ch, timestamp,
+                                       quick_tune->nios_profile,
+                                       quick_tune->rffe_profile,
+                                       quick_tune->port, quick_tune->spdt));
+
+    /* The Nios recalls the profile by writing the RFIC directly, which
+     * leaves the part in fastlock mode with FORCE_ALC_ENABLE asserted.
+     * ad9361_fastlock_prepare() cannot undo that on its own: it is gated
+     * on this driver's own bookkeeping, and a recall performed by the
+     * FPGA never touches it. Ownership of the RFPLL therefore returns to
+     * host tuning with forced controls still active.
+     *
+     * Measured on a bladeRF 2.0 micro xA4, interleaving a recall with
+     * ordinary tuning every fifth stop of a 242-point sweep:
+     *
+     *   without this exit   49 lock failures in 643 tunes, first at 280
+     *   with it              1 lock failure  in 702 tunes, first at 495
+     *
+     * Without the exit the failures form a series that never recovers,
+     * and 0x247 reads 0x40 throughout: the charge pump has saturated
+     * low. Three runs with it in place gave zero consecutive failures,
+     * and confirmed the leak occurs on every recall without exception.
+     *
+     * Immediate scheduling is the only case handled here. A retune
+     * scheduled for a future timestamp completes inside the FPGA long
+     * after this call returns, so the exit has to happen there instead.
+     */
+    if (BLADERF_RETUNE_NOW == timestamp) {
+        CHECK_AD936X(ad9361_fastlock_exit_foreign(
+            board_data->phy, BLADERF_CHANNEL_IS_TX(ch)));
+    }
+
+    return 0;
 }
 
 static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev,
@@ -3071,6 +3164,19 @@ int bladerf_get_rfic_register(struct bladerf *dev,
         CHECK_AD936X_LOCKED(dev->backend->ad9361_spi_read(dev, address, &data));
 
         *val = (data >> 56) & 0xff;
+    });
+
+    return 0;
+}
+
+int bladerf_get_rffe_control(struct bladerf *dev, uint32_t *value)
+{
+    CHECK_BOARD_IS_BLADERF2(dev);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    NULL_CHECK(value);
+
+    WITH_MUTEX(&dev->lock, {
+        CHECK_STATUS_LOCKED(dev->backend->rffe_control_read(dev, value));
     });
 
     return 0;

@@ -82,9 +82,15 @@ option(ENABLE_LOCK_CHECKS
        OFF
 )
 
+# Off by default: the port reset costs more than the crash recovery it buys.
+# A bladeRF 2.0 micro advertises bU1DevExitLat=0 and bU2DevExitLat=0, so the
+# kernel answers every SuperSpeed renegotiation with "LPM exit latency is
+# zeroed, disabling LPM". One open is one reset, measured, and after enough of
+# them the link stops coming up as SuperSpeed at all and the device settles on
+# Hi-Speed. Turn it back on if you actually hit issue #95.
 option(ENABLE_USB_DEV_RESET_ON_OPEN
        "Perform a USB port reset when opening a device. This works around an issue on some Linux USB 3.0 setups that prevents a device from being opened after an application crash or unclean exit."
-       ${BLADERF_OS_LINUX}
+       OFF
 )
 
 option(ENABLE_RFIC_TIMING_CALIBRATION

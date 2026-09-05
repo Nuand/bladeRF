@@ -552,12 +552,18 @@ int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch, bool enable)
 int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     int status;
-    bladerf_gain_mode gain_mode;
+    bladerf_gain_mode gain_mode  = BLADERF_GAIN_MGC;
+    bladerf_gain_mode restore_to = BLADERF_GAIN_MGC;
+    bool restore_gain_mode       = false;
     bladerf_frequency freq;
     bladerf_gain assigned_gain = gain;
     MUTEX_LOCK(&dev->lock);
 
-    /* Change gain mode to manual if ch = RX */
+    /* The RFIC only accepts a manual gain value while it is in MGC: the
+     * AD936x driver rejects the write outright otherwise. Borrow MGC for the
+     * duration of the write and hand the channel back in the mode the caller
+     * chose, rather than silently leaving AGC switched off behind them.
+     */
     if (BLADERF_CHANNEL_IS_TX(ch) == false) {
         status = dev->board->get_gain_mode(dev, ch, &gain_mode);
         if (status != 0) {
@@ -566,12 +572,14 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         }
 
         if (gain_mode != BLADERF_GAIN_MGC) {
-            log_warning("Setting gain mode to manual\n");
             status = dev->board->set_gain_mode(dev, ch, BLADERF_GAIN_MGC);
             if (status != 0) {
                 log_error("Failed to set gain mode\n");
                 goto error;
             }
+
+            restore_to         = gain_mode;
+            restore_gain_mode  = true;
         }
     }
 
@@ -585,7 +593,16 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     status = dev->board->set_gain(dev, ch, assigned_gain);
     if (status != 0) {
         log_error("Failed to set gain\n");
-        goto error;
+    }
+
+    if (restore_gain_mode) {
+        int restore_status = dev->board->set_gain_mode(dev, ch, restore_to);
+        if (restore_status != 0) {
+            log_error("Failed to restore gain mode\n");
+            if (status == 0) {
+                status = restore_status;
+            }
+        }
     }
 
 error:
@@ -1117,6 +1134,7 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
         if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
             log_error("bladeRF 2.0 required for 8bit format\n");
+            MUTEX_UNLOCK(&dev->lock);
             return BLADERF_ERR_UNSUPPORTED;
         }
     }
@@ -1216,6 +1234,7 @@ int bladerf_sync_config(struct bladerf *dev,
     if (format == BLADERF_FORMAT_SC8_Q7 || format == BLADERF_FORMAT_SC8_Q7_META) {
         if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
             log_error("bladeRF 2.0 required for 8bit format\n");
+            MUTEX_UNLOCK(&dev->lock);
             return BLADERF_ERR_UNSUPPORTED;
         }
     }
@@ -2234,6 +2253,12 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
     }
 
     if (cal_file_loc != NULL) {
+        if (strlen(cal_file_loc) >= filename_len) {
+            log_error("Gain calibration path is too long (%zu >= %zu)\n",
+                      strlen(cal_file_loc), filename_len);
+            status = BLADERF_ERR_INVAL;
+            goto error;
+        }
         strcpy(filename, cal_file_loc);
     } else {
         log_debug("No calibration file specified, using serial number\n");
@@ -2256,6 +2281,10 @@ int bladerf_load_gain_calibration(struct bladerf *dev, bladerf_channel ch, const
 
     /** Convert to binary format if CSV */
     full_path_bin = (char*)malloc(strlen(full_path) + 1);
+    if (full_path_bin == NULL) {
+        status = BLADERF_ERR_MEM;
+        goto error;
+    }
     strcpy(full_path_bin, full_path);
     ext = strstr(full_path_bin, ".csv");
     if (ext) {
