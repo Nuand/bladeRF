@@ -486,6 +486,7 @@ CyBool_t NuandHandleVendorRequest(
     case BLADE_USB_CMD_READ_PAGE_BUFFER:
         if(wIndex + wLength > sizeof(glPageBuffer)) {
             apiRetStatus = CyU3PUsbStall(0x80, CyTrue, CyFalse);
+            break;
         }
 
         apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glPageBuffer[wIndex]);
@@ -497,6 +498,7 @@ CyBool_t NuandHandleVendorRequest(
     case BLADE_USB_CMD_WRITE_PAGE_BUFFER:
         if(wIndex + wLength > sizeof(glPageBuffer)) {
             apiRetStatus = CyU3PUsbStall(0x0, CyTrue, CyFalse);
+            break;
         }
 
         apiRetStatus = CyU3PUsbGetEP0Data(wLength, &glPageBuffer[wIndex], &readC);
@@ -572,10 +574,12 @@ CyBool_t NuandHandleVendorRequest(
         if(!glCalCacheValid) {
             /* Fail the request if the cache is invalid */
             apiRetStatus = CyU3PUsbStall(0x80, CyTrue, CyFalse);
+            break;
         }
 
         if(wIndex + wLength > sizeof(glCal)) {
             apiRetStatus = CyU3PUsbStall(0x80, CyTrue, CyFalse);
+            break;
         }
 
         apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glCal[wIndex]);

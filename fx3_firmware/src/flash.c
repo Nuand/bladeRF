@@ -385,12 +385,24 @@ int NuandExtractField(char *ptr, int len, char *field,
         if (c == 0xff) // flash and OTP are 0xff if they've never been written to
             break;
 
+        /* `c' comes straight from flash/OTP; make sure the record (1 byte
+         * length + c data bytes + 2 byte CRC) actually fits before reading
+         * past it, otherwise ub[c+1] can read beyond `end`. */
+        if ((size_t)(end - ub) < (size_t)c + 3)
+            return 1;
+
         a1 = *(unsigned short *)(&ub[c+1]);  // read checksum
         a2 = zcrc(ub, c+1);  // calculate checksum
 
         if (a1 == a2 || 1) {
             if (!strncmp((char *)ub + 1, field, flen)) {
-                wlen = min_sz(c - flen, maxlen);
+                /* Field name longer than the stored record data means there
+                 * is nothing to copy; avoid `c - flen' underflowing to a
+                 * huge size_t in min_sz(), which previously caused
+                 * strncpy()/val[wlen]=0 to overrun the caller's buffer. */
+                if (c < flen)
+                    return 1;
+                wlen = min_sz(c - flen, maxlen > 0 ? maxlen - 1 : 0);
                 strncpy(val, (char *)ub + 1 + flen, wlen);
                 val[wlen] = 0;
                 return 0;

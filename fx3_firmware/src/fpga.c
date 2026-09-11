@@ -363,6 +363,9 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
 
     NuandFpgaConfigStart();
     ptr = CyU3PDmaBufferAlloc(4096);
+    if (ptr == NULL) {
+        goto out;
+    }
     apiRetStatus = CyFxSpiInit(0x100);
 
     CyFxSpiFastRead(CyTrue);
@@ -395,7 +398,9 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
     NuandSetFpgaConfigSource(NUAND_FPGA_CONFIG_SOURCE_FLASH);
 
 out:
-    CyU3PDmaBufferFree(ptr);
+    if (ptr != NULL) {
+        CyU3PDmaBufferFree(ptr);
+    }
     CyU3PSpiDeInit();
 
     CyFxSpiFastRead(CyFalse);
