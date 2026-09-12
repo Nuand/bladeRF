@@ -70,6 +70,16 @@ extern "C" {
 // clang-format off
 #if defined _WIN32 || defined __CYGWIN__
 #   include <windows.h>
+    /* windows.h defines IGNORE as a bare 0 (winbase.h), and the AD9361
+     * driver has an enumerator of that name (ad9361.h:3149). Including both
+     * turns that enumerator into "0," and the enum fails to compile, taking
+     * NUM_TX_CLOCKS down with it. The driver is a vendor submodule, so the
+     * collision is undone here rather than by renaming their identifier.
+     * Undefining the macro does not lose anything: it belongs to the
+     * console-input API, which this library does not use. */
+#   ifdef IGNORE
+#       undef IGNORE
+#   endif
 #   define CALL_CONV __cdecl
 #   ifdef __GNUC__
 #       define API_EXPORT __attribute__ ((dllexport))
