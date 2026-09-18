@@ -994,7 +994,8 @@ static inline int handle_tx_parameters(struct bladerf_metadata *user_meta,
                                        struct bladerf_sync *s,
                                        struct tx_options *options)
 {
-    if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META) {
+    if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META ||
+        s->stream_config.format == BLADERF_FORMAT_SC8_Q7_META) {
         if (user_meta == NULL) {
             log_debug("NULL metadata pointer passed to %s\n", __FUNCTION__);
             return BLADERF_ERR_INVAL;
@@ -1424,7 +1425,8 @@ int sync_tx(struct bladerf_sync *s,
     }
 
     if (status == 0 &&
-        s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META &&
+        (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META ||
+         s->stream_config.format == BLADERF_FORMAT_SC8_Q7_META) &&
         (user_meta->flags & BLADERF_META_FLAG_TX_BURST_END)) {
         s->meta.in_burst = false;
         s->meta.now      = false;
