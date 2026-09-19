@@ -279,31 +279,83 @@ void bladerf_nios_init(struct pkt_buf *pkt,
                       VCTCXO_TAMER_0_IRQ);
 }
 
-static void i2c_complete_transfer(uint8_t check_rxack)
+/* Bounded for the same reason as spi_arbiter_lock() below: an I2C peripheral
+ * that stops driving TIP or never acks must not cost us the main loop. A
+ * device that misbehaves leaves a bad register read; a spinning Nios leaves a
+ * board that answers nothing until power is cycled.
+ *
+ * Returns false if any phase timed out. */
+static bool i2c_complete_transfer(uint8_t check_rxack)
 {
+    /* Arbitrary but bounded: at Nios speeds this is far longer than any
+     * legitimate transfer takes. */
+    uint32_t const TRIES = 100000;
+    uint32_t count;
+
     if ((IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_TIP) == 0) {
-        while ((IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_TIP) == 0)
-            ;
+        count = 0;
+        while ((IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_TIP) == 0) {
+            if (++count >= TRIES) {
+                DBG("%s: timed out waiting for TIP to assert\n", __FUNCTION__);
+                return false;
+            }
+        }
     }
 
-    while (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_TIP)
-        ;
+    count = 0;
+    while (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_TIP) {
+        if (++count >= TRIES) {
+            DBG("%s: timed out waiting for TIP to clear\n", __FUNCTION__);
+            return false;
+        }
+    }
 
-    while (check_rxack && (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_RXACK))
-        ;
+    count = 0;
+    while (check_rxack &&
+           (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_RXACK)) {
+        if (++count >= TRIES) {
+            DBG("%s: timed out waiting for RXACK\n", __FUNCTION__);
+            return false;
+        }
+    }
+
+    return true;
 }
 
-void spi_arbiter_lock()
+/* The comment that used to sit here claimed this applies only to bladeRF1.
+ * It does not: the xA4 BSP defines ARBITER_0_BASE and the design carries a
+ * real arbiter instance, so every AD9361 SPI access below takes this path.
+ *
+ * Waiting for the grant without a bound is what turns a stuck arbiter into a
+ * dead board: the arbiter FSM leaves WAIT_FOR_ACK only once the grantee acks
+ * (arbiter.vhd), and its only reset is the system reset. Spinning here never
+ * returns to the main loop, so the packet handlers stop being serviced and
+ * the board goes silent even to bladerf_open() until power is cycled.
+ *
+ * Give up instead. Callers drive the RFIC, where a failed transfer is a bad
+ * register value; a wedged Nios is a power cycle. */
+bool spi_arbiter_lock()
 {
-// Applies only to bladeRF1
 #ifdef ARBITER_0_BASE
+    /* Arbitrary but bounded: a grant that has not arrived after this many
+     * reads is not arriving. */
+    uint32_t const TRIES = 100000;
+    uint32_t count       = 0;
     uint8_t data;
 
     IOWR_32DIRECT(ARBITER_0_BASE, 0, 1);
 
     do {
         data = IORD_8DIRECT(ARBITER_0_BASE, 1);
-    } while ((data & 1) == 0);
+        if ((data & 1) != 0) {
+            return true;
+        }
+    } while (++count < TRIES);
+
+    DBG("%s: no SPI arbiter grant after %u tries\n", __FUNCTION__, TRIES);
+    return false;
+#else
+    return true;
 #endif  // ARBITER_0_BASE
 }
 
@@ -319,7 +371,10 @@ uint8_t lms6_read(uint8_t addr)
 {
     uint8_t data;
 
-    spi_arbiter_lock();
+    if (!spi_arbiter_lock()) {
+        return 0;
+    }
+
     data = IORD_8DIRECT(RFFE_SPI_BASE, addr);
     spi_arbiter_unlock();
 
@@ -328,7 +383,10 @@ uint8_t lms6_read(uint8_t addr)
 
 void lms6_write(uint8_t addr, uint8_t data)
 {
-    spi_arbiter_lock();
+    if (!spi_arbiter_lock()) {
+        return;
+    }
+
     IOWR_8DIRECT(RFFE_SPI_BASE, addr, data);
     spi_arbiter_unlock();
 }
@@ -342,7 +400,10 @@ uint64_t adi_spi_read(uint16_t addr)
     uint8_t i;
     uint64_t rv;
 
-    spi_arbiter_lock();
+    if (!spi_arbiter_lock()) {
+        return UINT64_C(0);
+    }
+
     // The alt_avalon_spi_command expects parameters to be arrays of bytes
 
     // Convert the uint16_t address into array of 2 uint8_t
@@ -373,7 +434,10 @@ void adi_spi_write(uint16_t addr, uint64_t data)
     alt_u8 bytes;
     uint8_t i;
 
-    spi_arbiter_lock();
+    if (!spi_arbiter_lock()) {
+        return;
+    }
+
     // The alt_avalon_spi_command expects parameters to be arrays of bytes
 
     // Convert the uint16_t address into array of 2 uint8_t
@@ -618,22 +682,34 @@ uint8_t si5338_read(uint8_t addr)
     /* Set the address to the Si5338 */
     IOWR_8DIRECT(I2C, OC_I2C_DATA, SI5338_I2C);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, addr);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     /* Next transfer is a read operation, so '1' in the read/write bit */
     IOWR_8DIRECT(I2C, OC_I2C_DATA, SI5338_I2C | 1);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD | OC_I2C_NACK | OC_I2C_STO);
-    i2c_complete_transfer(0);
+    if (!i2c_complete_transfer(0)) {
+        goto i2c_fail;
+    }
 
     data = IORD_8DIRECT(I2C, OC_I2C_DATA);
     return data;
+
+i2c_fail:
+    /* Bus did not complete; a zero read beats never returning. */
+    return 0;
 }
 
 void si5338_write(uint8_t addr, uint8_t data)
@@ -641,15 +717,24 @@ void si5338_write(uint8_t addr, uint8_t data)
     /* Set the address to the Si5338 */
     IOWR_8DIRECT(I2C, OC_I2C_DATA, SI5338_I2C);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, addr);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, data);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO);
-    i2c_complete_transfer(0);
+    (void)i2c_complete_transfer(0);
+    return;
+
+i2c_fail:
+    /* Bus did not complete; the write is lost, which beats never returning. */
+    return;
 }
 
 #ifdef BOARD_BLADERF_MICRO
@@ -660,26 +745,40 @@ uint16_t ina219_read(uint8_t addr)
     /* Set the address to the INA219 */
     IOWR_8DIRECT(I2C, OC_I2C_DATA, INA219_I2C);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, addr);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     /* Next transfer is a read operation, so '1' in the read/write bit */
     IOWR_8DIRECT(I2C, OC_I2C_DATA, INA219_I2C | 1);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
     data = IORD_8DIRECT(I2C, OC_I2C_DATA) << 8;
 
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD | OC_I2C_NACK | OC_I2C_STO);
-    i2c_complete_transfer(0);
+    if (!i2c_complete_transfer(0)) {
+        goto i2c_fail;
+    }
 
     data |= IORD_8DIRECT(I2C, OC_I2C_DATA);
     return data;
+
+i2c_fail:
+    /* Bus did not complete; a zero read beats never returning. */
+    return 0;
 }
 #endif  // BOARD_BLADERF_MICRO
 
@@ -689,19 +788,30 @@ void ina219_write(uint8_t addr, uint16_t data)
     /* Set the address to the INA219 */
     IOWR_8DIRECT(I2C, OC_I2C_DATA, INA219_I2C);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, addr);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_CMD_STATUS | OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, data >> 8);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR);
-    i2c_complete_transfer(1);
+    if (!i2c_complete_transfer(1)) {
+        goto i2c_fail;
+    }
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, data);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO);
-    i2c_complete_transfer(0);
+    (void)i2c_complete_transfer(0);
+    return;
+
+i2c_fail:
+    /* Bus did not complete; the write is lost, which beats never returning. */
+    return;
 }
 #endif  // BOARD_BLADERF_MICRO
 
