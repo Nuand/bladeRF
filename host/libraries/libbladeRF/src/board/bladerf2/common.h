@@ -133,6 +133,12 @@ struct controller_fns {
 };
 
 struct bladerf2_board_data {
+    /* RF link epoch bookkeeping. The START/STOP toggles are shared by both
+     * directions, so STOP may only be sent when the LAST enabled direction
+     * goes down -- disabling TX while RX streams must not end RX's epoch.
+     * Index 0 = RX, 1 = TX. */
+    bool rf_link_dir_on[2];
+
     /* Board state */
     enum {
         STATE_UNINITIALIZED,
@@ -194,6 +200,11 @@ struct bladerf2_board_data {
 struct bladerf_rfic_status_register {
     bool rfic_initialized;
     size_t write_queue_length;
+    /* Result of the last command the NIOS write queue retired. The firmware
+     * has always reported it (devices_rfic_cmds.c:290-301, WQSUCCESS bit);
+     * the host used to discard it, so a queued command that drained and
+     * failed looked exactly like one that succeeded. */
+    bool last_write_success;
 };
 
 

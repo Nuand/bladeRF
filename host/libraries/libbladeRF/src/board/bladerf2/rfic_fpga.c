@@ -90,8 +90,15 @@ static int _rfic_fpga_get_status(
     status = _rfic_cmd_read(dev, BLADERF_CHANNEL_INVALID,
                             BLADERF_RFIC_COMMAND_STATUS, &sreg);
 
-    rfic_status->rfic_initialized   = ((sreg >> 0) & 0x1);
-    rfic_status->write_queue_length = ((sreg >> 8) & 0xFF);
+    rfic_status->rfic_initialized =
+        ((sreg >> BLADERF_RFIC_STATUS_INIT_SHIFT) &
+         BLADERF_RFIC_STATUS_INIT_MASK);
+    rfic_status->last_write_success =
+        ((sreg >> BLADERF_RFIC_STATUS_WQSUCCESS_SHIFT) &
+         BLADERF_RFIC_STATUS_WQSUCCESS_MASK);
+    rfic_status->write_queue_length =
+        ((sreg >> BLADERF_RFIC_STATUS_WQLEN_SHIFT) &
+         BLADERF_RFIC_STATUS_WQLEN_MASK);
 
     return status;
 }
@@ -135,6 +142,34 @@ static int _rfic_fpga_spinwait(struct bladerf *dev)
      * have the number of items in the queue. Bonk this down to a timeout. */
     if (jobs > 0) {
         jobs = BLADERF_ERR_TIMEOUT;
+    }
+
+    if (jobs < 0) {
+        return jobs;
+    }
+
+    /* The queue drained, which is not the same as the command having worked:
+     * the firmware retires failed commands too, reporting the result in the
+     * WQSUCCESS bit. Without reading it, a command that ran and failed is
+     * indistinguishable from one that succeeded.
+     *
+     * Note the firmware masks last_rv down to a single bit, so the 0xFF reset
+     * sentinel ("no command has run yet") reads as success and 0xFE ("no write
+     * handler for this command") as failure. Only the failure direction is
+     * actionable here. */
+    {
+        struct bladerf_rfic_status_register rfic_status;
+        int status = _rfic_fpga_get_status(dev, &rfic_status);
+
+        if (status < 0) {
+            return status;
+        }
+
+        if (!rfic_status.last_write_success) {
+            log_debug("%s: queue drained but last command failed\n",
+                      __FUNCTION__);
+            return BLADERF_ERR_UNEXPECTED;
+        }
     }
 
     return jobs;
