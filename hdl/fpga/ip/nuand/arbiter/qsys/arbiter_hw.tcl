@@ -163,16 +163,3 @@ set_interface_property clock_sink SVD_ADDRESS_GROUP ""
 
 add_interface_port clock_sink clock clk Input 1
 
-
-# 
-# connection point conduit_end_1
-# 
-add_interface conduit_end_1 conduit end
-set_interface_property conduit_end_1 associatedClock clock_sink
-set_interface_property conduit_end_1 associatedReset reset
-set_interface_property conduit_end_1 ENABLED true
-set_interface_property conduit_end_1 EXPORT_OF ""
-set_interface_property conduit_end_1 PORT_NAME_MAP ""
-set_interface_property conduit_end_1 CMSIS_SVD_VARIABLES ""
-set_interface_property conduit_end_1 SVD_ADDRESS_GROUP ""
-
