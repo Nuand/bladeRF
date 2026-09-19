@@ -2380,6 +2380,20 @@ static int bladerf2_set_tuning_mode(struct bladerf *dev,
                 return BLADERF_ERR_UNSUPPORTED;
             }
 
+            /* Handing the RFIC to the Nios means the Nios runs its own
+             * initialization against the AD9361: the RFFE control bits are
+             * cleared and the part is reset. Doing that to a chip the host is
+             * streaming from leaves the board unresponsive - bladerf_open()
+             * included - until the bitstream is reloaded. Refuse rather than
+             * let the caller find out the hard way. */
+            if (board_data->module_format[BLADERF_RX] != (bladerf_format)-1 ||
+                board_data->module_format[BLADERF_TX] != (bladerf_format)-1) {
+                log_error("%s: refusing to hand the RFIC to the FPGA while a "
+                          "module is still configured for streaming\n",
+                          __FUNCTION__);
+                return BLADERF_ERR_INVAL;
+            }
+
             rfic_new   = &rfic_fpga_control;
             rfic_other = &rfic_host_control;
             mode_other = BLADERF_TUNING_MODE_HOST;
