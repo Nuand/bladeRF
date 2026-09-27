@@ -31,14 +31,42 @@
 #cmakedefine01  BLADERF_OS_FREEBSD
 #cmakedefine01  BLADERF_OS_OSX
 #cmakedefine01  BLADERF_OS_WINDOWS
+#cmakedefine01  BLADERF_OS_ANDROID
 #cmakedefine01  BLADERF_BIG_ENDIAN
 
-#if !(BLADERF_OS_LINUX || BLADERF_OS_OSX || BLADERF_OS_WINDOWS || BLADERF_OS_FREEBSD)
+
+#if !(BLADERF_OS_LINUX || BLADERF_OS_OSX || BLADERF_OS_WINDOWS || BLADERF_OS_FREEBSD || BLADERF_OS_ANDROID)
 #   error "Build not configured for any supported operating systems"
 #endif
 
 #if 1 < (BLADERF_OS_LINUX + BLADERF_OS_OSX + BLADERF_OS_WINDOWS + BLADERF_OS_FREEBSD)
 #error "Build configured for multiple operating systems"
+#endif
+
+#ifdef BLADERF_OS_ANDROID
+#include <unistd.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <pwd.h>
+#include <time.h>
+#include <errno.h>
+
+static inline struct passwd *bladerf_android_getpwuid_stub(uid_t uid)
+{
+    static struct passwd pwd;
+    static char fallback_dir[] = "/";
+    const char *home;
+
+    (void)uid;
+
+    home = getenv("HOME");
+    pwd.pw_dir = (char *)(home != NULL ? home : fallback_dir);
+
+    return &pwd;
+}
+
+#define getpwuid(uid) bladerf_android_getpwuid_stub(uid)
+
 #endif
 
 #cmakedefine01  HAVE_CLOCK_GETTIME
@@ -61,7 +89,7 @@
 /*-----------------------
  * Linux
  *---------------------*/
-#if BLADERF_OS_LINUX
+#if BLADERF_OS_LINUX || BLADERF_OS_ANDROID
 #include <endian.h>
 
 #define HOST_TO_LE16(val) htole16(val)
@@ -151,6 +179,10 @@
  *---------------------*/
 #else
 #error "Encountered an OS that we do not have endian wrappers for?"
+#endif
+
+#if BLADERF_OS_ANDROID
+#define pthread_cancel(val)     pthread_kill(val, SIGTERM)
 #endif
 
 /*******************************************************************************

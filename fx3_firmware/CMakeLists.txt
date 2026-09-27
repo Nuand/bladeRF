@@ -58,6 +58,9 @@ option(ENABLE_BLADERF_FIRMWARE
     "Build firmware for the bladeRF 1.0"
     ON
 )
+if(BLADERF_OS_ANDROID)
+    set(ENABLE_BLADERF_FIRMWARE OFF)
+endif()
 
 ################################################################################
 # Build Configuration

@@ -22,7 +22,11 @@
 
 #include <string.h>
 #include <stdio.h>
+#ifndef BLADERF_OS_ANDROID
 #include "common.h"
+#else
+#include <ad9361.h>
+#endif
 #include "libbladeRF.h"
 #include "board/board.h"
 #include "helpers/version.h"
