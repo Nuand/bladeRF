@@ -78,7 +78,7 @@ int dev_init(struct bladerf *dev, bladerf_direction dir, struct test_params *tes
 
     CHECK(bladerf_set_gain(dev, ch, test->gain));
     CHECK(bladerf_set_sample_rate(dev, ch, test->samp_rate, NULL));
-    CHECK(bladerf_set_bandwidth(dev, ch, test->bandwidth, &test->bandwidth));
+    CHECK(bladerf_set_bandwidth(dev, ch, test->samp_rate, &test->bandwidth));
     CHECK(bladerf_set_frequency(dev, ch, test->frequency));
     CHECK(bladerf_sync_config(dev, layout, format, num_buffers, buffer_size,
                               num_transfers, stream_timeout));

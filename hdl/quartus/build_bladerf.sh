@@ -63,7 +63,8 @@ function usage()
     echo "Usage: `basename $0` -b <board_name> -r <rev> -s <size>"
     echo ""
     echo "Options:"
-    echo "    -c                    Clear working directory"
+    echo "    -c                    Clear working directory (default)"
+    echo "    -k                    Keep working directory for an incremental build"
     echo "    -b <board_name>       Target board name"
     echo "    -r <rev>              Quartus project revision"
     echo "    -s <size>             FPGA size"
@@ -134,7 +135,7 @@ check_quartus_version()
 
     QUARTUS_VER[minor]=$( \
         echo "${VERSION}"   | \
-        sed -e 's/^16\.//g' | \
+        sed -e 's/^[[:digit:]]\+\.//g' | \
         sed -e 's/\([[:digit:]]\+\).*/\1/g' \
     )
 
@@ -159,15 +160,20 @@ if [ $# -eq 0 ]; then
 fi
 
 # Set default options
+clear_work_dir=1
 nios_rev="Tiny"
 flow="full"
 seed="1"
 omit_date=false
 
-while getopts ":cb:r:s:a:fn:l:S:DhH" opt; do
+while getopts ":ckb:r:s:a:fn:l:S:DhH" opt; do
     case $opt in
         c)
             clear_work_dir=1
+            ;;
+
+        k)
+            clear_work_dir=0
             ;;
 
         b)
@@ -232,12 +238,17 @@ done
 if [ "$build_hosted" == "1" ]; then
     mkdir -p build_logs
     build_pids=()
+    hosted_options=()
+
+    if [ "$clear_work_dir" == "0" ]; then
+        hosted_options=(-k)
+    fi
 
     echo "Starting parallel builds for all hosted configurations..."
     for config in "bladeRF 40" "bladeRF 115" "bladeRF-micro A4" "bladeRF-micro A5" "bladeRF-micro A9"; do
         read -r board size <<< "$config"
         log_file="build_logs/$board-hosted-$size.log"
-        $0 -b "$board" -r hosted -s "$size" > "$log_file" 2>&1 &
+        "$0" "${hosted_options[@]}" -b "$board" -r hosted -s "$size" > "$log_file" 2>&1 &
         build_pids+=($!)
         echo " → $board $size (PID: ${build_pids[-1]})"
     done
@@ -370,6 +381,13 @@ fi
 
 if [ $(expr ${QUARTUS_VER[major]} \>= 19 ) -eq 1 ]; then
    export PERL5LIB=$(echo ${QUARTUS_ROOTDIR}/linux64/perl/lib/*.*/)
+fi
+
+if [ "x$(uname)" == "xLinux" ] &&
+       { [ "${QUARTUS_VER[major]}" -lt 20 ] ||
+         { [ "${QUARTUS_VER[major]}" -eq 20 ] &&
+           [ "${QUARTUS_VER[minor]}" -le 1 ]; }; }; then
+    export GLIBC_TUNABLES="${GLIBC_TUNABLES:+${GLIBC_TUNABLES}:}glibc.rtld.execstack=2"
 fi
 
 nios_system=../fpga/ip/altera/nios_system

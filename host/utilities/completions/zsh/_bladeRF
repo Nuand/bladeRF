@@ -1,0 +1,131 @@
+#compdef bladeRF-cli bladeRF-power bladeRF-fsk bladeRF-update
+#autoload
+
+# Unified zsh completion for all bladeRF utilities
+
+# Common device specifier suggestions with dynamic device probing
+_bladerf_device() {
+  local -a device_specs
+  
+  # Try to get device serials dynamically
+  if (( $+commands[bladeRF-cli] )); then
+    local serials
+    serials=(${(f)"$(bladeRF-cli -p 2>/dev/null | grep -E '^\s*Serial:' | awk '{print $2}')"})
+    
+    if [[ ${#serials} -gt 0 ]]; then
+      # Build device specs with actual serial numbers
+      device_specs=(
+        '*\:instance=:Specify device by instance number'
+        'libusb\:instance=:Specify libusb device by instance number'
+      )
+      for serial in $serials; do
+        device_specs+=("*\:serial=$serial:Device with serial $serial")
+      done
+    else
+      # Fall back to generic templates if no devices found
+      device_specs=(
+        '*\:serial=:Specify device by serial number'
+        '*\:instance=:Specify device by instance number'
+        'libusb\:instance=:Specify libusb device by instance number'
+      )
+    fi
+  else
+    # Fall back if bladeRF-cli is not available
+    device_specs=(
+      '*\:serial=:Specify device by serial number'
+      '*\:instance=:Specify device by instance number'
+      'libusb\:instance=:Specify libusb device by instance number'
+    )
+  fi
+  
+  _describe -t device-specs 'device specifier' device_specs -S ''
+}
+
+# Common verbosity levels
+_bladerf_verbosity() {
+  local -a levels
+  levels=(
+    'critical:Only show critical errors'
+    'error:Show errors and above'
+    'warning:Show warnings and above'
+    'info:Show informational messages and above'
+    'debug:Show debug messages and above'
+    'verbose:Show all messages'
+  )
+  _describe -t verbosity-levels 'verbosity level' levels
+}
+
+# Common channel numbers
+_bladerf_channel() {
+  _values 'channel' '0' '1'
+}
+
+case "$service" in
+  bladeRF-cli)
+    local -a args
+    args=(
+      '(- : *)'{-h,--help}'[Show help text]'
+      '(- : *)--help-interactive[Print help information for all interactive commands]'
+      '(- : *)--lib-version[Print libbladeRF version and exit]'
+      '(- : *)--version[Print CLI version and exit]'
+      '(-d --device)'{-d,--device}'[Use the specified bladeRF device]:device:_bladerf_device'
+      '(-f --flash-firmware)'{-f,--flash-firmware}'[Write the provided FX3 firmware file to flash]:firmware file:_files'
+      '(-l --load-fpga)'{-l,--load-fpga}'[Load the provided FPGA bitstream]:FPGA file:_files'
+      '(-L --flash-fpga)'{-L,--flash-fpga}'[Write the provided FPGA image to flash for autoloading]:FPGA file:_files'
+      '(-p --probe)'{-p,--probe}'[Probe for devices, print results, then exit]'
+      '*'{-e,--exec}'[Execute the specified interactive mode command]:command:'
+      '(-s --script)'{-s,--script}'[Run provided script]:script file:_files'
+      '(-i --interactive)'{-i,--interactive}'[Enter interactive mode]'
+      '(-v --verbosity)'{-v,--verbosity}'[Set the libbladeRF verbosity level]:level:_bladerf_verbosity'
+    )
+    _arguments -s -S $args
+    ;;
+
+  bladeRF-power)
+    local -a args
+    args=(
+      '(- : *)'{-h,--help}'[Show help text]'
+      '(-d --device)'{-d,--device}'[Use the specified bladeRF device]:device:_bladerf_device'
+      '(-c --channel)'{-c,--channel}'[Channel to use]:channel:_bladerf_channel'
+      '(-l --load)'{-l,--load}'[Input file to load power calibration from]:file:_files -g "*.{csv,tbl}"'
+      '(-f --frequency)'{-f,--frequency}'[Frequency to calibrate at (Hz)]:frequency:'
+      '(-s --sample-rate)'{-s,--sample-rate}'[Sample rate (Hz)]:rate:'
+      '(-r --rx -t --tx)'{-t,--tx}'[Calibrate transmit path]'
+      '(-r --rx -t --tx)'{-r,--rx}'[Calibrate receive path]'
+      '(-v --verbosity)'{-v,--verbosity}'[Set libbladeRF verbosity level]:level:_bladerf_verbosity'
+    )
+    _arguments -s -S $args
+    ;;
+
+  bladeRF-fsk)
+    local -a args
+    args=(
+      '(- : *)'{-h,--help}'[Show help text]'
+      '(-d --device)'{-d,--device}'[Open the specified bladeRF device]:device:_bladerf_device'
+      '(-p --packet-size)'{-p,--packet-size}'[Payload data length per link layer frame]:size:(64 128 256 512 1024)'
+      '(-q --quiet)'{-q,--quiet}'[Suppress printing of banner/exit messages]'
+      '(-r --rx-freq)'{-r,--rx-freq}'[RX frequency (Hz)]:frequency:'
+      '(-o --output)'{-o,--output}'[RX data output]:output file:_files'
+      '(-t --tx-freq)'{-t,--tx-freq}'[TX frequency (Hz)]:frequency:'
+      '(-i --input)'{-i,--input}'[TX data input]:input file:_files'
+      '(-s --sample-rate)'{-s,--sample-rate}'[Sample rate (Hz)]:rate:'
+      '--rx-chan[RX channel]:channel:_bladerf_channel'
+      '--rx-biast[Enable bias-tee amplifier accessory on RX channel]'
+      '--tx-chan[TX channel]:channel:_bladerf_channel'
+      '--tx-biast[Enable bias-tee amplifier accessory on TX channel]'
+      '--rx-agc[Enable RX AGC]'
+      '--rx-gain[RX unified gain (dB)]:gain:'
+      '--tx-gain[TX unified gain (dB)]:gain:'
+    )
+    _arguments -s -S $args
+    ;;
+
+  bladeRF-update)
+    _arguments -s -S \
+      '(- : *)'{-h,--help}'[Show help text]' \
+      '*'{-v,--verbose}'[Increase verbosity level]' \
+      '(-y --rm)'{-y,--rm}'[Skip the yes/no prompt]'
+    ;;
+esac
+
+# ex: filetype=zsh

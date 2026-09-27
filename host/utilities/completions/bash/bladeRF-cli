@@ -1,0 +1,50 @@
+# bash completion for bladeRF-cli                            -*- shell-script -*-
+
+# Source common functions
+. $(dirname "${BASH_SOURCE[0]}")/bladeRF-common 2>/dev/null || :
+
+_bladeRF_cli()
+{
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "$prev" in
+        -f|--flash-firmware)
+            COMPREPLY=( $(compgen -f -X '!*.@(bin|img|fw)' -- "$cur") )
+            return
+            ;;
+        -l|--load-fpga|-L|--flash-fpga)
+            COMPREPLY=( $(compgen -f -X '!*.@(rbf|bit)' -- "$cur") )
+            return
+            ;;
+        -s|--script)
+            COMPREPLY=( $(compgen -f -X '!*.@(txt|script|cli)' -- "$cur") )
+            return
+            ;;
+        -d|--device)
+            _bladerf_complete_device "$cur"
+            return
+            ;;
+        -v|--verbosity)
+            COMPREPLY=( $(compgen -W "critical error warning info debug verbose" -- "$cur") )
+            return
+            ;;
+        -e|--exec)
+            COMPREPLY=( $(compgen -W "info version open close print set rx tx run \
+                                      calibrate erase flash_backup flash_restore \
+                                      load jump_to_boot peek poke help quit q" -- "$cur") )
+            return
+            ;;
+    esac
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-d --device -f --flash-firmware -l --load-fpga \
+                                  -L --flash-fpga -p --probe -e --exec -s --script \
+                                  -i --interactive -v --verbosity -h --help \
+                                  --help-interactive --lib-version --version" -- "$cur") )
+    fi
+}
+
+complete -F _bladeRF_cli bladeRF-cli
+
+# ex: filetype=sh

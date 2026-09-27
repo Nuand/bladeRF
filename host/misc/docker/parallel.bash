@@ -40,7 +40,9 @@ fi
 
 # assuming the script is 3 levels down (host/misc/docker)
 dfdir=$(dirname "${0}")
+dfdir=$(cd "${dfdir}" && pwd)  # Convert to absolute path
 basedir=${dfdir}/../../..
+basedir=$(cd "${basedir}" && pwd)  # Convert to absolute path
 buildscript=${dfdir}/build.bash
 
 # globals
@@ -125,7 +127,7 @@ do_spawn () {
     rel=$(basename -s ".Dockerfile" ${dff})
 
     if [ ! -f "${dff}" ]; then
-        echo "*** File doesn't exist: ${1}"
+        echo "*** File doesn't exist: ${dff}"
         exit 1
     fi
 

@@ -58,7 +58,9 @@ RUN test -f "${work}/bladerf-micro-A9-hosted/${rbf}" \
 
 # clean up unnecessary stuff
 WORKDIR /root/bladeRF
-RUN git clean -xdf && git gc --aggressive
+RUN git clean -xdf && git gc --aggressive \
+ || (echo "Skipping git cleanup for non-self-contained worktree checkout" \
+     && rm -f .git)
 
 # build a scratch image with nothing but the bladeRF source and FPGA images
 FROM scratch

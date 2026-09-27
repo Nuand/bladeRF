@@ -312,12 +312,12 @@ begin
         );
 
     -- Generate phase-shifted PLL clock
-    U_fx3_pll : entity rtl_work.fx3_pll
+    U_fx3_pll : entity nuand.fx3_pll
         port map (
-            inclk0   =>  fx3_pclk,
-            areset   =>  pll_reset,
-            c0       =>  fx3_pclk_pll,
-            locked   =>  pll_locked
+            refclk   => fx3_pclk,
+            rst      => pll_reset,
+            outclk_0 => fx3_pclk_pll,
+            locked   => pll_locked
         );
 
     tx_clock    <= not tx_clock  after TX_HALF_PERIOD ;

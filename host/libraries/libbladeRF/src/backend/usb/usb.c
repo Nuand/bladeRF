@@ -483,7 +483,7 @@ static inline int perform_erase(struct bladerf *dev, uint16_t block)
                                         BLADE_USB_CMD_FLASH_ERASE,
                                         0, block,
                                         &erase_ret, sizeof(erase_ret),
-                                        CTRL_TIMEOUT_MS);
+                                        FLASH_ERASE_TIMEOUT_MS);
 
 
     return status;

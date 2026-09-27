@@ -6,7 +6,7 @@
 #
 #
 ################################################################################
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 if(NOT "$ENV{QUARTUS_ROOTDIR}" STREQUAL "")
     set(QUARTUS_ROOTDIR "$ENV{QUARTUS_ROOTDIR}")

@@ -28,6 +28,7 @@ void NuandFpgaConfigSwInit(void);
 extern const struct NuandApplication NuandFpgaConfig;
 int FpgaBeginProgram(void);
 CyBool_t NuandLoadFromFlash(int fpga_len);
+CyBool_t NuandLoadCompressedFromFlash(int fpga_len, int compressed_len);
 NuandFpgaConfigSource NuandGetFpgaConfigSource(void);
 void NuandSetFpgaConfigSource(NuandFpgaConfigSource src);
 

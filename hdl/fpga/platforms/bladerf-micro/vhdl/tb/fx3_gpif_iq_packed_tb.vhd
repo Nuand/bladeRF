@@ -121,9 +121,8 @@ architecture arch of fx3_gpif_iq_packed_tb is
     signal tx_timestamp             : unsigned(63 downto 0)   := ( others => '0' );
     signal rx_timestamp             : unsigned(63 downto 0)   := ( others => '0' );
 
-    constant FX3_HALF_PERIOD    :   time        := 1.0/(100.0e6)/2.0*1 sec ;
-    constant TX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
-    constant RX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
+    constant SAMPLE_CLOCK_9MHZ_HIGH : time := 55 ns;
+    constant SAMPLE_CLOCK_9MHZ_LOW  : time := 56 ns;
 
     signal dac_controls         :   sample_controls_t(0 to NUM_MIMO_STREAMS-1)  := (others => SAMPLE_CONTROL_DISABLE);
     signal dac_streams          :   sample_streams_t(dac_controls'range)        := (others => ZERO_SAMPLE);
@@ -296,16 +295,18 @@ begin
         );
 
     -- Generate phase-shifted PLL clock
-    U_fx3_pll : entity rtl_work.fx3_pll
+    U_fx3_pll : entity nuand.fx3_pll
         port map (
-            inclk0   =>  fx3_pclk,
-            areset   =>  pll_reset,
-            c0       =>  fx3_pclk_pll,
-            locked   =>  pll_locked
+            refclk   => fx3_pclk,
+            rst      => pll_reset,
+            outclk_0 => fx3_pclk_pll,
+            locked   => pll_locked
         );
 
-    tx_clock    <= not tx_clock  after TX_HALF_PERIOD ;
-    rx_clock    <= not rx_clock  after RX_HALF_PERIOD ;
+    tx_clock <= not tx_clock after SAMPLE_CLOCK_9MHZ_HIGH when tx_clock = '1' else
+                not tx_clock after SAMPLE_CLOCK_9MHZ_LOW;
+    rx_clock <= not rx_clock after SAMPLE_CLOCK_9MHZ_HIGH when rx_clock = '1' else
+                not rx_clock after SAMPLE_CLOCK_9MHZ_LOW;
 
 
     -- Reset handler

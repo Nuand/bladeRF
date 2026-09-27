@@ -35,7 +35,7 @@ WordCompletion *tab_complete = NULL;
 int tab_completion(WordCompletion *cpl, void *data, const char *line, int w_end)
 {
     static const char file_param[] = "file=";
-    char *param = strstr(line, file_param);
+    const char *param = strstr(line, file_param);
     int ret;
 
     if (param != NULL) {

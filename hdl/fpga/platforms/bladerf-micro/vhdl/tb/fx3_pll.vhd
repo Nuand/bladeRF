@@ -31,11 +31,11 @@ entity fx3_pll is
 end entity ; -- fx3_pll
 
 architecture simulation of fx3_pll is
-    constant PHASE_OFFSET   : time  := 1 sec * (1.0/100.0e6) - 500 ps;
+    constant PHASE_OFFSET   : time  := 9 ns;
     signal outclk           : std_logic   := '1';
 begin
     -- Generate 80 MHz clock
-    outclk <= refclk after PHASE_OFFSET;
+    outclk <= transport refclk after PHASE_OFFSET;
 
     -- Send it out...
     simulate_pll : process(rst, outclk) is

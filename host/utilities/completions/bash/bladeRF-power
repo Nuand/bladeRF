@@ -1,0 +1,39 @@
+# bash completion for bladeRF-power                          -*- shell-script -*-
+
+# Source common completion functions
+. $(dirname "${BASH_SOURCE[0]}")/bladeRF-common
+
+_bladeRF_power()
+{
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "$prev" in
+        -l|--load)
+            COMPREPLY=( $(compgen -f -X '!*.@(csv|tbl)' -- "$cur") )
+            return
+            ;;
+        -c|--channel)
+            COMPREPLY=( $(compgen -W "0 1" -- "$cur") )
+            return
+            ;;
+        -d|--device)
+            _bladerf_complete_device "$cur"
+            return
+            ;;
+        -v|--verbosity)
+            COMPREPLY=( $(compgen -W "critical error warning info debug verbose" -- "$cur") )
+            return
+            ;;
+    esac
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-d --device -c --channel -l --load -f --frequency \
+                                  -s --sample-rate -t --tx -r --rx -v --verbosity \
+                                  -h --help" -- "$cur") )
+    fi
+}
+
+complete -F _bladeRF_power bladeRF-power
+
+# ex: filetype=sh

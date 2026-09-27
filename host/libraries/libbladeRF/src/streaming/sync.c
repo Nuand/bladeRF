@@ -1237,6 +1237,9 @@ int sync_tx(struct bladerf_sync *s,
                         s->meta.curr_msg_off = 0;
 
                         if (s->meta.now) {
+                            // fifo_reader.vhd defines "constant META_NOW" as all 1's
+                            // fifo_reader.vhd also subtracts 1 from the timestamp it receives
+                            // Sending 0 here becomes 0 - 1 in fifo_reader.vhd which wraps to all 1's and signals "tx now"
                             metadata_set(s->meta.curr_msg, 0, 0);
                         } else {
                             metadata_set(s->meta.curr_msg,

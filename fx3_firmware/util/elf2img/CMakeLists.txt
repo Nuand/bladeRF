@@ -1,7 +1,7 @@
 ################################################################################
 # Build for FX3 elf2img utility
 ################################################################################
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(elf2img C)
 
 if(WIN32)

@@ -22,7 +22,7 @@
 
 # References:
 # * AD9361 Reference Manual UG-570
-# * Intel LVDS SERDES Transmitter/Receiver IP Cores User Guide UG-MF9504
+# * Altera LVDS SERDES Transmitter/Receiver IP Cores User Guide UG-MF9504
 
 ### AD9361 LVDS ###
 
