@@ -60,17 +60,6 @@ int txmute_set_cached(struct ad9361_rf_phy *phy,
                       uint32_t atten);
 
 /**
- * @brief       Get the transmit mute state
- *
- * @param       phy     RFIC handle
- * @param[in]   ch      Channel
- * @param[out]  state   Mute state: true for muted, false for unmuted
- *
- * @return      0 on success, value from \ref RETCODES list on failure
- */
-int txmute_get(struct ad9361_rf_phy *phy, bladerf_channel ch, bool *state);
-
-/**
  * @brief       Sets the transmit mute.
  *
  * If muted, the TX attenuation will be set to maximum to reduce leakage
@@ -80,11 +69,15 @@ int txmute_get(struct ad9361_rf_phy *phy, bladerf_channel ch, bool *state);
  *
  * @param       phy     RFIC handle
  * @param[in]   ch      Channel
+ * @param[in,out] muted Device-owned live mute state
  * @param[in]   state   Mute state: true for muted, false for unmuted
  *
  * @return      0 on success, value from \ref RETCODES list on failure
  */
-int txmute_set(struct ad9361_rf_phy *phy, bladerf_channel ch, bool state);
+int txmute_set(struct ad9361_rf_phy *phy,
+               bladerf_channel ch,
+               bool *muted,
+               bool state);
 
 /**
  * @brief       Set AD9361 RFIC RF port

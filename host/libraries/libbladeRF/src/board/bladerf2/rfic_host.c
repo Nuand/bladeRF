@@ -286,7 +286,7 @@ static int _rfic_host_enable_module(struct bladerf *dev,
 
         /* Set/unset TX mute */
         if (BLADERF_CHANNEL_IS_TX(ch)) {
-            txmute_set(phy, ch, !enable);
+            CHECK_STATUS(rfic->set_txmute(dev, ch, !enable));
         }
     }
 
@@ -645,11 +645,7 @@ static int _rfic_host_get_gain(struct bladerf *dev,
     CHECK_STATUS(get_gain_offset(dev, ch, &offset));
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        bool muted;
-
-        CHECK_STATUS(txmute_get(phy, ch, &muted));
-
-        if (muted) {
+        if (board_data->tx_mute_state[BLADERF_CHANNEL_INDEX(ch)]) {
             struct bladerf_range const *range = NULL;
 
             CHECK_STATUS(
@@ -683,11 +679,7 @@ static int _rfic_host_set_gain(struct bladerf *dev,
     val = gain - offset;
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        bool muted;
-
-        CHECK_STATUS(txmute_get(phy, ch, &muted));
-
-        if (muted) {
+        if (board_data->tx_mute_state[BLADERF_CHANNEL_INDEX(ch)]) {
             struct bladerf_range const *range = NULL;
 
             CHECK_STATUS(
@@ -953,10 +945,10 @@ static int _rfic_host_get_txmute(struct bladerf *dev,
                                  bool *state)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        return txmute_get(phy, ch, state);
+        *state = board_data->tx_mute_state[BLADERF_CHANNEL_INDEX(ch)];
+        return 0;
     }
 
     return BLADERF_ERR_UNSUPPORTED;
@@ -967,10 +959,11 @@ static int _rfic_host_set_txmute(struct bladerf *dev,
                                  bool state)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct ad9361_rf_phy *phy              = board_data->phy;
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        return txmute_set(phy, ch, state);
+        return txmute_set(board_data->phy, ch,
+                          &board_data->tx_mute_state[BLADERF_CHANNEL_INDEX(ch)],
+                          state);
     }
 
     return BLADERF_ERR_UNSUPPORTED;

@@ -194,13 +194,15 @@ static bool _rfic_initialize(struct rfic_state *state)
                 /* Initialize TX Mute */
                 CHECK_BOOL(txmute_set_cached(state->phy, ch,
                                              init_param->tx_attenuation_mdB));
-                CHECK_BOOL(txmute_set(state->phy, ch, false));
+                CHECK_BOOL(txmute_set(state->phy, ch,
+                                       &state->tx_mute_active[i], false));
                 break;
 
             case BLADERF_RFIC_INIT_STATE_STANDBY:
                 /* Restore saved TX Mute state */
-                CHECK_BOOL(
-                    txmute_set(state->phy, ch, (state->tx_mute_state[i])));
+                CHECK_BOOL(txmute_set(state->phy, ch,
+                                       &state->tx_mute_active[i],
+                                       state->tx_mute_state[i]));
                 break;
 
             default:
@@ -238,8 +240,8 @@ static bool _rfic_standby(struct rfic_state *state)
     /* Cache current txmute state and put it aside */
     FOR_EACH_CHANNEL(BLADERF_TX, 2, i, ch)
     {
-        CHECK_BOOL(txmute_get(state->phy, ch, &state->tx_mute_state[i]));
-        CHECK_BOOL(txmute_set(state->phy, ch, true));
+        state->tx_mute_state[i] = state->tx_mute_active[i];
+        CHECK_BOOL(txmute_set(state->phy, ch, &state->tx_mute_active[i], true));
     }
 
     /* Reset frequencies if they're invalid */
@@ -742,14 +744,10 @@ bool _rfic_cmd_wr_gain(struct rfic_state *state,
                        bladerf_channel channel,
                        uint32_t gain)
 {
-    uint8_t const rfic_ch = channel >> 1;
+    uint8_t const rfic_ch = BLADERF_CHANNEL_INDEX(channel);
 
     if (BLADERF_CHANNEL_IS_TX(channel)) {
-        bool muted;
-
-        CHECK_BOOL(txmute_get(state->phy, channel, &muted));
-
-        if (muted) {
+        if (state->tx_mute_active[rfic_ch]) {
             CHECK_BOOL(txmute_set_cached(state->phy, channel, gain));
         } else {
             CHECK_BOOL(ad9361_set_tx_attenuation(state->phy, rfic_ch, gain));
@@ -780,14 +778,10 @@ bool _rfic_cmd_rd_gain(struct rfic_state *state,
                        bladerf_channel channel,
                        uint32_t *gain)
 {
-    uint8_t const rfic_ch = channel >> 1;
+    uint8_t const rfic_ch = BLADERF_CHANNEL_INDEX(channel);
 
     if (BLADERF_CHANNEL_IS_TX(channel)) {
-        bool muted;
-
-        CHECK_BOOL(txmute_get(state->phy, channel, &muted));
-
-        if (muted) {
+        if (state->tx_mute_active[rfic_ch]) {
             *gain = txmute_get_cached(state->phy, channel);
         } else {
             CHECK_BOOL(ad9361_get_tx_attenuation(state->phy, rfic_ch, gain));
@@ -974,7 +968,9 @@ bool _rfic_cmd_wr_txmute(struct rfic_state *state,
 {
     bool val = (mute > 0);
 
-    CHECK_BOOL(txmute_set(state->phy, channel, val));
+    CHECK_BOOL(txmute_set(
+        state->phy, channel,
+        &state->tx_mute_active[BLADERF_CHANNEL_INDEX(channel)], val));
 
     return true;
 }
@@ -991,11 +987,7 @@ bool _rfic_cmd_rd_txmute(struct rfic_state *state,
                          bladerf_channel channel,
                          uint32_t *mute)
 {
-    bool val;
-
-    CHECK_BOOL(txmute_get(state->phy, channel, &val));
-
-    *mute = val ? 1 : 0;
+    *mute = state->tx_mute_active[BLADERF_CHANNEL_INDEX(channel)];
 
     return true;
 }

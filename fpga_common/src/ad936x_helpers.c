@@ -33,8 +33,6 @@
 #include "ad936x_helpers.h"
 #include "bladerf2_common.h"
 
-static bool tx_mute_state[2] = { false };
-
 uint32_t txmute_get_cached(struct ad9361_rf_phy *phy, bladerf_channel ch)
 {
     switch (ch) {
@@ -63,23 +61,17 @@ int txmute_set_cached(struct ad9361_rf_phy *phy,
     }
 }
 
-int txmute_get(struct ad9361_rf_phy *phy, bladerf_channel ch, bool *state)
+int txmute_set(struct ad9361_rf_phy *phy,
+               bladerf_channel ch,
+               bool *muted,
+               bool state)
 {
-    int rfic_ch = (ch >> 1);
-
-    *state = tx_mute_state[rfic_ch];
-
-    return 0;
-}
-
-int txmute_set(struct ad9361_rf_phy *phy, bladerf_channel ch, bool state)
-{
-    int rfic_ch                = (ch >> 1);
+    int rfic_ch                = BLADERF_CHANNEL_INDEX(ch);
     uint32_t const MUTED_ATTEN = 89750;
     uint32_t atten, cached;
     int status;
 
-    if (tx_mute_state[rfic_ch] == state) {
+    if (*muted == state) {
         // short circuit if there's no change
         return 0;
     }
@@ -111,7 +103,7 @@ int txmute_set(struct ad9361_rf_phy *phy, bladerf_channel ch, bool state)
         return status;
     }
 
-    tx_mute_state[rfic_ch] = state;
+    *muted = state;
 
     return 0;
 }

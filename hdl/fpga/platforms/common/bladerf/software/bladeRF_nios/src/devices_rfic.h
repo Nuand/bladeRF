@@ -67,6 +67,8 @@ struct rfic_state {
     /* Frequency retrieval is invalid due to fastlock shenanigans */
     bool frequency_invalid[NUM_MODULES];
 
+    bool tx_mute_active[2];
+
     /* TX mute state at standby */
     bool tx_mute_state[2];
 };
