@@ -679,6 +679,11 @@ typedef int bladerf_channel;
 #define BLADERF_CHANNEL_TX(ch) (bladerf_channel)(((ch) << 1) | 0x1)
 
 /**
+ * Extract the zero-based channel index from a valid RX or TX channel.
+ */
+#define BLADERF_CHANNEL_INDEX(ch) ((ch) >> 1)
+
+/**
  * Invalid channel
  */
 #define BLADERF_CHANNEL_INVALID (bladerf_channel)(-1)
