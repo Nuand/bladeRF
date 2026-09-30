@@ -59,6 +59,11 @@ int txmute_set_cached(struct ad9361_rf_phy *phy,
                       bladerf_channel ch,
                       uint32_t atten);
 
+/* txmute_get/txmute_set track mute state in a file-scope static and are only
+ * safe when a single bladeRF exists per process. They remain available to the
+ * NIOS II RFIC controller (one device per FPGA); the host library uses
+ * per-device equivalents declared in board/bladerf2/rfic_host.c. */
+#if defined(BLADERF_NIOS_BUILD)
 /**
  * @brief       Get the transmit mute state
  *
@@ -85,6 +90,7 @@ int txmute_get(struct ad9361_rf_phy *phy, bladerf_channel ch, bool *state);
  * @return      0 on success, value from \ref RETCODES list on failure
  */
 int txmute_set(struct ad9361_rf_phy *phy, bladerf_channel ch, bool state);
+#endif
 
 /**
  * @brief       Set AD9361 RFIC RF port
