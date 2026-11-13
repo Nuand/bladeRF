@@ -53,58 +53,116 @@ static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 #define print_buf(msg, data, len) do {} while(0)
 #endif
 
-/* Buf is assumed to be NIOS_PKT_LEN bytes */
-static int nios_access(struct bladerf *dev, uint8_t *buf)
+/* At most this many stale responses are discarded before a request's own */
+#define NIOS_STALE_RESPONSES_MAX 4
+
+/* Does resp answer req? Every response echoes its request's magic byte. The
+ * 8x8, 8x16, 8x32, 8x64, 16x64 and 32x32 formats share the header layout (target
+ * ID at byte 1, address from byte 4) and also echo target and address; the
+ * retune formats echo only the magic byte. */
+static bool nios_resp_matches(const uint8_t *req, const uint8_t *resp)
+{
+    size_t addr_len;
+
+    if (resp[0] != req[0]) {
+        return false;
+    }
+
+    switch (req[0]) {
+        case NIOS_PKT_8x8_MAGIC:
+        case NIOS_PKT_8x16_MAGIC:
+        case NIOS_PKT_8x32_MAGIC:
+        case NIOS_PKT_8x64_MAGIC:
+            addr_len = 1;
+            break;
+
+        case NIOS_PKT_16x64_MAGIC:
+            addr_len = 2;
+            break;
+
+        case NIOS_PKT_32x32_MAGIC:
+            addr_len = 4;
+            break;
+
+        default:
+            return true;
+    }
+
+    return resp[NIOS_PKT_16x64_IDX_TARGET_ID] ==
+               req[NIOS_PKT_16x64_IDX_TARGET_ID] &&
+           memcmp(&resp[NIOS_PKT_16x64_IDX_ADDR], &req[NIOS_PKT_16x64_IDX_ADDR],
+                  addr_len) == 0;
+}
+
+/* Buf is assumed to be NIOS_PKT_LEN bytes.
+ *
+ * The Nios answers every request it receives, also one whose response the
+ * host stopped waiting for: a long operation (e.g. an RFIC command in FPGA
+ * tuning mode) can take longer than PERIPHERAL_TIMEOUT_MS. That late
+ * response is then the next one read, and without a check every later
+ * response would be taken as the answer to the request after its own.
+ * Responses that do not match the request are therefore discarded. */
+static int nios_access_common(struct bladerf *dev, uint8_t *buf, bool quiet)
 {
     struct bladerf_usb *usb = dev->backend_data;
+    uint8_t req[NIOS_PKT_LEN];
     int status;
+    int stale;
 
+    memcpy(req, buf, NIOS_PKT_LEN);
     print_buf("NIOS II REQ:", buf, NIOS_PKT_LEN);
 
     /* Send the command */
     status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT, buf,
                                     NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
     if (status != 0) {
-        log_error("Failed to send NIOS II request: %s\n",
-                  bladerf_strerror(status));
+        if (!quiet) {
+            log_error("Failed to send NIOS II request: %s\n",
+                      bladerf_strerror(status));
+        }
         return status;
     }
 
-    /* Retrieve the request */
-    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN, buf,
-                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
-    if (status != 0) {
-        log_error("Failed to receive NIOS II response: %s\n",
-                  bladerf_strerror(status));
+    /* Retrieve the response */
+    for (stale = 0;; stale++) {
+        status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN, buf,
+                                        NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
+        if (status != 0) {
+            if (!quiet) {
+                log_error("Failed to receive NIOS II response: %s\n",
+                          bladerf_strerror(status));
+            }
+            break;
+        }
+
+        print_buf("NIOS II res:", buf, NIOS_PKT_LEN);
+
+        if (nios_resp_matches(req, buf)) {
+            break;
+        }
+
+        if (stale == NIOS_STALE_RESPONSES_MAX) {
+            log_error("NIOS II response does not match the request.\n");
+            status = BLADERF_ERR_UNEXPECTED;
+            break;
+        }
+
+        log_debug("Discarding stale NIOS II response "
+                  "(magic 0x%02x, target 0x%02x).\n", buf[0], buf[1]);
     }
 
-    print_buf("NIOS II res:", buf, NIOS_PKT_LEN);
-
     return status;
+}
+
+static int nios_access(struct bladerf *dev, uint8_t *buf)
+{
+    return nios_access_common(dev, buf, false);
 }
 
 /* Variant that doesn't output to log_error on error. */
 static int nios_access_quiet(struct bladerf *dev, uint8_t *buf)
 {
-    struct bladerf_usb *usb = dev->backend_data;
-    int status;
-
-    print_buf("NIOS II REQ:", buf, NIOS_PKT_LEN);
-
-    /* Send the command */
-    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT, buf,
-                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
-    if (status != 0) {
-        return status;
-    }
-
-    /* Retrieve the request */
-    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN, buf,
-                                    NIOS_PKT_LEN, PERIPHERAL_TIMEOUT_MS);
-
-    print_buf("NIOS II res:", buf, NIOS_PKT_LEN);
-
-    return status;
+    return nios_access_common(dev, buf, true);
 }
 
 static int nios_8x8_read(struct bladerf *dev, uint8_t id,
