@@ -276,6 +276,16 @@ static int _rfic_fpga_enable_module(struct bladerf *dev,
     bool be_toggle;   /* Backend: toggle off/on to reset backend FIFO */
     bool be_teardown; /* Backend: disable backend module */
     bool be_setup;    /* Backend: enable backend module */
+    bool mimo;        /* Stream layout uses both channels of this direction */
+    bladerf_channel_layout layout = board_data->sync[dir].stream_config.layout;
+    size_t i;
+
+    /* With a MIMO stream layout both channels of the direction are enabled
+     * and disabled together, as in host tuning mode (rfic_host.c): enabling
+     * the second RX channel separately would toggle the backend and change
+     * the FPGA's channel mask under a running stream. */
+    mimo = (dir == BLADERF_RX && layout == BLADERF_RX_X2) ||
+           (dir == BLADERF_TX && layout == BLADERF_TX_X2);
 
     /* Read RFFE control register */
     CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
@@ -287,10 +297,20 @@ static int _rfic_fpga_enable_module(struct bladerf *dev,
     /* Calculate initial and target states */
     ch_enabled  = _rffe_ch_enabled(reg, ch);
     dir_enabled = _rffe_dir_enabled(reg, dir);
-    dir_enable  = ch_enable || _rffe_dir_otherwise_enabled(reg, ch);
+    dir_enable  = ch_enable || (!mimo && _rffe_dir_otherwise_enabled(reg, ch));
     ch_pending  = ch_enabled != ch_enable;
+    if (mimo) {
+        bladerf_channel other = (dir == BLADERF_RX) ? BLADERF_CHANNEL_RX(1)
+                                                    : BLADERF_CHANNEL_TX(1);
+        if (ch == other) {
+            other = (dir == BLADERF_RX) ? BLADERF_CHANNEL_RX(0)
+                                        : BLADERF_CHANNEL_TX(0);
+        }
+        ch_pending = ch_pending || _rffe_ch_enabled(reg, other) != ch_enable;
+    }
     dir_pending = dir_enabled != dir_enable;
-    be_toggle   = !BLADERF_CHANNEL_IS_TX(ch) && ch_enable && !dir_pending;
+    be_toggle   = !BLADERF_CHANNEL_IS_TX(ch) && ch_enable && !dir_pending &&
+                  !mimo;
     be_setup    = be_toggle || (dir_pending && dir_enable);
     be_teardown = be_toggle || (dir_pending && !dir_enable);
 
@@ -301,14 +321,28 @@ static int _rfic_fpga_enable_module(struct bladerf *dev,
     }
 
     /* Perform Channel Setup/Teardown */
-    if (ch_pending) {
+    for (i = 0; ch_pending && i < 2; i++) {
+        bladerf_channel c;
+
+        if (mimo) {
+            c = (dir == BLADERF_RX) ? BLADERF_CHANNEL_RX(i)
+                                    : BLADERF_CHANNEL_TX(i);
+            if (_rffe_ch_enabled(reg, c) == ch_enable) {
+                continue;
+            }
+        } else if (i == 0) {
+            c = ch;
+        } else {
+            break;
+        }
+
         /* Set/unset TX mute */
-        if (BLADERF_CHANNEL_IS_TX(ch)) {
-            CHECK_STATUS(rfic->set_txmute(dev, ch, !ch_enable));
+        if (BLADERF_CHANNEL_IS_TX(c)) {
+            CHECK_STATUS(rfic->set_txmute(dev, c, !ch_enable));
         }
 
         /* Execute RFIC enable command. */
-        CHECK_STATUS(_rfic_cmd_write(dev, ch, BLADERF_RFIC_COMMAND_ENABLE,
+        CHECK_STATUS(_rfic_cmd_write(dev, c, BLADERF_RFIC_COMMAND_ENABLE,
                                      ch_enable ? 1 : 0));
     }
 
