@@ -120,7 +120,7 @@ architecture simple of fifo_writer is
         fifo_clear          : std_logic;
         fifo_write          : std_logic;
         fifo_data           : unsigned(fifo_data'range);
-        fifo_12b_buf        : unsigned(95 downto 0);
+        fifo_12b_buf        : unsigned(FIFO_DATA_WIDTH+31 downto 0);
         write_cycle         : natural range 0 to 3;
         samples_left        : natural range 0 to in_sample_controls'length;
         in_sample_controls_r: sample_controls_t(0 to NUM_STREAMS-1);
