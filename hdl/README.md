@@ -57,6 +57,18 @@ Ex: Build the bladeRF 2.0 micro xA4 with the default `hosted` architecture
 ./build_bladerf.sh -b bladeRF-micro -s A4 -r hosted
 ```
 
+## Nios V (Quartus Prime 25.1 and later) ##
+Quartus Prime 25.1 and later no longer include the Nios II processor. The bladeRF 2.0 micro can instead be built with a Nios V/m processor running the same firmware. `build_bladerf.sh` uses Nios V automatically when the Quartus installation has no Nios II; `-C niosv` or `-C nios2` selects the CPU explicitly (for example, `-C niosv` with Quartus 23.1.1). Quartus 23.1.1 compiles the Nios V design, but writes programming files only with the no-cost Nios V/m license from Altera's Self-Service Licensing Center (set `LM_LICENSE_FILE` to it); Quartus 25.1 writes them without one, warning that it could not acquire the license. bladeRF 1 and the `foxhunt` revision support only Nios II for now.
+
+Building the Nios V firmware needs a RISC-V GCC. Quartus provides one in its optional RiscFree component (`RiscFreeSetup-<version>-linux.run`, installed next to Quartus as `riscfree/`); `build_bladerf.sh` adds it, and the Nios V tools in `niosv/bin`, to the `PATH`, so it still runs from the Nios II command shell. Another RISC-V toolchain can be used by putting it in the `PATH` and setting `NIOSV_TOOLCHAIN_PREFIX` (for example `riscv64-unknown-elf-`), with `NIOSV_LIBC=picolibc` if it comes with picolibc rather than newlib. By default the firmware uses newlib-nano, the counterpart of the Nios II small C library; with the full newlib it would not fit in the on-chip RAM. The RiscFree toolchain of a newer Quartus release also works with an older Quartus when its `riscfree/toolchain/riscv32-unknown-elf/bin` directory is put in the `PATH`, for example RiscFree 25.1 with Quartus 23.1.1. CMake 3.14 or newer is also required.
+
+Ex: Build the bladeRF 2.0 micro xA5 `hosted` image with Quartus Prime 25.1
+```
+~/altera_lite/25.1std/nios2eds/nios2_command_shell.sh ./build_bladerf.sh -b bladeRF-micro -s A5 -r hosted
+```
+
+The Nios V system keeps every peripheral address and interrupt number of the Nios II system. `-n Tiny` (the default) selects the non-pipelined Nios V/m and `-n Fast` the pipelined one.
+
 ## Adding Signal Tap ##
 For advanced users who want to use Signal Tap internal logic analyzer in their design, use the `-a` flag to add the Signal Tap file to the project before building it:
 ```

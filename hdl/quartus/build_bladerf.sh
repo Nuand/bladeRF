@@ -73,9 +73,15 @@ function usage()
     echo "    -f                    Force SignalTap STP insertion by temporarily enabling"
     echo "                          the TalkBack feature of Quartus (required for Web Edition)."
     echo "                          The previous setting will be restored afterward."
-    echo "    -n <Tiny|Fast>        Select Nios II Gen 2 core implementation."
-    echo "       Tiny (default)       Nios II/e; Compatible with Quartus Web Edition"
-    echo "       Fast                 Nios II/f; Requires Quartus Standard or Pro Edition"
+    echo "    -C <nios2|niosv>      Select the soft CPU."
+    echo "       nios2                Nios II Gen 2 (default when the Quartus install has it)"
+    echo "       niosv                Nios V/m (default otherwise, e.g. Quartus 25.1 and"
+    echo "                            later, which no longer ship Nios II)"
+    echo "    -n <Tiny|Fast>        Select the CPU core implementation."
+    echo "       Tiny (default)       Nios II/e or non-pipelined Nios V/m;"
+    echo "                            compatible with Quartus Web/Lite Edition"
+    echo "       Fast                 Nios II/f (requires Quartus Standard or Pro Edition)"
+    echo "                            or pipelined Nios V/m"
     echo "    -l <gen|synth|full>   Quartus build steps to complete. Valid options:"
     echo "       gen                  Only generate the project files"
     echo "       synth                Synthesize the design"
@@ -83,6 +89,13 @@ function usage()
     echo "    -S <seed>             Fitter seed setting (default: 1)"
     echo "    -D                    Output directory name won't contain the date"
     echo "    -h                    Show this text"
+    echo ""
+    echo "Nios V environment variables:"
+    echo "    NIOSV_TOOLCHAIN_PREFIX  RISC-V GCC prefix (default: riscv32-unknown-elf-,"
+    echo "                            the RiscFree toolchain installed with Quartus)"
+    echo "    NIOSV_LIBC              C library: newlib-nano (default) or picolibc"
+    echo "    NIOSV_BUS               Nios V manager interfaces: avalon (default where"
+    echo "                            supported) or axi4lite"
     echo ""
 
     print_boards
@@ -161,15 +174,20 @@ fi
 
 # Set default options
 clear_work_dir=1
+cpu=""
 nios_rev="Tiny"
 flow="full"
 seed="1"
 omit_date=false
 
-while getopts ":ckb:r:s:a:fn:l:S:DhH" opt; do
+while getopts ":ckb:r:s:a:fC:n:l:S:DhH" opt; do
     case $opt in
         c)
             clear_work_dir=1
+            ;;
+
+        C)
+            cpu=$OPTARG
             ;;
 
         k)
@@ -244,6 +262,10 @@ if [ "$build_hosted" == "1" ]; then
         hosted_options=(-k)
     fi
 
+    if [ -n "$cpu" ]; then
+        hosted_options+=(-C "$cpu")
+    fi
+
     echo "Starting parallel builds for all hosted configurations..."
     for config in "bladeRF 40" "bladeRF 115" "bladeRF-micro A4" "bladeRF-micro A5" "bladeRF-micro A9"; do
         read -r board size <<< "$config"
@@ -292,6 +314,8 @@ if [ "$rev" == "" ]; then
 fi
 
 for plat in ../fpga/platforms/*/build/platform.conf ; do
+    # Optional setting: don't inherit it from a previously sourced platform
+    unset PLATFORM_CPUS
     source $plat
     if [ $board == "$BOARD_NAME" ]; then
         platform=$(basename $(dirname $(dirname $plat)))
@@ -337,7 +361,13 @@ fi
 
 nios_rev=$(echo "$nios_rev" | tr "[:upper:]" "[:lower:]")
 if [ "$nios_rev" != "tiny" ] && [ "$nios_rev" != "fast" ]; then
-    echo -e "\nInvalid Nios II revision: $nios_rev\n" >&2
+    echo -e "\nInvalid core implementation: $nios_rev (Tiny or Fast)\n" >&2
+    exit 1
+fi
+
+cpu=$(echo "$cpu" | tr "[:upper:]" "[:lower:]")
+if [ "$cpu" != "" ] && [ "$cpu" != "nios2" ] && [ "$cpu" != "niosv" ]; then
+    echo -e "\nInvalid CPU: $cpu (expected nios2 or niosv)\n" >&2
     exit 1
 fi
 
@@ -365,12 +395,74 @@ if [ $? -ne 0 ] || [ ! -f "$qsys_check" ]; then
     exit 1
 fi
 
-# Check for Nios II SDK
-nios2_check="`which nios2-bsp-create-settings`"
-if [ $? -ne 0 ] || [ ! -f "$nios2_check" ]; then
-    echo -e "\nError: Nios II SDK (nios2eds 'bin' directory) does not appear to be in your PATH.\n" >&2
+if [ -z "${QUARTUS_ROOTDIR}" ]; then
+    QUARTUS_ROOTDIR="$(dirname "$(dirname "$(readlink -f "$quartus_check")")")"
+    export QUARTUS_ROOTDIR
+fi
+ACDS_ROOTDIR="$(readlink -f "${QUARTUS_ROOTDIR}/..")"
+
+# Select the soft CPU. Quartus Prime 25.1 and later no longer ship the Nios II
+# Gen 2 IP, so default to Nios V when it is missing.
+if [ "$cpu" == "" ]; then
+    if [ -d "${ACDS_ROOTDIR}/ip/altera/nios2_ip/altera_nios2_gen2" ]; then
+        cpu="nios2"
+    else
+        cpu="niosv"
+    fi
+fi
+
+if [[ ! " ${PLATFORM_CPUS[*]:-nios2} " =~ " ${cpu} " ]]; then
+    echo -e "\nError: CPU \"${cpu}\" is not supported on ${board}" \
+            "(supported: ${PLATFORM_CPUS[*]:-nios2})\n" >&2
     exit 1
 fi
+
+if [ "$cpu" == "niosv" ] && [ "$rev" == "foxhunt" ]; then
+    echo -e "\nError: the foxhunt revision does not support Nios V yet\n" >&2
+    exit 1
+fi
+
+if [ "$cpu" == "nios2" ]; then
+    # Check for Nios II SDK
+    nios2_check="`which nios2-bsp-create-settings`"
+    if [ $? -ne 0 ] || [ ! -f "$nios2_check" ]; then
+        echo -e "\nError: Nios II SDK (nios2eds 'bin' directory) does not appear to be in your PATH.\n" >&2
+        exit 1
+    fi
+else
+    # Nios V tools ship with Quartus; the RISC-V GCC comes with the optional
+    # RiscFree component. Add both to the PATH if they are installed, so this
+    # also works from the Nios II command shell. Any other RISC-V toolchain can
+    # be used via PATH and NIOSV_TOOLCHAIN_PREFIX.
+    for dir in "${ACDS_ROOTDIR}/riscfree/toolchain/riscv32-unknown-elf/bin" \
+               "${ACDS_ROOTDIR}/niosv/bin"; do
+        if [ -d "$dir" ] && [[ ":${PATH}:" != *":${dir}:"* ]]; then
+            PATH="${dir}:${PATH}"
+        fi
+    done
+    export PATH
+
+    niosv_prefix="${NIOSV_TOOLCHAIN_PREFIX:-riscv32-unknown-elf-}"
+    niosv_libc="${NIOSV_LIBC:-newlib-nano}"
+    if [ "$niosv_libc" != "newlib-nano" ] && [ "$niosv_libc" != "picolibc" ]; then
+        echo -e "\nError: invalid NIOSV_LIBC: ${niosv_libc} (expected newlib-nano or picolibc)\n" >&2
+        exit 1
+    fi
+
+    for tool in niosv-bsp elf2hex cmake "${niosv_prefix}gcc"; do
+        if ! which "$tool" > /dev/null 2>&1; then
+            echo -e "\nError: ${tool} does not appear to be in your PATH." >&2
+            if [ "$tool" == "${niosv_prefix}gcc" ]; then
+                echo "Install the RiscFree component of Quartus, or put another" \
+                     "RISC-V GCC in your PATH and set NIOSV_TOOLCHAIN_PREFIX." >&2
+            fi
+            echo "" >&2
+            exit 1
+        fi
+    done
+fi
+
+echo "Using CPU: ${cpu}"
 
 # Complain early about an unsupported version. Otherwise, the user
 # may get some unintuitive error messages.
@@ -425,7 +517,7 @@ fi
 
 echo ""
 echo "##########################################################################"
-echo "    Generating Nios II Qsys for ${board} ..."
+echo "    Generating ${cpu} Qsys for ${board} ..."
 echo "##########################################################################"
 echo ""
 
@@ -439,6 +531,14 @@ else
     cmd="${cmd}; set nios_impl ${nios_rev}"
     cmd="${cmd}; set ram_size $(get_qsys_ram $size)"
     cmd="${cmd}; set platform_revision ${rev}"
+    if [ "$cpu" != "nios2" ]; then
+        # Only passed for Nios V, so the Nios II system is generated exactly
+        # as before
+        cmd="${cmd}; set cpu_type ${cpu}"
+        if [ -n "${NIOSV_BUS}" ]; then
+            cmd="${cmd}; set niosv_bus ${NIOSV_BUS}"
+        fi
+    fi
     qsys-script \
         --script=${build_dir}/nios_system.tcl \
         --cmd="${cmd}"
@@ -460,57 +560,89 @@ echo "    Building BSP and ${board} application..."
 echo "##########################################################################"
 echo ""
 
-mkdir -p bladeRF_nios_bsp
-if [ -f settings.bsp ]; then
-    echo "Skipping creating Nios BSP, settings.bsp already exists"
+if [ "$cpu" == "niosv" ]; then
+    # Nios V: HAL BSP and application are CMake projects
+    if [ -f settings.bsp ]; then
+        echo "Skipping creating Nios V BSP, settings.bsp already exists"
+    else
+        niosv_bsp_cmds=(--cmd="set_setting hal.toolchain.prefix ${niosv_prefix}")
+        if [ "$niosv_libc" == "picolibc" ]; then
+            niosv_bsp_cmds+=(--cmd="set_setting hal.linker.use_picolibc 1")
+        fi
+        niosv-bsp \
+            --create \
+            --sopcinfo=nios_system.sopcinfo \
+            --type=hal \
+            --cpu-instance=niosv \
+            --bsp-dir=bladeRF_nios_bsp \
+            --script=${common_dir}/software/bladeRF_nios/niosv_bsp.tcl \
+            "${niosv_bsp_cmds[@]}" \
+            settings.bsp
+    fi
+
+    niosv_apps=(bladeRF_nios)
+    for app in "${niosv_apps[@]}"; do
+        cmake -S ${build_dir}/../software/${app} \
+              -B ${app} \
+              -G "Unix Makefiles" \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DBSP_DIR="$(pwd)/bladeRF_nios_bsp" \
+              -DNIOSV_LIBC="${niosv_libc}"
+        cmake --build ${app} -j "$(nproc 2>/dev/null || echo 4)"
+    done
 else
-    nios2-bsp-create-settings \
-        --settings settings.bsp \
-        --type hal \
-        --bsp-dir bladeRF_nios_bsp \
-        --cpu-name nios2 \
-        --script $(readlink -f $QUARTUS_ROOTDIR/..)/nios2eds/sdk2/bin/bsp-set-defaults.tcl \
-        --sopc nios_system.sopcinfo \
-        --set hal.max_file_descriptors 4 \
-        --set hal.enable_instruction_related_exceptions_api false \
-        --set hal.make.bsp_cflags_optimization "-Os" \
-        --set hal.enable_exit 0 \
-        --set hal.enable_small_c_library 1 \
-        --set hal.enable_clean_exit 0 \
-        --set hal.enable_c_plus_plus 0 \
-        --set hal.enable_reduced_device_drivers 1 \
-        --set hal.enable_lightweight_device_driver_api 1
-fi
+    mkdir -p bladeRF_nios_bsp
+    if [ -f settings.bsp ]; then
+        echo "Skipping creating Nios BSP, settings.bsp already exists"
+    else
+        nios2-bsp-create-settings \
+            --settings settings.bsp \
+            --type hal \
+            --bsp-dir bladeRF_nios_bsp \
+            --cpu-name nios2 \
+            --script $(readlink -f $QUARTUS_ROOTDIR/..)/nios2eds/sdk2/bin/bsp-set-defaults.tcl \
+            --sopc nios_system.sopcinfo \
+            --set hal.max_file_descriptors 4 \
+            --set hal.enable_instruction_related_exceptions_api false \
+            --set hal.make.bsp_cflags_optimization "-Os" \
+            --set hal.enable_exit 0 \
+            --set hal.enable_small_c_library 1 \
+            --set hal.enable_clean_exit 0 \
+            --set hal.enable_c_plus_plus 0 \
+            --set hal.enable_reduced_device_drivers 1 \
+            --set hal.enable_lightweight_device_driver_api 1
+    fi
 
-pushd bladeRF_nios_bsp
+    pushd bladeRF_nios_bsp
 
-# Fix warnings about a memory width mismatch between the Nios and the memory initialization file
-sed -i.bak 's/\($(ELF2HEX).*--width=$(mem_hex_width)\)/\1 --record=$(shell expr ${mem_hex_width} \/ 8)/g' mem_init.mk
+    # Fix warnings about a memory width mismatch between the Nios and the memory initialization file
+    sed -i.bak 's/\($(ELF2HEX).*--width=$(mem_hex_width)\)/\1 --record=$(shell expr ${mem_hex_width} \/ 8)/g' mem_init.mk
 
-make
-popd
+    make
+    popd
 
-pushd ${build_dir}/../software/bladeRF_nios/
+    pushd ${build_dir}/../software/bladeRF_nios/
 
-# Encountered issues on Ubuntu 13.04 with the SDK's scripts not resolving
-# paths properly. In the end, some items wind up being defined as .jar's that
-# should be in our PATH at this point, so we set these up here...
+    # Encountered issues on Ubuntu 13.04 with the SDK's scripts not resolving
+    # paths properly. In the end, some items wind up being defined as .jar's that
+    # should be in our PATH at this point, so we set these up here...
 
-#ELF2HEX=elf2hex.jar ELF2DAT=.jar make mem_init_generate
-make WORKDIR=${work_dir} \
-     mem_init_clean \
-     mem_init_generate
-
-popd
-
-if [ "$rev" == "foxhunt" ]; then
-    pushd ${build_dir}/../software/foxhunt/
-
+    #ELF2HEX=elf2hex.jar ELF2DAT=.jar make mem_init_generate
     make WORKDIR=${work_dir} \
          mem_init_clean \
          mem_init_generate
 
     popd
+
+    if [ "$rev" == "foxhunt" ]; then
+        pushd ${build_dir}/../software/foxhunt/
+
+        make WORKDIR=${work_dir} \
+             mem_init_clean \
+             mem_init_generate
+
+        popd
+    fi
 fi
 
 echo ""
@@ -549,6 +681,21 @@ if [[ ${flow} == "full" ]]; then
         BUILD_OUTPUT_DIR="$BUILD_NAME"
     fi
     RBF=$BUILD_NAME.rbf
+
+    if [ ! -f "${work_dir}/output_files/$rev.rbf" ]; then
+        echo -e "\nError: Quartus did not create ${work_dir}/output_files/$rev.rbf" >&2
+        if grep -q "Unlicensed IP" "${work_dir}/output_files/$rev.asm.rpt" 2>/dev/null; then
+            echo "The Assembler needs a license for an IP core in the design:" >&2
+            grep "Unlicensed IP" "${work_dir}/output_files/$rev.asm.rpt" >&2
+            if [ "$cpu" == "niosv" ]; then
+                echo "Some Quartus versions, such as 23.1.1, need the no-cost Nios V/m" \
+                     "license from Altera's Self-Service Licensing Center for" \
+                     "programming files (point LM_LICENSE_FILE to it)." >&2
+            fi
+        fi
+        echo "" >&2
+        exit 1
+    fi
 
     mkdir -p "$BUILD_OUTPUT_DIR"
     cp "${work_dir}/output_files/$rev.rbf" "$BUILD_OUTPUT_DIR/$RBF"
