@@ -417,11 +417,6 @@ if [[ ! " ${PLATFORM_CPUS[*]:-nios2} " =~ " ${cpu} " ]]; then
     exit 1
 fi
 
-if [ "$cpu" == "niosv" ] && [ "$rev" == "foxhunt" ]; then
-    echo -e "\nError: the foxhunt revision does not support Nios V yet\n" >&2
-    exit 1
-fi
-
 if [ "$cpu" == "nios2" ]; then
     # Check for Nios II SDK
     nios2_check="`which nios2-bsp-create-settings`"
@@ -581,6 +576,11 @@ if [ "$cpu" == "niosv" ]; then
     fi
 
     niosv_apps=(bladeRF_nios)
+    if [ "$rev" == "foxhunt" ]; then
+        # The foxhunt revision's RAM holds its own firmware
+        # (foxhunt/mem_init/meminit.qip), as in the Nios II flow below
+        niosv_apps+=(foxhunt)
+    fi
     for app in "${niosv_apps[@]}"; do
         cmake -S ${build_dir}/../software/${app} \
               -B ${app} \

@@ -24,7 +24,7 @@ Build Tests
 
 * Perform FPGA images build with Quartus Prime Lite Edition, the version
   hdl/README.md names for each board (25.1 for the bladeRF 2.0 micro, 23.1.1
-  for bladeRF 1 and the micro's foxhunt revision), for the following:
+  for bladeRF 1), for the following:
 
   * Board: bladeRF
     * Revision: hosted
