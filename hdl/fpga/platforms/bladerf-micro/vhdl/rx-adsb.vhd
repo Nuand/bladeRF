@@ -239,6 +239,7 @@ begin
             usb_speed           =>  usb_speed,
             meta_en             =>  meta_en,
             packet_en           =>  packet_en,
+            highly_packed_mode_en => '0',
             timestamp           =>  rx_timestamp,
             mini_exp            =>  mini_exp,
 
