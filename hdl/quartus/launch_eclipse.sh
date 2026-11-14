@@ -3,6 +3,10 @@
 set -e
 
 cat << EOF
+Eclipse (the Nios II Software Build Tools) is for Nios II builds (Quartus Prime
+23.1.1). It does not support Nios V, which the bladeRF 2.0 micro is built with
+by Quartus Prime 25.1 and later.
+
 To be able to run NiOS's Eclipse the following steps must be taken:
    #1) ./build_bladerf.sh must finish successfully
    #2) Ensure eclipse-nios2 is installed. Read Altera's guide at:

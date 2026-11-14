@@ -26,7 +26,7 @@ FPGA
 
 * [ ] Update the ```hdl/CHANGELOG``` file
 
-* [ ] Update the version number in the NIOS II ```fpga_version.h``` files (one
+* [ ] Update the version number in the Nios ```fpga_version.h``` files (one
       per platform)
 
 * [ ] Update the version compatibilty table in the libbladeRF

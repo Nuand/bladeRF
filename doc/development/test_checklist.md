@@ -22,8 +22,9 @@ Build Tests
 
 ## FPGA Bitstream ##
 
-* Perform FPGA images build with Quartus Prime (free edition) 17.1 (or latest
-  version) for the following:
+* Perform FPGA images build with Quartus Prime Lite Edition, the version
+  hdl/README.md names for each board (25.1 for the bladeRF 2.0 micro, 23.1.1
+  for bladeRF 1 and the micro's foxhunt revision), for the following:
 
   * Board: bladeRF
     * Revision: hosted
