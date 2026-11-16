@@ -566,7 +566,10 @@ static int _rfic_fpga_get_gain_stage(struct bladerf *dev,
 
     CHECK_STATUS(_rfic_cmd_read(dev, ch, BLADERF_RFIC_COMMAND_GAIN, &val));
 
-    *gain = __unscale_int(range, val);
+    /* The Nios returns the gain as a 32-bit two's complement value, and RX
+     * gains can be negative (the full gain stage goes down to -4 at 1.3-4 GHz
+     * and to -10 at 4-6 GHz), so sign-extend it. */
+    *gain = __unscale_int(range, (int32_t)(uint32_t)val);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         *gain = -(*gain);
