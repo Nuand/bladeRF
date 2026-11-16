@@ -38,13 +38,44 @@ struct gain {
     float inc;
 };
 
+/* The range a gain is clamped to now: on the bladeRF 2.0 the RX gain range
+ * depends on the frequency band the channel is tuned to */
+static int get_range(struct bladerf *dev,
+                     bladerf_channel ch,
+                     struct gain const *g,
+                     struct bladerf_range const **range)
+{
+    int status;
+
+    if (0 == strcmp(g->name, "overall")) {
+        status = bladerf_get_gain_range(dev, ch, range);
+    } else {
+        status = bladerf_get_gain_stage_range(dev, ch, g->name, range);
+    }
+
+    if (status < 0) {
+        PR_ERROR("Failed to retrieve range of %s gain: %s\n", g->name,
+                 bladerf_strerror(status));
+    }
+
+    return status;
+}
+
 static inline int set_and_check(struct bladerf *dev,
                                 bladerf_channel ch,
                                 struct gain const *g,
                                 int gain)
 {
+    struct bladerf_range const *range, *range_after;
+    float min, max;
+    int expected;
     int readback;
     int status;
+
+    status = get_range(dev, ch, g, &range);
+    if (status < 0) {
+        return status;
+    }
 
     if (0 == strcmp(g->name, "overall")) {
         status = bladerf_set_gain(dev, ch, gain);
@@ -75,9 +106,33 @@ static inline int set_and_check(struct bladerf *dev,
             return status;
         }
     }
-    if (gain != readback) {
+
+    /* In the threads test another thread retunes the channel meanwhile. If it
+     * moved the channel to a frequency band with another gain range between
+     * the set and the readback, the readback cannot be checked. Otherwise the
+     * gain was clamped to the range of the band the channel is in, which need
+     * not be the range the gain was picked from. */
+    status = get_range(dev, ch, g, &range_after);
+    if (status < 0) {
+        return status;
+    }
+
+    if (range_after != range) {
+        return 0;
+    }
+
+    min      = (float)(range->min * range->scale);
+    max      = (float)(range->max * range->scale);
+    expected = gain;
+    if (expected < min) {
+        expected = __round_int(min);
+    } else if (expected > max) {
+        expected = __round_int(max);
+    }
+
+    if (expected != readback) {
         PR_ERROR("Erroneous %s gain readback=%d, expected=%d\n", g->name,
-                 readback, gain);
+                 readback, expected);
         return -1;
     }
 
