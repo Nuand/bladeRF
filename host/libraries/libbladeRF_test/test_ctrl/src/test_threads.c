@@ -38,6 +38,8 @@ struct sync_task {
     MUTEX lock;
     bool launched;
     bool run;
+    bool started; /* The module is enabled: the stream runs */
+    bool done;
     int status;
 };
 
@@ -102,6 +104,10 @@ static void *stream_task(void *arg)
         goto out;
     }
 
+    MUTEX_LOCK(&t->lock);
+    t->started = true;
+    MUTEX_UNLOCK(&t->lock);
+
     get_sync_task_state(t, &run);
     while (run && 0 == status) {
         if (BLADERF_RX == t->direction) {
@@ -131,6 +137,7 @@ out:
     free(samples);
     MUTEX_LOCK(&t->lock);
     t->status = status;
+    t->done   = true;
     MUTEX_UNLOCK(&t->lock);
     return NULL;
 }
@@ -142,6 +149,8 @@ static void init_task(struct sync_task *t,
     t->dev       = dev;
     t->launched  = false;
     t->run       = true;
+    t->started   = false;
+    t->done      = false;
     t->status    = 0;
     t->direction = dir;
     MUTEX_INIT(&t->lock);
@@ -157,6 +166,22 @@ static int launch_task(struct sync_task *t)
     }
 
     return status;
+}
+
+/* Wait until the task's stream runs, or the task has given up */
+static void wait_for_task(struct sync_task *t)
+{
+    bool waiting = true;
+
+    while (waiting) {
+        MUTEX_LOCK(&t->lock);
+        waiting = !t->started && !t->done;
+        MUTEX_UNLOCK(&t->lock);
+
+        if (waiting) {
+            usleep(10000);
+        }
+    }
 }
 
 static inline int deinit_task(struct sync_task *t)
@@ -250,6 +275,13 @@ failure_count test_threads(struct bladerf *dev, struct app_params *p, bool quiet
         PR_ERROR("%s: Failed to launch TX thread\n", __FUNCTION__);
         goto out;
     }
+
+    /* The control threads run with p->module_enabled set, so they do not
+     * enable the modules themselves, and on the bladeRF 2.0 RX gain changes
+     * do not register while RX is disabled: start them once both streams
+     * run. */
+    wait_for_task(&rx);
+    wait_for_task(&tx);
 
     for (i = 0; i < num_threads; i++) {
         if (!p->use_xb200 && test_xb200 == threads[i].tc->test->fn) {
