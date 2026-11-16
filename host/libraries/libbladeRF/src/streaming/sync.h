@@ -92,6 +92,12 @@ struct buffer_mgmt {
      * resubmission */
     unsigned int resubmit_count;
 
+    /* Set by the RX worker when it detects an overrun, cleared once the
+     * condition has been reported to a bladerf_sync_rx() caller. The worker
+     * recovers by resubmitting buffers, so the sample stream has a gap that
+     * is otherwise invisible to the caller. */
+    bool overrun_pending;
+
     /* Applicable to TX only. Denotes which context is responsible for
      * submitting full buffers to the underlying async system */
     sync_tx_submitter submitter;
@@ -172,6 +178,11 @@ typedef enum {
 
 struct sync_meta {
     sync_meta_state state; /* State of metadata processing */
+
+    bool have_timestamp;   /* curr_timestamp holds a value read from a
+                            * message header. Until then there is nothing to
+                            * compare against, so the first header of a
+                            * stream must not be treated as a discontinuity. */
 
     uint8_t *curr_msg;            /* Points to current message in the buffer */
     size_t curr_msg_off;          /* Offset into current message (samples),
