@@ -1416,6 +1416,21 @@ static int bladerf2_get_rf_ports(struct bladerf *dev,
 /* Scheduled Tuning */
 /******************************************************************************/
 
+static int bladerf2_reset_quick_tunes(struct bladerf *dev, bladerf_channel ch)
+{
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        board_data->quick_tune_tx_profile = 0;
+    } else {
+        board_data->quick_tune_rx_profile = 0;
+    }
+
+    return 0;
+}
+
 static int bladerf2_get_quick_tune(struct bladerf *dev,
                                    bladerf_channel ch,
                                    struct bladerf_quick_tune *quick_tune)
@@ -2935,6 +2950,7 @@ struct board_fns const bladerf2_board_fns = {
     FIELD_INIT(.get_rf_port, bladerf2_get_rf_port),
     FIELD_INIT(.get_rf_ports, bladerf2_get_rf_ports),
     FIELD_INIT(.get_quick_tune, bladerf2_get_quick_tune),
+    FIELD_INIT(.reset_quick_tunes, bladerf2_reset_quick_tunes),
     FIELD_INIT(.schedule_retune, bladerf2_schedule_retune),
     FIELD_INIT(.cancel_scheduled_retunes, bladerf2_cancel_scheduled_retunes),
     FIELD_INIT(.get_correction, bladerf2_get_correction),

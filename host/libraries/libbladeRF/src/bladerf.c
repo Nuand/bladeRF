@@ -939,6 +939,20 @@ int bladerf_get_quick_tune(struct bladerf *dev,
     return status;
 }
 
+int bladerf_reset_quick_tunes(struct bladerf *dev, bladerf_channel ch)
+{
+    int status = 0;
+    MUTEX_LOCK(&dev->lock);
+
+    /* bladeRF1 quick tunes hold no device slots: nothing to reset */
+    if (dev->board->reset_quick_tunes != NULL) {
+        status = dev->board->reset_quick_tunes(dev, ch);
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 int bladerf_print_quick_tune(struct bladerf *dev, const struct bladerf_quick_tune *qt) {
     if (dev == NULL || qt == NULL) {
         log_error("Device handle or quick tune structure is NULL.\n");
