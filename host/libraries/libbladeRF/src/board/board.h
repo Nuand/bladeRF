@@ -321,6 +321,7 @@ struct board_fns {
     int (*get_quick_tune)(struct bladerf *dev,
                           bladerf_channel ch,
                           struct bladerf_quick_tune *quick_tune);
+    int (*reset_quick_tunes)(struct bladerf *dev, bladerf_channel ch);
     int (*schedule_retune)(struct bladerf *dev,
                            bladerf_channel ch,
                            bladerf_timestamp timestamp,

@@ -1932,6 +1932,23 @@ int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
                                      struct bladerf_quick_tune *quick_tune);
 
 /**
+ * Release all quick tune profiles of a channel's direction (RX or TX).
+ *
+ * On bladeRF2, bladerf_get_quick_tune() can hand out a limited number of
+ * profiles per direction. This makes all of them available again without
+ * reopening the device. Quick tunes previously obtained for that direction
+ * must not be used afterwards. On bladeRF1 this is a no-op.
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_reset_quick_tunes(struct bladerf *dev,
+                                        bladerf_channel ch);
+
+/**
  * @brief Prints the quick retune parameters for a bladeRF device.
  *
  * Outputs the current quick retune parameters of a bladeRF device
