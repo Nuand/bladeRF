@@ -594,22 +594,34 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
     return 0;
 }
 
+/* The page number is sent in a 16-bit control transfer field (wIndex), so the
+ * last page must be below 65536. The page count is not sent: it is 65536 for a
+ * whole 128 Mbit flash. */
+static bool flash_pages_fit(uint32_t page, uint32_t count)
+{
+    const uint32_t limit = (uint32_t)UINT16_MAX + 1;
+
+    if (count > limit || page > limit - count) {
+        log_debug("Flash pages %u+%u do not fit in the 16-bit page field\n",
+                  page, count);
+        return false;
+    }
+
+    return true;
+}
+
 static int usb_read_flash_pages(struct bladerf *dev,
                                 uint8_t *buf,
-                                uint32_t page_u32,
-                                uint32_t count_u32)
+                                uint32_t page,
+                                uint32_t count)
 {
     int status;
     size_t n_read;
-    uint16_t i;
+    uint32_t i;
 
-    /* 16-bit control transfer fields are used for these.
-     * The current bladeRF build only has a 4MiB flash, anyway. */
-    const uint16_t page  = (uint16_t)page_u32;
-    const uint16_t count = (uint16_t)count_u32;
-
-    assert(page == page_u32);
-    assert(count == count_u32);
+    if (!flash_pages_fit(page, count)) {
+        return BLADERF_ERR_INVAL;
+    }
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status != 0) {
@@ -624,8 +636,8 @@ static int usb_read_flash_pages(struct bladerf *dev,
                  (i + 1) == count ? 100 : 100 * i / count,
                  (i + 1) == count ? '\n' : '\r');
 
-        status =
-            read_page(dev, BLADE_USB_CMD_FLASH_READ, page + i, buf + n_read);
+        status = read_page(dev, BLADE_USB_CMD_FLASH_READ,
+                           (uint16_t)(page + i), buf + n_read);
         if (status != 0) {
             goto error;
         }
@@ -707,21 +719,17 @@ static int write_page(struct bladerf *dev, uint8_t write_operation,
 
 static int usb_write_flash_pages(struct bladerf *dev,
                                  const uint8_t *buf,
-                                 uint32_t page_u32,
-                                 uint32_t count_u32)
+                                 uint32_t page,
+                                 uint32_t count)
 
 {
     int status, restore_status;
-    uint16_t i;
+    uint32_t i;
     size_t n_written;
 
-    /* 16-bit control transfer fields are used for these.
-     * The current bladeRF build only has a 4MiB flash, anyway. */
-    const uint16_t page  = (uint16_t)page_u32;
-    const uint16_t count = (uint16_t)count_u32;
-
-    assert(page == page_u32);
-    assert(count == count_u32);
+    if (!flash_pages_fit(page, count)) {
+        return BLADERF_ERR_INVAL;
+    }
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status != 0) {
@@ -737,7 +745,8 @@ static int usb_write_flash_pages(struct bladerf *dev,
                  (i + 1) == count ? 100 : 100 * i / count,
                  (i + 1) == count ? '\n' : '\r');
 
-        status = write_page(dev, BLADE_USB_CMD_FLASH_WRITE, page + i, buf + n_written);
+        status = write_page(dev, BLADE_USB_CMD_FLASH_WRITE,
+                            (uint16_t)(page + i), buf + n_written);
         if (status) {
             goto error;
         }
