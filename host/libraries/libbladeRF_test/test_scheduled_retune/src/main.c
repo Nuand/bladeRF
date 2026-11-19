@@ -115,6 +115,17 @@ int run_test(struct bladerf *dev, bladerf_module module,
         }
     }
 
+    /* Set initial frequency. This comes before reading the timestamp: a full
+     * tune can take longer than the startup delay below (~60 ms for a large
+     * frequency step on a bladeRF 2.0 micro in host tuning mode), which made
+     * the first sync call fail with "Requested timestamp is in the past". */
+    status = bladerf_set_frequency(dev, module, hop_set_next(hops, NULL));
+    if (status != 0) {
+        fprintf(stderr, "Failed to set initial frequency: %s\n",
+                bladerf_strerror(status));
+        goto out;
+    }
+
     status = bladerf_get_timestamp(dev, module, &meta.timestamp);
     if (status != 0) {
         fprintf(stderr, "Failed to get initial timestamp: %s\n",
@@ -133,14 +144,6 @@ int run_test(struct bladerf *dev, bladerf_module module,
     }
 
     retune_ts = meta.timestamp + RETUNE_INC;
-
-    /* Set initial frequency */
-    status = bladerf_set_frequency(dev, module, hop_set_next(hops, NULL));
-    if (status != 0) {
-        fprintf(stderr, "Failed to set initial frequency: %s\n",
-                bladerf_strerror(status));
-        goto out;
-    }
 
     /* Schedule first N hops */
     for (i = 0; i < SCHEDULE_AHEAD; i++) {
