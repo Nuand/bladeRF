@@ -291,8 +291,13 @@ int main(int argc, char *argv[])
     config.tx_samplerate = SAMPLE_RATE;
     config.tx_bandwidth  = BANDWIDTH;
 
+    /* With 16 buffers, 8 of them in flight, the RX consumer had only ~6.5 ms
+     * of slack at 5 Msps: on a bladeRF 2.0 micro (official FPGA v0.16.0,
+     * Linux laptop) the sync worker overran every few hundred iterations and
+     * the next sync_rx() failed with "Requested timestamp is in the past".
+     * 64 buffers give ~45 ms of slack. */
     config.samples_per_buffer = 4096;
-    config.num_buffers = 16;
+    config.num_buffers = 64;
     config.num_transfers = 8;
 
     status = devcfg_apply(dev, &config);
