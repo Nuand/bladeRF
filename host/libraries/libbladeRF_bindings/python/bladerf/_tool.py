@@ -106,6 +106,9 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
         print("Bus Current       {:.3f} A".format(b.bus_current or 0))
         print("Bus Power         {:.3f} W".format(b.bus_power or 0))
         print("RFIC temperature  {:.3f} C".format(b.rfic_temperature or 0))
+        if b.rfic_1r1t_mode is not None:
+            print("RFIC 1R1T Mode   ", b.rfic_1r1t_mode)
+            print("    In 1R1T Now  ", _bool_to_onoff(b.rfic_1r1t))
 
         print("Loopback         ", b.loopback)
         print("    Modes        ", _strify_list(b.loopback_modes))

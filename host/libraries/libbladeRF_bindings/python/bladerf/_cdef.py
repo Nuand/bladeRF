@@ -642,6 +642,17 @@ header = """
     uint8_t *val);
   int bladerf_set_rfic_register(struct bladerf *dev, uint16_t address,
     uint8_t val);
+  typedef enum
+  {
+    BLADERF_RFIC_1R1T_AUTO = 0,
+    BLADERF_RFIC_1R1T_OFF,
+    BLADERF_RFIC_1R1T_ON
+  } bladerf_rfic_1r1t_mode;
+  int bladerf_set_rfic_1r1t_mode(struct bladerf *dev,
+    bladerf_rfic_1r1t_mode mode);
+  int bladerf_get_rfic_1r1t_mode(struct bladerf *dev,
+    bladerf_rfic_1r1t_mode *mode);
+  int bladerf_get_rfic_1r1t(struct bladerf *dev, bool *enabled);
   int bladerf_get_rfic_temperature(struct bladerf *dev, float *val);
   int bladerf_get_rfic_rssi(struct bladerf *dev, bladerf_channel ch,
     int32_t *pre_rssi, int32_t *sym_rssi);
