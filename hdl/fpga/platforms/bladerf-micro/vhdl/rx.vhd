@@ -256,6 +256,7 @@ begin
 
             eight_bit_mode_en   => eight_bit_mode_en,
             highly_packed_mode_en => highly_packed_mode_en,
+            back_to_back_en     => r1_mode_en,
 
             meta_fifo_full      =>  meta_fifo.wfull,
             meta_fifo_usedw     =>  meta_fifo.wused,
