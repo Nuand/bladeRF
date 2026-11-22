@@ -284,6 +284,31 @@ error:
     return status;
 }
 
+/* The test checks only digital data and needs no TX power: before TX is
+ * enabled, the TX gain goes to the lowest whole dB of its range */
+static int tx_gain_min(struct bladerf *dev, bladerf_channel ch)
+{
+    int status;
+    const struct bladerf_range *range = NULL;
+    bladerf_gain gain;
+    bladerf_gain readback = 0;
+
+    CHECK_STATUS(bladerf_get_gain_range(dev, ch, &range));
+    gain = (bladerf_gain)(range->min * range->scale);
+    if (gain < range->min * range->scale) {
+        gain++;
+    }
+
+    CHECK_STATUS(bladerf_set_gain(dev, ch, gain));
+    CHECK_STATUS(bladerf_get_gain(dev, ch, &readback));
+    printf("TX%d gain: %d dB, the lowest of %.2f..%.2f dB\n",
+           (int)(ch >> 1) + 1, readback, range->min * range->scale,
+           range->max * range->scale);
+
+error:
+    return status;
+}
+
 int main(int argc, char *argv[])
 {
     int status = 0;
@@ -324,6 +349,9 @@ int main(int argc, char *argv[])
 
     expect_mode_selection(dev, "fresh open", BLADERF_RFIC_1R1T_AUTO);
     CHECK_STATUS(expect_mode(dev, "fresh open", false, 1, 1));
+
+    CHECK_STATUS(tx_gain_min(dev, BLADERF_CHANNEL_TX(0)));
+    CHECK_STATUS(tx_gain_min(dev, BLADERF_CHANNEL_TX(1)));
 
     if (supported) {
         CHECK_STATUS(test_supported(&dev));
