@@ -799,7 +799,7 @@ classdef bladeRF < handle
             metad.actual_count = 0;
             metad.reserved     = 0;
             metad.status       = 0;
-            metad.flag         = 0;
+            metad.flags        = 0;
 
             if timestamp == 0
                 % Start the burst "Now"
