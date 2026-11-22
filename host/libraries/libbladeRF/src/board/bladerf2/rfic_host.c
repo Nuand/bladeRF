@@ -205,7 +205,8 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     bool dir_enable;    /* Direction is enabled */
     bool dir_pending;   /* Requested direction state differs */
     bool backend_clear; /* Backend requires reset */
-    bool mimo_enabled;
+    bool mimo_enabled;  /* MIMO layout: both channels of the direction */
+    size_t i;
 
     /* Look up the RFFE bits affecting this channel */
     ch_bit  = _get_rffe_control_bit_for_ch(ch);
@@ -244,38 +245,44 @@ static int _rfic_host_enable_module(struct bladerf *dev,
     /* Read RFFE control register */
     CHECK_STATUS(dev->backend->rffe_control_read(dev, &reg));
     reg_old    = reg;
-    ch_pending = _rffe_ch_enabled(reg, ch) != enable;
-    layout = board_data->sync->stream_config.layout;
-    mimo_enabled = layout == BLADERF_RX_X2 || layout == BLADERF_TX_X2;
+    ch_pending = false;
 
-    if (layout == BLADERF_TX_X2) {
-        if (enable) {
-            log_debug("Enabling both TX channels. MIMO layout configured.\n");
-            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(0)));
-            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(1)));
-        } else {
-            log_debug("Disabling both TX channels. MIMO layout configured.\n");
-            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(0)));
-            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_TX(1)));
-        }
-    }
-
-    if (layout == BLADERF_RX_X2) {
-        if (enable) {
-            log_debug("Enabling both RX channels. MIMO layout configured.\n");
-            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(0)));
-            reg |= (1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(1)));
-        } else {
-            log_debug("Disabling both RX channels. MIMO layout configured.\n");
-            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(0)));
-            reg &= ~(1 << _get_rffe_control_bit_for_ch(BLADERF_CHANNEL_RX(1)));
-        }
-    }
+    /* With a MIMO stream layout for this direction, both of its channels are
+     * enabled and disabled together, whichever one is given. The layout is
+     * the one configured for this direction: an RX_X2 layout must not make a
+     * TX enable or disable change the RX channels. */
+    layout       = board_data->sync[dir].stream_config.layout;
+    mimo_enabled = (BLADERF_RX == dir && BLADERF_RX_X2 == layout) ||
+                   (BLADERF_TX == dir && BLADERF_TX_X2 == layout);
 
     /* Channel Setup/Teardown */
-    if (ch_pending) {
-        /* Modify SPDT bits */
-        CHECK_STATUS(_modify_spdt_bits_by_freq(&reg, ch, enable, freq));
+    for (i = 0; i < 2; ++i) {
+        bladerf_channel c;
+
+        if (mimo_enabled) {
+            c = (BLADERF_RX == dir) ? BLADERF_CHANNEL_RX(i)
+                                    : BLADERF_CHANNEL_TX(i);
+            ch_bit = _get_rffe_control_bit_for_ch(c);
+        } else if (0 == i) {
+            c = ch;
+        } else {
+            break;
+        }
+
+        if (_rffe_ch_enabled(reg, c) == enable) {
+            continue;
+        }
+
+        ch_pending = true;
+
+        if (mimo_enabled) {
+            log_debug("%s %s%zu: MIMO layout configured\n",
+                      enable ? "Enabling" : "Disabling",
+                      (BLADERF_RX == dir) ? "RX" : "TX", i + 1);
+        }
+
+        /* Modify SPDT bits (the channels of a direction share its LO) */
+        CHECK_STATUS(_modify_spdt_bits_by_freq(&reg, c, enable, freq));
 
         /* Modify MIMO channel enable bits */
         if (enable) {
@@ -285,8 +292,8 @@ static int _rfic_host_enable_module(struct bladerf *dev,
         }
 
         /* Set/unset TX mute */
-        if (BLADERF_CHANNEL_IS_TX(ch)) {
-            txmute_set(phy, ch, !enable);
+        if (BLADERF_CHANNEL_IS_TX(c)) {
+            txmute_set(phy, c, !enable);
         }
     }
 
