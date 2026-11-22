@@ -392,6 +392,8 @@ add_interface ad9361_adc_q0 conduit end
 set_interface_property ad9361_adc_q0 EXPORT_OF axi_ad9361_0.fifo_ch_1_in
 add_interface ad9361_adc_q1 conduit end
 set_interface_property ad9361_adc_q1 EXPORT_OF axi_ad9361_0.fifo_ch_3_in
+add_interface ad9361_adc_r1 conduit end
+set_interface_property ad9361_adc_r1 EXPORT_OF axi_ad9361_0.if_adc_r1_mode
 add_interface ad9361_adc_underflow conduit end
 set_interface_property ad9361_adc_underflow EXPORT_OF axi_ad9361_0.if_adc_dunf
 add_interface ad9361_dac_i0 conduit end
@@ -408,6 +410,8 @@ add_interface ad9361_dac_sync_in conduit end
 set_interface_property ad9361_dac_sync_in EXPORT_OF axi_ad9361_0.if_dac_sync_in
 add_interface ad9361_dac_sync_out conduit end
 set_interface_property ad9361_dac_sync_out EXPORT_OF axi_ad9361_0.if_dac_sync_out
+add_interface ad9361_dac_r1 conduit end
+set_interface_property ad9361_dac_r1 EXPORT_OF axi_ad9361_0.if_dac_r1_mode
 add_interface ad9361_dac_underflow conduit end
 set_interface_property ad9361_dac_underflow EXPORT_OF axi_ad9361_0.if_dac_dunf
 add_interface ad9361_data_clock clock source

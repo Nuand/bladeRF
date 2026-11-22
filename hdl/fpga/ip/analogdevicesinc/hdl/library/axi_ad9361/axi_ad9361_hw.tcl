@@ -123,6 +123,7 @@ add_interface_port fifo_ch_3_in  adc_data_q1   data     Output  16
 
 ad_alt_intf signal  adc_dovf        input  1   ovf
 ad_alt_intf signal  adc_dunf        input  1   unf
+ad_alt_intf signal  adc_r1_mode     output 1   mode
 
 add_interface fifo_ch_0_out conduit end
 #set_interface_property fifo_ch_0_out associatedClock if_l_clk
@@ -150,6 +151,7 @@ add_interface_port fifo_ch_3_out  dac_data_q1   data     Input   16
 
 ad_alt_intf signal  dac_dovf       input   1 ovf
 ad_alt_intf signal  dac_dunf       input   1 unf
+ad_alt_intf signal  dac_r1_mode    output  1 mode
 
 add_interface delay_clock clock end
 add_interface_port delay_clock delay_clk clk Input 1

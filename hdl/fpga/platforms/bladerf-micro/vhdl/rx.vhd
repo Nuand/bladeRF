@@ -53,6 +53,9 @@ entity rx is
         eight_bit_mode_en      : in std_logic := '0';
         highly_packed_mode_en  : in std_logic := '0';
 
+        -- AD9361 1R1T mode: one sample per rx_clock cycle
+        r1_mode_en             : in std_logic := '0';
+
         -- Packet to host via FX3
         packet_en              : in    std_logic;
         packet_control         : in    packet_control_t;
@@ -356,6 +359,7 @@ begin
 
             mode            =>  rx_gen_mode,
             eightbit_en     => eight_bit_mode_en,
+            valid_every_clock => r1_mode_en,
 
             sample_i        =>  rx_gen_i,
             sample_q        =>  rx_gen_q,

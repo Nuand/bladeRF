@@ -36,6 +36,7 @@ entity nios_system is
         ad9361_adc_q1_enable            : out std_logic;                                        -- enable
         ad9361_adc_q1_valid             : out std_logic;                                        -- valid
         ad9361_adc_q1_data              : out std_logic_vector(15 downto 0);                    -- data
+        ad9361_adc_r1_mode              : out std_logic;                                        -- mode
         ad9361_adc_underflow_unf        : in  std_logic                     := 'X';             -- unf
         ad9361_dac_i0_enable            : out std_logic;                                        -- enable
         ad9361_dac_i0_valid             : out std_logic;                                        -- valid
@@ -50,6 +51,7 @@ entity nios_system is
         ad9361_dac_q1_enable            : out std_logic;                                        -- enable
         ad9361_dac_q1_valid             : out std_logic;                                        -- valid
         ad9361_dac_q1_data              : in  std_logic_vector(15 downto 0) := (others => 'X'); -- data
+        ad9361_dac_r1_mode              : out std_logic;                                        -- mode
         ad9361_dac_sync_in_sync         : in  std_logic                     := 'X';             -- sync
         ad9361_dac_sync_out_sync        : out std_logic;                                        -- sync
         ad9361_dac_underflow_unf        : in  std_logic                     := 'X';             -- unf
@@ -91,6 +93,7 @@ entity nios_system is
         rx_tamer_ts_pps                 : in  std_logic                     := 'X';             -- ts_pps
         rx_tamer_ts_clock               : in  std_logic                     := 'X';             -- ts_clock
         rx_tamer_ts_reset               : in  std_logic                     := 'X';             -- ts_reset
+        rx_tamer_ts_count_every_clock   : in  std_logic                     := '0';             -- ts_count_every_clock
         rx_tamer_ts_time                : out std_logic_vector(63 downto 0);                    -- ts_time
         rx_trigger_ctl_in_port          : in  std_logic_vector(7 downto 0)  := (others => 'X'); -- in_port
         rx_trigger_ctl_out_port         : out std_logic_vector(7 downto 0);                     -- out_port
@@ -103,6 +106,7 @@ entity nios_system is
         tx_tamer_ts_pps                 : in  std_logic                     := 'X';             -- ts_pps
         tx_tamer_ts_clock               : in  std_logic                     := 'X';             -- ts_clock
         tx_tamer_ts_reset               : in  std_logic                     := 'X';             -- ts_reset
+        tx_tamer_ts_count_every_clock   : in  std_logic                     := '0';             -- ts_count_every_clock
         tx_tamer_ts_time                : out std_logic_vector(63 downto 0);                    -- ts_time
         tx_trigger_ctl_in_port          : in  std_logic_vector(7 downto 0)  := (others => 'X'); -- in_port
         tx_trigger_ctl_out_port         : out std_logic_vector(7 downto 0);                     -- out_port
@@ -141,6 +145,9 @@ begin
     oc_i2c_scl_padoen_o <= '1' ;
     oc_i2c_sda_pad_o <= '0' ;
     oc_i2c_sda_padoen_o <= '1' ;
+
+    ad9361_adc_r1_mode <= '0' ;
+    ad9361_dac_r1_mode <= '0' ;
 
     rx_tamer_ts_sync_out <= '0' ;
     rx_tamer_ts_time <= (others =>'0') ;

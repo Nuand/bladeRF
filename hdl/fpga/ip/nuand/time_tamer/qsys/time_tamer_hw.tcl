@@ -156,5 +156,6 @@ add_interface_port conduit_end ts_sync_out ts_sync_out Output 1
 add_interface_port conduit_end ts_pps ts_pps Input 1
 add_interface_port conduit_end ts_clock ts_clock Input 1
 add_interface_port conduit_end ts_reset ts_reset Input 1
+add_interface_port conduit_end ts_count_every_clock ts_count_every_clock Input 1
 add_interface_port conduit_end ts_time ts_time Output 64
 
