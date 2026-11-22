@@ -210,6 +210,14 @@ class Format(enum.Enum):
     SC8_Q7_META = libbladeRF.BLADERF_FORMAT_SC8_Q7_META
 
 
+class Feature(enum.Enum):
+    Default = libbladeRF.BLADERF_FEATURE_DEFAULT
+    Oversample = libbladeRF.BLADERF_FEATURE_OVERSAMPLE
+
+    def __str__(self):
+        return self.name
+
+
 class Loopback(enum.Enum):
     Disabled = libbladeRF.BLADERF_LB_NONE
     Firmware = libbladeRF.BLADERF_LB_FIRMWARE
@@ -773,6 +781,34 @@ class BladeRF:
             return [ffi.string(ports_arr[i]).decode() for i in range(ret)]
         except UnsupportedError:
             return []
+
+    # Features
+
+    def enable_feature(self, feature, enable):
+        """Enable or disable a feature (a Feature).
+
+        Feature.Oversample (bladeRF 2.0 micro) overclocks the RFIC for
+        sample rates up to 122.88 Msps with the 8-bit sample formats
+        (Format.SC8_Q7 and Format.SC8_Q7_META). Set the sample rate again
+        after enabling or disabling it. Disabling a feature, or enabling
+        Feature.Default, returns to the default configuration."""
+        if isinstance(feature, Feature):
+            feature = feature.value
+        ret = libbladeRF.bladerf_enable_feature(self.dev[0], feature, enable)
+        _check_error(ret)
+
+    def get_feature(self):
+        """The feature that is enabled, Feature.Default if none."""
+        feature = ffi.new("bladerf_feature *")
+        ret = libbladeRF.bladerf_get_feature(self.dev[0], feature)
+        _check_error(ret)
+        return Feature(feature[0])
+
+    def set_feature(self, feature):
+        """Enable a feature (a Feature); Feature.Default disables any."""
+        self.enable_feature(feature, True)
+
+    feature = property(get_feature, set_feature, doc="Enabled feature")
 
     # Sample Loopback
 
