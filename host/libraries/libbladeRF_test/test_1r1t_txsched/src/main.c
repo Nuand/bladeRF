@@ -54,7 +54,7 @@ struct test {
 void print_usage(const char *prog_name)
 {
     printf("Usage: %s [-h] [-v] [-c channel] [-m mode] [-f format] [-k bursts]"
-           " [-l length] [-p period]\n", prog_name);
+           " [-l length] [-p period] [-r rate] [-o file [-n samples]]\n", prog_name);
     printf("  -h    Show this help message\n");
     printf("  -v    Enable verbose logging\n");
     printf("  -c    Channel: 1 (TX1 to RX1, default) or 2 (TX2 to RX2)\n");
@@ -63,6 +63,9 @@ void print_usage(const char *prog_name)
     printf("  -k    Number of bursts (default: 100)\n");
     printf("  -l    Samples per burst, 2 to 32767 (default: 4096)\n");
     printf("  -p    Samples from one burst's start to the next (default: 10 ms)\n");
+    printf("  -r    Sample rate in Hz (default: 122880000 for sc8, 61440000 for sc16)\n");
+    printf("  -o    Write the first -n RX samples after the warm-up to this file\n");
+    printf("  -n    Samples for -o (default: 2000000)\n");
 }
 
 static double seconds_since(const struct timespec *start)
@@ -111,6 +114,23 @@ static bool get_sample(bool sc16, const void *buf, size_t i, unsigned int *w)
 static unsigned int burst_value(const struct test *t, unsigned int k, unsigned int pos)
 {
     return (unsigned int)(((uint64_t)k * t->burst_len + pos) & 0x7fff);
+}
+
+/* Look for bursts from n on: start_of[] covers bursts n to n + 7 */
+static void advance(const struct test *t, int16_t *start_of, unsigned int *next,
+                    unsigned int n)
+{
+    unsigned int k;
+
+    for (k = *next; k < n && k < t->num_bursts; k++) {
+        start_of[burst_value(t, k, 0)] = -1;
+    }
+
+    for (k = (n > *next + 8) ? n : *next + 8; k < n + 8 && k < t->num_bursts; k++) {
+        start_of[burst_value(t, k, 0)] = (int16_t)k;
+    }
+
+    *next = n;
 }
 
 static void *tx_task(void *arg)
@@ -191,7 +211,12 @@ int main(int argc, char *argv[])
     unsigned int ch = 0;
     bladerf_format fmt;
     uint64_t period = 0;
+    double rate = 0;
+    const char *dump_name = NULL;
+    FILE *dump = NULL;
+    uint64_t dump_left = 2000000;
     void *samples = NULL;
+    int16_t *start_of = NULL;
     uint64_t *start_ts = NULL;
     bool *seen = NULL;
     pthread_t tx_thread;
@@ -199,7 +224,7 @@ int main(int argc, char *argv[])
     bool r1t = false;
     enum { IDLE, CANDIDATE, IN_BURST } state = IDLE;
     unsigned int next = 0, burst = 0, cand = 0, pos = 0, reports = 0;
-    unsigned int received = 0, prev = 0;
+    unsigned int received = 0, prev = 0, expected = 0;
     uint64_t cand_ts = 0;
     uint64_t bad = 0, gaps = 0, overruns = 0, prev_end = 0;
     bool have_prev = false;
@@ -221,6 +246,9 @@ int main(int argc, char *argv[])
         {"bursts", required_argument, 0, 'k'},
         {"length", required_argument, 0, 'l'},
         {"period", required_argument, 0, 'p'},
+        {"rate", required_argument, 0, 'r'},
+        {"output", required_argument, 0, 'o'},
+        {"dump-samples", required_argument, 0, 'n'},
         {0, 0, 0, 0}
     };
 
@@ -230,7 +258,7 @@ int main(int argc, char *argv[])
 
     bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_WARNING);
 
-    while ((opt = getopt_long(argc, argv, "hvc:m:f:k:l:p:", longopts, &opt_ind)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hvc:m:f:k:l:p:r:o:n:", longopts, &opt_ind)) != -1) {
         switch (opt) {
             case 'h':
                 print_usage(argv[0]);
@@ -276,13 +304,22 @@ int main(int argc, char *argv[])
             case 'p':
                 period = strtoull(optarg, NULL, 0);
                 break;
+            case 'r':
+                rate = atof(optarg);
+                break;
+            case 'o':
+                dump_name = optarg;
+                break;
+            case 'n':
+                dump_left = strtoull(optarg, NULL, 0);
+                break;
             default:
                 print_usage(argv[0]);
                 return EXIT_FAILURE;
         }
     }
 
-    t.rate   = t.sc16 ? 61440000.0 : 122880000.0;
+    t.rate   = rate > 0 ? rate : (t.sc16 ? 61440000.0 : 122880000.0);
     t.period = period ? period : (uint64_t)(t.rate / 100);
     fmt      = t.sc16 ? BLADERF_FORMAT_SC16_Q11_META : BLADERF_FORMAT_SC8_Q7_META;
 
@@ -295,7 +332,8 @@ int main(int argc, char *argv[])
     samples  = malloc((size_t)BUF_SAMPLES * (t.sc16 ? 4 : 2));
     start_ts = calloc(t.num_bursts, sizeof(start_ts[0]));
     seen     = calloc(t.num_bursts, sizeof(seen[0]));
-    if (samples == NULL || start_ts == NULL || seen == NULL) {
+    start_of = malloc(0x8000 * sizeof(start_of[0]));
+    if (samples == NULL || start_ts == NULL || seen == NULL || start_of == NULL) {
         status = BLADERF_ERR_MEM;
         goto error;
     }
@@ -338,6 +376,16 @@ int main(int argc, char *argv[])
     tx_started = true;
     clock_gettime(CLOCK_MONOTONIC, &rx_start);
 
+    /* start_of[w]: the burst whose first sample carries w, among the next 8
+     * (one table look-up per sample keeps up with the RX stream) */
+    for (i = 0; i < 0x8000; i++) {
+        start_of[i] = -1;
+    }
+
+    for (k = 0; k < t.num_bursts && k < 8; k++) {
+        start_of[burst_value(&t, k, 0)] = (int16_t)k;
+    }
+
     while (next < t.num_bursts) {
         struct bladerf_metadata meta;
 
@@ -360,6 +408,20 @@ int main(int argc, char *argv[])
 
         if (!t.rx_warm && rx_count >= (uint64_t)(WARMUP_S * t.rate)) {
             t.rx_warm = true;
+
+            if (dump_name != NULL) {
+                dump = fopen(dump_name, "wb");
+                if (dump != NULL) {
+                    printf("dump: RX samples from timestamp %" PRIu64 " (TX timestamps"
+                           " are printed below) into %s\n", meta.timestamp + meta.actual_count,
+                           dump_name);
+                }
+            }
+        } else if (dump != NULL && dump_left > 0) {
+            size_t n = meta.actual_count < dump_left ? meta.actual_count : dump_left;
+
+            fwrite(samples, t.sc16 ? 4 : 2, n, dump);
+            dump_left -= n;
         }
 
         for (i = 0; i < meta.actual_count && next < t.num_bursts; i++) {
@@ -367,18 +429,20 @@ int main(int argc, char *argv[])
             bool nonzero = get_sample(t.sc16, samples, i, &w);
 
             if (state == IN_BURST) {
-                if (w != burst_value(&t, burst, pos)) {
+                if (w != expected) {
                     if (reports++ < MAX_REPORTS) {
                         printf("  burst %u sample %u: 0x%04x, expected 0x%04x\n",
-                               burst, pos, w, burst_value(&t, burst, pos));
+                               burst, pos, w, expected);
                     }
 
                     bad++;
                 }
 
+                expected = (expected + 1) & 0x7fff;
+
                 if (++pos == t.burst_len) {
                     state = IDLE;
-                    next  = burst + 1;
+                    advance(&t, start_of, &next, burst + 1);
                 }
 
                 continue;
@@ -390,9 +454,10 @@ int main(int argc, char *argv[])
                     start_ts[burst] = cand_ts;
                     seen[burst]     = true;
                     received++;
-                    pos   = 2;
-                    state = (pos == t.burst_len) ? IDLE : IN_BURST;
-                    next  = (state == IDLE) ? burst + 1 : burst;
+                    pos      = 2;
+                    expected = burst_value(&t, burst, 2);
+                    state    = (pos == t.burst_len) ? IDLE : IN_BURST;
+                    advance(&t, start_of, &next, (state == IDLE) ? burst + 1 : burst);
                     continue;
                 }
 
@@ -401,15 +466,10 @@ int main(int argc, char *argv[])
 
             /* A burst may start here: this sample carries the first number of
              * the next burst or of one of the 7 after it */
-            if (nonzero && t.rx_warm) {
-                for (k = next; k < t.num_bursts && k < next + 8; k++) {
-                    if (w == burst_value(&t, k, 0)) {
-                        cand    = k;
-                        cand_ts = meta.timestamp + i;
-                        state   = CANDIDATE;
-                        break;
-                    }
-                }
+            if (nonzero && t.rx_warm && start_of[w] >= 0) {
+                cand    = (unsigned int)start_of[w];
+                cand_ts = meta.timestamp + i;
+                state   = CANDIDATE;
             }
         }
 
@@ -479,6 +539,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    printf("first burst's TX timestamp %" PRIu64 ", then every %" PRIu64 " samples\n",
+           t.tx_ts0, t.period);
     printf("TX->RX delay: %" PRId64 " samples (RX timestamp minus TX timestamp;"
            " min %" PRId64 ", max %" PRId64 ")\n", delay0, delay_min, delay_max);
     printf("bursts received: %u of %u; RX spacing %" PRIu64 "..%" PRIu64
@@ -510,9 +572,14 @@ error:
         bladerf_close(dev);
     }
 
+    if (dump != NULL) {
+        fclose(dump);
+    }
+
     free(samples);
     free(start_ts);
     free(seen);
+    free(start_of);
 
     printf("RESULT: %s\n", status == 0 ? "PASS" : (status > 0 ? "FAIL" : "ERROR"));
     return status == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
