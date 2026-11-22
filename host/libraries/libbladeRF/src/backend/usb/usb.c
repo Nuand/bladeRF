@@ -599,7 +599,7 @@ static int usb_read_flash_pages(struct bladerf *dev,
                                 uint32_t page_u32,
                                 uint32_t count_u32)
 {
-    int status;
+    int status, restore_status;
     size_t n_read;
     uint16_t i;
 
@@ -636,8 +636,8 @@ static int usb_read_flash_pages(struct bladerf *dev,
     log_info("Done reading %u page%s\n", count, 1 == count ? "" : "s");
 
 error:
-    status = restore_post_flash_setting(dev);
-    return status;
+    restore_status = restore_post_flash_setting(dev);
+    return status != 0 ? status : restore_status;
 }
 
 static int write_page(struct bladerf *dev, uint8_t write_operation,
