@@ -614,6 +614,12 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get
 % const char* bladerf_image_type_to_string(bladerf_image_type type);
 fcns.thunkname{fcnNum}='cstringint32Thunk';fcns.name{fcnNum}='bladerf_image_type_to_string'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='cstring'; fcns.RHS{fcnNum}={'bladerf_image_type'};fcnNum=fcnNum+1;
 
+% int bladerf_enable_feature ( struct bladerf * dev , bladerf_feature feature , bool enable );
+fcns.thunkname{fcnNum}='int32voidPtrbladerf_feature_BoolThunk';fcns.name{fcnNum}='bladerf_enable_feature'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_feature', 'bool'};fcnNum=fcnNum+1;
+
+% int bladerf_get_feature ( struct bladerf * dev , bladerf_feature * feature );
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_feature'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_featurePtr'};fcnNum=fcnNum+1;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Structures
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -797,6 +803,9 @@ enuminfo.bladerf_smb_mode=struct('BLADERF_SMB_MODE_INVALID',   -1, ...
 enuminfo.bladerf_tuning_mode=struct('BLADERF_TUNING_MODE_INVALID', -1, ...
                                     'BLADERF_TUNING_MODE_HOST',     0, ...
                                     'BLADERF_TUNING_MODE_FPGA',     1);
+
+enuminfo.bladerf_feature=struct('BLADERF_FEATURE_DEFAULT',    0, ...
+                                'BLADERF_FEATURE_OVERSAMPLE', 1);
 
 enuminfo.bladerf_cal_module=struct('BLADERF_DC_CAL_INVALID',   -1, ...
                                    'BLADERF_DC_CAL_LPF_TUNING', 0, ...

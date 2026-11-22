@@ -66,6 +66,7 @@ classdef bladeRF_XCVR < handle
 
     properties(SetAccess = private)
         running         % Denotes whether or not the module is enabled to stream samples.
+        format          % Sample format of the running stream: SC16_Q11_META, or SC8_Q7_META with the OVERSAMPLE feature
         timestamp       % Provides a coarse readback of the timestamp counter.
     end
 
@@ -610,11 +611,17 @@ classdef bladeRF_XCVR < handle
                 obj.eob = false;
             end
 
+            % OVERSAMPLE allows only the 8-bit formats
+            obj.format = 'BLADERF_FORMAT_SC16_Q11_META';
+            if strcmp(obj.bladerf.feature, 'OVERSAMPLE')
+                obj.format = 'BLADERF_FORMAT_SC8_Q7_META';
+            end
+
             % Configure the sync config
             [status, ~] = calllib('libbladeRF', 'bladerf_sync_config', ...
                                   obj.bladerf.device, ...
                                    bladeRF.str2ch(obj.module), ...
-                                  'BLADERF_FORMAT_SC16_Q11_META', ...
+                                  obj.format, ...
                                   obj.config.num_buffers, ...
                                   obj.config.buffer_size, ...
                                   obj.config.num_transfers, ...

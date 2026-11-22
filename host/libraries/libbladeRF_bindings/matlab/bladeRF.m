@@ -91,6 +91,7 @@ classdef bladeRF < handle
 
     properties(Dependent)
         loopback    % Loopback mode. Available options: 'NONE', 'FIRMWARE', 'BB_TXLPF_RXVGA2', 'BB_TXVGA1_RXVGA2', 'BB_TXLPF_RXLPF', 'BB_TXVGA1_RXLPF', 'RF_LNA1', 'RF_LNA2', 'RF_LNA3'
+        feature     % bladeRF 2.0 feature set: 'DEFAULT' or 'OVERSAMPLE' (8-bit samples, rates up to 122.88 MHz). Set the sample rate after changing it.
     end
 
     properties(SetAccess=immutable)
@@ -672,7 +673,13 @@ classdef bladeRF < handle
                 timestamp_in = 0;
             end
 
-            s16 = int16(zeros(2*num_samples, 1));
+            if strcmp(obj.rx.format, 'BLADERF_FORMAT_SC8_Q7_META')
+                buf = int8(zeros(2*num_samples, 1));
+                scale = 128.0;
+            else
+                buf = int16(zeros(2*num_samples, 1));
+                scale = 2048.0;
+            end
 
             metad = libstruct('bladerf_metadata');
             metad.actual_count = 0;
@@ -692,9 +699,9 @@ classdef bladeRF < handle
 
             overrun = false;
 
-            [status, ~, s16, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
+            [status, ~, buf, ~] = calllib('libbladeRF', 'bladerf_sync_rx', ...
                                           obj.device, ...
-                                          s16, ...
+                                          buf, ...
                                           num_samples, ...
                                           pmetad, ...
                                           timeout_ms);
@@ -707,7 +714,7 @@ classdef bladeRF < handle
             end
 
             % Deinterleve and scale to [-1.0, 1.0).
-            samples = (double(s16(1:2:end)) + double(s16(2:2:end))*1j) ./ 2048.0;
+            samples = (double(buf(1:2:end)) + double(buf(2:2:end))*1j) ./ scale;
             timestamp_out = metad.timestamp;
         end
 
@@ -837,9 +844,13 @@ classdef bladeRF < handle
             % here because valid values are only [-2048, 2047]. However,
             % it's simpler to allow users to assume they can just input
             % samples within [-1.0, 1.0].
-            samples = samples .* 2047;
-
-            s16 = zeros(2 * length(samples), 1, 'int16');
+            if strcmp(obj.tx.format, 'BLADERF_FORMAT_SC8_Q7_META')
+                samples = samples .* 127;
+                s16 = zeros(2 * length(samples), 1, 'int8');
+            else
+                samples = samples .* 2047;
+                s16 = zeros(2 * length(samples), 1, 'int16');
+            end
             s16(1:2:end) = real(samples);
             s16(2:2:end) = imag(samples);
 
@@ -934,6 +945,27 @@ classdef bladeRF < handle
             mode_val = [ 'BLADERF_LB_' mode ];
             status = calllib('libbladeRF', 'bladerf_set_loopback', obj.device, mode_val);
             bladeRF.check_status('bladerf_set_loopback', status);
+        end
+
+        function set.feature(obj, val)
+            switch upper(val)
+                case 'DEFAULT'
+                    feat = 'BLADERF_FEATURE_DEFAULT';
+                case 'OVERSAMPLE'
+                    feat = 'BLADERF_FEATURE_OVERSAMPLE';
+                otherwise
+                    error(['Invalid feature: ' val]);
+            end
+
+            status = calllib('libbladeRF', 'bladerf_enable_feature', obj.device, feat, true);
+            bladeRF.check_status('bladerf_enable_feature', status);
+        end
+
+        function val = get.feature(obj)
+            feat = int32(0);
+            [status, ~, feat] = calllib('libbladeRF', 'bladerf_get_feature', obj.device, feat);
+            bladeRF.check_status('bladerf_get_feature', status);
+            val = strrep(char(feat), 'BLADERF_FEATURE_', '');
         end
 
         function mode = get.loopback(obj)
