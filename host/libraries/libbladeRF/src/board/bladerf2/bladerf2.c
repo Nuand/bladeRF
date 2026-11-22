@@ -184,6 +184,25 @@ static int _bladerf2_initialize(struct bladerf *dev)
     /* Initialize INA219 */
     CHECK_STATUS(ina219_init(dev, ina219_r_shunt));
 
+    /* After an FPGA load on an open device, host-side RFIC state from the
+     * previous image no longer describes the hardware: the new image starts
+     * with its RFFE control register at its reset value, which holds the
+     * AD9361 in reset (RFFE_CONTROL_RESET_N clear), so the AD9361 has to be
+     * set up again. In FPGA tuning mode the freshly started Nios reports its
+     * RFIC as uninitialized, so set_tuning_mode() below initializes it again.
+     * In host tuning mode the RFIC counted as initialized as long as the
+     * AD9361 driver state existed, so it was kept as is, and the first sample
+     * rate change after the load timed out in the AD9361's RX baseband filter
+     * calibration. Release that state so that the RFIC is initialized from
+     * scratch in both tuning modes. (On open there is none.) */
+    if (NULL != board_data->phy) {
+        extern struct controller_fns const rfic_host_control;
+
+        log_debug("%s: releasing host RFIC state from before the FPGA load\n",
+                  __FUNCTION__);
+        CHECK_STATUS(rfic_host_control.deinitialize(dev));
+    }
+
     /* Set tuning mode. This will trigger initialization of the RFIC.
      *
      * RFIC initialization consists of:
