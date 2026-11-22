@@ -26,6 +26,7 @@
 #include "cyu3dma.h"
 #include "cyu3error.h"
 #include "cyu3usb.h"
+#include "cyu3utils.h"
 #include "bladeRF.h"
 #include "cyu3gpif.h"
 #include "cyu3pib.h"
@@ -265,22 +266,31 @@ CyU3PReturnStatus_t ClearDMAChannel(uint8_t ep,
 {
     CyU3PReturnStatus_t status;
 
+    /* NAK the endpoint and give a transfer in progress time to finish before
+     * resetting its DMA channel and the endpoint, as the FX3 SDK's examples do
+     * (cyfxgpiftousb.c). The host may be reading from it: to add a second RX
+     * channel in FPGA tuning mode, libbladeRF turns RF_RX off and on with the
+     * stream's transfers queued, and without the NAK that was seen to lock the
+     * FX3 up. */
+    CyU3PUsbSetEpNak(ep, CyTrue);
+    CyU3PBusyWait(125);
+
     status = CyU3PDmaChannelReset(handle);
     if (status != CY_U3P_SUCCESS) {
         LOG_ERROR(status);
-        return status;
+        goto out;
     }
 
     status = CyU3PUsbFlushEp(ep);
     if (status != CY_U3P_SUCCESS) {
         LOG_ERROR(status);
-        return status;
+        goto out;
     }
 
     status = CyU3PUsbResetEp(ep);
     if (status != CY_U3P_SUCCESS) {
         LOG_ERROR(status);
-        return status;
+        goto out;
     }
 
     status = CyU3PDmaChannelSetXfer (handle, count);
@@ -288,6 +298,8 @@ CyU3PReturnStatus_t ClearDMAChannel(uint8_t ep,
         LOG_ERROR(status);
     }
 
+out:
+    CyU3PUsbSetEpNak(ep, CyFalse);
     return status;
 }
 
