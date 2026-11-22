@@ -462,6 +462,18 @@ BLADERF_REFIN_DEFAULT = 10.0e6
 
 BLADERF_SERIAL_LENGTH = 33
 
+# struct bladerf_metadata status and flags, as in libbladeRF.h
+BLADERF_META_STATUS_OVERRUN = (1 << 0)
+BLADERF_META_STATUS_UNDERRUN = (1 << 1)
+BLADERF_META_FLAG_TX_BURST_START = (1 << 0)
+BLADERF_META_FLAG_TX_BURST_END = (1 << 1)
+BLADERF_META_FLAG_TX_NOW = (1 << 2)
+BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP = (1 << 3)
+BLADERF_META_FLAG_RX_NOW = (1 << 31)
+BLADERF_META_FLAG_RX_HW_UNDERFLOW = (1 << 0)
+BLADERF_META_FLAG_RX_HW_MINIEXP1 = (1 << 16)
+BLADERF_META_FLAG_RX_HW_MINIEXP2 = (1 << 17)
+
 
 ###############################################################################
 
@@ -876,6 +888,17 @@ class BladeRF:
                                          meta,
                                          timeout_ms or 0)
         _check_error(ret)
+
+    def get_timestamp(self, direction):
+        """The current timestamp counter of a direction (RX, TX or a
+        Direction), in samples, from bladerf_get_timestamp()."""
+        if isinstance(direction, Direction):
+            direction = direction.value
+        timestamp = ffi.new("bladerf_timestamp *")
+        ret = libbladeRF.bladerf_get_timestamp(self.dev[0], direction,
+                                               timestamp)
+        _check_error(ret)
+        return timestamp[0]
 
     # FPGA/Firmware Loading/Flashing
 
