@@ -6,7 +6,9 @@
  * The test sends K bursts of L samples, each P samples after the previous one,
  * at TX timestamps a lead ahead of the TX time: SC8_Q7_META at 122.88 Msps
  * with OVERSAMPLE, or SC16_Q11_META at 61.44 Msps. Each burst sample carries
- * its number, counted over all bursts. RX streams continuously with metadata.
+ * its number, counted over all bursts. RX streams continuously with metadata,
+ * and a burst is found where two samples carry the first two numbers of a
+ * burst: between bursts the TX holds its last sample, which need not be zero.
  * The test passes when every burst arrives at the same delay (RX timestamp
  * minus TX timestamp) as the first, P samples after the previous one, with
  * every sample unchanged. The bladeRF also transmits at its TX port.
@@ -71,8 +73,7 @@ static double seconds_since(const struct timespec *start)
     return (now.tv_sec - start->tv_sec) + (now.tv_nsec - start->tv_nsec) * 1e-9;
 }
 
-/* Burst sample n carries w = n mod 2^15. Its Q is never zero, and the TX
- * sends zeros between the bursts. */
+/* Burst sample n carries w = n mod 2^15; its Q is never zero */
 static void put_sample(bool sc16, void *buf, unsigned int i, unsigned int w)
 {
     if (sc16) {
@@ -88,29 +89,28 @@ static void put_sample(bool sc16, void *buf, unsigned int i, unsigned int w)
     }
 }
 
+/* The number a sample would carry; false for a zero sample */
 static bool get_sample(bool sc16, const void *buf, size_t i, unsigned int *w)
 {
     if (sc16) {
         const int16_t *s = buf;
 
-        if (s[2 * i + 1] == 0) {
-            return false;
-        }
-
         *w = (((unsigned int)(s[2 * i + 1] + 2048) & 0xf) << 11) |
              ((unsigned int)s[2 * i] & 0x7ff);
+        return s[2 * i] != 0 || s[2 * i + 1] != 0;
     } else {
         const int8_t *s = buf;
 
-        if (s[2 * i + 1] == 0) {
-            return false;
-        }
-
         *w = (((unsigned int)(uint8_t)s[2 * i + 1] & 0x7f) << 8) |
              (uint8_t)s[2 * i];
+        return s[2 * i] != 0 || s[2 * i + 1] != 0;
     }
+}
 
-    return true;
+/* The number carried by sample pos of burst k */
+static unsigned int burst_value(const struct test *t, unsigned int k, unsigned int pos)
+{
+    return (unsigned int)(((uint64_t)k * t->burst_len + pos) & 0x7fff);
 }
 
 static void *tx_task(void *arg)
@@ -193,18 +193,21 @@ int main(int argc, char *argv[])
     uint64_t period = 0;
     void *samples = NULL;
     uint64_t *start_ts = NULL;
+    bool *seen = NULL;
     pthread_t tx_thread;
     bool tx_started = false;
     bool r1t = false;
-    bool in_burst = false;
-    unsigned int burst = 0, pos = 0, reports = 0;
-    uint64_t bad = 0, extra = 0, gaps = 0, overruns = 0, prev_end = 0;
+    enum { IDLE, CANDIDATE, IN_BURST } state = IDLE;
+    unsigned int next = 0, burst = 0, cand = 0, pos = 0, reports = 0;
+    unsigned int received = 0, prev = 0;
+    uint64_t cand_ts = 0;
+    uint64_t bad = 0, gaps = 0, overruns = 0, prev_end = 0;
     bool have_prev = false;
     struct timespec rx_start;
     uint64_t rx_count = 0;
     int64_t delay0 = 0, delay_min = 0, delay_max = 0;
     uint64_t spacing_min = 0, spacing_max = 0;
-    unsigned int k, delay_errors = 0, spacing_errors = 0;
+    unsigned int k, n_delays = 0, delay_errors = 0, spacing_errors = 0;
     size_t i;
     int opt;
     int opt_ind = 0;
@@ -291,7 +294,8 @@ int main(int argc, char *argv[])
 
     samples  = malloc((size_t)BUF_SAMPLES * (t.sc16 ? 4 : 2));
     start_ts = calloc(t.num_bursts, sizeof(start_ts[0]));
-    if (samples == NULL || start_ts == NULL) {
+    seen     = calloc(t.num_bursts, sizeof(seen[0]));
+    if (samples == NULL || start_ts == NULL || seen == NULL) {
         status = BLADERF_ERR_MEM;
         goto error;
     }
@@ -334,7 +338,7 @@ int main(int argc, char *argv[])
     tx_started = true;
     clock_gettime(CLOCK_MONOTONIC, &rx_start);
 
-    while (burst < t.num_bursts) {
+    while (next < t.num_bursts) {
         struct bladerf_metadata meta;
 
         memset(&meta, 0, sizeof(meta));
@@ -358,51 +362,54 @@ int main(int argc, char *argv[])
             t.rx_warm = true;
         }
 
-        for (i = 0; i < meta.actual_count; i++) {
+        for (i = 0; i < meta.actual_count && next < t.num_bursts; i++) {
             unsigned int w;
-            bool payload = get_sample(t.sc16, samples, i, &w);
+            bool nonzero = get_sample(t.sc16, samples, i, &w);
 
-            if (!in_burst) {
-                if (!payload) {
-                    continue;
-                }
-
-                if (!t.rx_warm || burst >= t.num_bursts) {
-                    extra++;
-                    continue;
-                }
-
-                in_burst        = true;
-                pos             = 0;
-                start_ts[burst] = meta.timestamp + i;
-            }
-
-            if (payload) {
-                unsigned int expected =
-                    (unsigned int)(((uint64_t)burst * t.burst_len + pos) & 0x7fff);
-
-                if (w != expected) {
+            if (state == IN_BURST) {
+                if (w != burst_value(&t, burst, pos)) {
                     if (reports++ < MAX_REPORTS) {
                         printf("  burst %u sample %u: 0x%04x, expected 0x%04x\n",
-                               burst, pos, w, expected);
+                               burst, pos, w, burst_value(&t, burst, pos));
                     }
 
                     bad++;
                 }
 
                 if (++pos == t.burst_len) {
-                    in_burst = false;
-                    burst++;
-                }
-            } else {
-                if (reports++ < MAX_REPORTS) {
-                    printf("  burst %u ended after %u of %u samples\n", burst,
-                           pos, t.burst_len);
+                    state = IDLE;
+                    next  = burst + 1;
                 }
 
-                bad += t.burst_len - pos;
-                in_burst = false;
-                burst++;
+                continue;
+            }
+
+            if (state == CANDIDATE) {
+                if (nonzero && w == burst_value(&t, cand, 1)) {
+                    burst           = cand;
+                    start_ts[burst] = cand_ts;
+                    seen[burst]     = true;
+                    received++;
+                    pos   = 2;
+                    state = (pos == t.burst_len) ? IDLE : IN_BURST;
+                    next  = (state == IDLE) ? burst + 1 : burst;
+                    continue;
+                }
+
+                state = IDLE;
+            }
+
+            /* A burst may start here: this sample carries the first number of
+             * the next burst or of one of the 7 after it */
+            if (nonzero && t.rx_warm) {
+                for (k = next; k < t.num_bursts && k < next + 8; k++) {
+                    if (w == burst_value(&t, k, 0)) {
+                        cand    = k;
+                        cand_ts = meta.timestamp + i;
+                        state   = CANDIDATE;
+                        break;
+                    }
+                }
             }
         }
 
@@ -422,30 +429,43 @@ int main(int argc, char *argv[])
     pthread_join(tx_thread, NULL);
     tx_started = false;
 
-    for (k = 0; k < burst && k < t.num_bursts; k++) {
-        int64_t delay = (int64_t)(start_ts[k] - (t.tx_ts0 + k * t.period));
+    for (k = 0; k < t.num_bursts; k++) {
+        int64_t delay;
 
-        if (k == 0) {
+        if (!seen[k]) {
+            if (reports++ < MAX_REPORTS) {
+                printf("  burst %u not found\n", k);
+            }
+
+            continue;
+        }
+
+        delay = (int64_t)(start_ts[k] - (t.tx_ts0 + k * t.period));
+
+        if (n_delays++ == 0) {
             delay0 = delay_min = delay_max = delay;
         } else {
-            uint64_t spacing = start_ts[k] - start_ts[k - 1];
+            /* Spacing per period, from the previous burst found */
+            uint64_t spacing = (start_ts[k] - start_ts[prev]) / (k - prev);
 
-            if (k == 1 || spacing < spacing_min) {
+            if (n_delays == 2 || spacing < spacing_min) {
                 spacing_min = spacing;
             }
 
-            if (k == 1 || spacing > spacing_max) {
+            if (n_delays == 2 || spacing > spacing_max) {
                 spacing_max = spacing;
             }
 
-            if (spacing != t.period) {
+            if (start_ts[k] - start_ts[prev] != (k - prev) * t.period) {
                 spacing_errors++;
             }
         }
 
+        prev = k;
+
         if (delay != delay0) {
             if (delay_errors++ < MAX_REPORTS) {
-                printf("  burst %u: delay %" PRId64 " samples, burst 0's %" PRId64 "\n",
+                printf("  burst %u: delay %" PRId64 " samples, the first burst's %" PRId64 "\n",
                        k, delay, delay0);
             }
         }
@@ -462,17 +482,16 @@ int main(int argc, char *argv[])
     printf("TX->RX delay: %" PRId64 " samples (RX timestamp minus TX timestamp;"
            " min %" PRId64 ", max %" PRId64 ")\n", delay0, delay_min, delay_max);
     printf("bursts received: %u of %u; RX spacing %" PRIu64 "..%" PRIu64
-           " samples (expected %" PRIu64 ")\n", burst, t.num_bursts, spacing_min,
+           " samples (expected %" PRIu64 ")\n", received, t.num_bursts, spacing_min,
            spacing_max, t.period);
-    printf("wrong or missing burst samples: %" PRIu64 "; samples outside the bursts:"
-           " %" PRIu64 "; RX gaps %" PRIu64 ", overruns %" PRIu64 "; TX status %d\n",
-           bad, extra, gaps, overruns, t.tx_status);
+    printf("wrong burst samples: %" PRIu64 "; RX gaps %" PRIu64 ", overruns %" PRIu64
+           "; TX status %d\n", bad, gaps, overruns, t.tx_status);
 
     if (mode != BLADERF_RFIC_1R1T_OFF && !r1t) {
         printf("the interface is not in 1R1T mode\n");
     }
 
-    if (burst != t.num_bursts || bad != 0 || extra != 0 || delay_errors != 0 ||
+    if (received != t.num_bursts || bad != 0 || delay_errors != 0 ||
         spacing_errors != 0 || t.tx_status != 0 ||
         (mode != BLADERF_RFIC_1R1T_OFF && !r1t)) {
         status = 1;
@@ -493,6 +512,7 @@ error:
 
     free(samples);
     free(start_ts);
+    free(seen);
 
     printf("RESULT: %s\n", status == 0 ? "PASS" : (status > 0 ? "FAIL" : "ERROR"));
     return status == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
