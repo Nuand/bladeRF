@@ -36,6 +36,7 @@ add_subdirectory(test_flash_fpga_compression)
 add_subdirectory(test_flash_validate)
 add_subdirectory(test_1r1t_state)
 add_subdirectory(test_1r1t_meta)
+add_subdirectory(test_1r1t_stream)
 
 option(TEST_REGRESSION "Include regression tests" OFF)
 if(TEST_REGRESSION)
