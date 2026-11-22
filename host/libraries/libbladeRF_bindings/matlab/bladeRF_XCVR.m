@@ -150,11 +150,7 @@ classdef bladeRF_XCVR < handle
 
         % Configures the automatic gain control setting
         function set.agc(obj, val)
-            if strcmpi(obj.direction,'RX') == true
-                ch = 'BLADERF_CHANNEL_RX1';
-            else
-                ch = 'BLADERF_CHANNEL_TX1';
-            end
+            ch = obj.current_channel;
 
             switch lower(val)
                 case 'auto'
@@ -185,11 +181,7 @@ classdef bladeRF_XCVR < handle
         % Reads the current automatic gain control setting
         function val = get.agc(obj)
             val = int32(0);
-            if strcmpi(obj.direction,'RX') == true
-                ch = 'BLADERF_CHANNEL_RX1';
-            else
-                ch = 'BLADERF_CHANNEL_TX1';
-            end
+            ch = obj.current_channel;
 
             tmp = int32(0);
             [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
@@ -256,11 +248,7 @@ classdef bladeRF_XCVR < handle
                 warning(['Cannot set ' obj.direction ' gain when AGC is in ' obj.agc ' mode'])
             end
 
-            if strcmpi(obj.direction,'RX') == true
-                ch = 'BLADERF_CHANNEL_RX1';
-            else
-                ch = 'BLADERF_CHANNEL_TX1';
-            end
+            ch = obj.current_channel;
             [status, ~] = calllib('libbladeRF', 'bladerf_set_gain', obj.bladerf.device, bladeRF.str2ch(ch), val);
             bladeRF.check_status('bladerf_set_gain', status);
         end
@@ -268,11 +256,7 @@ classdef bladeRF_XCVR < handle
         % Reads the current universal gain configuration
         function val = get.gain(obj)
             val = int32(0);
-            if strcmpi(obj.direction,'RX') == true
-                ch = 'BLADERF_CHANNEL_RX1';
-            else
-                ch = 'BLADERF_CHANNEL_TX1';
-            end
+            ch = obj.current_channel;
 
             tmp = int32(0);
             [status, ~, val] = calllib('libbladeRF', 'bladerf_get_gain', obj.bladerf.device, bladeRF.str2ch(ch), tmp);
