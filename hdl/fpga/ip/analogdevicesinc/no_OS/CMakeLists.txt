@@ -45,9 +45,22 @@ set(LIBAD936X_UPSTREAM_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LIBAD936X_BLADERF_ROOT}/host/cmake/modules/")
 
 
-# Ensure the toolchain file got loaded...
-if(NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "nios2")
-    message(FATAL_ERROR "CMAKE_SYSTEM_PROCESSOR is ${CMAKE_SYSTEM_PROCESSOR}, expected nios2")
+# Ensure a Nios toolchain file got loaded: cmake/nios-toolchain.cmake for
+# Nios II, or the toolchain.cmake of a Nios V BSP ("Nios V/m", ...)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "nios2")
+    set(LIBAD936X_NIOS2 TRUE)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^Nios V")
+    set(LIBAD936X_NIOS2 FALSE)
+else()
+    message(FATAL_ERROR "CMAKE_SYSTEM_PROCESSOR is ${CMAKE_SYSTEM_PROCESSOR}, expected nios2 or Nios V")
+endif()
+
+# Nios BSP headers: BSP_DIR if given (Nios V build), otherwise the Nios II
+# flow's bladeRF_nios_bsp directory next to this build directory
+if(BSP_DIR)
+    set(LIBAD936X_BSP_DIR "${BSP_DIR}")
+else()
+    set(LIBAD936X_BSP_DIR "${CMAKE_BINARY_DIR}/../bladeRF_nios_bsp")
 endif()
 
 
@@ -70,12 +83,12 @@ target_compile_options(ad936x PRIVATE
     -DBLADERF_NIOS_BUILD -DNUAND_MODIFICATIONS -Wall -Os
 )
 
-if(NOT NIOS_HAS_HARDWARE_MULTIPLY_DIVIDE)
+if(LIBAD936X_NIOS2 AND NOT NIOS_HAS_HARDWARE_MULTIPLY_DIVIDE)
     message(STATUS "libad936x: building with software mul/mulx/div operations")
     target_compile_options(ad936x PRIVATE
         -mno-hw-div -mno-hw-mul -mno-hw-mulx
     )
-endif(NOT NIOS_HAS_HARDWARE_MULTIPLY_DIVIDE)
+endif()
 
 if(NOT MSVC)
     target_compile_options(ad936x PRIVATE
@@ -100,7 +113,7 @@ if(BUILD_AD936X_PRINTF_DEBUG)
 endif(BUILD_AD936X_PRINTF_DEBUG)
 
 target_include_directories(ad936x PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 
     ${LIBAD936X_PLATFORM_DIR}
     ${LIBAD936X_UPSTREAM_BUILD_DIR}
@@ -113,9 +126,9 @@ target_include_directories(ad936x PUBLIC
     ${LIBAD936X_BLADERF_ROOT}/hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/src
     ${LIBAD936X_BLADERF_ROOT}/hdl/fpga/platforms/bladerf-micro/software/bladeRF_nios/src
     ${LIBAD936X_BLADERF_ROOT}/fpga_common/include
-    ${CMAKE_BINARY_DIR}/../bladeRF_nios_bsp
-    ${CMAKE_BINARY_DIR}/../bladeRF_nios_bsp/drivers/inc
-    ${CMAKE_BINARY_DIR}/../bladeRF_nios_bsp/HAL/inc
+    ${LIBAD936X_BSP_DIR}
+    ${LIBAD936X_BSP_DIR}/drivers/inc
+    ${LIBAD936X_BSP_DIR}/HAL/inc
 )
 
 ################################################################################

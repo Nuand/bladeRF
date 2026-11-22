@@ -29,8 +29,10 @@
 #include "libbladeRF.h"
 #include "debug.h"
 
-/* Use our debug assert */
+/* Use our debug assert, also if the C library's <assert.h> has already been
+ * included (newlib-nano's <sys/reent.h> includes it, via <stdlib.h>) */
 #ifndef BLADERF_NIOS_PC_SIMULATION
+#   undef assert
 #   define assert ASSERT
 #else
 #   define ASSERT assert

@@ -42,6 +42,17 @@ uint16_t vctcxo_trim_dac_value = 0x7FFF;
 /* Define a cached version of the VCTCXO tamer control register */
 uint8_t vctcxo_tamer_ctrl_reg = 0x00;
 
+/* Not every platform's VCTCXO tamer has an interrupt. On the bladeRF 2.0 micro,
+ * vctcxo_tamer_0 is a plain on-chip memory, so system.h defines
+ * VCTCXO_TAMER_0_IRQ as -1. The HAL does not reject IRQ -1: registering an ISR
+ * for it writes alt_irq[-1], corrupting whatever the linker placed just before
+ * the handler table. */
+#if defined(VCTCXO_TAMER_0_IRQ) && (VCTCXO_TAMER_0_IRQ >= 0)
+#define VCTCXO_TAMER_HAS_IRQ 1
+#else
+#define VCTCXO_TAMER_HAS_IRQ 0
+#endif
+
 #ifdef BOARD_BLADERF_MICRO
 /* Common bladeRF2 header */
 #include "bladerf2_common.h"
@@ -74,6 +85,7 @@ static void command_uart_isr(void *context)
     return;
 }
 
+#if VCTCXO_TAMER_HAS_IRQ
 static void vctcxo_tamer_isr(void *context)
 {
     struct vctcxo_tamer_pkt_buf *pkt = (struct vctcxo_tamer_pkt_buf *)context;
@@ -106,6 +118,7 @@ static void vctcxo_tamer_isr(void *context)
 
     return;
 }
+#endif  // VCTCXO_TAMER_HAS_IRQ
 
 void vctcxo_tamer_enable_isr(bool enable)
 {
@@ -263,10 +276,14 @@ void bladerf_nios_init(struct pkt_buf *pkt,
     alt_ic_isr_register(COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID,
                         COMMAND_UART_IRQ, command_uart_isr, pkt, NULL);
 
+#if VCTCXO_TAMER_HAS_IRQ
     /* Register the VCTCXO Tamer ISR */
     alt_ic_isr_register(VCTCXO_TAMER_0_IRQ_INTERRUPT_CONTROLLER_ID,
                         VCTCXO_TAMER_0_IRQ, vctcxo_tamer_isr, vctcxo_tamer_pkt,
                         NULL);
+#else
+    (void)vctcxo_tamer_pkt;
+#endif
 
     /* Default VCTCXO Tamer and its interrupts to be disabled. */
     vctcxo_tamer_set_tune_mode(BLADERF_VCTCXO_TAMER_DISABLED);
@@ -275,8 +292,10 @@ void bladerf_nios_init(struct pkt_buf *pkt,
     command_uart_enable_isr(true);
     alt_ic_irq_enable(COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID,
                       COMMAND_UART_IRQ);
+#if VCTCXO_TAMER_HAS_IRQ
     alt_ic_irq_enable(VCTCXO_TAMER_0_IRQ_INTERRUPT_CONTROLLER_ID,
                       VCTCXO_TAMER_0_IRQ);
+#endif
 }
 
 static void i2c_complete_transfer(uint8_t check_rxack)

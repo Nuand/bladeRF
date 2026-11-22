@@ -95,7 +95,7 @@ Below is the list of `<component>` values to use:
 * firmware
     * This is for FX3 firmware
 * fpga
-    * This is for all FPGA and HDL-related changes, including the NIOS II code.
+    * This is for all FPGA and HDL-related changes, including the Nios code.
 
 
 ## Project-wide Tags ##

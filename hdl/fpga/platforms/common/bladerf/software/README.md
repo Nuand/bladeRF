@@ -1,7 +1,7 @@
-bladeRF NIOS II software
+bladeRF Nios software
 ==========================
 
-The [bladeRF_nios](./bladeRF_nios) directory contains the bladeRF program that executes on a NIOS II soft processor in the FPGA. This program is responsible for performing control and configuration operations requests from the host, as received via the FX3 UART.  Based upon the request information, the operation is applied to a physical device attached to the FPGA, or a module in the FPGA's programmable fabric.
+The [bladeRF_nios](./bladeRF_nios) directory contains the bladeRF program that executes on a Nios soft processor in the FPGA: Nios II, or Nios V/m for the bladeRF 2.0 micro built with Quartus Prime 25.1 (see the [README.md](../../../../../../hdl/README.md) in the [bladeRF/hdl/](../../../../../../hdl) directory). This program is responsible for performing control and configuration operations requests from the host, as received via the FX3 UART.  Based upon the request information, the operation is applied to a physical device attached to the FPGA, or a module in the FPGA's programmable fabric.
 
 Packet Formats
 ========================
@@ -85,6 +85,8 @@ The Nios software is built and embedded into the FPGA when running the **build_b
 per the [README.md](../../../../../../README.md) in the [bladeRF/hdl/](../../../../../../hdl) directory.
 
 It is possible to build, load, and debug the Nios software over JTAG using the Altera/Terasic USB Blaster using either `make` and `gdb`, or Eclipse. The former is quicker to setup, but the latter offers the Eclipse GUI that some may find easier. Both methods are discussed below.
+
+Both methods are for Nios II builds (Quartus Prime 23.1.1). For a Nios V build of the bladeRF 2.0 micro, `build_bladerf.sh` builds the firmware with CMake ([CMakeLists.txt](../../../bladerf-micro/software/bladeRF_nios/CMakeLists.txt), and for the `foxhunt` revision also [its own](../../../bladerf-micro/software/foxhunt/CMakeLists.txt)) into `hdl/quartus/work/<platform>-<size>-<rev>/bladeRF_nios` (and `foxhunt`); the Nios II tools below (`nios2-gdb-server`, the Makefile's `download-elf` and `elf-gdb` targets, Eclipse) do not apply, and debugging a Nios V over JTAG (Ashling RiscFree IDE, or OpenOCD with a RISC-V GDB) is not covered here.
 
 (***Linux Users: Ensure you've installed udev rules for your JTAG debugger***)
 
@@ -170,7 +172,7 @@ When debugging with gdb, it is often desirable to print the values of variables 
 
 Another common occurence when debugging is finding out that a variable has been optimized out and its value is not printable. The best way to get around this is to reduce the level of compiler optimization. This can be done as follows:
 
-- Open [hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/Makefile](../../../../../../hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/Makefile)
+- Open [hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/Makefile](../../../../../../hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/Makefile) (Nios V: [hdl/fpga/platforms/common/bladerf/software/bladeRF_nios/niosv_app.cmake](bladeRF_nios/niosv_app.cmake), `target_compile_options`)
 - Find the line `APP_CFLAGS_OPTIMIZATION`
 - It will have the default optimization for size (`-Os`). Change it to no optimization: `-O0`.
 - Save the file.
@@ -310,11 +312,11 @@ its response data, and "pass."   The test program will abort when it encounters 
 or if read/write to a simulated device/module contains unexpected information.
 
 
-NIOS II Core Implementation
+Nios Core Implementation
 =========================
 
-By default, the FPGA build is configured for use with a NIOS II/e implementation, which can be built with the Quartus II Web Edition.
+By default, the FPGA build is configured for use with a Nios II/e implementation, which can be built with the Quartus II Web Edition, or with the non-pipelined Nios V/m in Nios V builds.
 
-Users with licenses for the NIOS II/s or II/f implementations can pass `-n Small` or `-n Fast` (respectively) to `build_bladerf.sh` to configure the build for the associated NIOS II core. Otherwise, `-n Tiny` is assumed.
+Users with licenses for the Nios II/f implementation can pass `-n Fast` to `build_bladerf.sh` to configure the build for that Nios II core; in Nios V builds, `-n Fast` selects the pipelined Nios V/m. Otherwise, `-n Tiny` is assumed.
 
 For more information, see Altera's [Nios II Core Implementation Details](https://www.altera.com/en_US/pdfs/literature/hb/nios2/n2cpu_nii51015.pdf) document.
