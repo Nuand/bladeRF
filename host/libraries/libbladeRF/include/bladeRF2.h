@@ -117,6 +117,81 @@ int CALL_CONV bladerf_set_rfic_register(struct bladerf *dev,
                                         uint8_t val);
 
 /**
+ * RFIC digital interface mode choices
+ *
+ * In 2R2T mode, the interface between the RFIC and the FPGA carries both RX
+ * channels, even when only one streams, and its clock is four times the sample
+ * rate. In 1R1T mode it carries one RX and one TX channel, either channel 1 or
+ * channel 2 in each direction, and its clock is twice the sample rate. With
+ * ::BLADERF_FEATURE_OVERSAMPLE, 1R1T mode lets one RX channel stream at 122.88
+ * Msps with the interface clock at 245.76 MHz instead of 491.52 MHz.
+ */
+typedef enum {
+    BLADERF_RFIC_1R1T_AUTO = 0, /**< 1R1T mode at the OVERSAMPLE rates while
+                                 *   at most one RX and one TX channel are in
+                                 *   use (default) */
+    BLADERF_RFIC_1R1T_OFF,      /**< 2R2T mode at all times */
+    BLADERF_RFIC_1R1T_ON,       /**< 1R1T mode at all times */
+} bladerf_rfic_1r1t_mode;
+
+/**
+ * Select how the RFIC digital interface chooses 1R1T or 2R2T mode
+ *
+ * With ::BLADERF_RFIC_1R1T_AUTO, the interface is in 1R1T mode while
+ * ::BLADERF_FEATURE_OVERSAMPLE is on and at most one RX and one TX channel are
+ * enabled, and no two-channel layout is set up. Otherwise it is in 2R2T mode.
+ * The choice is made after each sample rate change and before each channel is
+ * enabled, and 1R1T mode uses the channel of each direction that is enabled
+ * (channel 1 if none is). Enabling a second channel of one direction changes
+ * the interface to 2R2T mode, which interrupts the channels that stream.
+ *
+ * With ::BLADERF_RFIC_1R1T_ON, the interface is in 1R1T mode at every sample
+ * rate, and enabling a second channel of one direction fails.
+ *
+ * The mode is ::BLADERF_RFIC_1R1T_AUTO after the device is opened.
+ *
+ * @note    1R1T mode needs FPGA v0.17.0 or later. With an older FPGA image,
+ *          ::BLADERF_RFIC_1R1T_AUTO stays in 2R2T mode and
+ *          ::BLADERF_RFIC_1R1T_ON fails with ::BLADERF_ERR_UNSUPPORTED.
+ *
+ * @param       dev         Device handle
+ * @param[in]   mode        Mode selection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rfic_1r1t_mode(struct bladerf *dev,
+                                         bladerf_rfic_1r1t_mode mode);
+
+/**
+ * Get the RFIC digital interface mode selection
+ *
+ * @see bladerf_set_rfic_1r1t_mode()
+ *
+ * @param       dev         Device handle
+ * @param[out]  mode        Mode selection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rfic_1r1t_mode(struct bladerf *dev,
+                                         bladerf_rfic_1r1t_mode *mode);
+
+/**
+ * Get the current RFIC digital interface mode
+ *
+ * @see bladerf_set_rfic_1r1t_mode()
+ *
+ * @param       dev         Device handle
+ * @param[out]  enabled     true if the interface is in 1R1T mode now, false
+ *                          for 2R2T mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rfic_1r1t(struct bladerf *dev, bool *enabled);
+
+/**
  * Read the temperature from the RFIC
  *
  * @param       dev         Device handle

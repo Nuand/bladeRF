@@ -692,6 +692,26 @@ int bladerf_get_gain_stages(struct bladerf *dev,
 /* Sample Rate */
 /******************************************************************************/
 
+/* Sample rate assignments enable RX2 and TX2 in the RFIC again, and the
+ * OVERSAMPLE feature may have changed, so the RFIC interface mode must be
+ * chosen again after each one. */
+static int reapply_rfic_1r1t(struct bladerf *dev)
+{
+    bladerf_rfic_1r1t_mode mode;
+    int status;
+
+    if (strcmp(bladerf_get_board_name(dev), "bladerf2") != 0) {
+        return 0;
+    }
+
+    status = bladerf_get_rfic_1r1t_mode(dev, &mode);
+    if (status != 0) {
+        return status;
+    }
+
+    return bladerf_set_rfic_1r1t_mode(dev, mode);
+}
+
 int bladerf_set_sample_rate(struct bladerf *dev,
                             bladerf_channel ch,
                             bladerf_sample_rate rate,
@@ -714,6 +734,10 @@ int bladerf_set_sample_rate(struct bladerf *dev,
         if (status != 0) {
             log_error("Oversample register config failure\n");
         }
+    }
+
+    if (status == 0) {
+        status = reapply_rfic_1r1t(dev);
     }
 
     return status;
@@ -765,6 +789,10 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
         if (status != 0) {
             log_error("Oversample register config failure\n");
         }
+    }
+
+    if (status == 0) {
+        status = reapply_rfic_1r1t(dev);
     }
 
     return status;
