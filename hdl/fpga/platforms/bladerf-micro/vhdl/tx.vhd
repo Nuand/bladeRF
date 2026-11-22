@@ -51,6 +51,9 @@ entity tx is
         eight_bit_mode_en      : in std_logic := '0';
         highly_packed_mode_en  : in std_logic := '0';
 
+        -- AD9361 1R1T mode: one sample per tx_clock cycle
+        r1_mode_en             : in std_logic := '0';
+
         -- Packet from host via FX3
         packet_en            : in    std_logic;
         packet_empty         : out   std_logic;
@@ -220,6 +223,7 @@ begin
 
             eight_bit_mode_en   =>  eight_bit_mode_en,
             highly_packed_mode_en =>  highly_packed_mode_en,
+            back_to_back_en     =>  r1_mode_en,
 
             fifo_empty          =>  sample_fifo.rempty,
             fifo_usedw          =>  sample_fifo.rused,

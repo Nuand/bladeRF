@@ -45,6 +45,7 @@ entity fifo_reader is
         packet_en           :   in      std_logic;
         eight_bit_mode_en   :   in      std_logic;
         highly_packed_mode_en : in      std_logic;
+        back_to_back_en     :   in      std_logic := '0';
         timestamp           :   in      unsigned(63 downto 0);
 
         fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
@@ -250,9 +251,10 @@ begin
 
         -- Count the FIFO reads made while META_LOAD and META_WAIT run. They
         -- take words of the next message before its downcount starts.
+        -- (fifo_read is the strobe the FIFO sees: see below.)
         if( meta_current.state = META_DOWNCOUNT ) then
             meta_future.early_reads <= 0;
-        elsif( fifo_current.fifo_read = '1' and meta_current.early_reads < 3 ) then
+        elsif( fifo_read = '1' and meta_current.early_reads < 3 ) then
             meta_future.early_reads <= meta_current.early_reads + 1;
         end if;
 
@@ -308,7 +310,7 @@ begin
                    meta_future.dma_downcount <= packet_len - 1;
                 else
                    -- Less the words already read (early_reads, and a read now)
-                   if( fifo_current.fifo_read = '1' ) then
+                   if( fifo_read = '1' ) then
                        meta_future.dma_downcount <= dma_buf_size - 4 -
                                                     NUM_STREAMS * (meta_current.early_reads + 1);
                    else
@@ -330,7 +332,7 @@ begin
 
                 meta_future.meta_time_go  <= '1';
                 if( packet_en = '0' ) then
-                   if( fifo_current.fifo_read = '1') then
+                   if( fifo_read = '1') then
                       meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
                       if( meta_current.dma_downcount <= 2 ) then
                           -- Look for 2 because of the 2 cycles passing
@@ -767,13 +769,21 @@ begin
         end if;
 
         -- Output assignments
-        fifo_read   <= fifo_current.fifo_read;
         out_samples <= fifo_current.out_samples;
 
         packet_control <= fifo_current.packet_control;
 
     end process;
 
+
+    -- The FIFO read strobe. Data requests normally come at most every other
+    -- clock, and the registered strobe advances the FIFO in time. With
+    -- back_to_back_en (one sample per clock, as in the AD9361's 1R1T mode) the
+    -- request after the last sample of a FIFO word comes on the next clock, so
+    -- the FIFO must advance in the same cycle. The meta FSM counts this strobe,
+    -- so it counts each read in the cycle the FIFO advances.
+    fifo_read <= fifo_future.fifo_read when back_to_back_en = '1' else
+                 fifo_current.fifo_read;
 
     -- ------------------------------------------------------------------------
     -- UNDERFLOW

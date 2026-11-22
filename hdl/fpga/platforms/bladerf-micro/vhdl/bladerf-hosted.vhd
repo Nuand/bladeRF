@@ -578,6 +578,7 @@ begin
             -- Eightbit mode
             eight_bit_mode_en    => eightbit_en_tx,
             highly_packed_mode_en => highly_packed_en_txrx,
+            r1_mode_en           => dac_r1_mode,
 
             -- Packet FIFO
             packet_en            => packet_en_tx,
