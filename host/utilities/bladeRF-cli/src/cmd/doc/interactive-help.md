@@ -642,6 +642,8 @@ BladeRF2-only parameters:
 `biastee`       Current bias-tee status
 
 `filter`        RFIC FIR filter selection
+
+`rfic_1r1t`     RFIC interface 1R1T mode selection and current mode
 ----------------------------------------------------------------------
 
 probe
@@ -1071,6 +1073,8 @@ BladeRF2-only parameters:
 `biastee`       Enables or disables the bias tee on a given channel
 
 `filter`        RFIC FIR filter selection
+
+`rfic_1r1t`     RFIC interface 1R1T mode: auto, off or on
 ----------------------------------------------------------------------
 
 version

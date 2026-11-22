@@ -870,6 +870,11 @@ T{
 T}@T{
 RFIC FIR filter selection
 T}
+T{
+\f[C]rfic_1r1t\f[]
+T}@T{
+RFIC interface 1R1T mode selection and current mode
+T}
 .TE
 .SS probe
 .PP
@@ -1573,6 +1578,11 @@ T{
 \f[C]filter\f[]
 T}@T{
 RFIC FIR filter selection
+T}
+T{
+\f[C]rfic_1r1t\f[]
+T}@T{
+RFIC interface 1R1T mode: auto, off or on
 T}
 .TE
 .SS version

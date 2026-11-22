@@ -603,6 +603,7 @@
   "      refin_freq ADF4002 reference clock frequency\n" \
   "         biastee Current bias-tee status\n" \
   "          filter RFIC FIR filter selection\n" \
+  "       rfic_1r1t RFIC interface 1R1T mode selection and current mode\n" \
   "\n" \
 
 
@@ -975,6 +976,7 @@
   "      refin_freq ADF4002 reference clock frequency\n" \
   "         biastee Enables or disables the bias tee on a given channel\n" \
   "          filter RFIC FIR filter selection\n" \
+  "       rfic_1r1t RFIC interface 1R1T mode: auto, off or on\n" \
   "\n" \
 
 

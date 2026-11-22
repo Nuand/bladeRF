@@ -1299,6 +1299,96 @@ out:
     return rv;
 }
 
+/* rfic_1r1t */
+int print_rfic_1r1t(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    bladerf_rfic_1r1t_mode mode;
+    bool enabled;
+    const char *mode_str;
+
+    status = bladerf_get_rfic_1r1t_mode(state->dev, &mode);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+
+    status = bladerf_get_rfic_1r1t(state->dev, &enabled);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+
+    switch (mode) {
+        case BLADERF_RFIC_1R1T_AUTO:
+            mode_str = "Auto";
+            break;
+        case BLADERF_RFIC_1R1T_OFF:
+            mode_str = "Off";
+            break;
+        case BLADERF_RFIC_1R1T_ON:
+            mode_str = "On";
+            break;
+        default:
+            mode_str = "Unknown";
+    }
+
+    printf("  RFIC 1R1T Mode: %s (interface in %s mode)\n", mode_str,
+           enabled ? "1R1T" : "2R2T");
+
+out:
+    return rv;
+}
+
+int set_rfic_1r1t(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    bladerf_rfic_1r1t_mode mode;
+
+    if (argc != 3) {
+        if (argc == 2) {
+            printf("Usage: %s %s <mode>\n", argv[0], argv[1]);
+            printf("\n  <mode> values:\n");
+            printf("      auto   1R1T mode with oversample and at most one RX and\n"
+                   "             one TX channel, else 2R2T mode (default)\n");
+            printf("      off    2R2T mode at all times\n");
+            printf("      on     1R1T mode at every sample rate\n");
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
+    }
+
+    if (!strcasecmp("auto", argv[2])) {
+        mode = BLADERF_RFIC_1R1T_AUTO;
+    } else if (!strcasecmp("off", argv[2])) {
+        mode = BLADERF_RFIC_1R1T_OFF;
+    } else if (!strcasecmp("on", argv[2])) {
+        mode = BLADERF_RFIC_1R1T_ON;
+    } else {
+        cli_err(state, argv[1], "Invalid 1R1T mode.\n");
+        return CLI_RET_INVPARAM;
+    }
+
+    status = bladerf_set_rfic_1r1t_mode(state->dev, mode);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        goto out;
+    }
+
+    rv = print_rfic_1r1t(state, 2, argv);
+
+out:
+    return rv;
+}
+
 /* bitmode */
 int print_bitmode(struct cli_state *state, int argc, char **argv)
 {
