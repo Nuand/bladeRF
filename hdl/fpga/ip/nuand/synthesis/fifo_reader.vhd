@@ -89,6 +89,7 @@ architecture simple of fifo_reader is
     type meta_fsm_t is record
         state           : meta_state_t;
         dma_downcount   : natural range 0 to DMA_BUF_SIZE_SS;
+        early_reads     : natural range 0 to 3;
         meta_pkt_sop    : std_logic;
         meta_pkt_eop    : std_logic;
         skip_padding    : std_logic;
@@ -105,6 +106,7 @@ architecture simple of fifo_reader is
     constant META_FSM_RESET_VALUE : meta_fsm_t := (
         state           => META_LOAD,
         dma_downcount   => 0,
+        early_reads     => 0,
         meta_pkt_sop    => '0',
         meta_pkt_eop    => '0',
         skip_padding    => '0',
@@ -246,6 +248,14 @@ begin
 
         meta_future <= meta_current;
 
+        -- Count the FIFO reads made while META_LOAD and META_WAIT run. They
+        -- take words of the next message before its downcount starts.
+        if( meta_current.state = META_DOWNCOUNT ) then
+            meta_future.early_reads <= 0;
+        elsif( fifo_current.fifo_read = '1' and meta_current.early_reads < 3 ) then
+            meta_future.early_reads <= meta_current.early_reads + 1;
+        end if;
+
         meta_future.meta_read <= '0';
         meta_future.meta_pkt_sop <= '0';
         meta_future.meta_pkt_eop <= '0';
@@ -297,7 +307,14 @@ begin
                    packet_len := to_integer(unsigned(meta_current.meta_cache(15 downto 0)));
                    meta_future.dma_downcount <= packet_len - 1;
                 else
-                   meta_future.dma_downcount <= dma_buf_size - 4;
+                   -- Less the words already read (early_reads, and a read now)
+                   if( fifo_current.fifo_read = '1' ) then
+                       meta_future.dma_downcount <= dma_buf_size - 4 -
+                                                    NUM_STREAMS * (meta_current.early_reads + 1);
+                   else
+                       meta_future.dma_downcount <= dma_buf_size - 4 -
+                                                    NUM_STREAMS * meta_current.early_reads;
+                   end if;
                 end if;
 
                 if( (timestamp >= meta_current.meta_p_time or meta_current.meta_p_time = MAX_TIMESTAMP)
