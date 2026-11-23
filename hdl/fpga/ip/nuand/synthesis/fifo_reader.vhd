@@ -99,6 +99,7 @@ architecture simple of fifo_reader is
         meta_time_go    : std_logic;
         meta_fifo_empty : std_logic;
         meta_fifo_data  : std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0);
+        next_cont       : std_logic;
     end record;
 
     constant META_FSM_RESET_VALUE : meta_fsm_t := (
@@ -113,7 +114,8 @@ architecture simple of fifo_reader is
         meta_p_time_r   => (others => '-'),
         meta_time_go    => '0',
         meta_fifo_empty => '1',
-        meta_fifo_data  => (others => '0')
+        meta_fifo_data  => (others => '0'),
+        next_cont       => '0'
     );
 
     signal meta_current : meta_fsm_t := META_FSM_RESET_VALUE;
@@ -171,6 +173,9 @@ architecture simple of fifo_reader is
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
     signal fifo_future  : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
 
+    -- Samples per channel in one message
+    signal msg_samples  : unsigned(63 downto 0) := (others => '0');
+
 begin
 
     -- Throw compile/synthesis error if things don't make sense
@@ -190,6 +195,28 @@ begin
             else
                 dma_buf_size <= DMA_BUF_SIZE_HS;
             end if;
+        end if;
+    end process;
+
+
+    -- A message holds dma_buf_size - 4 sample words (the other 4 are its
+    -- metadata): one sample each, or two with 8-bit samples, shared by the
+    -- enabled channels. The timestamp of a message that follows another one
+    -- without a gap is the other one's timestamp plus this.
+    calc_msg_samples : process( clock, reset )
+        variable n : natural range 0 to 2*DMA_BUF_SIZE_SS;
+    begin
+        if( reset = '1' ) then
+            msg_samples <= (others => '0');
+        elsif( rising_edge(clock) ) then
+            n := dma_buf_size - 4;
+            if( eight_bit_mode_en = '1' ) then
+                n := 2 * n;
+            end if;
+            if( fifo_current.enabled_channels = 2 ) then
+                n := n / 2;
+            end if;
+            msg_samples <= to_unsigned(n, msg_samples'length);
         end if;
     end process;
 
@@ -226,6 +253,16 @@ begin
         meta_future.meta_fifo_data  <= meta_fifo_data;
         meta_time := unsigned(meta_current.meta_fifo_data(95 downto 32)) - 1;
         meta_future.meta_p_time_r <= meta_time;
+
+        -- The next message (at the meta FIFO's head) follows the current one
+        -- without a gap, or is to be sent now
+        if( meta_current.meta_fifo_empty = '0' and
+            (meta_current.meta_p_time_r = META_NOW or
+             meta_current.meta_p_time_r = meta_current.meta_p_time + msg_samples) ) then
+            meta_future.next_cont <= '1';
+        else
+            meta_future.next_cont <= '0';
+        end if;
 
         case meta_current.state is
 
@@ -282,6 +319,11 @@ begin
                           -- Look for 2 because of the 2 cycles passing
                           -- through META_LOAD and META_WAIT after this.
                           meta_future.state <= META_LOAD;
+                          -- Samples go on through META_LOAD only into a
+                          -- message that follows without a gap. A sample
+                          -- request there would otherwise take the next
+                          -- message's first sample before its timestamp.
+                          meta_future.meta_time_go <= meta_current.next_cont;
                       end if;
                    end if;
                 else
