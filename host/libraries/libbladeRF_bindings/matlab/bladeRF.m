@@ -99,6 +99,14 @@ classdef bladeRF < handle
         xb          % Attached expansion board
     end
 
+    properties(Dependent)
+        rfic_1r1t_mode % bladeRF 2.0 AD9361 interface mode: 'AUTO' (1R1T with OVERSAMPLE and one RX and one TX channel; the default), 'OFF' (always 2R2T) or 'ON' (always 1R1T)
+    end
+
+    properties(Dependent, SetAccess = private)
+        rfic_1r1t   % true while the bladeRF 2.0 AD9361 interface is in 1R1T mode
+    end
+
     properties(Access=private)
         initialized = false;
     end
@@ -854,6 +862,32 @@ classdef bladeRF < handle
                              timeout_ms * 1000);
 
             bladeRF.check_status('bladerf_sync_tx', status);
+        end
+
+        function set.rfic_1r1t_mode(obj, val)
+            switch upper(val)
+                case { 'AUTO', 'OFF', 'ON' }
+                    mode = ['BLADERF_RFIC_1R1T_' upper(val)];
+                otherwise
+                    error(['Invalid 1R1T mode: ' val]);
+            end
+
+            status = calllib('libbladeRF', 'bladerf_set_rfic_1r1t_mode', obj.device, mode);
+            bladeRF.check_status('bladerf_set_rfic_1r1t_mode', status);
+        end
+
+        function val = get.rfic_1r1t_mode(obj)
+            mode = int32(0);
+            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_rfic_1r1t_mode', obj.device, mode);
+            bladeRF.check_status('bladerf_get_rfic_1r1t_mode', status);
+            val = strrep(char(mode), 'BLADERF_RFIC_1R1T_', '');
+        end
+
+        function val = get.rfic_1r1t(obj)
+            enabled = false;
+            [status, ~, enabled] = calllib('libbladeRF', 'bladerf_get_rfic_1r1t', obj.device, enabled);
+            bladeRF.check_status('bladerf_get_rfic_1r1t', status);
+            val = logical(enabled);
         end
 
         function delete(obj)

@@ -44,6 +44,7 @@ entity fifo_writer is
         packet_en           :   in      std_logic;
         eight_bit_mode_en   :   in      std_logic := '0';
         highly_packed_mode_en : in      std_logic;
+        back_to_back_en     :   in      std_logic := '0';
         timestamp           :   in      unsigned(63 downto 0);
         mini_exp            :   in      std_logic_vector(1 downto 0);
 
@@ -295,31 +296,54 @@ begin
 
             when META_DOWNCOUNT =>
 
-                if( fifo_current.fifo_write = '1' and meta_current.meta_write = '0' ) then
-                    meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
-                end if;
+                if( back_to_back_en = '1' ) then
+                    -- One sample per clock (the AD9361's 1R1T mode): the steps
+                    -- through IDLE and META_WRITE below let a varying number of
+                    -- samples into the next buffer before its meta is written.
+                    -- Instead, count each word in the cycle the sample FIFO FSM
+                    -- decides to write it. The decision of a buffer's last word
+                    -- writes the next buffer's meta at once, with the timestamp of
+                    -- the sample that arrives in that cycle: the first sample of
+                    -- the next buffer.
+                    if( fifo_future.fifo_write = '1' ) then
+                        if( meta_current.dma_downcount <= 2 ) then
+                            meta_future.dma_downcount <= dma_buf_size - 4;
+                            if( fifo_enough ) then
+                                meta_future.meta_write <= '1';
+                            else
+                                meta_future.state <= IDLE;
+                            end if;
+                        else
+                            meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
+                        end if;
+                    end if;
+                else
+                    if( fifo_current.fifo_write = '1' and meta_current.meta_write = '0' ) then
+                        meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
+                    end if;
 
-                if( meta_current.dma_downcount <= 2 ) then
-                    -- Look for 2 because of the 2 cycles passing
-                    -- through IDLE and META_WRITE after this.
-                    -- 8bit format requires an additional 2 cycle delay.
-                    if( eight_bit_mode_en = '1' ) then
-                        if( fifo_future.eight_bit_delay = '1' and fifo_future.samples_left = 0) then
+                    if( meta_current.dma_downcount <= 2 ) then
+                        -- Look for 2 because of the 2 cycles passing
+                        -- through IDLE and META_WRITE after this.
+                        -- 8bit format requires an additional 2 cycle delay.
+                        if( eight_bit_mode_en = '1' ) then
+                            if( fifo_future.eight_bit_delay = '1' and fifo_future.samples_left = 0) then
+                                meta_future.state <= IDLE;
+                            end if;
+                        else
                             meta_future.state <= IDLE;
                         end if;
-                    else
+                    end if;
+
+                    -- Patches the late meta write for MIMO mode
+                    if( in_sample_controls'length = 2 and
+                        in_sample_controls(0).enable = '1' and
+                        in_sample_controls(1).enable = '1' and
+                        eight_bit_mode_en = '0' and
+                        meta_current.dma_downcount <= NUM_STREAMS + 2 )
+                    then
                         meta_future.state <= IDLE;
                     end if;
-                end if;
-
-                -- Patches the late meta write for MIMO mode
-                if( in_sample_controls'length = 2 and
-                    in_sample_controls(0).enable = '1' and
-                    in_sample_controls(1).enable = '1' and
-                    eight_bit_mode_en = '0' and
-                    meta_current.dma_downcount <= NUM_STREAMS + 2 )
-                then
-                    meta_future.state <= IDLE;
                 end if;
 
             when PACKET_WAIT_EOP =>

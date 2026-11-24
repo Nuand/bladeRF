@@ -545,6 +545,15 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_tri
 % int bladerf_get_tuning_mode ( struct bladerf * dev , bladerf_tuning_mode * mode );
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_tuning_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_tuning_modePtr'};fcnNum=fcnNum+1;
 
+% int bladerf_set_rfic_1r1t_mode ( struct bladerf * dev , bladerf_rfic_1r1t_mode mode );
+fcns.thunkname{fcnNum}='int32voidPtrbladerf_rfic_1r1t_modeThunk';fcns.name{fcnNum}='bladerf_set_rfic_1r1t_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_rfic_1r1t_mode'};fcnNum=fcnNum+1;
+
+% int bladerf_get_rfic_1r1t_mode ( struct bladerf * dev , bladerf_rfic_1r1t_mode * mode );
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rfic_1r1t_mode'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_rfic_1r1t_modePtr'};fcnNum=fcnNum+1;
+
+% int bladerf_get_rfic_1r1t ( struct bladerf * dev , bool * enabled );
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rfic_1r1t'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'boolPtr'};fcnNum=fcnNum+1;
+
 % int bladerf_get_bias_tee ( struct bladerf * dev , bladerf_channel ch , _Bool * enable );
 fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_bias_tee'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'boolPtr'};fcnNum=fcnNum+1;
 
@@ -779,6 +788,10 @@ enuminfo.bladerf_rx_mux=struct('BLADERF_RX_MUX_INVALID',            -1, ...
                                'BLADERF_RX_MUX_32BIT_COUNTER',       2, ...
                                'BLADERF_RX_MUX_DIGITAL_LOOPBACK',    4);
                                % Value 3 is reserved for future use
+
+enuminfo.bladerf_rfic_1r1t_mode=struct('BLADERF_RFIC_1R1T_AUTO', 0, ...
+                                       'BLADERF_RFIC_1R1T_OFF',  1, ...
+                                       'BLADERF_RFIC_1R1T_ON',   2);
 
 enuminfo.bladerf_dev_speed=struct('BLADERF_DEVICE_SPEED_UNKNOWN',   0, ...
                                   'BLADERF_DEVICE_SPEED_HIGH',      1, ...

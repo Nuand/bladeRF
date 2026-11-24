@@ -162,6 +162,11 @@
 #define BLADERF_CAP_FPGA_8BIT_SAMPLES (((uint64_t)1) << 39)
 
 /**
+ * FPGA v0.17.0 introduces support for the RFIC's 1R1T interface mode.
+ */
+#define BLADERF_CAP_FPGA_RFIC_1R1T (((uint64_t)1) << 40)
+
+/**
  * Max number of gain calibration tables associated to max number of channels
  */
 #define NUM_GAIN_CAL_TBLS 4

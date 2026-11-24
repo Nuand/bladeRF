@@ -237,6 +237,15 @@ class RXMux(enum.Enum):
         return self.name
 
 
+class RFIC1R1TMode(enum.Enum):
+    Auto = libbladeRF.BLADERF_RFIC_1R1T_AUTO
+    Off = libbladeRF.BLADERF_RFIC_1R1T_OFF
+    On = libbladeRF.BLADERF_RFIC_1R1T_ON
+
+    def __str__(self):
+        return self.name
+
+
 class ClockSelect(enum.Enum):
     Unknown = -99
     VCTCXO = libbladeRF.CLOCK_SELECT_ONBOARD
@@ -953,6 +962,47 @@ class BladeRF:
 
     rfic_temperature = property(get_rfic_temperature,
                                 doc="RFIC internal temperature")
+
+    def get_rfic_1r1t_mode(self):
+        """How the RFIC digital interface chooses 1R1T or 2R2T mode.
+
+        Auto (the default after open) uses 1R1T mode while the OVERSAMPLE
+        feature is on and at most one RX and one TX channel are enabled. Off
+        uses 2R2T mode at all times. On uses 1R1T mode at every sample rate
+        and refuses a second channel of one direction. Returns None if the
+        board has no such setting."""
+        try:
+            mode = ffi.new("bladerf_rfic_1r1t_mode *")
+            ret = libbladeRF.bladerf_get_rfic_1r1t_mode(self.dev[0], mode)
+            _check_error(ret)
+            return RFIC1R1TMode(mode[0])
+        except UnsupportedError:
+            return None
+
+    def set_rfic_1r1t_mode(self, mode):
+        """Set the RFIC 1R1T mode selection (an RFIC1R1TMode). On needs an
+        FPGA image with 1R1T support (v0.17.0 or later)."""
+        if isinstance(mode, RFIC1R1TMode):
+            mode = mode.value
+        ret = libbladeRF.bladerf_set_rfic_1r1t_mode(self.dev[0], mode)
+        _check_error(ret)
+
+    rfic_1r1t_mode = property(get_rfic_1r1t_mode, set_rfic_1r1t_mode,
+                              doc="RFIC 1R1T mode selection")
+
+    def get_rfic_1r1t(self):
+        """True if the RFIC digital interface is in 1R1T mode now, False
+        for 2R2T mode. Returns None if the board has no such setting."""
+        try:
+            enabled = ffi.new("bool *")
+            ret = libbladeRF.bladerf_get_rfic_1r1t(self.dev[0], enabled)
+            _check_error(ret)
+            return bool(enabled[0])
+        except UnsupportedError:
+            return None
+
+    rfic_1r1t = property(get_rfic_1r1t,
+                         doc="RFIC digital interface in 1R1T mode now")
 
     def get_rfic_rssi(self, ch):
         try:

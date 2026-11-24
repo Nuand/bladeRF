@@ -10,6 +10,7 @@ entity signal_generator is
 
     mode            :   in      std_logic ;
     eightbit_en     :   in      std_logic := '0';
+    valid_every_clock : in      std_logic := '0';
 
     sample_i        :   out     signed(15 downto 0) ;
     sample_q        :   out     signed(15 downto 0) ;
@@ -53,8 +54,12 @@ begin
                 sample_q <= (others =>'0') ;
                 sample_valid <= '0' ;
             else
-                sample_valid <= not sample_valid ;
-                if( sample_valid = '1' ) then
+                if( valid_every_clock = '1' ) then
+                    sample_valid <= '1' ;
+                else
+                    sample_valid <= not sample_valid ;
+                end if ;
+                if( sample_valid = '1' or valid_every_clock = '1' ) then
                     if( count12 < 2047 ) then
                         count12 := count12 + 1 ;
                     else

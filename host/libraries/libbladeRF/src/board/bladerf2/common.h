@@ -189,6 +189,12 @@ struct bladerf2_board_data {
     /* If true, RFIC control will be fully de-initialized on close, instead of
      * just put into a standby state. */
     bool rfic_reset_on_close;
+
+    /* How the RFIC digital interface chooses 1R1T or 2R2T mode */
+    bladerf_rfic_1r1t_mode rfic_1r1t_mode;
+
+    /* If true, the RFIC digital interface is in 1R1T mode */
+    bool rfic_1r1t;
 };
 
 struct bladerf_rfic_status_register {

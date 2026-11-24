@@ -177,6 +177,9 @@ module axi_ad9361_dev_if (
 
   // internal registers
 
+  reg             rx_r1_mode = 'd0;
+  reg             rx_r1_mode_r2 = 'd0;
+  reg             tx_r1_mode = 'd0;
   reg     [ 3:0]  rx_frame = 'd0;
   reg     [ 5:0]  rx_data_3 = 'd0;
   reg     [ 5:0]  rx_data_2 = 'd0;
@@ -225,56 +228,94 @@ module axi_ad9361_dev_if (
 
   // receive data path interface
 
+  // Each l_clk cycle carries four 6-bit words. rx_frame[0] and rx_data_0 are
+  // the first word in time. A sample is four words: I msb, Q msb, I lsb, Q lsb.
+  // In 2R2T mode the frame is high for the four words of channel 1 and low for
+  // the four words of channel 2, so adc_valid is high every other cycle with
+  // both channels in adc_data. In 1R1T (R1) mode the frame is high for the two
+  // msb words of each sample, so every cycle holds one of 4'b0011, 4'b0110,
+  // 4'b1100 or 4'b1001 and starts one sample. adc_valid is then high every
+  // cycle with the one channel in adc_data[23:0]. A sample that starts on word
+  // n uses the same word mapping in both modes.
+
   assign rx_frame_inv_s = ~rx_frame;
 
   always @(posedge l_clk) begin
+    rx_r1_mode <= adc_r1_mode;
+    rx_r1_mode_r2 <= rx_r1_mode;
     rx_frame <= rx_frame_s;
     rx_data_3 <= rx_data_3_s;
     rx_data_2 <= rx_data_2_s;
     rx_data_1 <= rx_data_1_s;
     rx_data_0 <= rx_data_0_s;
-    if (rx_frame_inv_s == rx_frame_s) begin
+    if (rx_r1_mode == 1'b1) begin
+      if (rx_frame == rx_frame_s) begin
+        rx_error_r2 <= 1'b0;
+      end else begin
+        rx_error_r2 <= 1'b1;
+      end
+    end else if (rx_frame_inv_s == rx_frame_s) begin
       rx_error_r2 <= 1'b0;
     end else begin
       rx_error_r2 <= 1'b1;
     end
-    case (rx_frame)
-      4'b1111: begin
+    case ({rx_r1_mode, rx_frame})
+      5'b10011: begin
         rx_valid_r2 <= 1'b1;
         rx_data_r2[23:12] <= {rx_data_1,   rx_data_3};
         rx_data_r2[11: 0] <= {rx_data_0,   rx_data_2};
       end
-      4'b1110: begin
+      5'b10110: begin
         rx_valid_r2 <= 1'b1;
         rx_data_r2[23:12] <= {rx_data_2,   rx_data_0_s};
         rx_data_r2[11: 0] <= {rx_data_1,   rx_data_3};
       end
-      4'b1100: begin
+      5'b11100: begin
         rx_valid_r2 <= 1'b1;
         rx_data_r2[23:12] <= {rx_data_3,   rx_data_1_s};
         rx_data_r2[11: 0] <= {rx_data_2,   rx_data_0_s};
       end
-      4'b1000: begin
+      5'b11001: begin
         rx_valid_r2 <= 1'b1;
         rx_data_r2[23:12] <= {rx_data_0_s, rx_data_2_s};
         rx_data_r2[11: 0] <= {rx_data_3,   rx_data_1_s};
       end
-      4'b0000: begin
+      5'b01111: begin
+        rx_valid_r2 <= 1'b1;
+        rx_data_r2[23:12] <= {rx_data_1,   rx_data_3};
+        rx_data_r2[11: 0] <= {rx_data_0,   rx_data_2};
+      end
+      5'b01110: begin
+        rx_valid_r2 <= 1'b1;
+        rx_data_r2[23:12] <= {rx_data_2,   rx_data_0_s};
+        rx_data_r2[11: 0] <= {rx_data_1,   rx_data_3};
+      end
+      5'b01100: begin
+        rx_valid_r2 <= 1'b1;
+        rx_data_r2[23:12] <= {rx_data_3,   rx_data_1_s};
+        rx_data_r2[11: 0] <= {rx_data_2,   rx_data_0_s};
+      end
+      5'b01000: begin
+        rx_valid_r2 <= 1'b1;
+        rx_data_r2[23:12] <= {rx_data_0_s, rx_data_2_s};
+        rx_data_r2[11: 0] <= {rx_data_3,   rx_data_1_s};
+      end
+      5'b00000: begin
         rx_valid_r2 <= 1'b0;
         rx_data_r2[23:12] <= {rx_data_1,   rx_data_3};
         rx_data_r2[11: 0] <= {rx_data_0,   rx_data_2};
       end
-      4'b0001: begin
+      5'b00001: begin
         rx_valid_r2 <= 1'b0;
         rx_data_r2[23:12] <= {rx_data_2,   rx_data_0_s};
         rx_data_r2[11: 0] <= {rx_data_1,   rx_data_3};
       end
-      4'b0011: begin
+      5'b00011: begin
         rx_valid_r2 <= 1'b0;
         rx_data_r2[23:12] <= {rx_data_3,   rx_data_1_s};
         rx_data_r2[11: 0] <= {rx_data_2,   rx_data_0_s};
       end
-      4'b0111: begin
+      5'b00111: begin
         rx_valid_r2 <= 1'b0;
         rx_data_r2[23:12] <= {rx_data_0_s, rx_data_2_s};
         rx_data_r2[11: 0] <= {rx_data_3,   rx_data_1_s};
@@ -285,7 +326,10 @@ module axi_ad9361_dev_if (
         rx_data_r2[11: 0] <= 12'd0;
       end
     endcase
-    if (rx_valid_r2 == 1'b1) begin
+    if (rx_r1_mode_r2 == 1'b1) begin
+      adc_valid <= rx_valid_r2;
+      adc_data <= {24'd0, rx_data_r2};
+    end else if (rx_valid_r2 == 1'b1) begin
       adc_valid <= 1'b0;
       adc_data <= {24'd0, rx_data_r2};
     end else begin
@@ -297,10 +341,20 @@ module axi_ad9361_dev_if (
 
   // transmit data path mux
 
+  // In R1 mode the frame is high for the two msb words of every sample, and
+  // the core sends one sample per cycle (dac_valid every cycle, DAC rate 0).
+
   always @(posedge l_clk) begin
+    tx_r1_mode <= dac_r1_mode;
     tx_data_sel <= dac_valid;
     tx_data <= dac_data;
-    if (tx_data_sel == 1'b1) begin
+    if (tx_r1_mode == 1'b1) begin
+      tx_frame <= 4'b0011;
+      tx_data_0 <= tx_data[11: 6];
+      tx_data_1 <= tx_data[23:18];
+      tx_data_2 <= tx_data[ 5: 0];
+      tx_data_3 <= tx_data[17:12];
+    end else if (tx_data_sel == 1'b1) begin
       tx_frame <= 4'b1111;
       tx_data_0 <= tx_data[11: 6];
       tx_data_1 <= tx_data[23:18];

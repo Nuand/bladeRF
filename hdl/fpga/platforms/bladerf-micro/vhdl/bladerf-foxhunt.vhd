@@ -199,6 +199,7 @@ architecture foxhunt_bladerf of bladerf is
         ad9361_adc_q1_enable            :   out std_logic;
         ad9361_adc_q1_valid             :   out std_logic;
         ad9361_adc_q1_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_r1_mode              :   out std_logic;
         ad9361_adc_underflow_unf        :   in  std_logic;
         ad9361_dac_i0_enable            :   out std_logic;
         ad9361_dac_i0_valid             :   out std_logic;
@@ -213,6 +214,7 @@ architecture foxhunt_bladerf of bladerf is
         ad9361_dac_q1_enable            :   out std_logic;
         ad9361_dac_q1_valid             :   out std_logic;
         ad9361_dac_q1_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_r1_mode              :   out std_logic;
         ad9361_dac_underflow_unf        :   in  std_logic;
         oc_i2c_arst_i                   :   in  std_logic;
         oc_i2c_scl_pad_i                :   in  std_logic;
@@ -231,12 +233,14 @@ architecture foxhunt_bladerf of bladerf is
         rx_tamer_ts_pps                 :   in  std_logic;
         rx_tamer_ts_clock               :   in  std_logic;
         rx_tamer_ts_reset               :   in  std_logic;
+        rx_tamer_ts_count_every_clock   :   in  std_logic := '0';
         rx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
         tx_tamer_ts_sync_in             :   in  std_logic;
         tx_tamer_ts_sync_out            :   out std_logic;
         tx_tamer_ts_pps                 :   in  std_logic;
         tx_tamer_ts_clock               :   in  std_logic;
         tx_tamer_ts_reset               :   in  std_logic;
+        tx_tamer_ts_count_every_clock   :   in  std_logic := '0';
         tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
         tx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
         tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);

@@ -159,6 +159,10 @@ architecture hosted_bladerf of bladerf is
     signal adc_streams            : sample_streams_t(adc_controls'range)  := (others => ZERO_SAMPLE);
     signal adc_streams_last_v     : std_logic_vector(adc_controls'range)  := (others => '0');
 
+    -- AD9361 1R1T (R1) mode from the AXI AD9361 core, on its l_clk (rx_clock)
+    signal adc_r1_mode            : std_logic;
+    signal dac_r1_mode            : std_logic;
+
     signal   ps_sync              : std_logic_vector(0 downto 0)          := (others => '0');
 
 
@@ -412,6 +416,7 @@ begin
             ad9361_adc_q1_enable            => ad9361.ch(1).adc.q.enable, -- out sl
             ad9361_adc_q1_valid             => ad9361.ch(1).adc.q.valid,  -- out sl
             ad9361_adc_q1_data              => ad9361.ch(1).adc.q.data,   -- out slv(15:0)
+            ad9361_adc_r1_mode              => adc_r1_mode,               -- out sl
             ad9361_adc_underflow_unf        => ad9361.adc_underflow,      -- in  sl
             ad9361_dac_i0_enable            => ad9361.ch(0).dac.i.enable, -- out sl
             ad9361_dac_i0_valid             => ad9361.ch(0).dac.i.valid,  -- out sl
@@ -426,6 +431,7 @@ begin
             ad9361_dac_q1_enable            => ad9361.ch(1).dac.q.enable, -- out sl
             ad9361_dac_q1_valid             => ad9361.ch(1).dac.q.valid,  -- out sl
             ad9361_dac_q1_data              => ad9361.ch(1).dac.q.data,   -- in  slv(15:0)
+            ad9361_dac_r1_mode              => dac_r1_mode,               -- out sl
             ad9361_dac_underflow_unf        => ad9361.dac_underflow,      -- in  sl
             xb_gpio_in_port                 => nios_xb_gpio_in,
             xb_gpio_out_port                => nios_xb_gpio_out,
@@ -444,12 +450,14 @@ begin
             rx_tamer_ts_pps                 => '0',
             rx_tamer_ts_clock               => rx_clock,
             rx_tamer_ts_reset               => rx_ts_reset,
+            rx_tamer_ts_count_every_clock   => adc_r1_mode,
             unsigned(rx_tamer_ts_time)      => rx_timestamp,
             tx_tamer_ts_sync_in             => '0',
             tx_tamer_ts_sync_out            => open,
             tx_tamer_ts_pps                 => '0',
             tx_tamer_ts_clock               => tx_clock,
             tx_tamer_ts_reset               => tx_ts_reset,
+            tx_tamer_ts_count_every_clock   => dac_r1_mode,
             unsigned(tx_tamer_ts_time)      => tx_timestamp,
             rx_trigger_ctl_out_port         => rx_trigger_ctl_i,
             tx_trigger_ctl_out_port         => tx_trigger_ctl_i,
@@ -570,6 +578,7 @@ begin
             -- Eightbit mode
             eight_bit_mode_en    => eightbit_en_tx,
             highly_packed_mode_en => highly_packed_en_txrx,
+            r1_mode_en           => dac_r1_mode,
 
             -- Packet FIFO
             packet_en            => packet_en_tx,
@@ -614,9 +623,24 @@ begin
             dac_controls(i).data_req <= (ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled) and
                                         mimo_tx_enables(i);
 
+            -- In 1R1T mode the core sends its channel 0 to whichever AD9361
+            -- TX channel is on, so both slots follow the channel 0 controls,
+            -- and the MIMO TX enables pick the slot that streams
+            if( dac_r1_mode = '1' ) then
+                dac_controls(i).enable   <= (ad9361.ch(0).dac.i.enable or ad9361.ch(0).dac.q.enable or tx_loopback_enabled) and
+                                            mimo_tx_enables(i);
+                dac_controls(i).data_req <= (ad9361.ch(0).dac.i.valid  or ad9361.ch(0).dac.q.valid  or tx_loopback_enabled) and
+                                            mimo_tx_enables(i);
+            end if;
+
             if (rising_edge(tx_clock) and dac_streams(i).data_v = '1') then
-                ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
-                ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
+                if( dac_r1_mode = '1' ) then
+                    ad9361.ch(0).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
+                    ad9361.ch(0).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
+                else
+                    ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
+                    ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
+                end if;
             end if;
         end loop;
     end process;
@@ -647,6 +671,7 @@ begin
             -- Packed modes
             eight_bit_mode_en      => eightbit_en_rx,
             highly_packed_mode_en  => highly_packed_en_txrx,
+            r1_mode_en             => adc_r1_mode,
 
             -- Packet FIFO
             packet_en              => packet_en_rx,
@@ -696,6 +721,17 @@ begin
             adc_streams(i).data_i    <= signed(ad9361.ch(i).adc.i.data);
             adc_streams(i).data_q    <= signed(ad9361.ch(i).adc.q.data);
             adc_streams(i).data_v    <= (ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid) and not adc_streams_last_v(i);
+
+            -- In 1R1T mode the core's valid is high every clock, and its
+            -- channel 0 carries the samples of whichever AD9361 RX channel is
+            -- on. Both slots get them, and the MIMO RX enables pick the slot
+            -- that streams.
+            if( adc_r1_mode = '1' ) then
+                adc_controls(i).enable <= (ad9361.ch(0).adc.i.enable or ad9361.ch(0).adc.q.enable) and mimo_rx_enables(i);
+                adc_streams(i).data_i  <= signed(ad9361.ch(0).adc.i.data);
+                adc_streams(i).data_q  <= signed(ad9361.ch(0).adc.q.data);
+                adc_streams(i).data_v  <= ad9361.ch(0).adc.i.valid or ad9361.ch(0).adc.q.valid;
+            end if;
         end loop;
     end process;
 

@@ -108,6 +108,8 @@ int print_bitmode(struct cli_state *state, int argc, char **argv);
 int set_bitmode(struct cli_state *state, int argc, char **argv);
 int print_feature(struct cli_state *state, int argc, char **argv);
 int set_feature(struct cli_state *state, int argc, char **argv);
+int print_rfic_1r1t(struct cli_state *state, int argc, char **argv);
+int set_rfic_1r1t(struct cli_state *state, int argc, char **argv);
 int print_rxvga1(struct cli_state *state, int argc, char **argv);
 int set_rxvga1(struct cli_state *state, int argc, char **argv);
 int print_rxvga2(struct cli_state *state, int argc, char **argv);

@@ -26,6 +26,7 @@ entity time_tamer is
     ts_pps      :   in  std_logic ;
     ts_clock    :   in  std_logic ;
     ts_reset    :   in  std_logic ;
+    ts_count_every_clock : in std_logic := '0' ;  -- '1': ts_clock is the sample clock
     ts_time     :   out std_logic_vector(63 downto 0)
   ) ;
 end entity ;
@@ -156,7 +157,9 @@ begin
             tick := '1' ;
             timestamp <= (others =>'0') ;
         elsif( rising_edge(ts_clock) ) then
-            if( tick = '0' ) then
+            -- ts_clock is twice the sample rate in 2R2T mode and equal to it
+            -- in 1R1T mode
+            if( tick = '0' or ts_count_every_clock = '1' ) then
                 timestamp <= timestamp + 1 ;
             end if ;
             tick := not tick ;

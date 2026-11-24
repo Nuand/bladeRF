@@ -45,6 +45,7 @@ entity fifo_reader is
         packet_en           :   in      std_logic;
         eight_bit_mode_en   :   in      std_logic;
         highly_packed_mode_en : in      std_logic;
+        back_to_back_en     :   in      std_logic := '0';
         timestamp           :   in      unsigned(63 downto 0);
 
         fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
@@ -89,6 +90,7 @@ architecture simple of fifo_reader is
     type meta_fsm_t is record
         state           : meta_state_t;
         dma_downcount   : natural range 0 to DMA_BUF_SIZE_SS;
+        early_reads     : natural range 0 to 3;
         meta_pkt_sop    : std_logic;
         meta_pkt_eop    : std_logic;
         skip_padding    : std_logic;
@@ -99,11 +101,13 @@ architecture simple of fifo_reader is
         meta_time_go    : std_logic;
         meta_fifo_empty : std_logic;
         meta_fifo_data  : std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0);
+        next_cont       : std_logic;
     end record;
 
     constant META_FSM_RESET_VALUE : meta_fsm_t := (
         state           => META_LOAD,
         dma_downcount   => 0,
+        early_reads     => 0,
         meta_pkt_sop    => '0',
         meta_pkt_eop    => '0',
         skip_padding    => '0',
@@ -113,7 +117,8 @@ architecture simple of fifo_reader is
         meta_p_time_r   => (others => '-'),
         meta_time_go    => '0',
         meta_fifo_empty => '1',
-        meta_fifo_data  => (others => '0')
+        meta_fifo_data  => (others => '0'),
+        next_cont       => '0'
     );
 
     signal meta_current : meta_fsm_t := META_FSM_RESET_VALUE;
@@ -171,6 +176,9 @@ architecture simple of fifo_reader is
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
     signal fifo_future  : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
 
+    -- Samples per channel in one message
+    signal msg_samples  : unsigned(63 downto 0) := (others => '0');
+
 begin
 
     -- Throw compile/synthesis error if things don't make sense
@@ -190,6 +198,28 @@ begin
             else
                 dma_buf_size <= DMA_BUF_SIZE_HS;
             end if;
+        end if;
+    end process;
+
+
+    -- A message holds dma_buf_size - 4 sample words (the other 4 are its
+    -- metadata): one sample each, or two with 8-bit samples, shared by the
+    -- enabled channels. The timestamp of a message that follows another one
+    -- without a gap is the other one's timestamp plus this.
+    calc_msg_samples : process( clock, reset )
+        variable n : natural range 0 to 2*DMA_BUF_SIZE_SS;
+    begin
+        if( reset = '1' ) then
+            msg_samples <= (others => '0');
+        elsif( rising_edge(clock) ) then
+            n := dma_buf_size - 4;
+            if( eight_bit_mode_en = '1' ) then
+                n := 2 * n;
+            end if;
+            if( fifo_current.enabled_channels = 2 ) then
+                n := n / 2;
+            end if;
+            msg_samples <= to_unsigned(n, msg_samples'length);
         end if;
     end process;
 
@@ -219,6 +249,15 @@ begin
 
         meta_future <= meta_current;
 
+        -- Count the FIFO reads made while META_LOAD and META_WAIT run. They
+        -- take words of the next message before its downcount starts.
+        -- (fifo_read is the strobe the FIFO sees: see below.)
+        if( meta_current.state = META_DOWNCOUNT ) then
+            meta_future.early_reads <= 0;
+        elsif( fifo_read = '1' and meta_current.early_reads < 3 ) then
+            meta_future.early_reads <= meta_current.early_reads + 1;
+        end if;
+
         meta_future.meta_read <= '0';
         meta_future.meta_pkt_sop <= '0';
         meta_future.meta_pkt_eop <= '0';
@@ -226,6 +265,16 @@ begin
         meta_future.meta_fifo_data  <= meta_fifo_data;
         meta_time := unsigned(meta_current.meta_fifo_data(95 downto 32)) - 1;
         meta_future.meta_p_time_r <= meta_time;
+
+        -- The next message (at the meta FIFO's head) follows the current one
+        -- without a gap, or is to be sent now
+        if( meta_current.meta_fifo_empty = '0' and
+            (meta_current.meta_p_time_r = META_NOW or
+             meta_current.meta_p_time_r = meta_current.meta_p_time + msg_samples) ) then
+            meta_future.next_cont <= '1';
+        else
+            meta_future.next_cont <= '0';
+        end if;
 
         case meta_current.state is
 
@@ -260,7 +309,14 @@ begin
                    packet_len := to_integer(unsigned(meta_current.meta_cache(15 downto 0)));
                    meta_future.dma_downcount <= packet_len - 1;
                 else
-                   meta_future.dma_downcount <= dma_buf_size - 4;
+                   -- Less the words already read (early_reads, and a read now)
+                   if( fifo_read = '1' ) then
+                       meta_future.dma_downcount <= dma_buf_size - 4 -
+                                                    NUM_STREAMS * (meta_current.early_reads + 1);
+                   else
+                       meta_future.dma_downcount <= dma_buf_size - 4 -
+                                                    NUM_STREAMS * meta_current.early_reads;
+                   end if;
                 end if;
 
                 if( (timestamp >= meta_current.meta_p_time or meta_current.meta_p_time = MAX_TIMESTAMP)
@@ -276,12 +332,17 @@ begin
 
                 meta_future.meta_time_go  <= '1';
                 if( packet_en = '0' ) then
-                   if( fifo_current.fifo_read = '1') then
+                   if( fifo_read = '1') then
                       meta_future.dma_downcount <= meta_current.dma_downcount - NUM_STREAMS;
                       if( meta_current.dma_downcount <= 2 ) then
                           -- Look for 2 because of the 2 cycles passing
                           -- through META_LOAD and META_WAIT after this.
                           meta_future.state <= META_LOAD;
+                          -- Samples go on through META_LOAD only into a
+                          -- message that follows without a gap. A sample
+                          -- request there would otherwise take the next
+                          -- message's first sample before its timestamp.
+                          meta_future.meta_time_go <= meta_current.next_cont;
                       end if;
                    end if;
                 else
@@ -708,13 +769,21 @@ begin
         end if;
 
         -- Output assignments
-        fifo_read   <= fifo_current.fifo_read;
         out_samples <= fifo_current.out_samples;
 
         packet_control <= fifo_current.packet_control;
 
     end process;
 
+
+    -- The FIFO read strobe. Data requests normally come at most every other
+    -- clock, and the registered strobe advances the FIFO in time. With
+    -- back_to_back_en (one sample per clock, as in the AD9361's 1R1T mode) the
+    -- request after the last sample of a FIFO word comes on the next clock, so
+    -- the FIFO must advance in the same cycle. The meta FSM counts this strobe,
+    -- so it counts each read in the cycle the FIFO advances.
+    fifo_read <= fifo_future.fifo_read when back_to_back_en = '1' else
+                 fifo_current.fifo_read;
 
     -- ------------------------------------------------------------------------
     -- UNDERFLOW
