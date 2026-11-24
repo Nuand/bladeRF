@@ -285,7 +285,7 @@ classdef bladeRF < handle
         %   - libusb-1.0.dll and/or CyUSB.dll
         %   - pthreadVC2.dll
         %
-        % Linux users will need to copy libbladeRF.h, bladeRF1.h, bladeRF2.h to this directory
+        % Linux and macOS users will need to copy libbladeRF.h, bladeRF1.h, bladeRF2.h to this directory
         % and add the following #define to libbladeRF.h, after "#define BLADERF_H_" or "#define LIBBLADERF_H"
         %
         % #define MATLAB_LINUX_THUNK_BUILD_
@@ -305,7 +305,7 @@ classdef bladeRF < handle
             switch arch
                 case 'win64'
                     [notfound, warnings] = loadlibrary('bladeRF', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
-                case 'glnxa64'
+                case { 'glnxa64', 'maci64', 'maca64' }
                     hnd = fopen('libbladeRF.h');
                     found = false;
                     if hnd > 0
@@ -322,9 +322,12 @@ classdef bladeRF < handle
                         warning('Could not find required #define in libbladeRF.h . Please review instructions.');
                         return
                     end
-                    [notfound, warnings] = loadlibrary('libbladeRF', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
-                case 'maci64'
-                    [notfound, warnings] = loadlibrary('libbladeRF.dylib', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
+                    if strcmp(arch, 'glnxa64')
+                        lib = 'libbladeRF';
+                    else
+                        lib = bladeRF.macos_library;
+                    end
+                    [notfound, warnings] = loadlibrary(lib, 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
                 otherwise
                     error(strcat('Unsupported architecture: ', arch))
             end
@@ -369,8 +372,8 @@ classdef bladeRF < handle
                         [notfound, warnings] = loadlibrary('bladeRF', @libbladeRF_proto, 'alias', 'libbladeRF');
                     case 'glnxa64'
                         [notfound, warnings] = loadlibrary('libbladeRF', @libbladeRF_proto);
-                    case 'maci64'
-                        [notfound, warnings] = loadlibrary('libbladeRF.dylib', @libbladeRF_proto);
+                    case {'maci64', 'maca64'}
+                        [notfound, warnings] = loadlibrary(bladeRF.macos_library, @libbladeRF_proto, 'alias', 'libbladeRF');
                     otherwise
                         error(strcat('Unsupported architecture: ', arch))
                 end
@@ -381,6 +384,33 @@ classdef bladeRF < handle
 
                 if isempty(warnings) == false
                     warning('Encountered the following warnings while loading libbladeRF:\n%s\n', warnings);
+                end
+            end
+        end
+
+        function lib = macos_library
+        % Find libbladeRF.dylib for loadlibrary() on macOS: in a folder of
+        % DYLD_LIBRARY_PATH, the current folder or the MATLAB path, then in
+        % Homebrew's library folder (Apple silicon, then Intel). dlopen()
+        % does not search /opt/homebrew/lib by itself.
+            lib = 'libbladeRF.dylib';
+            dirs = [strsplit(getenv('DYLD_LIBRARY_PATH'), pathsep), {pwd}];
+            for n = 1:length(dirs)
+                if ~isempty(dirs{n}) && exist(fullfile(dirs{n}, lib), 'file')
+                    lib = fullfile(dirs{n}, lib);
+                    return
+                end
+            end
+            on_path = which(lib);
+            if ~isempty(on_path)
+                lib = on_path;
+                return
+            end
+            dirs = {'/opt/homebrew/lib', '/usr/local/lib'};
+            for n = 1:length(dirs)
+                if exist(fullfile(dirs{n}, lib), 'file')
+                    lib = fullfile(dirs{n}, lib);
+                    return
                 end
             end
         end
