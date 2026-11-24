@@ -45,7 +45,7 @@ classdef bladeRF_XCVR < handle
         vga2            % VGA2 gain. RX range: [0, 30], TX range: [0, 25]
         lna             % RX LNA gain. Values: { 'BYPASS', 'MID', 'MAX' }
         xb200_filter    % XB200 Filter selection. Only valid when an XB200 is attached. Options are: '50M', '144M', '222M', 'AUTO_1DB', 'AUTO_3DB', 'CUSTOM'
-        mux             % FPGA sample FIFO mux mode. Only valid for RX, with options 'BASEBAND_LMS', '12BIT_COUNTER', '32BIT_COUNTER', 'DIGITAL_LOOPBACK'
+        mux             % FPGA sample FIFO mux mode. Only valid for RX, with options 'BASEBAND' (or its old name 'BASEBAND_LMS'), '12BIT_COUNTER', '32BIT_COUNTER', 'DIGITAL_LOOPBACK'
         channel         % Channel number
     end
 
@@ -495,7 +495,7 @@ classdef bladeRF_XCVR < handle
 
             mode = upper(mode);
             switch mode
-                case { 'BASEBAND_LMS', '12BIT_COUNTER', '32BIT_COUNTER', 'DIGITAL_LOOPBACK' }
+                case { 'BASEBAND', 'BASEBAND_LMS', '12BIT_COUNTER', '32BIT_COUNTER', 'DIGITAL_LOOPBACK' }
                     mode = ['BLADERF_RX_MUX_' mode ];
                 otherwise
                     error(['Invalid RX mux mode: ' mode]);
