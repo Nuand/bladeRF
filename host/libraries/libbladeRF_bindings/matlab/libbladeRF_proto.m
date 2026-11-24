@@ -48,17 +48,20 @@ switch arch
         libname   = 'libbladeRF_thunk_glnxa64';
         libsuffix = '.so';
         u64_type  = 'ulong';
+        size_type = 'ulong';
 
     case 'win64'
         libname   = 'libbladeRF_thunk_pcwin64';
         libsuffix = '.dll';
         u64_type  = 'uint64';
+        size_type = 'uint64';
 
-    case 'imac64'
-        % Additional type changes for this may be required for OSX support
-        libname   = 'libbladeRF_thunk_imac64';
+    case {'maci64', 'maca64'}
+        % uint64_t is unsigned long long on macOS, size_t unsigned long
+        libname   = ['libbladeRF_thunk_' arch];
         libsuffix = '.dylib';
-        u64_type  = 'ulong';
+        u64_type  = 'uint64';
+        size_type = 'ulong';
 
     otherwise
         error(['Unsupported architecture: ' arch]);
@@ -483,7 +486,7 @@ fcns.thunkname{fcnNum}='cstringint32Thunk';fcns.name{fcnNum}='bladerf_strerror';
 fcns.thunkname{fcnNum}='cstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_board_name'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='cstring'; fcns.RHS{fcnNum}={'bladerfPtr'};fcnNum=fcnNum+1;
 
 % size_t bladerf_get_channel_count ( struct bladerf * dev , bladerf_direction dir );
-fcns.thunkname{fcnNum}=[ u64_type 'voidPtrbladerf_directionThunk'];fcns.name{fcnNum}='bladerf_get_channel_count'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=u64_type; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_direction'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=[ size_type 'voidPtrbladerf_directionThunk'];fcns.name{fcnNum}='bladerf_get_channel_count'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=size_type; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_direction'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain ( struct bladerf * dev , bladerf_channel ch , bladerf_gain * gain );
 fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'int32Ptr'};fcnNum=fcnNum+1;
@@ -504,7 +507,7 @@ fcns.thunkname{fcnNum}='int32voidPtrint32cstringvoidPtrThunk';fcns.name{fcnNum}=
 fcns.thunkname{fcnNum}='int32voidPtrint32cstringvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_gain_stage_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'cstring', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_get_gain_stages ( struct bladerf * dev , bladerf_channel ch , const char ** stages , size_t count );
-fcns.thunkname{fcnNum}=['int32voidPtrint32voidPtr' u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_get_gain_stages'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr', u64_type};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrint32voidPtr' size_type 'Thunk'];fcns.name{fcnNum}='bladerf_get_gain_stages'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'stringPtrPtr', size_type};fcnNum=fcnNum+1;
 
 % int bladerf_get_sample_rate_range ( struct bladerf * dev , bladerf_channel ch , const struct bladerf_range ** range );
 fcns.thunkname{fcnNum}='int32voidPtrint32voidPtrThunk';fcns.name{fcnNum}='bladerf_get_sample_rate_range'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_channel', 'bladerf_rangePtrPtr'};fcnNum=fcnNum+1;
