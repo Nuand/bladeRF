@@ -246,6 +246,15 @@ class ClockSelect(enum.Enum):
         return self.name
 
 
+class TuningMode(enum.Enum):
+    Invalid = libbladeRF.BLADERF_TUNING_MODE_INVALID
+    Host = libbladeRF.BLADERF_TUNING_MODE_HOST
+    FPGA = libbladeRF.BLADERF_TUNING_MODE_FPGA
+
+    def __str__(self):
+        return self.name
+
+
 class RSSI(collections.namedtuple("RSSI", ["preamble", "symbol"])):
     def __str__(self):
         return ("RSSI\n" +
@@ -918,12 +927,21 @@ class BladeRF:
     # Tuning Mode
 
     def set_tuning_mode(self, mode):
-        raise NotImplementedError()
+        """Select where tuning runs (a TuningMode): on the host
+        (TuningMode.Host) or in the FPGA (TuningMode.FPGA)."""
+        if isinstance(mode, TuningMode):
+            mode = mode.value
+        ret = libbladeRF.bladerf_set_tuning_mode(self.dev[0], mode)
+        _check_error(ret)
 
     def get_tuning_mode(self):
-        raise NotImplementedError()
+        mode = ffi.new("bladerf_tuning_mode *")
+        ret = libbladeRF.bladerf_get_tuning_mode(self.dev[0], mode)
+        _check_error(ret)
+        return TuningMode(mode[0])
 
-    tuning_mode = property(get_tuning_mode, set_tuning_mode)
+    tuning_mode = property(get_tuning_mode, set_tuning_mode,
+                           doc="Tuning mode")
 
     # Bias tee
 
